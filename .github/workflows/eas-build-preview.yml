@@ -1,0 +1,59 @@
+name: EAS Build (Preview)
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: eas-build-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Preview APK
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🏗 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🏗 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 🏗 Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🚀 Build Preview APK
+        run: eas build --profile preview --platform android --non-interactive --no-wait
+
+      - name: 💬 Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🏗️ **Preview build triggered!**\n\nCheck the build status at: https://expo.dev/accounts/${{ secrets.EXPO_ACCOUNT }}/projects/pos-damai/builds'
+            })
+
+      - name: 📝 Build Summary
+        run: |
+          echo "## 🎉 Preview Build Triggered" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Build has been submitted to EAS for PR #${{ github.event.pull_request.number }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the build status at: https://expo.dev/accounts/${{ secrets.EXPO_ACCOUNT }}/projects/pos-damai/builds" >> $GITHUB_STEP_SUMMARY

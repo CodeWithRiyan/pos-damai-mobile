@@ -1,0 +1,61 @@
+name: EAS Build (Production)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      submit_to_store:
+        description: 'Submit to Google Play Store'
+        required: false
+        default: 'false'
+        type: boolean
+
+concurrency:
+  group: eas-build-prod-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Production APK/AAB
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🏗 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🏗 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 🏗 Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔐 Setup Google Services
+        if: ${{ github.event.inputs.submit_to_store == 'true' }}
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > google-services.json
+
+      - name: 🚀 Build Production AAB
+        run: eas build --profile production --platform android --non-interactive --no-wait
+
+      - name: 📤 Submit to Play Store
+        if: ${{ github.event.inputs.submit_to_store == 'true' }}
+        run: eas submit --platform android --latest --non-interactive
+
+      - name: 📝 Build Summary
+        run: |
+          echo "## 🎉 Production Build Triggered" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Build has been submitted to EAS." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the build status at: https://expo.dev/accounts/${{ secrets.EXPO_ACCOUNT }}/projects/pos-damai/builds" >> $GITHUB_STEP_SUMMARY
