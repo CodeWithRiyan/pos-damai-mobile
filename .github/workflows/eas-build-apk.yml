@@ -17,6 +17,8 @@ jobs:
   build-and-release:
     name: Build & Release Android APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       # 1️⃣ Checkout
