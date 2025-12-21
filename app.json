@@ -2,7 +2,7 @@
   "expo": {
     "name": "POS Damai",
     "slug": "pos-damai",
-    "version": "0.0.0", 
+    "version": "0.0.1upda",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "posdamai",
