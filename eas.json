@@ -7,7 +7,8 @@
     "base": {
       "android": {
         "image": "latest",
-        "buildType": "apk"
+        "buildType": "apk",
+        "java": "17"
       },
       "env": {
         "GRADLE_OPTS": "-Dorg.gradle.parallel=true -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx4g",
@@ -27,9 +28,6 @@
       "extends": "base",
       "distribution": "internal",
       "channel": "preview",
-      "android": {
-        "gradleCommand": ":app:assembleRelease"
-      },
       "env": {
         "APP_ENV": "preview"
       }

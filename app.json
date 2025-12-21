@@ -42,7 +42,9 @@
         "expo-build-properties",
         {
           "android": {
-            "kotlinJvmTarget": "17"
+            "kotlinJvmTarget": "17",
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34
           }
         }
       ]
