@@ -1,4 +1,4 @@
-name: EAS Build (APK Only)
+name: EAS Build & Release APK
 
 on:
   push:
@@ -10,36 +10,70 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: eas-build-apk-${{ github.ref }}
+  group: eas-apk-release-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build Android APK
+  build-and-release:
+    name: Build & Release Android APK
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout
       - name: 🏗 Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Node
       - name: 🏗 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # 3️⃣ Setup pnpm
       - name: 🏗 Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
 
+      # 4️⃣ Install dependencies
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: 🏗 Setup EAS
+      # 5️⃣ Setup Expo & EAS
+      - name: 🏗 Setup Expo & EAS
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: 🚀 Build APK
-        run: eas build --platform android --non-interactive --no-wait
+      # 6️⃣ Build APK (WAIT until finished)
+      - name: 🚀 Build Android APK
+        run: |
+          eas build \
+            --platform android \
+            --profile preview \
+            --non-interactive
+
+      # 7️⃣ Download APK from EAS
+      - name: 📥 Download APK from EAS
+        run: |
+          eas build:list --platform android --limit 1 --json > build.json
+          APK_URL=$(jq -r '.[0].artifacts.buildUrl' build.json)
+          echo "Downloading APK from $APK_URL"
+          curl -L "$APK_URL" -o pos-damai.apk
+
+      # 8️⃣ Create GitHub Release
+      - name: 📦 Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: POS Damai APK #${{ github.run_number }}
+          body: |
+            🚀 **POS Damai – Android APK**
+
+            - Branch: `${{ github.ref_name }}`
+            - Commit: `${{ github.sha }}`
+            - Build: `${{ github.run_number }}`
+
+            📥 Download APK and install manually (sideload).
+          files: pos-damai.apk
