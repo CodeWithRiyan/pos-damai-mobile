@@ -52,13 +52,18 @@ jobs:
           eas build \
             --platform android \
             --profile preview \
-            --non-interactive
+            --non-interactive \
+            --json > build-result.json
 
       # 7️⃣ Download APK from EAS
       - name: 📥 Download APK from EAS
         run: |
-          eas build:list --platform android --limit 1 --json > build.json
-          APK_URL=$(jq -r '.[0].artifacts.buildUrl' build.json)
+          APK_URL=$(jq -r '.[0].artifacts.buildUrl' build-result.json)
+          if [ -z "$APK_URL" ] || [ "$APK_URL" = "null" ]; then
+            echo "❌ APK URL not found"
+            cat build-result.json
+            exit 1
+          fi
           echo "Downloading APK from $APK_URL"
           curl -L "$APK_URL" -o pos-damai.apk
 
