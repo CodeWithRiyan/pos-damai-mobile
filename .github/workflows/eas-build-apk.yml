@@ -1,12 +1,14 @@
 name: EAS Build & Release APK
 
+permissions:
+  contents: write   # WAJIB untuk create GitHub Release
+
 on:
   push:
     branches:
-      - main
-      - master
       - dev
-      - develop
+      - main
+      - prod
   workflow_dispatch:
 
 concurrency:
@@ -19,66 +21,208 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ------------------------------------------------------------
       # 1️⃣ Checkout
+      # ------------------------------------------------------------
       - name: 🏗 Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node
+      # ------------------------------------------------------------
+      # 2️⃣ Setup Node.js
+      # ------------------------------------------------------------
       - name: 🏗 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # ------------------------------------------------------------
       # 3️⃣ Setup pnpm
+      # ------------------------------------------------------------
       - name: 🏗 Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
 
+      # ------------------------------------------------------------
       # 4️⃣ Install dependencies
+      # ------------------------------------------------------------
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # 5️⃣ Setup Expo & EAS
+      # ------------------------------------------------------------
+      # 5️⃣ Setup Expo + EAS
+      # ------------------------------------------------------------
       - name: 🏗 Setup Expo & EAS
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      # 6️⃣ Build APK (WAIT until finished)
+      # ------------------------------------------------------------
+      # 6️⃣ Bump version based on branch
+      # ------------------------------------------------------------
+      - name: 🔢 Bump version
+        id: version
+        run: |
+          set -euo pipefail
+
+          VERSION=$(cat .version)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          BRANCH="${GITHUB_REF_NAME}"
+
+          echo "Current version: $VERSION"
+          echo "Branch: $BRANCH"
+
+          if [ "$BRANCH" = "dev" ]; then
+            PATCH=$((PATCH + 1))
+          elif [ "$BRANCH" = "main" ]; then
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          elif [ "$BRANCH" = "prod" ]; then
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+          else
+            echo "❌ Unsupported branch: $BRANCH"
+            exit 1
+          fi
+
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "$NEW_VERSION" > .version
+
+          echo "New version: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      # ------------------------------------------------------------
+      # 7️⃣ Sync version → app.json (version & android.versionCode)
+      # ------------------------------------------------------------
+      - name: 🔄 Sync version to app.json
+        run: |
+          set -euo pipefail
+
+          VERSION=$(cat .version)
+          VERSION_CODE=$(echo "$VERSION" | awk -F. '{print $1 * 10000 + $2 * 100 + $3}')
+
+          echo "Syncing version $VERSION"
+          echo "Computed android.versionCode: $VERSION_CODE"
+
+          jq \
+            --arg version "$VERSION" \
+            --argjson versionCode "$VERSION_CODE" \
+            '.expo.version = $version
+             | .expo.android.versionCode = $versionCode' \
+            app.json > app.json.tmp
+
+          mv app.json.tmp app.json
+
+      # ------------------------------------------------------------
+      # 8️⃣ Commit version bump + app.json
+      # ------------------------------------------------------------
+      - name: 💾 Commit version bump
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add .version app.json
+          git commit -m "chore(release): v$(cat .version)" || echo "No changes to commit"
+          git push
+
+      # ------------------------------------------------------------
+      # 9️⃣ Build APK (WAIT until finished)
+      # ------------------------------------------------------------
       - name: 🚀 Build Android APK
         run: |
+          set -euo pipefail
+
           eas build \
             --platform android \
             --profile preview \
             --non-interactive \
             --json > build-result.json
 
-      # 7️⃣ Download APK from EAS
+      # ------------------------------------------------------------
+      # 🔟 Download APK from EAS
+      # ------------------------------------------------------------
       - name: 📥 Download APK from EAS
         run: |
+          set -euo pipefail
+
+          VERSION=$(cat .version)
           APK_URL=$(jq -r '.[0].artifacts.buildUrl' build-result.json)
+
           if [ -z "$APK_URL" ] || [ "$APK_URL" = "null" ]; then
             echo "❌ APK URL not found"
             cat build-result.json
             exit 1
           fi
-          echo "Downloading APK from $APK_URL"
-          curl -L "$APK_URL" -o pos-damai.apk
 
-      # 8️⃣ Create GitHub Release
+          APK_NAME="pos-damai-v$VERSION.apk"
+          echo "Downloading APK from $APK_URL"
+          curl -L "$APK_URL" -o "$APK_NAME"
+
+          echo "APK_NAME=$APK_NAME" >> $GITHUB_ENV
+
+      # ------------------------------------------------------------
+      # 1️⃣0️⃣ Generate changelog from commits
+      # ------------------------------------------------------------
+      - name: 📝 Generate changelog
+        id: changelog
+        run: |
+          set -euo pipefail
+
+          LAST_TAG=$(git tag --sort=-creatordate | grep '^v' | head -n 1 || true)
+
+          if [ -z "$LAST_TAG" ]; then
+            RANGE=""
+            echo "No previous tag found, using all commits"
+          else
+            RANGE="$LAST_TAG..HEAD"
+            echo "Generating changelog from $RANGE"
+          fi
+
+          git log $RANGE --pretty=format:"%s" > commits.txt
+
+          {
+            echo "## ✨ Features"
+            grep '^feat:' commits.txt | sed 's/^feat: /* /' || true
+            echo ""
+
+            echo "## 🐛 Bug Fixes"
+            grep '^fix:' commits.txt | sed 's/^fix: /* /' || true
+            echo ""
+
+            echo "## 🧹 Refactor"
+            grep '^refactor:' commits.txt | sed 's/^refactor: /* /' || true
+            echo ""
+
+            echo "## 🔧 Chore"
+            grep '^chore:' commits.txt | sed 's/^chore: /* /' || true
+            echo ""
+
+            echo "## 📚 Others"
+            grep -vE '^(feat|fix|refactor|chore|docs):' commits.txt | sed 's/^/* /' || true
+          } > CHANGELOG.md
+
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat CHANGELOG.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+
+      # ------------------------------------------------------------
+      # 1️⃣2️⃣ Create GitHub Release
+      # ------------------------------------------------------------
       - name: 📦 Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apk-${{ github.run_number }}
-          name: POS Damai APK #${{ github.run_number }}
+          tag_name: v${{ steps.version.outputs.version }}
+          name: POS Damai v${{ steps.version.outputs.version }}
           body: |
             🚀 **POS Damai – Android APK**
 
+            - Version: `v${{ steps.version.outputs.version }}`
             - Branch: `${{ github.ref_name }}`
             - Commit: `${{ github.sha }}`
-            - Build: `${{ github.run_number }}`
+            - Android versionCode: auto-generated
 
-            📥 Download APK and install manually (sideload).
-          files: pos-damai.apk
+            📥 Download APK below and install manually (sideload).
+          files: ${{ env.APK_NAME }}
