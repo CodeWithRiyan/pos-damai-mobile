@@ -1,18 +1,23 @@
-name: EAS Build & Release APK
+name: Build & Release Android APK
 
 permissions:
-  contents: write   # WAJIB untuk create GitHub Release
+  contents: write   # Required for GitHub Release
 
 on:
-  push:
-    branches:
-      - dev
-      - main
-      - prod
+  # Manual trigger only to prevent quota waste
   workflow_dispatch:
+    inputs:
+      branch_type:
+        description: 'Branch type for version bump'
+        required: true
+        type: choice
+        options:
+          - dev
+          - main
+          - prod
 
 concurrency:
-  group: eas-apk-release-${{ github.ref }}
+  group: android-apk-release-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -36,12 +41,25 @@ jobs:
           node-version: 20
 
       # ------------------------------------------------------------
-      # 3️⃣ Setup pnpm
+      # 3️⃣ Setup pnpm with cache
       # ------------------------------------------------------------
       - name: 🏗 Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       # ------------------------------------------------------------
       # 4️⃣ Install dependencies
@@ -50,16 +68,32 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ------------------------------------------------------------
-      # 5️⃣ Setup Expo + EAS
+      # 5️⃣ Setup Java 17
       # ------------------------------------------------------------
-      - name: 🏗 Setup Expo & EAS
-        uses: expo/expo-github-action@v8
+      - name: 🏗 Setup Java 17
+        uses: actions/setup-java@v4
         with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+          distribution: 'temurin'
+          java-version: '17'
 
       # ------------------------------------------------------------
-      # 6️⃣ Bump version based on branch
+      # 6️⃣ Setup Android SDK with cache
+      # ------------------------------------------------------------
+      - name: 🏗 Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # ------------------------------------------------------------
+      # 7️⃣ Bump version based on branch
       # ------------------------------------------------------------
       - name: 🔢 Bump version
         id: version
@@ -68,10 +102,10 @@ jobs:
 
           VERSION=$(cat .version)
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          BRANCH="${GITHUB_REF_NAME}"
+          BRANCH="${{ github.event.inputs.branch_type }}"
 
           echo "Current version: $VERSION"
-          echo "Branch: $BRANCH"
+          echo "Branch type: $BRANCH"
 
           if [ "$BRANCH" = "dev" ]; then
             PATCH=$((PATCH + 1))
@@ -94,7 +128,7 @@ jobs:
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       # ------------------------------------------------------------
-      # 7️⃣ Sync version → app.json (version & android.versionCode)
+      # 8️⃣ Sync version → app.json
       # ------------------------------------------------------------
       - name: 🔄 Sync version to app.json
         run: |
@@ -116,7 +150,7 @@ jobs:
           mv app.json.tmp app.json
 
       # ------------------------------------------------------------
-      # 8️⃣ Commit version bump + app.json
+      # 9️⃣ Commit version bump
       # ------------------------------------------------------------
       - name: 💾 Commit version bump
         run: |
@@ -128,42 +162,40 @@ jobs:
           git push
 
       # ------------------------------------------------------------
-      # 9️⃣ Build APK (WAIT until finished)
+      # 🔟 Build APK with Gradle
       # ------------------------------------------------------------
       - name: 🚀 Build Android APK
         run: |
           set -euo pipefail
-
-          eas build \
-            --platform android \
-            --profile preview \
-            --non-interactive \
-            --json > build-result.json
-
-      # ------------------------------------------------------------
-      # 🔟 Download APK from EAS
-      # ------------------------------------------------------------
-      - name: 📥 Download APK from EAS
-        run: |
-          set -euo pipefail
-
+          
           VERSION=$(cat .version)
-          APK_URL=$(jq -r '.[0].artifacts.buildUrl' build-result.json)
-
-          if [ -z "$APK_URL" ] || [ "$APK_URL" = "null" ]; then
-            echo "❌ APK URL not found"
-            cat build-result.json
+          echo "Building APK version $VERSION"
+          
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+          
+          cd ..
+          
+          # Find the APK
+          APK_PATH=$(find android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          
+          if [ -z "$APK_PATH" ]; then
+            echo "❌ APK not found"
             exit 1
           fi
-
+          
+          # Rename APK
           APK_NAME="pos-damai-v$VERSION.apk"
-          echo "Downloading APK from $APK_URL"
-          curl -L "$APK_URL" -o "$APK_NAME"
-
+          cp "$APK_PATH" "$APK_NAME"
+          
           echo "APK_NAME=$APK_NAME" >> $GITHUB_ENV
+          
+          # Show APK size
+          ls -lh "$APK_NAME"
 
       # ------------------------------------------------------------
-      # 1️⃣0️⃣ Generate changelog from commits
+      # 1️⃣1️⃣ Generate changelog
       # ------------------------------------------------------------
       - name: 📝 Generate changelog
         id: changelog
@@ -223,6 +255,7 @@ jobs:
             - Branch: `${{ github.ref_name }}`
             - Commit: `${{ github.sha }}`
             - Android versionCode: auto-generated
+            - Build: Local Gradle (GitHub Actions)
 
             📥 Download APK below and install manually (sideload).
           files: ${{ env.APK_NAME }}
