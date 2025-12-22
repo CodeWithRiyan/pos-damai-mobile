@@ -162,7 +162,14 @@ jobs:
           git push
 
       # ------------------------------------------------------------
-      # 🔟 Build APK with Gradle
+      # 🔟 Prebuild native projects
+      # ------------------------------------------------------------
+      - name: 🏗 Prebuild native projects
+        run: |
+          npx expo prebuild --clean --platform android
+          
+      # ------------------------------------------------------------
+      # 1️⃣1️⃣ Build APK with Gradle
       # ------------------------------------------------------------
       - name: 🚀 Build Android APK
         run: |
