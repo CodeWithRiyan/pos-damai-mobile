@@ -162,6 +162,9 @@ importers:
       '@unrs/resolver-binding-darwin-x64':
         specifier: ^1.11.1
         version: 1.11.1
+      '@unrs/resolver-binding-linux-x64-gnu':
+        specifier: 1.11.1
+        version: 1.11.1
       babel-plugin-module-resolver:
         specifier: ^5.0.2
         version: 5.0.2
@@ -174,6 +177,9 @@ importers:
       eslint-config-expo:
         specifier: ~10.0.0
         version: 10.0.0(eslint@9.39.2(jiti@1.21.7))(typescript@5.9.3)
+      husky:
+        specifier: ^9.1.7
+        version: 9.1.7
       typescript:
         specifier: ~5.9.2
         version: 5.9.3
@@ -3786,6 +3792,11 @@ packages:
   https-proxy-agent@7.0.6:
     resolution: {integrity: sha512-vK9P5/iUfdl95AI+JVyUuIcVtd4ofvtrOr3HNtM2yxC9bnMbEdp3x01OhQNnjb8IJYi38VlTE3mBXwcfvywuSw==}
     engines: {node: '>= 14'}
+
+  husky@9.1.7:
+    resolution: {integrity: sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   hyphenate-style-name@1.1.0:
     resolution: {integrity: sha512-WDC/ui2VVRrz3jOVi+XtjqkDjiVjTtFaAGiW37k6b+ohyQ5wYDOGkvCZa8+H0nx3gyvv0+BST9xuOgIyGQ00gw==}
@@ -9116,8 +9127,7 @@ snapshots:
   '@unrs/resolver-binding-linux-s390x-gnu@1.11.1':
     optional: true
 
-  '@unrs/resolver-binding-linux-x64-gnu@1.11.1':
-    optional: true
+  '@unrs/resolver-binding-linux-x64-gnu@1.11.1': {}
 
   '@unrs/resolver-binding-linux-x64-musl@1.11.1':
     optional: true
@@ -10691,6 +10701,8 @@ snapshots:
       debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
+
+  husky@9.1.7: {}
 
   hyphenate-style-name@1.1.0: {}
 
