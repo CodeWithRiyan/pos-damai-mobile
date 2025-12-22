@@ -162,11 +162,12 @@ jobs:
           git push
 
       # ------------------------------------------------------------
-      # 🔟 Prebuild native projects
+      # 🔟 Clear Metro bundler cache
       # ------------------------------------------------------------
-      - name: 🏗 Prebuild native projects
+      - name: 🧹 Clear Metro cache
         run: |
-          npx expo prebuild --clean --platform android
+          rm -rf $TMPDIR/metro-* || true
+          rm -rf $TMPDIR/haste-* || true
           
       # ------------------------------------------------------------
       # 1️⃣1️⃣ Build APK with Gradle
