@@ -35,7 +35,7 @@ export default function HomeScreen() {
         </Box>
 
         <VStack space="md" className="bg-primary-50 dark:bg-primary-900/20 p-6 rounded-2xl border border-primary-200 dark:border-primary-800">
-          <Heading size="sm" color="primary">Quick Start</Heading>
+          <Heading size="sm">Quick Start</Heading>
           <Text size="sm">
             1. Edit <Text className="font-bold">app/(tabs)/index.tsx</Text>
             {"\n"}2. Add components with <Text className="italic">npx gluestack-ui add</Text>

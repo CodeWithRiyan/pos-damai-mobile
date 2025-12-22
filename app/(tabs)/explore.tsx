@@ -1,15 +1,29 @@
 import { Image } from 'expo-image';
 import { Platform, StyleSheet } from 'react-native';
 
-import { Collapsible } from '@/components/ui/collapsible';
 import { ExternalLink } from '@/components/external-link';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Button, ButtonText } from '@/components/ui';
+import { Collapsible } from '@/components/ui/collapsible';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Fonts } from '@/constants/theme';
+import { useLogout } from '@/lib/api/auth';
+import { useRouter } from 'expo-router';
 
 export default function TabTwoScreen() {
+  const logoutMutation = useLogout();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        router.replace('/login');
+      },
+    });
+  };
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
@@ -29,6 +43,9 @@ export default function TabTwoScreen() {
           }}>
           Explore
         </ThemedText>
+        <Button size="sm" action="negative" onPress={handleLogout}>
+          <ButtonText>Logout</ButtonText>
+        </Button>
       </ThemedView>
       <ThemedText>This app includes example code to help you get started.</ThemedText>
       <Collapsible title="File-based routing">
@@ -107,6 +124,9 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     gap: 8,
+    paddingRight: 16,
   },
 });
