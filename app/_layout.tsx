@@ -1,5 +1,5 @@
 import { GluestackUIProvider } from '@/components/ui';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
@@ -7,18 +7,16 @@ import 'react-native-reanimated';
 import '../global.css';
 
 import { SyncConfirmationModal } from '@/components/sync-confirmation-modal';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSyncManager } from '@/hooks/use-sync-manager';
 import { authStorageAdapter } from '@/lib/storage';
 import { QueryProvider } from '@/providers/query-provider';
 import { useNetworkMonitoring } from '@/stores/network-store';
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  anchor: '(main)',
 };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const segments = useSegments();
   const router = useRouter();
   
@@ -46,20 +44,20 @@ export default function RootLayout() {
       router.replace('/login');
     } else if (token && inAuthGroup) {
       // Redirect to home if already authenticated and trying to access login
-      router.replace('/(tabs)');
+      router.replace('/');
     }
   }, [segments, router, isMounted]);
 
   return (
     <QueryProvider>
       <GluestackUIProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <ThemeProvider value={DefaultTheme}>
           <Stack>
             <Stack.Screen name="login" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(main)" options={{ headerShown: false }} />
             <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           </Stack>
-          <StatusBar style="auto" />
+          <StatusBar style="dark" />
         </ThemeProvider>
         
         {/* Sync confirmation modal */}

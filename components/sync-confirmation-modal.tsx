@@ -2,13 +2,13 @@ import { Button, ButtonText } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { CloseIcon, Icon } from '@/components/ui/icon';
 import {
-    Modal,
-    ModalBackdrop,
-    ModalBody,
-    ModalCloseButton,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
+  Modal,
+  ModalBackdrop,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
 } from '@/components/ui/modal';
 import { Text } from '@/components/ui/text';
 import { apiClient } from '@/lib/api/client';
@@ -97,6 +97,7 @@ export function SyncConfirmationModal({
           </Button>
           <Button
             action="primary"
+            className="bg-brand-primary active:bg-brand-primary/90"
             onPress={handleSync}
             disabled={isSyncing || queue.length === 0}
           >

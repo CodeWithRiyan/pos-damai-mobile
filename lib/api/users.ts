@@ -1,30 +1,59 @@
 import { useSyncQueueStore } from '@/stores/sync-queue-store';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { apiClient, isConnectionError } from './client';
+import { apiClient, ApiResponse, isConnectionError } from './client';
 
 export interface User {
   id: string;
-  email: string;
-  name: string;
-  roleId: string;
-  organizationId: string;
+  username: string;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  avatar: string | null;
+  phone: string | null;
+  provider: string;
+  isActive: boolean;
+  selectedOrganizationId: string | null;
+  roleId?: string;
+  role?: {
+    id: string;
+    name: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateUserDTO {
+  username: string;
   email: string;
-  name: string;
+  password?: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
   roleId: string;
-  organizationId: string;
 }
 
 export interface UpdateUserDTO {
   id: string;
+  username?: string;
   email?: string;
-  name?: string;
+  password?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
   roleId?: string;
-  organizationId?: string;
+  isActive?: boolean;
+}
+
+// Helper to unwrap API responses safely
+function unwrapResponse<T>(response: any): T {
+  let data = response.data;
+  if (data && data.data !== undefined) {
+    data = data.data;
+  }
+  if (data && data.data !== undefined && !Array.isArray(data)) {
+    data = data.data;
+  }
+  return data;
 }
 
 // Get all users
@@ -32,8 +61,9 @@ export function useUsers() {
   return useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const response = await apiClient.get<User[]>('/users');
-      return response.data;
+      const response = await apiClient.get<ApiResponse<User[]> | User[]>('/users');
+      const data = unwrapResponse<User[]>(response);
+      return Array.isArray(data) ? data : [];
     },
   });
 }
@@ -43,8 +73,8 @@ export function useUser(id: string) {
   return useQuery({
     queryKey: ['users', id],
     queryFn: async () => {
-      const response = await apiClient.get<User>(`/users/${id}`);
-      return response.data;
+      const response = await apiClient.get<ApiResponse<User> | User>(`/users/${id}`);
+      return unwrapResponse<User>(response);
     },
     enabled: !!id,
   });
@@ -56,8 +86,8 @@ export function useCreateUser() {
 
   return useMutation({
     mutationFn: async (data: CreateUserDTO) => {
-      const response = await apiClient.post<User>('/users', data);
-      return response.data;
+      const response = await apiClient.post<ApiResponse<User> | User>('/users', data);
+      return unwrapResponse<User>(response);
     },
     onError: (error, variables) => {
       if (isConnectionError(error)) {
@@ -78,8 +108,8 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: async (data: UpdateUserDTO) => {
       const { id, ...rest } = data;
-      const response = await apiClient.put<User>(`/users/${id}`, rest);
-      return response.data;
+      const response = await apiClient.put<ApiResponse<User> | User>(`/users/${id}`, rest);
+      return unwrapResponse<User>(response);
     },
     onError: (error, variables) => {
       if (isConnectionError(error)) {
@@ -99,8 +129,8 @@ export function useDeleteUser() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiClient.delete(`/users/${id}`);
-      return response.data;
+      const response = await apiClient.delete<ApiResponse<any> | any>(`/users/${id}`);
+      return unwrapResponse<any>(response);
     },
     onError: (error, id) => {
       if (isConnectionError(error)) {

@@ -1,5 +1,5 @@
 'use client';
-import { createToastHook } from '@gluestack-ui/core/toast/creator';
+import { createToastHook, ToastProvider } from '@gluestack-ui/core/toast/creator';
 import {
     tva,
     useStyleContext,
@@ -26,7 +26,7 @@ const SCOPE = 'TOAST';
 cssInterop(MotionView, { className: 'style' });
 
 const toastStyle = tva({
-  base: 'p-4 m-1 rounded-md gap-1 web:pointer-events-auto shadow-hard-5 border-outline-100',
+  base: 'p-4 m-1 rounded-md gap-1 web:pointer-events-auto shadow-hard-5 border-outline-100 z-[10000]',
   variants: {
     action: {
       error: 'bg-error-800',
@@ -237,5 +237,5 @@ Toast.displayName = 'Toast';
 ToastTitle.displayName = 'ToastTitle';
 ToastDescription.displayName = 'ToastDescription';
 
-export { Toast, ToastDescription, ToastTitle, useToast };
+export { Toast, ToastDescription, ToastProvider, ToastTitle, useToast };
 

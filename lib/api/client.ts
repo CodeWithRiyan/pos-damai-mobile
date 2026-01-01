@@ -10,6 +10,7 @@ export const apiClient = axios.create({
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
+    'Accept-Language': 'id',
   },
 });
 
@@ -45,11 +46,15 @@ apiClient.interceptors.response.use(
             refreshToken,
           });
 
-          const { token } = response.data;
-          authStorageAdapter.setToken(token);
+          const { accessToken, token: legacyToken } = response.data.data || {};
+          const newToken = accessToken || legacyToken || response.data.token;
+          
+          if (!newToken) throw new Error('Refresh failed');
+
+          authStorageAdapter.setToken(newToken);
 
           // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${token}`;
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
@@ -97,17 +102,46 @@ export function isServerError(error: unknown): boolean {
   return false;
 }
 
+// Standard API Response wrapper
+export interface ApiResponse<T> {
+  data: T;
+  success: boolean;
+  message: string;
+  errors: string[];
+  timestamp: string;
+  path: string;
+}
+
 // Type-safe error response
 export interface ApiErrorResponse {
   message: string;
-  errors?: Record<string, string[]>;
+  errors?: string[] | Record<string, string[]>;
+  success?: boolean;
   statusCode?: number;
 }
 
 export function getErrorMessage(error: unknown): string {
   if (isAxiosError(error)) {
     const data = error.response?.data as ApiErrorResponse;
-    return data?.message || error.message || 'An error occurred';
+    
+    // Prioritize backend message
+    if (data?.message) return data.message;
+    
+    // Fallback to first error in array
+    if (Array.isArray(data?.errors) && data.errors.length > 0) {
+      return data.errors[0];
+    }
+    
+    // Fallback to record-based errors
+    if (data?.errors && typeof data.errors === 'object') {
+      const firstKey = Object.keys(data.errors)[0];
+      const messages = (data.errors as Record<string, string[]>)[firstKey];
+      if (Array.isArray(messages) && messages.length > 0) {
+        return messages[0];
+      }
+    }
+
+    return error.message || 'An error occurred';
   }
 
   if (error instanceof Error) {

@@ -5,18 +5,49 @@ import { apiClient, isConnectionError } from './client';
 
 // Types
 export interface LoginCredentials {
-  email: string;
+  username: string;
   password: string;
 }
 
 export interface LoginResponse {
-  token: string;
-  refreshToken: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
+  data: {
+    accessToken: string;
+    refreshToken: string;
   };
+  success: boolean;
+  message: string;
+}
+
+export interface UserRole {
+  id: string;
+  name: string;
+  description: string | null;
+  level: number;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  avatar: string | null;
+  phone: string | null;
+  provider: string;
+  isActive: boolean;
+  roles: UserRole[];
+  selectedOrganizationId: string | null;
+  selectedOrganization: {
+    id: string;
+    name: string;
+  } | null;
+}
+
+export interface ProfileResponse {
+  data: {
+    user: UserProfile;
+  };
+  success: boolean;
+  message: string;
 }
 
 // Login mutation
@@ -31,11 +62,13 @@ export function useLogin() {
       console.log('useLogin mutationFn response', response.data);
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: (response) => {
       console.log('useLogin onSuccess called');
-      // Store tokens
-      authStorageAdapter.setToken(data.token);
-      authStorageAdapter.setRefreshToken(data.refreshToken);
+      if (response.success && response.data) {
+        // Store tokens
+        authStorageAdapter.setToken(response.data.accessToken);
+        authStorageAdapter.setRefreshToken(response.data.refreshToken);
+      }
     },
     onError: (error) => {
       // Login errors are always shown immediately, never queued
@@ -73,13 +106,13 @@ export function useLogout() {
   });
 }
 
-// Get current user
+// Get current user profile
 export function useCurrentUser() {
   return useQuery({
-    queryKey: ['auth', 'current-user'],
+    queryKey: ['auth', 'profile'],
     queryFn: async () => {
-      const response = await apiClient.get('/auth/me');
-      return response.data;
+      const response = await apiClient.get<ProfileResponse>('/auth/profile');
+      return response.data.data.user;
     },
     enabled: !!authStorageAdapter.getToken(),
   });

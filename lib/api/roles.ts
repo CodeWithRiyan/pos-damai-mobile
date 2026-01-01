@@ -1,24 +1,59 @@
 import { useSyncQueueStore } from '@/stores/sync-queue-store';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { apiClient, isConnectionError } from './client';
+import { apiClient, ApiResponse, isConnectionError } from './client';
+
+export interface Permission {
+  id: string;
+  name: string;
+  description: string;
+  module: string;
+}
 
 export interface Role {
   id: string;
   name: string;
-  permissions: string[];
+  description?: string;
+  level: number;
+  isSystem: boolean;
+  permissions?: Permission[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateRoleDTO {
   name: string;
-  permissions: string[];
+  description?: string;
+  level: number;
+  isSystem: boolean;
+  permissionIds: string[];
 }
 
 export interface UpdateRoleDTO {
   id: string;
   name?: string;
-  permissions?: string[];
+  description?: string;
+  level?: number;
+  isSystem?: boolean;
+  permissionIds?: string[];
+}
+
+// Helper to unwrap API responses safely
+function unwrapResponse<T>(response: any): T {
+  // Axios response.data is the root
+  let data = response.data;
+  
+  // If we have data.data, use it (common for wrapped responses)
+  if (data && data.data !== undefined) {
+    data = data.data;
+  }
+  
+  // Some endpoints wrap again: { data: { data: [...] } }
+  // OR the inner data object itself has a data field
+  if (data && data.data !== undefined && !Array.isArray(data)) {
+    data = data.data;
+  }
+  
+  return data;
 }
 
 // Get all roles
@@ -26,8 +61,21 @@ export function useRoles() {
   return useQuery({
     queryKey: ['roles'],
     queryFn: async () => {
-      const response = await apiClient.get<Role[]>('/roles');
-      return response.data;
+      const response = await apiClient.get<ApiResponse<Role[]> | Role[]>('/roles');
+      const data = unwrapResponse<Role[]>(response);
+      return Array.isArray(data) ? data : [];
+    },
+  });
+}
+
+// Get all permissions
+export function usePermissions() {
+  return useQuery({
+    queryKey: ['permissions'],
+    queryFn: async () => {
+      const response = await apiClient.get<ApiResponse<Permission[]> | Permission[]>('/roles/permissions');
+      const data = unwrapResponse<Permission[]>(response);
+      return Array.isArray(data) ? data : [];
     },
   });
 }
@@ -37,8 +85,8 @@ export function useRole(id: string) {
   return useQuery({
     queryKey: ['roles', id],
     queryFn: async () => {
-      const response = await apiClient.get<Role>(`/roles/${id}`);
-      return response.data;
+      const response = await apiClient.get<ApiResponse<Role> | Role>(`/roles/${id}`);
+      return unwrapResponse<Role>(response);
     },
     enabled: !!id,
   });
@@ -50,8 +98,8 @@ export function useCreateRole() {
 
   return useMutation({
     mutationFn: async (data: CreateRoleDTO) => {
-      const response = await apiClient.post<Role>('/roles', data);
-      return response.data;
+      const response = await apiClient.post<ApiResponse<Role> | Role>('/roles', data);
+      return unwrapResponse<Role>(response);
     },
     onError: (error, variables) => {
       if (isConnectionError(error)) {
@@ -72,8 +120,8 @@ export function useUpdateRole() {
   return useMutation({
     mutationFn: async (data: UpdateRoleDTO) => {
       const { id, ...rest } = data;
-      const response = await apiClient.put<Role>(`/roles/${id}`, rest);
-      return response.data;
+      const response = await apiClient.put<ApiResponse<Role> | Role>(`/roles/${id}`, rest);
+      return unwrapResponse<Role>(response);
     },
     onError: (error, variables) => {
       if (isConnectionError(error)) {
@@ -93,8 +141,8 @@ export function useDeleteRole() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiClient.delete(`/roles/${id}`);
-      return response.data;
+      const response = await apiClient.delete<ApiResponse<any> | any>(`/roles/${id}`);
+      return unwrapResponse<any>(response);
     },
     onError: (error, id) => {
       if (isConnectionError(error)) {

@@ -1,6 +1,6 @@
 import { useSyncQueueStore } from '@/stores/sync-queue-store';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { apiClient, isConnectionError } from './client';
+import { apiClient, ApiResponse, isConnectionError } from './client';
 
 export interface Organization {
   id: string;
@@ -26,8 +26,8 @@ export function useOrganizations() {
   return useQuery({
     queryKey: ['organizations'],
     queryFn: async () => {
-      const response = await apiClient.get<Organization[]>('/organizations');
-      return response.data;
+      const response = await apiClient.get<ApiResponse<Organization[]>>('/organizations');
+      return response.data.data;
     },
   });
 }
@@ -37,8 +37,8 @@ export function useOrganization(id: string) {
   return useQuery({
     queryKey: ['organizations', id],
     queryFn: async () => {
-      const response = await apiClient.get<Organization>(`/organizations/${id}`);
-      return response.data;
+      const response = await apiClient.get<ApiResponse<Organization>>(`/organizations/${id}`);
+      return response.data.data;
     },
     enabled: !!id,
   });
@@ -50,8 +50,8 @@ export function useCreateOrganization() {
 
   return useMutation({
     mutationFn: async (data: CreateOrganizationDTO) => {
-      const response = await apiClient.post<Organization>('/organizations', data);
-      return response.data;
+      const response = await apiClient.post<ApiResponse<Organization>>('/organizations', data);
+      return response.data.data;
     },
     onError: (error, variables) => {
       if (isConnectionError(error)) {
@@ -72,8 +72,8 @@ export function useUpdateOrganization() {
   return useMutation({
     mutationFn: async (data: UpdateOrganizationDTO) => {
       const { id, ...rest } = data;
-      const response = await apiClient.put<Organization>(`/organizations/${id}`, rest);
-      return response.data;
+      const response = await apiClient.put<ApiResponse<Organization>>(`/organizations/${id}`, rest);
+      return response.data.data;
     },
     onError: (error, variables) => {
       if (isConnectionError(error)) {
@@ -93,8 +93,8 @@ export function useDeleteOrganization() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiClient.delete(`/organizations/${id}`);
-      return response.data;
+      const response = await apiClient.delete<ApiResponse<any>>(`/organizations/${id}`);
+      return response.data.data;
     },
     onError: (error, id) => {
       if (isConnectionError(error)) {
