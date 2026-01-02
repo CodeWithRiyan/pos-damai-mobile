@@ -2,7 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig, isAxiosError } from 'axi
 import { authStorageAdapter } from '../storage';
 
 // API base URL
-const API_BASE_URL = 'https://dev.api.pos.damai.sakaloka.id';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://dev.api.pos.damai.sakaloka.id';
 
 // Create axios instance
 export const apiClient = axios.create({
