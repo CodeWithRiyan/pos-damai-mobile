@@ -10,6 +10,9 @@ module.exports = {
           primary: "#3D2117", // Dark Brown
           secondary: "#C2956A", // Tan
           accent: "#FDFBF9", // Warm White
+          "primary-forground": "#FDFBF9", // Warm White,
+          "secondary-forground": "#3D2117", // Dark Brown
+          "accent-forground": "#3D2117", // Dark Brown
         },
         error: {
           800: "#991b1b",

@@ -1,7 +1,6 @@
-import { Sidebar } from '@/components/sidebar';
-import { Stack } from 'expo-router';
-import React from 'react';
-import { View } from 'react-native';
+import { Sidebar } from "@/components/sidebar";
+import { Stack } from "expo-router";
+import { View } from "react-native";
 
 export default function MainLayout() {
   return (
@@ -10,16 +9,27 @@ export default function MainLayout() {
       <View className="flex-1">
         <Stack
           screenOptions={{
-            headerShown: true,
-            headerShadowVisible: false,
-            headerStyle: {
-              backgroundColor: 'transparent',
-            },
+            headerShown: false,
+            animation: "slide_from_right",
           }}
         >
-          <Stack.Screen name="index" options={{ title: 'Dashboard' }} />
-          <Stack.Screen name="roles/index" options={{ title: 'Role Management' }} />
-          <Stack.Screen name="users/index" options={{ title: 'User Management' }} />
+          <Stack.Screen name="index" options={{ title: "Dashboard" }} />
+          <Stack.Screen
+            name="/management/index"
+            options={{ title: "Manajemen" }}
+          />
+          <Stack.Screen
+            name="/management/role-user/index"
+            options={{ title: "Manajemen Role dan Karyawan" }}
+          />
+          <Stack.Screen
+            name="/management/role-user/role/index"
+            options={{ title: "Manajemen Role" }}
+          />
+          <Stack.Screen
+            name="/management/role-user/user/index"
+            options={{ title: "Manajemen Karyawan" }}
+          />
         </Stack>
       </View>
     </View>
