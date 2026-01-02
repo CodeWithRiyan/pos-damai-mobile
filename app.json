@@ -3,7 +3,7 @@
     "name": "POS Damai",
     "slug": "pos-damai",
     "version": "0.0.17",
-    "orientation": "portrait",
+    "orientation": "landscape",
     "icon": "./assets/images/icon.png",
     "scheme": "posdamai",
     "userInterfaceStyle": "automatic",
