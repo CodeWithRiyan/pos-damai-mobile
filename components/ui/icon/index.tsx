@@ -1,7 +1,7 @@
 import { createIcon, IPrimitiveIcon, PrimitiveIcon, Svg } from '@gluestack-ui/core/icon/creator';
 import {
-    tva,
-    type VariantProps,
+  tva,
+  type VariantProps,
 } from '@gluestack-ui/utils/nativewind-utils';
 import { cssInterop } from 'nativewind';
 import React from 'react';
@@ -561,12 +561,12 @@ ChevronsRightIcon.displayName = 'ChevronsRightIcon';
 ChevronsUpDownIcon.displayName = 'ChevronsUpDownIcon';
 
 export {
-    ChevronDownIcon,
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    ChevronsLeftIcon,
-    ChevronsRightIcon,
-    ChevronsUpDownIcon, ChevronUpIcon
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsLeftIcon,
+  ChevronsRightIcon,
+  ChevronsUpDownIcon, ChevronUpIcon
 };
 
 const CircleIcon = createIcon({

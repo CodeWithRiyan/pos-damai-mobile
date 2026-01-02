@@ -82,6 +82,7 @@ export default function UsersScreen() {
       <Header
         header="USER"
         action={<Icon as={ThreeDotsIcon} className="p-6" />}
+        isGoBack
       />
       <Box className="flex-1 bg-white p-4">
         <UserFormModal

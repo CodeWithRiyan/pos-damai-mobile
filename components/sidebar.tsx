@@ -19,6 +19,10 @@ import {
   DrawerHeader,
 } from "./ui/drawer";
 import { Pressable } from "./ui/pressable";
+import {
+  SolarIconBoldDuotone,
+  SolarIconBoldDuotoneProps,
+} from "./ui/solar-icon-wrapper";
 
 export function Sidebar() {
   const router = useRouter();
@@ -33,18 +37,23 @@ export function Sidebar() {
     logout(undefined, {
       onSuccess: () => {
         router.replace("/login");
+        setShowDrawer(false);
       },
     });
   };
 
-  const menuItems = [
-    { label: "Dashboard", icon: "house.fill", href: "/" },
-    { label: "Manajemen", icon: "house.fill", href: "/management" },
-    { label: "Transaksi Penjualan", icon: "house.fill", href: "/transaction" },
-    { label: "Pembelian Barang", icon: "house.fill", href: "/purchase" },
-    { label: "Keuangan", icon: "house.fill", href: "/finance" },
-    { label: "Laporan", icon: "house.fill", href: "/report" },
-    { label: "Pengaturan", icon: "house.fill", href: "/settings" },
+  const menuItems: {
+    label: string;
+    icon: SolarIconBoldDuotoneProps["name"];
+    href: string;
+  }[] = [
+    { label: "Dashboard", icon: "Widget5", href: "/" },
+    { label: "Manajemen", icon: "Database", href: "/management" },
+    { label: "Transaksi Penjualan", icon: "Plain", href: "/transaction" },
+    { label: "Pembelian Barang", icon: "Cart3", href: "/purchase" },
+    { label: "Keuangan", icon: "WalletMoney", href: "/finance" },
+    { label: "Laporan", icon: "PieChart2", href: "/report" },
+    { label: "Pengaturan", icon: "Settings", href: "/settings" },
   ];
 
   return (
@@ -94,22 +103,26 @@ export function Sidebar() {
                 const isActive =
                   pathname === item.href ||
                   (item.href !== "/" && pathname.startsWith(item.href));
-                  
+
                 return (
                   <Link href={item.href as any} key={item.href} asChild>
                     <Pressable
                       className={`flex-row items-center p-3 rounded-xl gap-3 ${
                         isActive ? "bg-brand-primary" : "active:bg-slate-200"
                       }`}
+                      onPress={() => {
+                        setShowDrawer(false);
+                      }}
                     >
-                      <IconSymbol
-                        name={item.icon as any}
+                      <SolarIconBoldDuotone
+                        name={item.icon}
                         size={20}
-                        color={isActive ? "#fff" : "#64748b"}
+                        className={isActive ? "text-brand-primary-forground" : "text-slate-500"}
                       />
+
                       <Text
                         className={`font-medium ${
-                          isActive ? "text-white" : "text-slate-600"
+                          isActive ? "text-brand-primary-forground" : "text-slate-500"
                         }`}
                       >
                         {item.label}
