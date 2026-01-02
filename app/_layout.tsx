@@ -8,7 +8,7 @@ import '../global.css';
 
 import { SyncConfirmationModal } from '@/components/sync-confirmation-modal';
 import { useSyncManager } from '@/hooks/use-sync-manager';
-import { authStorageAdapter } from '@/lib/storage';
+import { authStorageAdapter, initializeStorage } from '@/lib/storage';
 import { QueryProvider } from '@/providers/query-provider';
 import { useNetworkMonitoring } from '@/stores/network-store';
 
@@ -27,14 +27,20 @@ export default function RootLayout() {
   const { showSyncModal, handleCloseSyncModal } = useSyncManager();
 
   const [isMounted, setIsMounted] = React.useState(false);
+  const [isStorageReady, setIsStorageReady] = React.useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    const init = async () => {
+      await initializeStorage();
+      setIsStorageReady(true);
+      setIsMounted(true);
+    };
+    init();
   }, []);
 
   // Handle auth redirection
   useEffect(() => {
-    if (!isMounted) return;
+    if (!isMounted || !isStorageReady) return;
 
     const token = authStorageAdapter.getToken();
     const inAuthGroup = segments[0] === 'login';
@@ -46,7 +52,11 @@ export default function RootLayout() {
       // Redirect to home if already authenticated and trying to access login
       router.replace('/');
     }
-  }, [segments, router, isMounted]);
+  }, [segments, router, isMounted, isStorageReady]);
+
+  if (!isMounted || !isStorageReady) {
+    return null;
+  }
 
   return (
     <QueryProvider>

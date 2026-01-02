@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "posdamai",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "android": {
       "package": "com.codewithriyan.posdamai",
       "versionCode": 17,
