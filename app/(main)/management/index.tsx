@@ -1,7 +1,11 @@
 import Header from "@/components/header";
-import { Box, Icon, Text, ThreeDotsIcon, VStack } from "@/components/ui";
+import { Box, Text, VStack } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
-import { SolarIconLinear, SolarIconLinearProps } from "@/components/ui/solar-icon-wrapper";
+import {
+  SolarIconBold,
+  SolarIconLinear,
+  SolarIconLinearProps,
+} from "@/components/ui/solar-icon-wrapper";
 import { useSidebarStore } from "@/stores/sidebar";
 import { Link } from "expo-router";
 import { ScrollView } from "react-native";
@@ -9,26 +13,59 @@ import { ScrollView } from "react-native";
 export default function ManagementScreen() {
   const { setShowDrawer } = useSidebarStore((state) => state);
 
-  const managementItems: { label: string; href: string; icon: SolarIconLinearProps["name"] }[] = [
+  const managementItems: {
+    label: string;
+    href: string;
+    icon: SolarIconLinearProps["name"];
+  }[] = [
     {
       label: "Produk, Kategori dan Brand",
       href: "/management/product-category-brand",
       icon: "Box",
     },
     { label: "Diskon", href: "/management/discount", icon: "TicketSale" },
-    { label: "Pelanggan dan Suplier", href: "/management/customer-supplier", icon: "Card2" },
-    { label: "Hutang dan Piutang", href: "/management/credit-debt", icon: "NotebookBookmark" },
-    { label: "Stock Opname", href: "/management/stock-opname", icon: "ArchiveCheck" },
+    {
+      label: "Pelanggan dan Suplier",
+      href: "/management/customer-supplier",
+      icon: "Card2",
+    },
+    {
+      label: "Hutang dan Piutang",
+      href: "/management/credit-debt",
+      icon: "NotebookBookmark",
+    },
+    {
+      label: "Stock Opname",
+      href: "/management/stock-opname",
+      icon: "ArchiveCheck",
+    },
     { label: "Retur", href: "/management/retur", icon: "History" },
-    { label: "Tipe Pembayaran", href: "/management/payment-type", icon: "Banknote2" },
-    { label: "Karyawan dan Role", href: "/management/role-user", icon: "UsersGroupTwoRounded" },
+    {
+      label: "Tipe Pembayaran",
+      href: "/management/payment-type",
+      icon: "Banknote2",
+    },
+    {
+      label: "Karyawan dan Role",
+      href: "/management/role-user",
+      icon: "UsersGroupTwoRounded",
+    },
   ];
 
   return (
     <Box className="flex-1 bg-white">
       <Header
         header="MANAJEMEN"
-        action={<Icon as={ThreeDotsIcon} className="p-6" />}
+        action={
+          <Pressable className="p-6" onPress={() => {}}>
+            <SolarIconBold
+              name="MenuDots"
+              size={20}
+              color="#FDFBF9"
+              style={{ transform: [{ rotate: "90deg" }] }}
+            />
+          </Pressable>
+        }
       />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>

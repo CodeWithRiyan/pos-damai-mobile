@@ -103,16 +103,17 @@ export default function RolesScreen() {
               <Pressable className="p-6" onPress={() => handleDeletePress()}>
                 <SolarIconBold
                   name="TrashBin2"
-                  size={24}
-                  className="text-white"
+                  size={20}
+                  color="#FDFBF9"
                 />
               </Pressable>
             ) : (
-              <Pressable className="p-6" onPress={() => handleDeletePress()}>
+              <Pressable className="p-6" onPress={() => {}}>
                 <SolarIconBold
                   name="MenuDots"
-                  size={24}
-                  className="text-white rotate-90"
+                  size={20}
+                  color="#FDFBF9"
+                  style={{ transform: [{ rotate: "90deg" }] }}
                 />
               </Pressable>
             )}
@@ -122,19 +123,23 @@ export default function RolesScreen() {
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
           <ScrollView className="flex-1">
-            <VStack space="md">
+            <VStack>
               {roles.map((role) => (
                 <Pressable
                   key={role.id}
-                  className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-50 ${
+                  className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
                     selectedRoles?.some((r) => r.id === role.id)
-                      ? "bg-gray-50"
+                      ? "bg-gray-100"
                       : ""
                   }`}
                   onPress={() => {
-                    setShowActionDrawer("ROLE-DETAIL");
-                    setDataId(role.id);
-                    setSelectedRoles(null);
+                    if (!!selectedRoles?.length) {
+                      handleRolePress(role);
+                    } else {
+                      setShowActionDrawer("ROLE-DETAIL");
+                      setDataId(role.id);
+                      setSelectedRoles(null);
+                    }
                   }}
                   onLongPress={() => handleRolePress(role)}
                 >

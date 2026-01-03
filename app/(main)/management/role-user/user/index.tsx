@@ -99,18 +99,15 @@ export default function UsersScreen() {
           <HStack space="sm" className="w-[72px]">
             {!!selectedUsers?.length ? (
               <Pressable className="p-6" onPress={() => handleDeletePress()}>
-                <SolarIconBold
-                  name="TrashBin2"
-                  size={24}
-                  className="text-white"
-                />
+                <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
               </Pressable>
             ) : (
-              <Pressable className="p-6" onPress={() => handleDeletePress()}>
+              <Pressable className="p-6" onPress={() => {}}>
                 <SolarIconBold
                   name="MenuDots"
-                  size={24}
-                  className="text-white rotate-90"
+                  size={20}
+                  color="#FDFBF9"
+                  style={{ transform: [{ rotate: "90deg" }] }}
                 />
               </Pressable>
             )}
@@ -120,19 +117,23 @@ export default function UsersScreen() {
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
           <ScrollView className="flex-1">
-            <VStack space="md">
+            <VStack>
               {users?.map((user) => (
                 <Pressable
                   key={user.id}
-                  className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-50 ${
+                  className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
                     selectedUsers?.some((r) => r.id === user.id)
-                      ? "bg-gray-50"
+                      ? "bg-gray-100"
                       : ""
                   }`}
                   onPress={() => {
-                    setShowActionDrawer("USER-DETAIL");
-                    setDataId(user.id);
-                    setSelectedUsers(null);
+                    if (!!selectedUsers?.length) {
+                      handleRolePress(user);
+                    } else {
+                      setShowActionDrawer("USER-DETAIL");
+                      setDataId(user.id);
+                      setSelectedUsers(null);
+                    }
                   }}
                   onLongPress={() => handleRolePress(user)}
                 >
