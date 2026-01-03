@@ -15,19 +15,19 @@ export default function MainLayout() {
         >
           <Stack.Screen name="index" options={{ title: "Dashboard" }} />
           <Stack.Screen
-            name="/management/index"
+            name="management/index"
             options={{ title: "Manajemen" }}
           />
           <Stack.Screen
-            name="/management/role-user/index"
+            name="management/role-user/index"
             options={{ title: "Manajemen Role dan Karyawan" }}
           />
           <Stack.Screen
-            name="/management/role-user/role/index"
+            name="management/role-user/role/index"
             options={{ title: "Manajemen Role" }}
           />
           <Stack.Screen
-            name="/management/role-user/user/index"
+            name="management/role-user/user/index"
             options={{ title: "Manajemen Karyawan" }}
           />
         </Stack>

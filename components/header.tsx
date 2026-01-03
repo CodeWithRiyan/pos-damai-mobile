@@ -4,10 +4,10 @@ import React from "react";
 import { View } from "react-native";
 import {
   ArrowLeftIcon,
+  HStack,
   Icon,
   MenuIcon,
-  Text,
-  ThreeDotsIcon
+  Text
 } from "./ui";
 import { Pressable } from "./ui/pressable";
 
@@ -23,12 +23,13 @@ export default function Header({
   const { setShowDrawer } = useSidebarStore((state) => state);
   const router = useRouter();
   const goBack = () => router.back();
+  const isCanGoBack = router.canGoBack();
 
   return (
     <View className="bg-brand-primary w-full flex flex-row justify-between items-center">
       <Pressable
         onPress={() => {
-          if (isGoBack) {
+          if (isCanGoBack && isGoBack) {
             goBack();
           } else {
             setShowDrawer(true);
@@ -36,7 +37,7 @@ export default function Header({
         }}
         className="p-6"
       >
-        {isGoBack ? (
+        {isCanGoBack && isGoBack ? (
           <Icon
             as={ArrowLeftIcon}
             size="xl"
@@ -51,7 +52,7 @@ export default function Header({
         )}
       </Pressable>
       <Text className="text-brand-primary-forground font-bold">{header}</Text>
-      {action ? action : <Icon as={ThreeDotsIcon} className="p-6" />}
+      {action ? action : <HStack space="sm" className="w-[72px]"></HStack>}
     </View>
   );
 }

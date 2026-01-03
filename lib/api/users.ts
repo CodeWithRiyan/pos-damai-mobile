@@ -1,25 +1,37 @@
-import { useSyncQueueStore } from '@/stores/sync-queue-store';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { apiClient, ApiResponse, isConnectionError } from './client';
+import { useSyncQueueStore } from "@/stores/sync-queue-store";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiClient, ApiResponse, isConnectionError } from "./client";
+import { Role } from "./roles";
 
 export interface User {
-  id: string;
-  username: string;
+  id: string
   email: string | null;
-  firstName: string | null;
-  lastName: string | null;
+  password: string
+  provider: string
+  firstName: string
+  lastName: string | null
   avatar: string | null;
   phone: string | null;
-  provider: string;
   isActive: boolean;
-  selectedOrganizationId: string | null;
-  roleId?: string;
-  role?: {
-    id: string;
-    name: string;
-  };
-  createdAt: string;
-  updatedAt: string;
+  isLocked: boolean;
+  lockReason: string | null;
+  selectedOrganizationId: string
+  createdById: string | null;
+  lastLoginAt: string | null;
+  passwordChangedAt: string | null;
+  createdAt: string
+  updatedAt: string
+  username: string
+  roles: [
+    {
+      userId: string
+      roleId: string
+      assignedAt: string
+      assignedBy: string | null;
+      expiresAt: string | null;
+      role: Role
+    }
+  ];
 }
 
 export interface CreateUserDTO {
@@ -59,9 +71,11 @@ function unwrapResponse<T>(response: any): T {
 // Get all users
 export function useUsers() {
   return useQuery({
-    queryKey: ['users'],
+    queryKey: ["users"],
     queryFn: async () => {
-      const response = await apiClient.get<ApiResponse<User[]> | User[]>('/users');
+      const response = await apiClient.get<ApiResponse<User[]> | User[]>(
+        "/users"
+      );
       const data = unwrapResponse<User[]>(response);
       return Array.isArray(data) ? data : [];
     },
@@ -71,9 +85,11 @@ export function useUsers() {
 // Get single user
 export function useUser(id: string) {
   return useQuery({
-    queryKey: ['users', id],
+    queryKey: ["users", id],
     queryFn: async () => {
-      const response = await apiClient.get<ApiResponse<User> | User>(`/users/${id}`);
+      const response = await apiClient.get<ApiResponse<User> | User>(
+        `/users/${id}`
+      );
       return unwrapResponse<User>(response);
     },
     enabled: !!id,
@@ -86,14 +102,17 @@ export function useCreateUser() {
 
   return useMutation({
     mutationFn: async (data: CreateUserDTO) => {
-      const response = await apiClient.post<ApiResponse<User> | User>('/users', data);
+      const response = await apiClient.post<ApiResponse<User> | User>(
+        "/users",
+        data
+      );
       return unwrapResponse<User>(response);
     },
     onError: (error, variables) => {
       if (isConnectionError(error)) {
         addToQueue({
-          type: 'create',
-          endpoint: '/users',
+          type: "create",
+          endpoint: "/users",
           data: variables,
         });
       }
@@ -108,13 +127,16 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: async (data: UpdateUserDTO) => {
       const { id, ...rest } = data;
-      const response = await apiClient.put<ApiResponse<User> | User>(`/users/${id}`, rest);
+      const response = await apiClient.put<ApiResponse<User> | User>(
+        `/users/${id}`,
+        rest
+      );
       return unwrapResponse<User>(response);
     },
     onError: (error, variables) => {
       if (isConnectionError(error)) {
         addToQueue({
-          type: 'update',
+          type: "update",
           endpoint: `/users/${variables.id}`,
           data: variables,
         });
@@ -129,13 +151,15 @@ export function useDeleteUser() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiClient.delete<ApiResponse<any> | any>(`/users/${id}`);
+      const response = await apiClient.delete<ApiResponse<any> | any>(
+        `/users/${id}`
+      );
       return unwrapResponse<any>(response);
     },
     onError: (error, id) => {
       if (isConnectionError(error)) {
         addToQueue({
-          type: 'delete',
+          type: "delete",
           endpoint: `/users/${id}`,
           data: null,
         });

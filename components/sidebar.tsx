@@ -66,7 +66,7 @@ export function Sidebar() {
           setShowDrawer(false);
         }}
       >
-        <DrawerBackdrop />
+        <DrawerBackdrop className="bg-black/10" />
         <DrawerContent>
           <DrawerHeader className="relative">
             <VStack space="xs">
@@ -96,9 +96,9 @@ export function Sidebar() {
               <Icon as={CloseIcon} />
             </Pressable>
           </DrawerHeader>
-          <DrawerBody>
+          <DrawerBody className="flex-1">
             {/* Navigation */}
-            <VStack space="sm" className="">
+            <VStack space="sm" className="flex-1">
               {menuItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
@@ -131,9 +131,12 @@ export function Sidebar() {
                   </Link>
                 );
               })}
+            </VStack>
+          </DrawerBody>
+          <DrawerFooter>
               {/* Logout */}
               <Pressable
-                className="flex-row items-center p-3 rounded-xl gap-3 bg-gray-50"
+                className="flex-row flex-1 items-center p-3 rounded-xl gap-3 bg-gray-50"
                 onPress={handleLogout}
               >
                 <IconSymbol
@@ -143,9 +146,7 @@ export function Sidebar() {
                 />
                 <Text className="text-red-500">Logout</Text>
               </Pressable>
-            </VStack>
-          </DrawerBody>
-          <DrawerFooter className="fixed bottom-0"></DrawerFooter>
+          </DrawerFooter>
         </DrawerContent>
       </Drawer>
     </>
