@@ -1,8 +1,9 @@
 import Header from "@/components/header";
 import { HelloWave } from "@/components/hello-wave";
-import { Icon, ThreeDotsIcon } from "@/components/ui";
 import { Box } from "@/components/ui/box";
 import { Heading } from "@/components/ui/heading";
+import { Pressable } from "@/components/ui/pressable";
+import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import React from "react";
@@ -13,7 +14,16 @@ export default function HomeScreen() {
     <>
       <Header
         header="DASHBOARD"
-        action={<Icon as={ThreeDotsIcon} className="p-6" />}
+        action={
+          <Pressable className="p-6" onPress={() => {}}>
+            <SolarIconBold
+              name="MenuDots"
+              size={20}
+              color="#FDFBF9"
+              style={{ transform: [{ rotate: "90deg" }] }}
+            />
+          </Pressable>
+        }
       />
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 24 }}>
         <VStack space="xl">

@@ -11,6 +11,7 @@ import { useSyncManager } from '@/hooks/use-sync-manager';
 import { authStorageAdapter, initializeStorage } from '@/lib/storage';
 import { QueryProvider } from '@/providers/query-provider';
 import { useNetworkMonitoring } from '@/stores/network-store';
+import * as NavigationBar from "expo-navigation-bar";
 
 export const unstable_settings = {
   anchor: '(main)',
@@ -19,6 +20,12 @@ export const unstable_settings = {
 export default function RootLayout() {
   const segments = useSegments();
   const router = useRouter();
+
+  useEffect(() => {
+    // Hide navigation bar on Android
+    NavigationBar.setVisibilityAsync("hidden");
+    NavigationBar.setBehaviorAsync("overlay-swipe");
+  }, []);
   
   // Initialize network monitoring
   useNetworkMonitoring();
@@ -67,7 +74,7 @@ export default function RootLayout() {
             <Stack.Screen name="(main)" options={{ headerShown: false }} />
             <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
           </Stack>
-          <StatusBar style="dark" />
+          <StatusBar style="dark" hidden />
         </ThemeProvider>
         
         {/* Sync confirmation modal */}

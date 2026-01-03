@@ -1,7 +1,8 @@
 import Header from "@/components/header";
-import { Box, Icon, Text, ThreeDotsIcon, VStack } from "@/components/ui";
+import { Box, Text, VStack } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import {
+  SolarIconBold,
   SolarIconLinear,
   SolarIconLinearProps,
 } from "@/components/ui/solar-icon-wrapper";
@@ -30,7 +31,16 @@ export default function UserRoleScreen() {
     <Box className="flex-1 bg-white">
       <Header
         header="MANAJEMEN"
-        action={<Icon as={ThreeDotsIcon} className="p-6" />}
+        action={
+          <Pressable className="p-6" onPress={() => {}}>
+            <SolarIconBold
+              name="MenuDots"
+              size={20}
+              color="#FDFBF9"
+              style={{ transform: [{ rotate: "90deg" }] }}
+            />
+          </Pressable>
+        }
         isGoBack
       />
 
