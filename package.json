@@ -9,8 +9,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "build:check": "pnpm tsc --noEmit && npx expo export --platform android",
-    "prepare": "husky"
+    "build:check": "pnpm tsc --noEmit && npx expo export --platform android"
   },
   "dependencies": {
     "@expo/html-elements": "^0.13.8",
@@ -68,7 +67,6 @@
     "babel-preset-expo": "~54.0.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
-    "husky": "^9.1.7",
     "typescript": "~5.9.2"
   },
   "private": true,

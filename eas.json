@@ -30,7 +30,7 @@
       "channel": "preview",
       "env": {
         "APP_ENV": "preview",
-        "EXPO_PUBLIC_API_URL": "https://dev.api.pos.damai.sakaloka.id"
+        "EXPO_PUBLIC_API_URL": "https://sit.api.pos.damai.sakaloka.id"
       }
     },
     "production": {
