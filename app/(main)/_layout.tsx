@@ -10,7 +10,7 @@ export default function MainLayout() {
         <Stack
           screenOptions={{
             headerShown: false,
-            animation: "slide_from_right",
+            animation: "slide_from_left",
             animationTypeForReplace: "pop", // This handles the back animation
             presentation: "card",
           }}

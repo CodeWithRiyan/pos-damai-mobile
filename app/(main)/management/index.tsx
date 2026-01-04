@@ -6,13 +6,10 @@ import {
   SolarIconLinear,
   SolarIconLinearProps,
 } from "@/components/ui/solar-icon-wrapper";
-import { useSidebarStore } from "@/stores/sidebar";
 import { Link } from "expo-router";
 import { ScrollView } from "react-native";
 
 export default function ManagementScreen() {
-  const { setShowDrawer } = useSidebarStore((state) => state);
-
   const managementItems: {
     label: string;
     href: string;

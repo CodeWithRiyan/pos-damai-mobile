@@ -1,15 +1,15 @@
 'use client';
 import { createToastHook, ToastProvider } from '@gluestack-ui/core/toast/creator';
 import {
-    tva,
-    useStyleContext,
-    withStyleContext,
-    type VariantProps,
+  tva,
+  useStyleContext,
+  withStyleContext,
+  type VariantProps,
 } from '@gluestack-ui/utils/nativewind-utils';
 import {
-    AnimatePresence,
-    Motion,
-    type MotionComponentProps,
+  AnimatePresence,
+  Motion,
+  type MotionComponentProps,
 } from '@legendapp/motion';
 import { cssInterop } from 'nativewind';
 import React from 'react';
@@ -26,7 +26,7 @@ const SCOPE = 'TOAST';
 cssInterop(MotionView, { className: 'style' });
 
 const toastStyle = tva({
-  base: 'p-4 m-1 rounded-md gap-1 web:pointer-events-auto shadow-hard-5 border-outline-100 z-[10000]',
+  base: 'p-4 m-4 rounded-md w-[95vw] gap-1 web:pointer-events-auto shadow-hard-5 border-outline-100 z-[10000]',
   variants: {
     action: {
       error: 'bg-error-800',

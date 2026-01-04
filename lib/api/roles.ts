@@ -63,7 +63,6 @@ export function useRoles() {
     queryFn: async () => {
       const response = await apiClient.get<ApiResponse<Role[]> | Role[]>('/roles');
       const data = unwrapResponse<Role[]>(response);
-      console.log("roles: ", data)
       return Array.isArray(data) ? data : [];
     },
   });
@@ -76,7 +75,6 @@ export function usePermissions() {
     queryFn: async () => {
       const response = await apiClient.get<ApiResponse<Permission[]> | Permission[]>('/roles/permissions');
       const data = unwrapResponse<Permission[]>(response);
-      console.log("roles: ", data)
       return Array.isArray(data) ? data : [];
     },
   });

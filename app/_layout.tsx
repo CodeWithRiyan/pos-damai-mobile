@@ -6,6 +6,7 @@ import React, { useEffect } from 'react';
 import 'react-native-reanimated';
 import '../global.css';
 
+import { PopUpConfirmProvider } from '@/components/pop-up-confirm';
 import { SyncConfirmationModal } from '@/components/sync-confirmation-modal';
 import { useSyncManager } from '@/hooks/use-sync-manager';
 import { authStorageAdapter, initializeStorage } from '@/lib/storage';
@@ -69,12 +70,14 @@ export default function RootLayout() {
     <QueryProvider>
       <GluestackUIProvider>
         <ThemeProvider value={DefaultTheme}>
-          <Stack>
-            <Stack.Screen name="login" options={{ headerShown: false }} />
-            <Stack.Screen name="(main)" options={{ headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-          </Stack>
-          <StatusBar style="dark" hidden />
+          <PopUpConfirmProvider>
+            <Stack>
+              <Stack.Screen name="login" options={{ headerShown: false }} />
+              <Stack.Screen name="(main)" options={{ headerShown: false }} />
+              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+            </Stack>
+            <StatusBar style="dark" hidden />
+          </PopUpConfirmProvider>
         </ThemeProvider>
         
         {/* Sync confirmation modal */}

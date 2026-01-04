@@ -23,20 +23,29 @@ import {
   Toast,
   ToastTitle,
   useToast,
-  VStack
+  VStack,
 } from "@/components/ui";
 import { getErrorMessage } from "@/lib/api/client";
 import { useRoles } from "@/lib/api/roles";
-import { useCreateUser, useUpdateUser, useUser } from "@/lib/api/users";
+import {
+  CreateUserDTO,
+  UpdateUserDTO,
+  useCreateUser,
+  useUpdateUser,
+  useUser,
+  useUsers,
+} from "@/lib/api/users";
 import { useActionDrawerStore } from "@/stores/action-drawer";
-import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 
 export default function UserForm() {
-  const { showActionDrawer, dataId: userId, setShowActionDrawer } = useActionDrawerStore ();
-  const router = useRouter();
+  const {
+    showActionDrawer,
+    dataId: userId,
+    setShowActionDrawer,
+    setDataId
+  } = useActionDrawerStore();
   const isAdd = showActionDrawer === "USER-ADD";
-  const isEdit = showActionDrawer === "USER-EDIT";
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -47,8 +56,12 @@ export default function UserForm() {
   const [roleId, setRoleId] = useState("");
   const [isActive, setIsActive] = useState(true);
 
-  const { data: user, isLoading: isLoadingUser, refetch } = useUser(userId || "");
-  const { data: roles = [], isLoading: isLoadingRoles } = useRoles();
+  const { refetch: refetchUsers } = useUsers();
+  const {
+    data: user,
+    refetch: refetchUser,
+  } = useUser(userId || "");
+  const { data: roles = [] } = useRoles();
   const createMutation = useCreateUser();
   const updateMutation = useUpdateUser();
   const toast = useToast();
@@ -89,12 +102,25 @@ export default function UserForm() {
     }
   }, [user, userId]);
 
+  const onRefetch = () => {
+    refetchUsers();
+
+    if (userId) {
+      refetchUser();
+    }
+  };
+
   const handleCancel = () => {
-    setShowActionDrawer(null);
+    if (roleId) {
+      setShowActionDrawer("ROLE-DETAIL");
+    } else {
+      setShowActionDrawer(null);
+      setDataId(null);
+    }
   };
 
   const handleSubmit = async () => {
-    const data: any = {
+    const data: CreateUserDTO = {
       username,
       email,
       firstName,
@@ -103,12 +129,16 @@ export default function UserForm() {
       roleId,
     };
 
-    if (user) {
-      data.id = user.id;
-      data.isActive = isActive;
-      updateMutation.mutate(data, {
+    if (userId && user) {
+      const updateData: UpdateUserDTO = {
+        ...data,
+        id: user.id,
+        isActive,
+      }
+
+      updateMutation.mutate(updateData, {
         onSuccess: () => {
-          refetch();
+          onRefetch();
           handleCancel();
         },
         onError: (error) => {
@@ -116,10 +146,16 @@ export default function UserForm() {
         },
       });
     } else {
-      data.password = password;
-      createMutation.mutate(data, {
+      const createData: CreateUserDTO = {
+        ...data,
+        password,
+      }
+      console.log(roles);
+      console.log("createData", createData);
+
+      createMutation.mutate(createData, {
         onSuccess: () => {
-          refetch();
+          onRefetch();
           handleCancel();
         },
         onError: (error) => {
@@ -136,25 +172,15 @@ export default function UserForm() {
       footer={
         <HStack className="flex-1 p-4 border-t border-slate-200 justify-end gap-4">
           <Button
-            variant="outline"
-            action="secondary"
-            onPress={handleCancel}
-            className="mr-3"
-          >
-            <ButtonText>BATAL</ButtonText>
-          </Button>
-          <Button
             action="primary"
             onPress={handleSubmit}
             disabled={createMutation.isPending || updateMutation.isPending}
-            className="bg-brand-primary"
+            className="bg-brand-primary flex-1"
           >
             <ButtonText className="text-white">
               {createMutation.isPending || updateMutation.isPending
                 ? "MENYIMPAN..."
-                : user
-                ? "EDIT KARYAWAN"
-                : "TAMBAH KARYAWAN"}
+                : "SIMPAN"}
             </ButtonText>
           </Button>
         </HStack>
@@ -219,7 +245,7 @@ export default function UserForm() {
           </Input>
         </FormControl>
 
-        <FormControl isRequired>
+        <FormControl>
           <FormControlLabel>
             <FormControlLabelText>Nama Belakang</FormControlLabelText>
           </FormControlLabel>
@@ -232,7 +258,7 @@ export default function UserForm() {
           </Input>
         </FormControl>
 
-        <FormControl isRequired>
+        <FormControl>
           <FormControlLabel>
             <FormControlLabelText>No Handphone</FormControlLabelText>
           </FormControlLabel>
@@ -249,9 +275,9 @@ export default function UserForm() {
           <FormControlLabel>
             <FormControlLabelText>Role</FormControlLabelText>
           </FormControlLabel>
-          <Select>
+          <Select onValueChange={setRoleId}>
             <SelectTrigger>
-              <SelectInput placeholder="Pilih Role" className="flex-1" />
+              <SelectInput placeholder="Pilih Role" className="flex-1 capitalize" />
               <SelectIcon className="mr-3" as={ChevronDownIcon} />
             </SelectTrigger>
             <SelectPortal>
@@ -261,7 +287,7 @@ export default function UserForm() {
                   <SelectDragIndicator />
                 </SelectDragIndicatorWrapper>
                 {roles.map((role) => (
-                  <SelectItem key={role.id} label={role.name} value={role.id} />
+                  <SelectItem key={role.id} label={role.name} value={role.id} textStyle={{ className: "capitalize flex-1" }} />
                 ))}
               </SelectContent>
             </SelectPortal>
@@ -271,7 +297,7 @@ export default function UserForm() {
         {user && (
           <FormControl
             isInvalid
-            className="flex-row gap-4 items-center border border-background-300 p-4 rounded-md flex-1"
+            className="flex-row gap-4 items-center border border-background-300 px-4 rounded-md flex-1"
           >
             <FormControlLabel className="mb-0 flex-1">
               <FormControlLabelText>Akun Aktif</FormControlLabelText>
