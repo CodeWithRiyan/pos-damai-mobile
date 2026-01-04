@@ -13,7 +13,7 @@ import {
   Toast,
   ToastTitle,
   useToast,
-  VStack
+  VStack,
 } from "@/components/ui";
 import { getErrorMessage } from "@/lib/api/client";
 import {
@@ -21,15 +21,19 @@ import {
   useCreateRole,
   usePermissions,
   useRole,
+  useRoles,
   useUpdateRole,
 } from "@/lib/api/roles";
 import { useActionDrawerStore } from "@/stores/action-drawer";
-import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 
 export default function RoleForm() {
-  const { showActionDrawer, dataId: roleId, setShowActionDrawer } = useActionDrawerStore();
-  const router = useRouter();
+  const {
+    showActionDrawer,
+    dataId: roleId,
+    setShowActionDrawer,
+    setDataId,
+  } = useActionDrawerStore();
   const isAdd = showActionDrawer === "ROLE-ADD";
 
   const [name, setName] = useState("");
@@ -39,8 +43,9 @@ export default function RoleForm() {
   const {
     data: role,
     isLoading: isLoadingRole,
-    refetch,
+    refetch: refetchRole,
   } = useRole(roleId || "");
+  const { refetch: refetchRoles } = useRoles();
   const { data: permissions = [], isLoading: isLoadingPermissions } =
     usePermissions();
   const isLoading = isLoadingRole || isLoadingPermissions;
@@ -75,8 +80,21 @@ export default function RoleForm() {
     }
   }, [roleId, role]);
 
+  const onRefetch = () => {
+    refetchRoles();
+
+    if (roleId) {
+      refetchRole();
+    }
+  };
+
   const handleCancel = () => {
-    setShowActionDrawer(null);
+    if (roleId) {
+      setShowActionDrawer("ROLE-DETAIL");
+    } else {
+      setShowActionDrawer(null);
+      setDataId(null);
+    }
   };
 
   const handleSubmit = async () => {
@@ -93,7 +111,7 @@ export default function RoleForm() {
         { id: roleId, ...data },
         {
           onSuccess: () => {
-            refetch();
+            onRefetch();
             handleCancel();
           },
           onError: (error) => {
@@ -104,7 +122,7 @@ export default function RoleForm() {
     } else {
       createMutation.mutate(data, {
         onSuccess: () => {
-          refetch();
+          onRefetch();
           handleCancel();
         },
         onError: (error) => {
@@ -138,23 +156,19 @@ export default function RoleForm() {
     <ActionDrawer
       actionType={isAdd ? "ROLE-ADD" : "ROLE-EDIT"}
       header={isAdd ? "TAMBAH ROLE" : "EDIT ROLE"}
+      onClose={handleCancel}
       footer={
         <HStack className="flex-1 p-4 border-t border-slate-200 justify-end gap-4">
-          <Button variant="outline" action="secondary" onPress={handleCancel}>
-            <ButtonText>BATAL</ButtonText>
-          </Button>
           <Button
             action="primary"
             onPress={handleSubmit}
             disabled={createMutation.isPending || updateMutation.isPending}
-            className="bg-brand-primary"
+            className="bg-brand-primary flex-1"
           >
             <ButtonText className="text-white">
               {createMutation.isPending || updateMutation.isPending
                 ? "MENYIMPAN..."
-                : role
-                ? "EDIT ROLE"
-                : "TAMBAH ROLE"}
+                : "SIMPAN"}
             </ButtonText>
           </Button>
         </HStack>
@@ -217,9 +231,7 @@ export default function RoleForm() {
                         </Text>
                         <Switch
                           size="md"
-                          value={selectedPermissions.includes(
-                            permission.id
-                          )}
+                          value={selectedPermissions.includes(permission.id)}
                           onToggle={() => togglePermission(permission.id)}
                         />
                       </HStack>

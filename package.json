@@ -12,7 +12,7 @@
     "build:check": "pnpm tsc --noEmit && npx expo export --platform android"
   },
   "dependencies": {
-    "@expo/html-elements": "^0.13.8",
+    "@expo/html-elements": "^0.12.5",
     "@expo/vector-icons": "^15.0.3",
     "@gluestack-ui/core": "^3.0.12",
     "@gluestack-ui/nativewind": "^0.0.2",
@@ -31,6 +31,7 @@
     "@tanstack/react-query-persist-client": "^5.90.14",
     "autoprefixer": "^10.4.23",
     "axios": "^1.13.2",
+    "dayjs": "^1.11.19",
     "expo": "~54.0.30",
     "expo-build-properties": "^1.0.10",
     "expo-constants": "~18.0.12",

@@ -31,10 +31,14 @@ export default function ActionDrawer({
   const { showActionDrawer, setShowActionDrawer, setDataId } = useActionDrawerStore();
   
   const handleClose = () => {
-    setShowActionDrawer(null);
-    setDataId(null);
-    onClose?.();
+    if (onClose) {
+      onClose();
+    } else {
+      setShowActionDrawer(null);
+      setDataId(null);
+    }
   };
+  
   return (
     <Drawer
       isOpen={showActionDrawer === actionType}
