@@ -59,7 +59,6 @@ export default function UserDetail() {
 
   const handleClose = () => {
     setShowActionsheet(false)
-    setShowActionDrawer(null);
   };
 
   const handleDeletePress = () => {
@@ -90,7 +89,8 @@ export default function UserDetail() {
         hidePopUpConfirm();
         onRefetch();
         handleClose();
-
+        setShowActionDrawer(null);
+        
         toast.show({
           placement: "top",
           render: ({ id }) => (

@@ -50,7 +50,6 @@ export default function RoleDetail() {
 
   const handleClose = () => {
     setShowActionsheet(false)
-    setShowActionDrawer(null);
   };
 
   const handleDeletePress = () => {
@@ -81,6 +80,7 @@ export default function RoleDetail() {
         hidePopUpConfirm();
         onRefetch();
         handleClose();
+        setShowActionDrawer(null);
 
         toast.show({
           placement: "top",

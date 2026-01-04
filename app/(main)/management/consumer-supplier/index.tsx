@@ -8,31 +8,34 @@ import {
 import { Link } from "expo-router";
 import { ScrollView } from "react-native";
 
-export default function UserRoleScreen() {
-  const userRoleItems: {
+export default function ConsumerSupplierScreen() {
+  const menuItems: {
     label: string;
     href: string;
     icon: SolarIconLinearProps["name"];
   }[] = [
     {
-      label: "Karyawan",
-      href: "/management/role-user/user",
-      icon: "UsersGroupTwoRounded",
+      label: "Pelanggan",
+      href: "/management/consumer-supplier/consumer",
+      icon: "Card2",
     },
     {
-      label: "Role",
-      href: "/management/role-user/role",
-      icon: "KeyMinimalisticSquare2",
+      label: "Supplier",
+      href: "/management/consumer-supplier/supplier",
+      icon: "Card2",
     },
   ];
 
   return (
     <Box className="flex-1 bg-white">
-      <Header header="KARYAWAN DAN ROLE" isGoBack />
+      <Header
+        header="PELANGGAN DAN SUPPLIER"
+        isGoBack
+      />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack>
-          {userRoleItems.map((item, index) => (
+          {menuItems.map((item) => (
             <Link href={item.href as any} key={item.href} asChild>
               <Pressable className="flex-row items-center gap-4 p-4 border-bottom bg--white active:bg-gray-50">
                 <SolarIconLinear
