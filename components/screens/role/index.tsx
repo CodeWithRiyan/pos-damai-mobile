@@ -1,4 +1,5 @@
 import Header from "@/components/header";
+import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import RoleDetail from "@/components/screens/role/detail";
 import RoleForm from "@/components/screens/role/form";
 import { Box } from "@/components/ui/box";
@@ -15,13 +16,13 @@ import { getErrorMessage } from "@/lib/api/client";
 import { Role, useDeleteRole, useRoles } from "@/lib/api/roles";
 import { useActionDrawerStore } from "@/stores/action-drawer";
 import React, { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView } from "react-native";
 
 export default function RoleList() {
+  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+
   const { setShowActionDrawer, setDataId } = useActionDrawerStore();
   const { data, isLoading, refetch } = useRoles();
-  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<Role[] | null>(null);
 
   const roles = data || [];
@@ -57,29 +58,53 @@ export default function RoleList() {
   };
 
   const handleAddRole = () => {
-    console.log("RolesScreen: handleAddRole called");
     setSelectedRoles(null);
     setShowActionDrawer("ROLE-ADD");
   };
 
   const handleDeletePress = () => {
-    setRoleToDelete(selectedRoles?.[0] || null);
+    const roleToDelete = selectedRoles?.[0] || null;
+
+    showPopUpConfirm({
+      title: "HAPUS KARYAWAN",
+      icon: "warning",
+      description: (
+        <Text className="text-slate-500">
+          {`Apakah Anda yakin ingin menghapus role `}
+          <Text className="font-bold text-slate-900">{roleToDelete?.name}</Text>
+          {` ? Tindakan ini tidak dapat dibatalkan.`}
+        </Text>
+      ),
+      showClose: true,
+      okText: "HAPUS",
+      closeText: "BATAL",
+      okVariant: "destructive",
+      onOk: () => confirmDelete(roleToDelete),
+      loading: deleteMutation.isPending,
+    });
   };
 
-  const confirmDelete = async () => {
-    if (!roleToDelete) return;
+  const confirmDelete = async (user: Role | null) => {
+    if (!user) return;
 
-    setIsDeleting(true);
-    deleteMutation.mutate(roleToDelete.id, {
-      onSuccess: (response) => {
-        setIsDeleting(false);
-        setRoleToDelete(null);
+    deleteMutation.mutate(user.id, {
+      onSuccess: () => {
         setSelectedRoles(null);
+        hidePopUpConfirm();
         refetch();
+
+        toast.show({
+          placement: "top",
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+              <ToastTitle>Role berhasil dihapus</ToastTitle>
+            </Toast>
+          ),
+        });
       },
       onError: (error) => {
-        setIsDeleting(false);
         showErrorToast(error);
+        hidePopUpConfirm();
       },
     });
   };
@@ -101,11 +126,7 @@ export default function RoleList() {
           <HStack space="sm" className="w-[72px]">
             {!!selectedRoles?.length ? (
               <Pressable className="p-6" onPress={() => handleDeletePress()}>
-                <SolarIconBold
-                  name="TrashBin2"
-                  size={20}
-                  color="#FDFBF9"
-                />
+                <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
               </Pressable>
             ) : (
               <Pressable className="p-6" onPress={() => {}}>
@@ -176,60 +197,6 @@ export default function RoleList() {
             </Button>
           </HStack>
         </VStack>
-
-        {/* Delete Confirmation Modal */}
-        {roleToDelete && (
-          <View
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.5)",
-              zIndex: 2000,
-              justifyContent: "center",
-              alignItems: "center",
-              padding: 20,
-            }}
-          >
-            <Box className="bg-white rounded-2xl p-6 w-full max-w-[400px] shadow-2xl">
-              <VStack space="lg">
-                <VStack space="xs">
-                  <Heading size="md">Hapus Role</Heading>
-                  <Text size="sm" className="text-slate-500">
-                    Apakah Anda yakin ingin menghapus role{" "}
-                    <Text className="font-bold text-slate-900">
-                      &quot;{roleToDelete.name}&quot;
-                    </Text>
-                    ? Tindakan ini tidak dapat dibatalkan.
-                  </Text>
-                </VStack>
-
-                <HStack space="md" className="justify-end">
-                  <Button
-                    variant="outline"
-                    action="secondary"
-                    onPress={() => setRoleToDelete(null)}
-                    disabled={isDeleting}
-                  >
-                    <ButtonText>Batal</ButtonText>
-                  </Button>
-                  <Button
-                    action="negative"
-                    onPress={confirmDelete}
-                    disabled={isDeleting}
-                    className="bg-red-500"
-                  >
-                    <ButtonText className="text-white">
-                      {isDeleting ? "Menghapus..." : "Hapus"}
-                    </ButtonText>
-                  </Button>
-                </HStack>
-              </VStack>
-            </Box>
-          </View>
-        )}
       </Box>
       <RoleForm />
       <RoleDetail />

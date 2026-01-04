@@ -113,6 +113,19 @@ export default function RoleForm() {
           onSuccess: () => {
             onRefetch();
             handleCancel();
+
+            toast.show({
+              placement: "top",
+              render: ({ id }) => (
+                <Toast
+                  nativeID={`toast-${id}`}
+                  action="success"
+                  variant="solid"
+                >
+                  <ToastTitle>Role berhasil diubah</ToastTitle>
+                </Toast>
+              ),
+            });
           },
           onError: (error) => {
             showErrorToast(error);
@@ -124,6 +137,15 @@ export default function RoleForm() {
         onSuccess: () => {
           onRefetch();
           handleCancel();
+
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastTitle>Role berhasil dibuat</ToastTitle>
+              </Toast>
+            ),
+          });
         },
         onError: (error) => {
           showErrorToast(error);

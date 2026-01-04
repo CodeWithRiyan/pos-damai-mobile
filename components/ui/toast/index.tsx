@@ -26,7 +26,7 @@ const SCOPE = 'TOAST';
 cssInterop(MotionView, { className: 'style' });
 
 const toastStyle = tva({
-  base: 'p-4 m-4 rounded-md w-screen gap-1 web:pointer-events-auto shadow-hard-5 border-outline-100 z-[10000]',
+  base: 'p-4 m-4 rounded-md w-[95vw] gap-1 web:pointer-events-auto shadow-hard-5 border-outline-100 z-[10000]',
   variants: {
     action: {
       error: 'bg-error-800',

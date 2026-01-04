@@ -1,5 +1,14 @@
 import ActionDrawer from "@/components/action-drawer";
-import { Box, HStack, Text, VStack } from "@/components/ui";
+import { usePopUpConfirm } from "@/components/pop-up-confirm";
+import {
+  Box,
+  HStack,
+  Text,
+  Toast,
+  ToastTitle,
+  useToast,
+  VStack,
+} from "@/components/ui";
 import {
   Actionsheet,
   ActionsheetBackdrop,
@@ -12,19 +21,92 @@ import {
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import useBreakpoint from "@/hooks/use-breakpoint";
-import { useUser } from "@/lib/api/users";
+import { getErrorMessage } from "@/lib/api/client";
+import { useDeleteUser, useUser, useUsers } from "@/lib/api/users";
 import { useActionDrawerStore } from "@/stores/action-drawer";
 import dayjs from "dayjs";
 import { useState } from "react";
 
 export default function UserDetail() {
+  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { dataId: userId, setShowActionDrawer } = useActionDrawerStore();
   const { sm } = useBreakpoint();
   const [showActionsheet, setShowActionsheet] = useState<boolean>(false);
 
-  const { data: user } = useUser(userId || "");
+  const { data: users, refetch: refetchUsers } = useUsers();
+  const { data: user, refetch: refetchUser } = useUser(userId || "");
+  const deleteMutation = useDeleteUser();
+  const toast = useToast();
 
-  const handleClose = () => setShowActionsheet(false);
+  const onRefetch = () => {
+    refetchUsers();
+    refetchUser();
+  };
+
+  const showErrorToast = (error: unknown) => {
+    toast.show({
+      placement: "top",
+      render: ({ id }) => {
+        const toastId = "toast-" + id;
+        return (
+          <Toast nativeID={toastId} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
+          </Toast>
+        );
+      },
+    });
+  };
+
+  const handleClose = () => {
+    setShowActionsheet(false)
+    setShowActionDrawer(null);
+  };
+
+  const handleDeletePress = () => {
+    showPopUpConfirm({
+      title: "HAPUS KARYAWAN",
+      icon: "warning",
+      description: (
+        <Text className="text-slate-500">
+          {`Apakah Anda yakin ingin menghapus karyawan `}
+          <Text className="font-bold text-slate-900">{user?.username}</Text>
+          {` ? Tindakan ini tidak dapat dibatalkan.`}
+        </Text>
+      ),
+      showClose: true,
+      okText: "HAPUS",
+      closeText: "BATAL",
+      okVariant: "destructive",
+      onOk: () => confirmDelete(),
+      loading: deleteMutation.isPending,
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!user) return;
+
+    deleteMutation.mutate(user.id, {
+      onSuccess: () => {
+        hidePopUpConfirm();
+        onRefetch();
+        handleClose();
+
+        toast.show({
+          placement: "top",
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+              <ToastTitle>Karyawan berhasil dihapus</ToastTitle>
+            </Toast>
+          ),
+        });
+      },
+      onError: (error) => {
+        showErrorToast(error);
+        hidePopUpConfirm();
+        handleClose();
+      },
+    });
+  };
 
   return (
     <ActionDrawer
@@ -44,7 +126,7 @@ export default function UserDetail() {
           <Actionsheet isOpen={showActionsheet} onClose={handleClose}>
             <ActionsheetBackdrop />
             <ActionsheetContent className="px-0">
-              <ActionsheetDragIndicatorWrapper>
+              <ActionsheetDragIndicatorWrapper className="pb-4 pt-2">
                 <ActionsheetDragIndicator />
               </ActionsheetDragIndicatorWrapper>
 
@@ -67,7 +149,7 @@ export default function UserDetail() {
 
               <ActionsheetItem
                 onPress={() => {
-                  handleClose();
+                  handleDeletePress();
                 }}
               >
                 <HStack className="w-full justify-between items-center px-4 py-2">

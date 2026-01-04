@@ -1,4 +1,5 @@
 import Header from "@/components/header";
+import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import UserDetail from "@/components/screens/user/detail";
 import UserForm from "@/components/screens/user/form";
 import { Box } from "@/components/ui/box";
@@ -15,13 +16,12 @@ import { getErrorMessage } from "@/lib/api/client";
 import { useDeleteUser, User, useUsers } from "@/lib/api/users";
 import { useActionDrawerStore } from "@/stores/action-drawer";
 import React, { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView } from "react-native";
 
 export default function UserList() {
+  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { setShowActionDrawer, setDataId } = useActionDrawerStore();
   const { data: users, isLoading, refetch } = useUsers();
-  const [userToDelete, setUserToDelete] = useState<User | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<User[] | null>(null);
 
   const deleteMutation = useDeleteUser();
@@ -61,22 +61,50 @@ export default function UserList() {
   };
 
   const handleDeletePress = () => {
-    setUserToDelete(selectedUsers?.[0] || null);
+    const userToDelete = selectedUsers?.[0] || null;
+
+    showPopUpConfirm({
+      title: "HAPUS KARYAWAN",
+      icon: "warning",
+      description: (
+        <Text className="text-slate-500">
+          {`Apakah Anda yakin ingin menghapus karyawan `}
+          <Text className="font-bold text-slate-900">
+            {userToDelete?.username}
+          </Text>
+          {` ? Tindakan ini tidak dapat dibatalkan.`}
+        </Text>
+      ),
+      showClose: true,
+      okText: "HAPUS",
+      closeText: "BATAL",
+      okVariant: "destructive",
+      onOk: () => confirmDelete(userToDelete),
+      loading: deleteMutation.isPending,
+    });
   };
 
-  const confirmDelete = async () => {
-    if (!userToDelete) return;
-    setIsDeleting(true);
-    deleteMutation.mutate(userToDelete.id, {
+  const confirmDelete = async (user: User | null) => {
+    if (!user) return;
+
+    deleteMutation.mutate(user.id, {
       onSuccess: () => {
-        setIsDeleting(false);
-        setUserToDelete(null);
         setSelectedUsers(null);
+        hidePopUpConfirm();
         refetch();
+      
+        toast.show({
+          placement: "top",
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+              <ToastTitle>Karyawan berhasil dihapus</ToastTitle>
+            </Toast>
+          ),
+        });
       },
       onError: (error) => {
-        setIsDeleting(false);
         showErrorToast(error);
+        hidePopUpConfirm();
       },
     });
   };
@@ -176,7 +204,7 @@ export default function UserList() {
         </VStack>
 
         {/* Delete Confirmation Modal */}
-        {userToDelete && (
+        {/* {userToDelete && (
           <View
             style={{
               position: "absolute",
@@ -227,7 +255,7 @@ export default function UserList() {
               </VStack>
             </Box>
           </View>
-        )}
+        )} */}
       </Box>
       <UserForm />
       <UserDetail />
