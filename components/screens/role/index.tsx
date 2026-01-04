@@ -177,6 +177,12 @@ export default function RoleList() {
                         Level {role.level}
                       </Text>
                     </VStack>
+                    <VStack className="items-end">
+                      <Text className="text-brand-primary text-sm font-bold">
+                        User Aktif
+                      </Text>
+                      <Text>-</Text>
+                    </VStack>
                   </HStack>
                 </Pressable>
               ))}

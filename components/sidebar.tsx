@@ -67,8 +67,17 @@ export function Sidebar() {
         }}
       >
         <DrawerBackdrop className="bg-black/10" />
-        <DrawerContent>
-          <DrawerHeader className="relative">
+        <DrawerContent className="relative">
+          <Box className="absolute top-6 inset-x-6 items-end">
+            <Pressable
+              onPress={() => {
+                setShowDrawer(false);
+              }}
+            >
+              <Icon as={CloseIcon} />
+            </Pressable>
+          </Box>
+          <DrawerHeader>
             <VStack space="xs">
               <Heading size="md" className="text-brand-primary truncate">
                 POS DAMAI
@@ -87,16 +96,8 @@ export function Sidebar() {
                 </VStack>
               </HStack>
             </VStack>
-            <Pressable
-              onPress={() => {
-                setShowDrawer(false);
-              }}
-              className="fixed top-6 right-6"
-            >
-              <Icon as={CloseIcon} />
-            </Pressable>
           </DrawerHeader>
-          <DrawerBody className="flex-1">
+          <DrawerBody className="flex-1" showsVerticalScrollIndicator={false}>
             {/* Navigation */}
             <VStack space="sm" className="flex-1">
               {menuItems.map((item) => {
@@ -117,12 +118,18 @@ export function Sidebar() {
                       <SolarIconBoldDuotone
                         name={item.icon}
                         size={20}
-                        className={isActive ? "text-brand-primary-forground" : "text-slate-500"}
+                        className={
+                          isActive
+                            ? "text-brand-primary-forground"
+                            : "text-slate-500"
+                        }
                       />
 
                       <Text
                         className={`font-medium ${
-                          isActive ? "text-brand-primary-forground" : "text-slate-500"
+                          isActive
+                            ? "text-brand-primary-forground"
+                            : "text-slate-500"
                         }`}
                       >
                         {item.label}
@@ -134,18 +141,18 @@ export function Sidebar() {
             </VStack>
           </DrawerBody>
           <DrawerFooter>
-              {/* Logout */}
-              <Pressable
-                className="flex-row flex-1 items-center p-3 rounded-xl gap-3 bg-gray-50"
-                onPress={handleLogout}
-              >
-                <IconSymbol
-                  name="rectangle.portrait.and.arrow.right"
-                  size={18}
-                  className="text-red-500"
-                />
-                <Text className="text-red-500">Logout</Text>
-              </Pressable>
+            {/* Logout */}
+            <Pressable
+              className="flex-row flex-1 items-center p-3 rounded-xl gap-3 bg-gray-50"
+              onPress={handleLogout}
+            >
+              <IconSymbol
+                name="rectangle.portrait.and.arrow.right"
+                size={18}
+                className="text-red-500"
+              />
+              <Text className="text-red-500">Logout</Text>
+            </Pressable>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>

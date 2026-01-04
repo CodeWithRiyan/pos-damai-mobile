@@ -3,36 +3,41 @@ import { Box, Text, VStack } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import {
   SolarIconLinear,
-  SolarIconLinearProps
+  SolarIconLinearProps,
 } from "@/components/ui/solar-icon-wrapper";
 import { Link } from "expo-router";
 import { ScrollView } from "react-native";
 
-export default function UserRoleScreen() {
-  const userRoleItems: {
+export default function ProductCategoryBrandScreen() {
+  const menuItems: {
     label: string;
     href: string;
     icon: SolarIconLinearProps["name"];
   }[] = [
     {
-      label: "Karyawan",
-      href: "/management/role-user/user",
-      icon: "UsersGroupTwoRounded",
+      label: "Produk",
+      href: "/management/product-category-brand/product",
+      icon: "Box",
     },
     {
-      label: "Role",
-      href: "/management/role-user/role",
-      icon: "KeyMinimalisticSquare2",
+      label: "Kategori",
+      href: "/management/product-category-brand/category",
+      icon: "Widget",
+    },
+    {
+      label: "Brand",
+      href: "/management/product-category-brand/brand",
+      icon: "Widget",
     },
   ];
 
   return (
     <Box className="flex-1 bg-white">
-      <Header header="KARYAWAN DAN ROLE" isGoBack />
+      <Header header="PRODUK, KATEGORI DAN BRAND" isGoBack />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack>
-          {userRoleItems.map((item, index) => (
+          {menuItems.map((item) => (
             <Link href={item.href as any} key={item.href} asChild>
               <Pressable className="flex-row items-center gap-4 p-4 border-bottom bg--white active:bg-gray-50">
                 <SolarIconLinear

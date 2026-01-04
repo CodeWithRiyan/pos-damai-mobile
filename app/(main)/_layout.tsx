@@ -20,10 +20,25 @@ export default function MainLayout() {
             name="management/index"
             options={{ title: "Manajemen" }}
           />
+          
+          {/* Management Module */}
           <Stack.Screen
             name="management/role-user/index"
             options={{ title: "Manajemen Role dan Karyawan" }}
           />
+          <Stack.Screen
+            name="management/product-category-brand/index"
+            options={{ title: "Manajemen Produk, Kategori dan Brand" }}
+          />
+          <Stack.Screen
+            name="management/consumer-supplier/index"
+            options={{ title: "Manajemen Pelanggan dan Suplier" }}
+          />
+          <Stack.Screen
+            name="management/payable-receivable/index"
+            options={{ title: "Manajemen Hutang dan Piutang" }}
+          />
+
           <Stack.Screen
             name="management/role-user/role/index"
             options={{ title: "Manajemen Role" }}

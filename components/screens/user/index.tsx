@@ -15,6 +15,7 @@ import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
 import { useDeleteUser, User, useUsers } from "@/lib/api/users";
 import { useActionDrawerStore } from "@/stores/action-drawer";
+import dayjs from "dayjs";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
@@ -27,17 +28,17 @@ export default function UserList() {
   const deleteMutation = useDeleteUser();
   const toast = useToast();
 
-  const handleRolePress = (role: User) => {
-    if (selectedUsers?.some((r) => r.id === role.id)) {
-      setSelectedUsers(selectedUsers.filter((r) => r.id !== role.id));
+  const handleUserPress = (user: User) => {
+    if (selectedUsers?.some((r) => r.id === user.id)) {
+      setSelectedUsers(selectedUsers.filter((r) => r.id !== user.id));
       return;
     }
     if (!selectedUsers) {
-      setSelectedUsers([role]);
+      setSelectedUsers([user]);
       return;
     }
 
-    setSelectedUsers([...selectedUsers, role]);
+    setSelectedUsers([...selectedUsers, user]);
   };
 
   const showErrorToast = (error: unknown) => {
@@ -92,7 +93,7 @@ export default function UserList() {
         setSelectedUsers(null);
         hidePopUpConfirm();
         refetch();
-      
+
         toast.show({
           placement: "top",
           render: ({ id }) => (
@@ -155,14 +156,14 @@ export default function UserList() {
                   }`}
                   onPress={() => {
                     if (!!selectedUsers?.length) {
-                      handleRolePress(user);
+                      handleUserPress(user);
                     } else {
                       setShowActionDrawer("USER-DETAIL");
                       setDataId(user.id);
                       setSelectedUsers(null);
                     }
                   }}
-                  onLongPress={() => handleRolePress(user)}
+                  onLongPress={() => handleUserPress(user)}
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
@@ -182,6 +183,16 @@ export default function UserList() {
                         </Text>
                       </VStack>
                     </HStack>
+                    <VStack className="items-end">
+                      <Text className="text-brand-primary text-sm font-bold">Aktifitas Terakhir</Text>
+                      <Text>
+                        {user.lastLoginAt
+                          ? dayjs(user.lastLoginAt).format(
+                              "DD MMMM YYYY, HH:mm"
+                            )
+                          : "-"}
+                      </Text>
+                    </VStack>
                   </HStack>
                 </Pressable>
               ))}

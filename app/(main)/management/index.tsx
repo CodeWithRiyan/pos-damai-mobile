@@ -2,9 +2,8 @@ import Header from "@/components/header";
 import { Box, Text, VStack } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import {
-  SolarIconBold,
   SolarIconLinear,
-  SolarIconLinearProps,
+  SolarIconLinearProps
 } from "@/components/ui/solar-icon-wrapper";
 import { Link } from "expo-router";
 import { ScrollView } from "react-native";
@@ -23,12 +22,12 @@ export default function ManagementScreen() {
     { label: "Diskon", href: "/management/discount", icon: "TicketSale" },
     {
       label: "Pelanggan dan Suplier",
-      href: "/management/customer-supplier",
+      href: "/management/consumer-supplier",
       icon: "Card2",
     },
     {
       label: "Hutang dan Piutang",
-      href: "/management/credit-debt",
+      href: "/management/payable-receivable",
       icon: "NotebookBookmark",
     },
     {
@@ -38,7 +37,7 @@ export default function ManagementScreen() {
     },
     { label: "Retur", href: "/management/retur", icon: "History" },
     {
-      label: "Tipe Pembayaran",
+      label: "Jenis Pembayaran",
       href: "/management/payment-type",
       icon: "Banknote2",
     },
@@ -51,19 +50,7 @@ export default function ManagementScreen() {
 
   return (
     <Box className="flex-1 bg-white">
-      <Header
-        header="MANAJEMEN"
-        action={
-          <Pressable className="p-6" onPress={() => {}}>
-            <SolarIconBold
-              name="MenuDots"
-              size={20}
-              color="#FDFBF9"
-              style={{ transform: [{ rotate: "90deg" }] }}
-            />
-          </Pressable>
-        }
-      />
+      <Header header="MANAJEMEN" />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack>
