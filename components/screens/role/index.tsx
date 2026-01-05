@@ -63,7 +63,7 @@ export default function RoleList() {
     const roleToDelete = selectedRoles?.[0] || null;
 
     showPopUpConfirm({
-      title: "HAPUS KARYAWAN",
+      title: "HAPUS ROLE",
       icon: "warning",
       description: (
         <Text className="text-slate-500">
@@ -170,10 +170,6 @@ export default function RoleList() {
                           {role.description}
                         </Text>
                       )}
-                      <Text size="xs" className="text-slate-500 mt-1">
-                        {role.permissions?.length || 0} permissions assigned •
-                        Level {role.level}
-                      </Text>
                     </VStack>
                     <VStack className="items-end">
                       <Text className="text-brand-primary text-sm font-bold">
