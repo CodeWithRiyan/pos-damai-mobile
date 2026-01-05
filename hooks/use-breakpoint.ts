@@ -12,25 +12,25 @@ interface BreakpointProps {
 export default function useBreakpoint(): BreakpointProps {
   const { width } = Dimensions.get("window");
 
-  if (width >= 640) {
-    return { sm: true };
-  }
-
-  if (width >= 768) {
-    return { md: true };
-  }
-
-  if (width >= 1024) {
-    return { lg: true };
+  if (width >= 1536) {
+    return { "3xl": true };
   }
 
   if (width >= 1280) {
     return { xl: true };
   }
 
-  if (width >= 1536) {
-    return { "2xl": true };
+  if (width >= 1024) {
+    return { lg: true };
   }
 
-  return { "3xl": true };
+  if (width >= 768) {
+    return { md: true };
+  }
+
+  if (width >= 640) {
+    return { sm: true };
+  }
+
+  return {};
 }

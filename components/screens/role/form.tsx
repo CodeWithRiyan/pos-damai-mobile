@@ -1,31 +1,32 @@
 import ActionDrawer from "@/components/action-drawer";
 import {
-  Button,
-  ButtonText,
-  FormControl,
-  FormControlLabel,
-  FormControlLabelText,
-  HStack,
-  Input,
-  InputField,
-  Switch,
-  Text,
-  Toast,
-  ToastTitle,
-  useToast,
-  VStack,
+    Button,
+    ButtonText,
+    FormControl,
+    FormControlLabel,
+    FormControlLabelText,
+    HStack,
+    Input,
+    InputField,
+    Switch,
+    Text,
+    Toast,
+    ToastTitle,
+    useToast,
+    VStack,
 } from "@/components/ui";
 import { getErrorMessage } from "@/lib/api/client";
 import {
-  Permission,
-  useCreateRole,
-  usePermissions,
-  useRole,
-  useRoles,
-  useUpdateRole,
+    Permission,
+    useCreateRole,
+    usePermissions,
+    useRole,
+    useRoles,
+    useUpdateRole,
 } from "@/lib/api/roles";
 import { useActionDrawerStore } from "@/stores/action-drawer";
 import { useEffect, useState } from "react";
+import { ScrollView } from "react-native";
 
 export default function RoleForm() {
   const {
@@ -42,13 +43,11 @@ export default function RoleForm() {
 
   const {
     data: role,
-    isLoading: isLoadingRole,
     refetch: refetchRole,
   } = useRole(roleId || "");
   const { refetch: refetchRoles } = useRoles();
   const { data: permissions = [], isLoading: isLoadingPermissions } =
     usePermissions();
-  const isLoading = isLoadingRole || isLoadingPermissions;
 
   const createMutation = useCreateRole();
   const updateMutation = useUpdateRole();
@@ -196,75 +195,77 @@ export default function RoleForm() {
         </HStack>
       }
     >
-      <VStack space="lg" className="p-4">
-        <FormControl isRequired>
-          <FormControlLabel>
-            <FormControlLabelText>Nama Role</FormControlLabelText>
-          </FormControlLabel>
-          <Input>
-            <InputField
-              value={name}
-              onChangeText={setName}
-              placeholder="Masukkan nama role"
-            />
-          </Input>
-        </FormControl>
+      <ScrollView className="flex-1">
+        <VStack space="lg" className="p-4">
+          <FormControl isRequired>
+            <FormControlLabel>
+              <FormControlLabelText>Nama Role</FormControlLabelText>
+            </FormControlLabel>
+            <Input>
+              <InputField
+                value={name}
+                onChangeText={setName}
+                placeholder="Masukkan nama role"
+              />
+            </Input>
+          </FormControl>
 
-        <FormControl>
-          <FormControlLabel>
-            <FormControlLabelText>Catatan</FormControlLabelText>
-          </FormControlLabel>
-          <Input>
-            <InputField
-              value={description}
-              onChangeText={setDescription}
-              placeholder="Masukkan catatan"
-            />
-          </Input>
-        </FormControl>
+          <FormControl>
+            <FormControlLabel>
+              <FormControlLabelText>Catatan</FormControlLabelText>
+            </FormControlLabel>
+            <Input>
+              <InputField
+                value={description}
+                onChangeText={setDescription}
+                placeholder="Masukkan catatan"
+              />
+            </Input>
+          </FormControl>
 
-        <VStack space="md" className="mb-4">
-          <Text className="font-medium">Izin Akses</Text>
-          {isLoadingPermissions ? (
-            <Text>Loading izin akses...</Text>
-          ) : permissions.length === 0 ? (
-            <Text size="sm" className="text-slate-400 italic">
-              No permissions found.
-            </Text>
-          ) : (
-            Object.entries(groupedPermissions).map(
-              ([module, modulePermissions]) => (
-                <VStack
-                  key={module}
-                  space="sm"
-                  className="mb-2 border rounded-md p-4"
-                >
-                  <Text className="font-medium text-slate-500 uppercase text-sm">
-                    {module}
-                  </Text>
-                  <VStack space="xs">
-                    {modulePermissions.map((permission) => (
-                      <HStack
-                        key={permission.id}
-                        className="items-center justify-between py-2"
-                      >
-                        <Text className="flex-1 text-sm">
-                          {permission.description}
-                        </Text>
-                        <Switch
-                          size="md"
-                          value={selectedPermissions.includes(permission.id)}
-                          onToggle={() => togglePermission(permission.id)}
-                        />
-                      </HStack>
-                    ))}
+          <VStack space="md" className="mb-4">
+            <Text className="font-medium">Izin Akses</Text>
+            {isLoadingPermissions ? (
+              <Text>Loading izin akses...</Text>
+            ) : permissions.length === 0 ? (
+              <Text size="sm" className="text-slate-400 italic">
+                No permissions found.
+              </Text>
+            ) : (
+              Object.entries(groupedPermissions).map(
+                ([module, modulePermissions]) => (
+                  <VStack
+                    key={module}
+                    space="sm"
+                    className="mb-2 border rounded-md p-4"
+                  >
+                    <Text className="font-medium text-slate-500 uppercase text-sm">
+                      {module}
+                    </Text>
+                    <VStack space="xs">
+                      {modulePermissions.map((permission) => (
+                        <HStack
+                          key={permission.id}
+                          className="items-center justify-between py-2"
+                        >
+                          <Text className="flex-1 text-sm">
+                            {permission.description}
+                          </Text>
+                          <Switch
+                            size="md"
+                            value={selectedPermissions.includes(permission.id)}
+                            onToggle={() => togglePermission(permission.id)}
+                          />
+                        </HStack>
+                      ))}
+                    </VStack>
                   </VStack>
-                </VStack>
+                )
               )
-            )
-          )}
+            )}
+          </VStack>
         </VStack>
-      </VStack>
+      </ScrollView>
     </ActionDrawer>
   );
 }
