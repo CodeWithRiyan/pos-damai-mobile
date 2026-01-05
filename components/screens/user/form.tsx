@@ -282,12 +282,12 @@ export default function UserForm() {
             </SelectTrigger>
             <SelectPortal>
               <SelectBackdrop />
-              <SelectContent>
+              <SelectContent className="px-0">
                 <SelectDragIndicatorWrapper>
                   <SelectDragIndicator />
                 </SelectDragIndicatorWrapper>
                 {roles.map((role) => (
-                  <SelectItem key={role.id} label={role.name} value={role.id} textStyle={{ className: "capitalize flex-1" }} />
+                  <SelectItem key={role.id} label={role.name} value={role.id} textStyle={{ className: "capitalize flex-1" }} className="px-4 py-4" />
                 ))}
               </SelectContent>
             </SelectPortal>
