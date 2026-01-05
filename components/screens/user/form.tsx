@@ -1,52 +1,49 @@
-import ActionDrawer from "@/components/action-drawer";
+import Header from "@/components/header";
 import {
-    Button,
-    ButtonText,
-    ChevronDownIcon,
-    FormControl,
-    FormControlLabel,
-    FormControlLabelText,
-    HStack,
-    Input,
-    InputField,
-    Select,
-    SelectBackdrop,
-    SelectContent,
-    SelectDragIndicator,
-    SelectDragIndicatorWrapper,
-    SelectIcon,
-    SelectInput,
-    SelectItem,
-    SelectPortal,
-    SelectTrigger,
-    Switch,
-    Toast,
-    ToastTitle,
-    useToast,
-    VStack,
+  Button,
+  ButtonText,
+  ChevronDownIcon,
+  FormControl,
+  FormControlLabel,
+  FormControlLabelText,
+  HStack,
+  Input,
+  InputField,
+  Select,
+  SelectBackdrop,
+  SelectContent,
+  SelectDragIndicator,
+  SelectDragIndicatorWrapper,
+  SelectIcon,
+  SelectInput,
+  SelectItem,
+  SelectPortal,
+  SelectTrigger,
+  Switch,
+  Toast,
+  ToastTitle,
+  useToast,
+  VStack,
 } from "@/components/ui";
 import { getErrorMessage } from "@/lib/api/client";
 import { useRoles } from "@/lib/api/roles";
 import {
-    CreateUserDTO,
-    UpdateUserDTO,
-    useCreateUser,
-    useUpdateUser,
-    useUser,
-    useUsers,
+  CreateUserDTO,
+  UpdateUserDTO,
+  useCreateUser,
+  useUpdateUser,
+  useUser,
+  useUsers,
 } from "@/lib/api/users";
-import { useActionDrawerStore } from "@/stores/action-drawer";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function UserForm() {
-  const {
-    showActionDrawer,
-    dataId: userId,
-    setShowActionDrawer,
-    setDataId
-  } = useActionDrawerStore();
-  const isAdd = showActionDrawer === "USER-ADD";
+  const router = useRouter();
+  const { id } = useLocalSearchParams();
+  const isAdd = !id;
+  const userId = id as string;
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -58,10 +55,7 @@ export default function UserForm() {
   const [isActive, setIsActive] = useState(true);
 
   const { refetch: refetchUsers } = useUsers();
-  const {
-    data: user,
-    refetch: refetchUser,
-  } = useUser(userId || "");
+  const { data: user, refetch: refetchUser } = useUser(userId || "");
   const { data: roles = [] } = useRoles();
   const createMutation = useCreateUser();
   const updateMutation = useUpdateUser();
@@ -112,12 +106,7 @@ export default function UserForm() {
   };
 
   const handleCancel = () => {
-    if (roleId) {
-      setShowActionDrawer("ROLE-DETAIL");
-    } else {
-      setShowActionDrawer(null);
-      setDataId(null);
-    }
+    router.back();
   };
 
   const handleSubmit = async () => {
@@ -135,12 +124,21 @@ export default function UserForm() {
         ...data,
         id: user.id,
         isActive,
-      }
+      };
 
       updateMutation.mutate(updateData, {
         onSuccess: () => {
           onRefetch();
           handleCancel();
+
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastTitle>Karyawan berhasil diubah</ToastTitle>
+              </Toast>
+            ),
+          });
         },
         onError: (error) => {
           showErrorToast(error);
@@ -150,14 +148,21 @@ export default function UserForm() {
       const createData: CreateUserDTO = {
         ...data,
         password,
-      }
-      console.log(roles);
-      console.log("createData", createData);
+      };
 
       createMutation.mutate(createData, {
         onSuccess: () => {
           onRefetch();
           handleCancel();
+
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastTitle>Karyawan berhasil diubah</ToastTitle>
+              </Toast>
+            ),
+          });
         },
         onError: (error) => {
           showErrorToast(error);
@@ -167,27 +172,10 @@ export default function UserForm() {
   };
 
   return (
-    <ActionDrawer
-      actionType={isAdd ? "USER-ADD" : "USER-EDIT"}
-      header={isAdd ? "TAMBAH KARYAWAN" : "EDIT KARYAWAN"}
-      footer={
-        <HStack className="flex-1 p-4 border-t border-slate-200 justify-end gap-4">
-          <Button
-            action="primary"
-            onPress={handleSubmit}
-            disabled={createMutation.isPending || updateMutation.isPending}
-            className="bg-brand-primary flex-1"
-          >
-            <ButtonText className="text-white">
-              {createMutation.isPending || updateMutation.isPending
-                ? "MENYIMPAN..."
-                : "SIMPAN"}
-            </ButtonText>
-          </Button>
-        </HStack>
-      }
-    >
-      <ScrollView className="flex-1">
+    <VStack className="flex-1 bg-white">
+      <Header header={isAdd ? "TAMBAH KARYAWAN" : "EDIT KARYAWAN"} isGoBack />
+
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="lg" className="p-4">
           <FormControl isRequired>
             <FormControlLabel>
@@ -279,7 +267,10 @@ export default function UserForm() {
             </FormControlLabel>
             <Select onValueChange={setRoleId}>
               <SelectTrigger>
-                <SelectInput placeholder="Pilih Role" className="flex-1 capitalize" />
+                <SelectInput
+                  placeholder="Pilih Role"
+                  className="flex-1 capitalize"
+                />
                 <SelectIcon className="mr-3" as={ChevronDownIcon} />
               </SelectTrigger>
               <SelectPortal>
@@ -289,7 +280,13 @@ export default function UserForm() {
                     <SelectDragIndicator />
                   </SelectDragIndicatorWrapper>
                   {roles.map((role) => (
-                    <SelectItem key={role.id} label={role.name} value={role.id} textStyle={{ className: "capitalize flex-1" }} className="px-4 py-4" />
+                    <SelectItem
+                      key={role.id}
+                      label={role.name}
+                      value={role.id}
+                      textStyle={{ className: "capitalize flex-1" }}
+                      className="px-4 py-4"
+                    />
                   ))}
                 </SelectContent>
               </SelectPortal>
@@ -314,6 +311,20 @@ export default function UserForm() {
           )}
         </VStack>
       </ScrollView>
-    </ActionDrawer>
+      <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
+        <Button
+          action="primary"
+          onPress={handleSubmit}
+          disabled={createMutation.isPending || updateMutation.isPending}
+          className="bg-brand-primary flex-1"
+        >
+          <ButtonText className="text-white">
+            {createMutation.isPending || updateMutation.isPending
+              ? "MENYIMPAN..."
+              : "SIMPAN"}
+          </ButtonText>
+        </Button>
+      </HStack>
+    </VStack>
   );
 }

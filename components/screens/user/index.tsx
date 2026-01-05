@@ -1,7 +1,5 @@
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
-import UserDetail from "@/components/screens/user/detail";
-import UserForm from "@/components/screens/user/form";
 import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
@@ -14,14 +12,14 @@ import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
 import { useDeleteUser, User, useUsers } from "@/lib/api/users";
-import { useActionDrawerStore } from "@/stores/action-drawer";
 import dayjs from "dayjs";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function UserList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
-  const { setShowActionDrawer, setDataId } = useActionDrawerStore();
+  const router = useRouter();
   const { data: users, isLoading, refetch } = useUsers();
   const [selectedUsers, setSelectedUsers] = useState<User[] | null>(null);
 
@@ -57,8 +55,7 @@ export default function UserList() {
 
   const handleAddUser = () => {
     setSelectedUsers(null);
-    setSelectedUsers(null);
-    setShowActionDrawer("USER-ADD");
+    router.push("/(main)/management/role-user/user/add");
   };
 
   const handleDeletePress = () => {
@@ -158,8 +155,9 @@ export default function UserList() {
                     if (!!selectedUsers?.length) {
                       handleUserPress(user);
                     } else {
-                      setShowActionDrawer("USER-DETAIL");
-                      setDataId(user.id);
+                      router.navigate(
+                        `/(main)/management/role-user/user/detail/${user.id}`
+                      );
                       setSelectedUsers(null);
                     }
                   }}
@@ -184,7 +182,9 @@ export default function UserList() {
                       </VStack>
                     </HStack>
                     <VStack className="items-end">
-                      <Text className="text-brand-primary text-sm font-bold">Aktifitas Terakhir</Text>
+                      <Text className="text-brand-primary text-sm font-bold">
+                        Aktifitas Terakhir
+                      </Text>
                       <Text>
                         {user.lastLoginAt
                           ? dayjs(user.lastLoginAt).format(
@@ -213,63 +213,7 @@ export default function UserList() {
             </Button>
           </HStack>
         </VStack>
-
-        {/* Delete Confirmation Modal */}
-        {/* {userToDelete && (
-          <View
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.5)",
-              zIndex: 2000,
-              justifyContent: "center",
-              alignItems: "center",
-              padding: 20,
-            }}
-          >
-            <Box className="bg-white rounded-2xl p-6 w-full max-w-[400px] shadow-2xl">
-              <VStack space="lg">
-                <VStack space="xs">
-                  <Heading size="md">Hapus User</Heading>
-                  <Text size="sm" className="text-slate-500">
-                    Apakah Anda yakin ingin menghapus user{" "}
-                    <Text className="font-bold text-slate-900">
-                      &quot;{userToDelete.username}&quot;
-                    </Text>
-                    ? Tindakan ini tidak dapat dibatalkan.
-                  </Text>
-                </VStack>
-
-                <HStack space="md" className="justify-end">
-                  <Button
-                    variant="outline"
-                    action="secondary"
-                    onPress={() => setUserToDelete(null)}
-                    disabled={isDeleting}
-                  >
-                    <ButtonText>Batal</ButtonText>
-                  </Button>
-                  <Button
-                    action="negative"
-                    onPress={confirmDelete}
-                    disabled={isDeleting}
-                    className="bg-red-500"
-                  >
-                    <ButtonText className="text-white">
-                      {isDeleting ? "Menghapus..." : "Hapus"}
-                    </ButtonText>
-                  </Button>
-                </HStack>
-              </VStack>
-            </Box>
-          </View>
-        )} */}
       </Box>
-      <UserForm />
-      <UserDetail />
     </Box>
   );
 }
