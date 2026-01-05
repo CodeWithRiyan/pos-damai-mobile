@@ -52,7 +52,10 @@
             "targetSdkVersion": 34,
             "minSdkVersion": 24,
             "enableProguardInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "packagingOptions": {
+              "pickFirsts": ["**/libc++_shared.so"]
+            }
           }
         }
       ]
