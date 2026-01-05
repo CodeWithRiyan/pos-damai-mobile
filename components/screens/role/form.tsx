@@ -194,7 +194,7 @@ export default function RoleForm() {
             </Input>
           </FormControl>
 
-          <VStack space="md" className="mb-4">
+          <VStack space="md">
             <Text className="font-medium">Izin Akses</Text>
             {isLoadingPermissions ? (
               <Text>Loading izin akses...</Text>
@@ -237,7 +237,7 @@ export default function RoleForm() {
           </VStack>
         </VStack>
       </ScrollView>
-      <HStack className="flex-1 p-4 border-t border-slate-200 justify-end gap-4">
+      <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Button
           action="primary"
           onPress={handleSubmit}
