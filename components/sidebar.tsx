@@ -52,6 +52,7 @@ export function Sidebar() {
     { label: "Transaksi Penjualan", icon: "Plain", href: "/transaction" },
     { label: "Pembelian Barang", icon: "Cart3", href: "/purchase" },
     { label: "Keuangan", icon: "WalletMoney", href: "/finance" },
+    { label: "Shift", icon: "WatchSquareMinimalistic", href: "/shift" },
     { label: "Laporan", icon: "PieChart2", href: "/report" },
     { label: "Pengaturan", icon: "Settings", href: "/settings" },
   ];

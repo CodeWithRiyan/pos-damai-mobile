@@ -20,6 +20,10 @@ export default function MainLayout() {
             name="management/index"
             options={{ title: "Manajemen" }}
           />
+          <Stack.Screen
+            name="shift/index"
+            options={{ title: "Shift" }}
+          />
           
           {/* Management Module */}
           <Stack.Screen
