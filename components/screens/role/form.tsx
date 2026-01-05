@@ -1,50 +1,44 @@
-import ActionDrawer from "@/components/action-drawer";
+import Header from "@/components/header";
 import {
-    Button,
-    ButtonText,
-    FormControl,
-    FormControlLabel,
-    FormControlLabelText,
-    HStack,
-    Input,
-    InputField,
-    Switch,
-    Text,
-    Toast,
-    ToastTitle,
-    useToast,
-    VStack,
+  Button,
+  ButtonText,
+  FormControl,
+  FormControlLabel,
+  FormControlLabelText,
+  HStack,
+  Input,
+  InputField,
+  Switch,
+  Text,
+  Toast,
+  ToastTitle,
+  useToast,
+  VStack,
 } from "@/components/ui";
 import { getErrorMessage } from "@/lib/api/client";
 import {
-    Permission,
-    useCreateRole,
-    usePermissions,
-    useRole,
-    useRoles,
-    useUpdateRole,
+  Permission,
+  useCreateRole,
+  usePermissions,
+  useRole,
+  useRoles,
+  useUpdateRole,
 } from "@/lib/api/roles";
-import { useActionDrawerStore } from "@/stores/action-drawer";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function RoleForm() {
-  const {
-    showActionDrawer,
-    dataId: roleId,
-    setShowActionDrawer,
-    setDataId,
-  } = useActionDrawerStore();
-  const isAdd = showActionDrawer === "ROLE-ADD";
+  const router = useRouter();
+    const { id }  = useLocalSearchParams();
+    const isAdd = !id;
+    const roleId = id as string;
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
 
-  const {
-    data: role,
-    refetch: refetchRole,
-  } = useRole(roleId || "");
+  const { data: role, refetch: refetchRole } = useRole(roleId || "");
   const { refetch: refetchRoles } = useRoles();
   const { data: permissions = [], isLoading: isLoadingPermissions } =
     usePermissions();
@@ -88,12 +82,7 @@ export default function RoleForm() {
   };
 
   const handleCancel = () => {
-    if (roleId) {
-      setShowActionDrawer("ROLE-DETAIL");
-    } else {
-      setShowActionDrawer(null);
-      setDataId(null);
-    }
+    router.back();
   };
 
   const handleSubmit = async () => {
@@ -174,28 +163,10 @@ export default function RoleForm() {
   );
 
   return (
-    <ActionDrawer
-      actionType={isAdd ? "ROLE-ADD" : "ROLE-EDIT"}
-      header={isAdd ? "TAMBAH ROLE" : "EDIT ROLE"}
-      onClose={handleCancel}
-      footer={
-        <HStack className="flex-1 p-4 border-t border-slate-200 justify-end gap-4">
-          <Button
-            action="primary"
-            onPress={handleSubmit}
-            disabled={createMutation.isPending || updateMutation.isPending}
-            className="bg-brand-primary flex-1"
-          >
-            <ButtonText className="text-white">
-              {createMutation.isPending || updateMutation.isPending
-                ? "MENYIMPAN..."
-                : "SIMPAN"}
-            </ButtonText>
-          </Button>
-        </HStack>
-      }
-    >
-      <ScrollView className="flex-1">
+    <VStack className="flex-1 bg-white">
+      <Header header={isAdd ? "TAMBAH ROLE" : "EDIT ROLE"} isGoBack />
+
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="lg" className="p-4">
           <FormControl isRequired>
             <FormControlLabel>
@@ -266,6 +237,20 @@ export default function RoleForm() {
           </VStack>
         </VStack>
       </ScrollView>
-    </ActionDrawer>
+      <HStack className="flex-1 p-4 border-t border-slate-200 justify-end gap-4">
+        <Button
+          action="primary"
+          onPress={handleSubmit}
+          disabled={createMutation.isPending || updateMutation.isPending}
+          className="bg-brand-primary flex-1"
+        >
+          <ButtonText className="text-white">
+            {createMutation.isPending || updateMutation.isPending
+              ? "MENYIMPAN..."
+              : "SIMPAN"}
+          </ButtonText>
+        </Button>
+      </HStack>
+    </VStack>
   );
 }

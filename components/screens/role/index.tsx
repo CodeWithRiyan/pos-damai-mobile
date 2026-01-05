@@ -1,7 +1,5 @@
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
-import RoleDetail from "@/components/screens/role/detail";
-import RoleForm from "@/components/screens/role/form";
 import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
@@ -14,14 +12,13 @@ import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
 import { Role, useDeleteRole, useRoles } from "@/lib/api/roles";
-import { useActionDrawerStore } from "@/stores/action-drawer";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function RoleList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
-
-  const { setShowActionDrawer, setDataId } = useActionDrawerStore();
+  const router = useRouter();
   const { data, isLoading, refetch } = useRoles();
   const [selectedRoles, setSelectedRoles] = useState<Role[] | null>(null);
 
@@ -59,7 +56,7 @@ export default function RoleList() {
 
   const handleAddRole = () => {
     setSelectedRoles(null);
-    setShowActionDrawer("ROLE-ADD");
+    router.push("/(main)/management/role-user/role/add");
   };
 
   const handleDeletePress = () => {
@@ -157,8 +154,9 @@ export default function RoleList() {
                     if (!!selectedRoles?.length) {
                       handleRolePress(role);
                     } else {
-                      setShowActionDrawer("ROLE-DETAIL");
-                      setDataId(role.id);
+                      router.navigate(
+                        `/(main)/management/role-user/role/detail/${role.id}`
+                      );
                       setSelectedRoles(null);
                     }
                   }}
@@ -204,8 +202,6 @@ export default function RoleList() {
           </HStack>
         </VStack>
       </Box>
-      <RoleForm />
-      <RoleDetail />
     </Box>
   );
 }
