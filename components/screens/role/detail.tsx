@@ -17,6 +17,7 @@ import { getErrorMessage } from "@/lib/api/client";
 import { useDeleteRole, useRole, useRoles } from "@/lib/api/roles";
 import { useActionDrawerStore } from "@/stores/action-drawer";
 import { useState } from "react";
+import { ScrollView } from "react-native";
 
 export default function RoleDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -24,7 +25,7 @@ export default function RoleDetail() {
   const { sm } = useBreakpoint();
   const [showActionsheet, setShowActionsheet] = useState<boolean>(false);
 
-  const { data: roles, refetch: refetchRoles } = useRoles();
+  const { refetch: refetchRoles } = useRoles();
     const { data: role, refetch: refetchRole } = useRole(roleId || "");
     const deleteMutation = useDeleteRole();
     const toast = useToast();
@@ -155,34 +156,41 @@ export default function RoleDetail() {
         </HStack>
       }
     >
-      <Box
-        className={`p-4 border-b grid gap-4${
-          sm ? " grid-cols-2" : " grid-cols-1"
-        }`}
-      >
-        <VStack>
-          <Text className="text-gray-500 font-bold">Nama Role</Text>
-          <Text>{role?.name}</Text>
-        </VStack>
-        <VStack>
-          <Text className="text-gray-500 font-bold">Deskripsi</Text>
-          <Text>{role?.description}</Text>
-        </VStack>
-        <VStack className="col-span-2">
-          <Text className="text-gray-500 font-bold">Izin Akses</Text>
-          <Box
-            className={`p-4 border rounded-md grid gap-4${
-              sm ? " grid-cols-2" : " grid-cols-1"
-            }`}
-          >
-            {role?.permissions?.map((permission) => (
-              <Text key={permission.id} className="font-medium capitalize">
-                {permission.name}
-              </Text>
-            ))}
-          </Box>
-        </VStack>
-      </Box>
+      <ScrollView className="flex-1">
+        <Box
+          className={`p-4 border-b flex-row flex-wrap ${
+            sm ? "gap-y-4" : "gap-y-4"
+          }`}
+        >
+          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
+            <Text className="text-gray-500 font-bold">Nama Role</Text>
+            <Text>{role?.name}</Text>
+          </VStack>
+          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
+            <Text className="text-gray-500 font-bold">Deskripsi</Text>
+            <Text>{role?.description}</Text>
+          </VStack>
+          <VStack className="w-full mt-2">
+            <Text className="text-gray-500 font-bold">Izin Akses</Text>
+            <Box
+              className={`p-4 border rounded-md flex-row flex-wrap mt-2 ${
+                sm ? "gap-x-4 gap-y-2" : "gap-y-2"
+              }`}
+            >
+              {role?.permissions?.map((permission) => (
+                <Text
+                  key={permission.id}
+                  className={`font-medium capitalize ${
+                    sm ? "w-[48%]" : "w-full"
+                  }`}
+                >
+                  {permission.name}
+                </Text>
+              ))}
+            </Box>
+          </VStack>
+        </Box>
+      </ScrollView>
     </ActionDrawer>
   );
 }

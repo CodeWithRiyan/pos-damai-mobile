@@ -1,22 +1,22 @@
 import ActionDrawer from "@/components/action-drawer";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
-  Box,
-  HStack,
-  Text,
-  Toast,
-  ToastTitle,
-  useToast,
-  VStack,
+    Box,
+    HStack,
+    Text,
+    Toast,
+    ToastTitle,
+    useToast,
+    VStack,
 } from "@/components/ui";
 import {
-  Actionsheet,
-  ActionsheetBackdrop,
-  ActionsheetContent,
-  ActionsheetDragIndicator,
-  ActionsheetDragIndicatorWrapper,
-  ActionsheetItem,
-  ActionsheetItemText,
+    Actionsheet,
+    ActionsheetBackdrop,
+    ActionsheetContent,
+    ActionsheetDragIndicator,
+    ActionsheetDragIndicatorWrapper,
+    ActionsheetItem,
+    ActionsheetItemText,
 } from "@/components/ui/actionsheet";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
@@ -26,6 +26,7 @@ import { useDeleteUser, useUser, useUsers } from "@/lib/api/users";
 import { useActionDrawerStore } from "@/stores/action-drawer";
 import dayjs from "dayjs";
 import { useState } from "react";
+import { ScrollView } from "react-native";
 
 export default function UserDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -33,7 +34,7 @@ export default function UserDetail() {
   const { sm } = useBreakpoint();
   const [showActionsheet, setShowActionsheet] = useState<boolean>(false);
 
-  const { data: users, refetch: refetchUsers } = useUsers();
+  const { refetch: refetchUsers } = useUsers();
   const { data: user, refetch: refetchUser } = useUser(userId || "");
   const deleteMutation = useDeleteUser();
   const toast = useToast();
@@ -164,44 +165,42 @@ export default function UserDetail() {
         </HStack>
       }
     >
-      <Box
-        className={`p-4 border-b grid gap-4${
-          sm ? " grid-cols-2" : " grid-cols-1"
-        }`}
-      >
-        <VStack>
-          <Text className="text-gray-500 font-bold">Nama</Text>
-          <Text>
-            {user?.firstName + (user?.lastName ? ` ${user?.lastName}` : "")}
-          </Text>
-        </VStack>
-        <VStack>
-          <Text className="text-gray-500 font-bold">Role</Text>
-          <Text>{user?.roles?.[0]?.role?.name || "-"}</Text>
-        </VStack>
-        <VStack>
-          <Text className="text-gray-500 font-bold">Username</Text>
-          <Text>{user?.username}</Text>
-        </VStack>
-        <VStack>
-          <Text className="text-gray-500 font-bold">Email</Text>
-          <Text>{user?.email || "-"}</Text>
-        </VStack>
-        <VStack>
-          <Text className="text-gray-500 font-bold">No Handphone</Text>
-          <Text>{user?.phone || "-"}</Text>
-        </VStack>
-        <VStack>
-          <Text className="text-gray-500 font-bold">
-            Tanggal Terakhir Login
-          </Text>
-          <Text>
-            {user?.lastLoginAt
-              ? dayjs(user?.lastLoginAt).format("DD MMMM YYYY")
-              : "-"}
-          </Text>
-        </VStack>
-      </Box>
+      <ScrollView className="flex-1">
+        <Box className="p-4 border-b flex-row flex-wrap gap-y-4">
+          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
+            <Text className="text-gray-500 font-bold">Nama</Text>
+            <Text>
+              {user?.firstName + (user?.lastName ? ` ${user?.lastName}` : "")}
+            </Text>
+          </VStack>
+          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
+            <Text className="text-gray-500 font-bold">Role</Text>
+            <Text>{user?.roles?.[0]?.role?.name || "-"}</Text>
+          </VStack>
+          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
+            <Text className="text-gray-500 font-bold">Username</Text>
+            <Text>{user?.username}</Text>
+          </VStack>
+          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
+            <Text className="text-gray-500 font-bold">Email</Text>
+            <Text>{user?.email || "-"}</Text>
+          </VStack>
+          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
+            <Text className="text-gray-500 font-bold">No Handphone</Text>
+            <Text>{user?.phone || "-"}</Text>
+          </VStack>
+          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
+            <Text className="text-gray-500 font-bold">
+              Tanggal Terakhir Login
+            </Text>
+            <Text>
+              {user?.lastLoginAt
+                ? dayjs(user?.lastLoginAt).format("DD MMMM YYYY")
+                : "-"}
+            </Text>
+          </VStack>
+        </Box>
+      </ScrollView>
     </ActionDrawer>
   );
 }

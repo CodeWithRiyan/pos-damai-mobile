@@ -1,42 +1,43 @@
 import ActionDrawer from "@/components/action-drawer";
 import {
-  Button,
-  ButtonText,
-  ChevronDownIcon,
-  FormControl,
-  FormControlLabel,
-  FormControlLabelText,
-  HStack,
-  Input,
-  InputField,
-  Select,
-  SelectBackdrop,
-  SelectContent,
-  SelectDragIndicator,
-  SelectDragIndicatorWrapper,
-  SelectIcon,
-  SelectInput,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-  Switch,
-  Toast,
-  ToastTitle,
-  useToast,
-  VStack,
+    Button,
+    ButtonText,
+    ChevronDownIcon,
+    FormControl,
+    FormControlLabel,
+    FormControlLabelText,
+    HStack,
+    Input,
+    InputField,
+    Select,
+    SelectBackdrop,
+    SelectContent,
+    SelectDragIndicator,
+    SelectDragIndicatorWrapper,
+    SelectIcon,
+    SelectInput,
+    SelectItem,
+    SelectPortal,
+    SelectTrigger,
+    Switch,
+    Toast,
+    ToastTitle,
+    useToast,
+    VStack,
 } from "@/components/ui";
 import { getErrorMessage } from "@/lib/api/client";
 import { useRoles } from "@/lib/api/roles";
 import {
-  CreateUserDTO,
-  UpdateUserDTO,
-  useCreateUser,
-  useUpdateUser,
-  useUser,
-  useUsers,
+    CreateUserDTO,
+    UpdateUserDTO,
+    useCreateUser,
+    useUpdateUser,
+    useUser,
+    useUsers,
 } from "@/lib/api/users";
 import { useActionDrawerStore } from "@/stores/action-drawer";
 import { useEffect, useState } from "react";
+import { ScrollView } from "react-native";
 
 export default function UserForm() {
   const {
@@ -186,131 +187,133 @@ export default function UserForm() {
         </HStack>
       }
     >
-      <VStack space="lg" className="p-4">
-        <FormControl isRequired>
-          <FormControlLabel>
-            <FormControlLabelText>Username</FormControlLabelText>
-          </FormControlLabel>
-          <Input>
-            <InputField
-              value={username}
-              autoComplete="off"
-              onChangeText={setUsername}
-              placeholder="Masukkan username"
-            />
-          </Input>
-        </FormControl>
-
-        <FormControl isRequired>
-          <FormControlLabel>
-            <FormControlLabelText>Email</FormControlLabelText>
-          </FormControlLabel>
-          <Input>
-            <InputField
-              value={email}
-              autoComplete="off"
-              onChangeText={setEmail}
-              placeholder="Masukkan email"
-            />
-          </Input>
-        </FormControl>
-
-        {!user && (
+      <ScrollView className="flex-1">
+        <VStack space="lg" className="p-4">
           <FormControl isRequired>
             <FormControlLabel>
-              <FormControlLabelText>Password</FormControlLabelText>
+              <FormControlLabelText>Username</FormControlLabelText>
             </FormControlLabel>
             <Input>
               <InputField
-                value={password}
-                autoComplete="new-password"
-                onChangeText={setPassword}
-                placeholder="Masukkan password"
-                type="password"
+                value={username}
+                autoComplete="off"
+                onChangeText={setUsername}
+                placeholder="Masukkan username"
               />
             </Input>
           </FormControl>
-        )}
 
-        <FormControl isRequired>
-          <FormControlLabel>
-            <FormControlLabelText>Nama Depan</FormControlLabelText>
-          </FormControlLabel>
-          <Input>
-            <InputField
-              value={firstName}
-              onChangeText={setFirstName}
-              placeholder="Masukkan nama depan"
-            />
-          </Input>
-        </FormControl>
-
-        <FormControl>
-          <FormControlLabel>
-            <FormControlLabelText>Nama Belakang</FormControlLabelText>
-          </FormControlLabel>
-          <Input>
-            <InputField
-              value={lastName}
-              onChangeText={setLastName}
-              placeholder="Masukkan nama belakang"
-            />
-          </Input>
-        </FormControl>
-
-        <FormControl>
-          <FormControlLabel>
-            <FormControlLabelText>No Handphone</FormControlLabelText>
-          </FormControlLabel>
-          <Input>
-            <InputField
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="Masukkan no handphone"
-            />
-          </Input>
-        </FormControl>
-
-        <FormControl isRequired isInvalid>
-          <FormControlLabel>
-            <FormControlLabelText>Role</FormControlLabelText>
-          </FormControlLabel>
-          <Select onValueChange={setRoleId}>
-            <SelectTrigger>
-              <SelectInput placeholder="Pilih Role" className="flex-1 capitalize" />
-              <SelectIcon className="mr-3" as={ChevronDownIcon} />
-            </SelectTrigger>
-            <SelectPortal>
-              <SelectBackdrop />
-              <SelectContent className="px-0">
-                <SelectDragIndicatorWrapper>
-                  <SelectDragIndicator />
-                </SelectDragIndicatorWrapper>
-                {roles.map((role) => (
-                  <SelectItem key={role.id} label={role.name} value={role.id} textStyle={{ className: "capitalize flex-1" }} className="px-4 py-4" />
-                ))}
-              </SelectContent>
-            </SelectPortal>
-          </Select>
-        </FormControl>
-
-        {user && (
-          <FormControl
-            isInvalid
-            className="flex-row gap-4 items-center border border-background-300 px-4 rounded-md flex-1"
-          >
-            <FormControlLabel className="mb-0 flex-1">
-              <FormControlLabelText>Akun Aktif</FormControlLabelText>
+          <FormControl isRequired>
+            <FormControlLabel>
+              <FormControlLabelText>Email</FormControlLabelText>
             </FormControlLabel>
-            <Switch
-              size="md"
-              value={isActive}
-              onToggle={() => setIsActive(!isActive)}
-              className="border-none"
-            />
+            <Input>
+              <InputField
+                value={email}
+                autoComplete="off"
+                onChangeText={setEmail}
+                placeholder="Masukkan email"
+              />
+            </Input>
           </FormControl>
-        )}
-      </VStack>
+
+          {!user && (
+            <FormControl isRequired>
+              <FormControlLabel>
+                <FormControlLabelText>Password</FormControlLabelText>
+              </FormControlLabel>
+              <Input>
+                <InputField
+                  value={password}
+                  autoComplete="new-password"
+                  onChangeText={setPassword}
+                  placeholder="Masukkan password"
+                  type="password"
+                />
+              </Input>
+            </FormControl>
+          )}
+
+          <FormControl isRequired>
+            <FormControlLabel>
+              <FormControlLabelText>Nama Depan</FormControlLabelText>
+            </FormControlLabel>
+            <Input>
+              <InputField
+                value={firstName}
+                onChangeText={setFirstName}
+                placeholder="Masukkan nama depan"
+              />
+            </Input>
+          </FormControl>
+
+          <FormControl>
+            <FormControlLabel>
+              <FormControlLabelText>Nama Belakang</FormControlLabelText>
+            </FormControlLabel>
+            <Input>
+              <InputField
+                value={lastName}
+                onChangeText={setLastName}
+                placeholder="Masukkan nama belakang"
+              />
+            </Input>
+          </FormControl>
+
+          <FormControl>
+            <FormControlLabel>
+              <FormControlLabelText>No Handphone</FormControlLabelText>
+            </FormControlLabel>
+            <Input>
+              <InputField
+                value={phone}
+                onChangeText={setPhone}
+                placeholder="Masukkan no handphone"
+              />
+            </Input>
+          </FormControl>
+
+          <FormControl isRequired isInvalid>
+            <FormControlLabel>
+              <FormControlLabelText>Role</FormControlLabelText>
+            </FormControlLabel>
+            <Select onValueChange={setRoleId}>
+              <SelectTrigger>
+                <SelectInput placeholder="Pilih Role" className="flex-1 capitalize" />
+                <SelectIcon className="mr-3" as={ChevronDownIcon} />
+              </SelectTrigger>
+              <SelectPortal>
+                <SelectBackdrop />
+                <SelectContent className="px-0">
+                  <SelectDragIndicatorWrapper>
+                    <SelectDragIndicator />
+                  </SelectDragIndicatorWrapper>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} label={role.name} value={role.id} textStyle={{ className: "capitalize flex-1" }} className="px-4 py-4" />
+                  ))}
+                </SelectContent>
+              </SelectPortal>
+            </Select>
+          </FormControl>
+
+          {user && (
+            <FormControl
+              isInvalid
+              className="flex-row gap-4 items-center border border-background-300 px-4 rounded-md flex-1"
+            >
+              <FormControlLabel className="mb-0 flex-1">
+                <FormControlLabelText>Akun Aktif</FormControlLabelText>
+              </FormControlLabel>
+              <Switch
+                size="md"
+                value={isActive}
+                onToggle={() => setIsActive(!isActive)}
+                className="border-none"
+              />
+            </FormControl>
+          )}
+        </VStack>
+      </ScrollView>
     </ActionDrawer>
   );
 }
