@@ -50,6 +50,7 @@
             "kotlinJvmTarget": "17",
             "compileSdkVersion": 34,
             "targetSdkVersion": 34,
+            "minSdkVersion": 24,
             "enableProguardInReleaseBuilds": true,
             "enableShrinkResourcesInReleaseBuilds": true
           }
