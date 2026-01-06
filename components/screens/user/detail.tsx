@@ -128,11 +128,11 @@ export default function UserDetail() {
       />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <Box className="p-4 border-b flex-row flex-wrap gap-y-4">
+        <Box className="p-4 border-b border-background-300 flex-row flex-wrap gap-y-4">
           <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
             <Text className="text-gray-500 font-bold">Nama</Text>
             <Text>
-              {user?.firstName + (user?.lastName ? ` ${user?.lastName}` : "")}
+              {user?.firstName || "-"}
             </Text>
           </VStack>
           <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
@@ -142,14 +142,6 @@ export default function UserDetail() {
           <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
             <Text className="text-gray-500 font-bold">Username</Text>
             <Text>{user?.username}</Text>
-          </VStack>
-          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
-            <Text className="text-gray-500 font-bold">Email</Text>
-            <Text>{user?.email || "-"}</Text>
-          </VStack>
-          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
-            <Text className="text-gray-500 font-bold">No Handphone</Text>
-            <Text>{user?.phone || "-"}</Text>
           </VStack>
           <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
             <Text className="text-gray-500 font-bold">

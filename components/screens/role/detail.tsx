@@ -127,7 +127,7 @@ export default function RoleDetail() {
       />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <Box
-          className={`p-4 border-b flex-row flex-wrap ${
+          className={`p-4 border-b border-background-300 flex-row flex-wrap ${
             sm ? "gap-y-4" : "gap-y-4"
           }`}
         >
@@ -137,12 +137,12 @@ export default function RoleDetail() {
           </VStack>
           <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
             <Text className="text-gray-500 font-bold">Deskripsi</Text>
-            <Text>{role?.description}</Text>
+            <Text>{role?.description || "-"}</Text>
           </VStack>
           <VStack className="w-full mt-2">
             <Text className="text-gray-500 font-bold">Izin Akses</Text>
             <Box
-              className={`p-4 border rounded-md flex-row flex-wrap mt-2 ${
+              className={`p-4 border border-background-300 rounded-md flex-row flex-wrap mt-2 ${
                 sm ? "gap-x-4 gap-y-2" : "gap-y-2"
               }`}
             >
