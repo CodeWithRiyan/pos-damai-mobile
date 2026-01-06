@@ -19,6 +19,7 @@
     "@gluestack-ui/overlay": "^0.1.22",
     "@gluestack-ui/toast": "^1.0.9",
     "@gluestack-ui/utils": "^3.0.13",
+    "@hookform/resolvers": "^5.2.2",
     "@legendapp/motion": "^2.4.0",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/netinfo": "11.4.1",
@@ -52,6 +53,7 @@
     "postcss": "^8.5.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-hook-form": "^7.70.0",
     "react-native": "0.81.5",
     "react-native-css-interop": "^0.2.1",
     "react-native-gesture-handler": "~2.28.0",
@@ -61,6 +63,7 @@
     "react-native-svg": "^15.12.0",
     "react-native-web": "~0.21.0",
     "tailwindcss": "^3.4.19",
+    "zod": "^4.3.5",
     "zustand": "^5.0.9"
   },
   "devDependencies": {

@@ -2,10 +2,10 @@
 import { createFormControl } from '@gluestack-ui/core/form-control/creator';
 import { PrimitiveIcon, UIIcon } from '@gluestack-ui/core/icon/creator';
 import {
-    tva,
-    useStyleContext,
-    withStyleContext,
-    type VariantProps,
+  tva,
+  useStyleContext,
+  withStyleContext,
+  type VariantProps,
 } from '@gluestack-ui/utils/nativewind-utils';
 import { cssInterop } from 'nativewind';
 import React from 'react';
@@ -456,7 +456,8 @@ FormControlHelper.displayName = 'FormControlHelper';
 FormControlHelperText.displayName = 'FormControlHelperText';
 
 export {
-    FormControl,
-    FormControlError, FormControlErrorIcon, FormControlErrorText, FormControlHelper,
-    FormControlHelperText, FormControlLabel, FormControlLabelAstrick, FormControlLabelText
+  FormControl,
+  FormControlError, FormControlErrorIcon, FormControlErrorText, FormControlHelper,
+  FormControlHelperText, FormControlLabel, FormControlLabelAstrick, FormControlLabelText
 };
+

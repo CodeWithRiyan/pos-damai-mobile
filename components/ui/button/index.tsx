@@ -1,15 +1,15 @@
 'use client';
-import React from 'react';
 import { createButton } from '@gluestack-ui/core/button/creator';
+import { PrimitiveIcon, UIIcon } from '@gluestack-ui/core/icon/creator';
 import {
-  tva,
-  withStyleContext,
-  useStyleContext,
-  type VariantProps,
+    tva,
+    useStyleContext,
+    withStyleContext,
+    type VariantProps,
 } from '@gluestack-ui/utils/nativewind-utils';
 import { cssInterop } from 'nativewind';
+import React from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
-import { PrimitiveIcon, UIIcon } from '@gluestack-ui/core/icon/creator';
 
 const SCOPE = 'BUTTON';
 
@@ -47,7 +47,7 @@ const buttonStyle = tva({
       positive:
         'bg-success-500 border-success-300 data-[hover=true]:bg-success-600 data-[hover=true]:border-success-400 data-[active=true]:bg-success-700 data-[active=true]:border-success-500 data-[focus-visible=true]:web:ring-indicator-info',
       negative:
-        'bg-error-500 border-error-300 data-[hover=true]:bg-error-600 data-[hover=true]:border-error-400 data-[active=true]:bg-error-700 data-[active=true]:border-error-500 data-[focus-visible=true]:web:ring-indicator-info',
+        'bg-error-500 border-error-300 data-[hover=true]:bg-error-600 data-[hover=true]:border-error-400 data-[active=true]:bg-error-600 data-[active=true]:border-error-500 data-[focus-visible=true]:web:ring-indicator-info',
       default:
         'bg-transparent data-[hover=true]:bg-background-50 data-[active=true]:bg-transparent',
     },
@@ -129,7 +129,7 @@ const buttonTextStyle = tva({
       positive:
         'text-success-600 data-[hover=true]:text-success-600 data-[active=true]:text-success-700',
       negative:
-        'text-error-600 data-[hover=true]:text-error-600 data-[active=true]:text-error-700',
+        'text-error-600 data-[hover=true]:text-error-600 data-[active=true]:text-error-600',
     },
     variant: {
       link: 'data-[hover=true]:underline data-[active=true]:underline',
@@ -222,7 +222,7 @@ const buttonIconStyle = tva({
         'text-success-600 data-[hover=true]:text-success-600 data-[active=true]:text-success-700',
 
       negative:
-        'text-error-600 data-[hover=true]:text-error-600 data-[active=true]:text-error-700',
+        'text-error-600 data-[hover=true]:text-error-600 data-[active=true]:text-error-600',
     },
   },
   parentCompoundVariants: [
@@ -431,4 +431,5 @@ ButtonSpinner.displayName = 'ButtonSpinner';
 ButtonIcon.displayName = 'ButtonIcon';
 ButtonGroup.displayName = 'ButtonGroup';
 
-export { Button, ButtonText, ButtonSpinner, ButtonIcon, ButtonGroup };
+export { Button, ButtonGroup, ButtonIcon, ButtonSpinner, ButtonText };
+
