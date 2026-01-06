@@ -82,6 +82,7 @@ export default function UserList() {
     });
   };
 
+  console.log(users);
   const confirmDelete = async (user: User | null) => {
     if (!user) return;
 

@@ -23,8 +23,6 @@ export interface Role {
 export interface CreateRoleDTO {
   name: string;
   description?: string;
-  level: number;
-  isSystem: boolean;
   permissionIds: string[];
 }
 
@@ -32,8 +30,6 @@ export interface UpdateRoleDTO {
   id: string;
   name?: string;
   description?: string;
-  level?: number;
-  isSystem?: boolean;
   permissionIds?: string[];
 }
 

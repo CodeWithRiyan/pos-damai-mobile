@@ -2,56 +2,49 @@ import { useSyncQueueStore } from "@/stores/sync-queue-store";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiClient, ApiResponse, isConnectionError } from "./client";
 import { Role } from "./roles";
-
 export interface User {
-  id: string
+  id: string;
   email: string | null;
-  password: string
-  provider: string
-  firstName: string
-  lastName: string | null
+  password: string;
+  provider: string;
+  firstName: string;
+  lastName: string | null;
   avatar: string | null;
   phone: string | null;
   isActive: boolean;
   isLocked: boolean;
   lockReason: string | null;
-  selectedOrganizationId: string
+  selectedOrganizationId: string;
   createdById: string | null;
   lastLoginAt: string | null;
   passwordChangedAt: string | null;
-  createdAt: string
-  updatedAt: string
-  username: string
+  createdAt: string;
+  updatedAt: string;
+  username: string;
   roles: [
     {
-      userId: string
-      roleId: string
-      assignedAt: string
+      userId: string;
+      roleId: string;
+      assignedAt: string;
       assignedBy: string | null;
       expiresAt: string | null;
-      role: Role
+      role: Role;
     }
   ];
 }
 
 export interface CreateUserDTO {
   username: string;
-  email: string;
+  name: string;
   password?: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
   roleId: string;
 }
 
 export interface UpdateUserDTO {
   id: string;
   username?: string;
-  email?: string;
   password?: string;
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
+  name?: string;
   roleId?: string;
   isActive?: boolean;
 }
