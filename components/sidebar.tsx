@@ -56,7 +56,7 @@ export function Sidebar() {
     { label: "Laporan", icon: "PieChart2", href: "/report" },
     { label: "Pengaturan", icon: "Settings", href: "/settings" },
   ];
-
+  console.log("user: ", user)
   return (
     <>
       <Drawer
@@ -89,7 +89,7 @@ export function Sidebar() {
                 </Box>
                 <VStack>
                   <Text size="sm" className="font-bold truncate">
-                    {user?.firstName || user?.id || "Unknown User"}
+                    {user?.name || user?.id || "Unknown User"}
                   </Text>
                   <Text size="xs" className="text-slate-500 truncate">
                     {role?.name || "No Role"}

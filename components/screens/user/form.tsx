@@ -126,6 +126,7 @@ export default function UserForm() {
       const updateData: UpdateUserDTO = {
         ...data,
         id: user.id,
+        password: user.password || undefined,
       };
 
       updateMutation.mutate(updateData, {
@@ -235,39 +236,37 @@ export default function UserForm() {
               </FormControl>
             )}
           />
-          {isAdd && (
-            <Controller
-              name="password"
-              control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
-                <FormControl isRequired={isAdd} isInvalid={!!error}>
-                  <FormControlLabel>
-                    <FormControlLabelText>Password</FormControlLabelText>
-                  </FormControlLabel>
-                  <Input>
-                    <InputField
-                      value={value}
-                      type="password"
-                      autoComplete="new-password"
-                      placeholder="Masukkan password"
-                      onChangeText={onChange}
-                      onBlur={onBlur}
-                    />
-                  </Input>
-                  {error && (
-                    <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
-                    </FormControlError>
-                  )}
-                </FormControl>
-              )}
-            />
-          )}
+          <Controller
+            name="password"
+            control={form.control}
+            render={({
+              field: { onChange, onBlur, value },
+              fieldState: { error },
+            }) => (
+              <FormControl isRequired={isAdd} isInvalid={!!error}>
+                <FormControlLabel>
+                  <FormControlLabelText>Password</FormControlLabelText>
+                </FormControlLabel>
+                <Input>
+                  <InputField
+                    value={value}
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Masukkan password"
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                  />
+                </Input>
+                {error && (
+                  <FormControlError>
+                    <FormControlErrorText>
+                      {error.message}
+                    </FormControlErrorText>
+                  </FormControlError>
+                )}
+              </FormControl>
+            )}
+          />
           <Controller
             control={form.control}
             name="roleId"
