@@ -11,7 +11,7 @@ import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
-import { useDeleteUser, User, useUsers } from "@/lib/api/users";
+import { useBulkDeleteUser, User, useUsers } from "@/lib/api/users";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -20,10 +20,12 @@ import { ScrollView } from "react-native";
 export default function UserList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
-  const { data: users, isLoading, refetch } = useUsers();
+  const { data, isLoading, refetch } = useUsers();
   const [selectedUsers, setSelectedUsers] = useState<User[] | null>(null);
 
-  const deleteMutation = useDeleteUser();
+  const users = data || [];
+
+  const deleteMutation = useBulkDeleteUser();
   const toast = useToast();
 
   const handleUserPress = (user: User) => {
@@ -59,53 +61,53 @@ export default function UserList() {
   };
 
   const handleDeletePress = () => {
-    const userToDelete = selectedUsers?.[0] || null;
+    const userIds = selectedUsers?.map((m) => m.id) || [];
 
     showPopUpConfirm({
       title: "HAPUS KARYAWAN",
       icon: "warning",
       description: (
         <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus karyawan `}
-          <Text className="font-bold text-slate-900">
-            {userToDelete?.username}
-          </Text>
-          {` ? Tindakan ini tidak dapat dibatalkan.`}
+          {`Apakah Anda yakin ingin menghapus `}
+          <Text className="font-bold text-slate-900">{userIds?.length}</Text>
+          {` karyawan? Tindakan ini tidak dapat dibatalkan.`}
         </Text>
       ),
       showClose: true,
       okText: "HAPUS",
       closeText: "BATAL",
       okVariant: "destructive",
-      onOk: () => confirmDelete(userToDelete),
+      onOk: () => confirmDelete(userIds),
       loading: deleteMutation.isPending,
     });
   };
 
-  console.log(users);
-  const confirmDelete = async (user: User | null) => {
-    if (!user) return;
+  const confirmDelete = async (userIds: string[]) => {
+    if (!userIds.length) return;
 
-    deleteMutation.mutate(user.id, {
-      onSuccess: () => {
-        setSelectedUsers(null);
-        hidePopUpConfirm();
-        refetch();
+    deleteMutation.mutate(
+      { ids: userIds },
+      {
+        onSuccess: () => {
+          setSelectedUsers(null);
+          hidePopUpConfirm();
+          refetch();
 
-        toast.show({
-          placement: "top",
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-              <ToastTitle>Karyawan berhasil dihapus</ToastTitle>
-            </Toast>
-          ),
-        });
-      },
-      onError: (error) => {
-        showErrorToast(error);
-        hidePopUpConfirm();
-      },
-    });
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastTitle>Karyawan berhasil dihapus</ToastTitle>
+              </Toast>
+            ),
+          });
+        },
+        onError: (error) => {
+          showErrorToast(error);
+          hidePopUpConfirm();
+        },
+      }
+    );
   };
 
   if (isLoading) {
@@ -124,9 +126,15 @@ export default function UserList() {
         action={
           <HStack space="sm" className="w-[72px]">
             {!!selectedUsers?.length ? (
-              <Pressable className="p-6" onPress={() => handleDeletePress()}>
-                <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
-              </Pressable>
+              deleteMutation.isPending ? (
+                <Box className="p-6">
+                  <Spinner size="small" color="#FFFFFF" />
+                </Box>
+              ) : (
+                <Pressable className="p-6" onPress={() => handleDeletePress()}>
+                  <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                </Pressable>
+              )
             ) : (
               <Pressable className="p-6" onPress={() => {}}>
                 <SolarIconBold

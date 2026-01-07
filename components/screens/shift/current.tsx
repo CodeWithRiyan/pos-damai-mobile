@@ -31,10 +31,10 @@ export default function CurrentShift() {
   const [userId, setUserId] = useState<string | null>(null);
   const [totalAmount, setTotalAmount] = useState<string | null>(null);
   return (
-    <VStack className="flex-1">
+    <VStack className="flex-1 bg-white">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="md" className="p-4">
-          <FormControl isRequired isInvalid>
+          <FormControl isRequired>
             <FormControlLabel>
               <FormControlLabelText>Karyawan</FormControlLabelText>
             </FormControlLabel>

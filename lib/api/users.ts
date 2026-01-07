@@ -160,3 +160,27 @@ export function useDeleteUser() {
     },
   });
 }
+
+export function useBulkDeleteUser() {
+  const addToQueue = useSyncQueueStore((state) => state.addToQueue);
+
+  return useMutation({
+    mutationFn: async (data: { ids: string[] }) => {
+      // Fix: Pass data inside config object
+      const response = await apiClient.delete<ApiResponse<any> | any>(
+        "/users/bulk",
+        { data }
+      );
+      return unwrapResponse<any>(response);
+    },
+    onError: (error, data) => {
+      if (isConnectionError(error)) {
+        addToQueue({
+          type: "delete",
+          endpoint: `/users/bulk`,
+          data,
+        });
+      }
+    },
+  });
+}
