@@ -3,7 +3,7 @@ import { ScrollView } from "react-native";
 
 export default function HistoryShift() {
   return (
-    <VStack className="flex-1">
+    <VStack className="flex-1 bg-white">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <Pressable
           className="flex-row items-center gap-4 p-4 bg--white active:bg-gray-50"

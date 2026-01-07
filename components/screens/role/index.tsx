@@ -11,7 +11,7 @@ import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
-import { Role, useDeleteRole, useRoles } from "@/lib/api/roles";
+import { Role, useBulkDeleteRole, useRoles } from "@/lib/api/roles";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
@@ -24,7 +24,7 @@ export default function RoleList() {
 
   const roles = data || [];
 
-  const deleteMutation = useDeleteRole();
+  const deleteMutation = useBulkDeleteRole();
   const toast = useToast();
 
   const handleRolePress = (role: Role) => {
@@ -60,50 +60,54 @@ export default function RoleList() {
   };
 
   const handleDeletePress = () => {
-    const roleToDelete = selectedRoles?.[0] || null;
+    const roleIds = selectedRoles?.map((m) => m.id) || [];
 
     showPopUpConfirm({
       title: "HAPUS ROLE",
       icon: "warning",
       description: (
         <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus role `}
-          <Text className="font-bold text-slate-900">{roleToDelete?.name}</Text>
-          {` ? Tindakan ini tidak dapat dibatalkan.`}
+          {`Apakah Anda yakin ingin menghapus `}
+          <Text className="font-bold text-slate-900">{roleIds?.length}</Text>
+          {` role? Tindakan ini tidak dapat dibatalkan.`}
         </Text>
       ),
       showClose: true,
       okText: "HAPUS",
       closeText: "BATAL",
       okVariant: "destructive",
-      onOk: () => confirmDelete(roleToDelete),
+      onOk: () => confirmDelete(roleIds),
       loading: deleteMutation.isPending,
     });
   };
 
-  const confirmDelete = async (user: Role | null) => {
-    if (!user) return;
+  const confirmDelete = async (roleIds: string[]) => {
+    if (!roleIds.length) return;
 
-    deleteMutation.mutate(user.id, {
-      onSuccess: () => {
-        setSelectedRoles(null);
-        hidePopUpConfirm();
-        refetch();
+    deleteMutation.mutate(
+      { ids: roleIds },
+      {
+        onSuccess: () => {
+          setSelectedRoles(null);
+          hidePopUpConfirm();
+          refetch();
 
-        toast.show({
-          placement: "top",
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-              <ToastTitle>Role berhasil dihapus</ToastTitle>
-            </Toast>
-          ),
-        });
-      },
-      onError: (error) => {
-        showErrorToast(error);
-        hidePopUpConfirm();
-      },
-    });
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastTitle>Role berhasil dihapus</ToastTitle>
+              </Toast>
+            ),
+          });
+        },
+        onError: (error) => {
+          console.log("roleIds", roleIds);
+          showErrorToast(error);
+          hidePopUpConfirm();
+        },
+      }
+    );
   };
 
   if (isLoading) {
@@ -122,9 +126,15 @@ export default function RoleList() {
         action={
           <HStack space="sm" className="w-[72px]">
             {!!selectedRoles?.length ? (
-              <Pressable className="p-6" onPress={() => handleDeletePress()}>
-                <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
-              </Pressable>
+              deleteMutation.isPending ? (
+                <Box className="p-6">
+                  <Spinner size="small" color="#FFFFFF" />
+                </Box>
+              ) : (
+                <Pressable className="p-6" onPress={() => handleDeletePress()}>
+                  <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                </Pressable>
+              )
             ) : (
               <Pressable className="p-6" onPress={() => {}}>
                 <SolarIconBold
