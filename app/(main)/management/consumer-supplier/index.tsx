@@ -16,7 +16,7 @@ export default function ConsumerSupplierScreen() {
   }[] = [
     {
       label: "Pelanggan",
-      href: "/management/consumer-supplier/consumer",
+      href: "/management/consumer-supplier/customer",
       icon: "Card2",
     },
     {
