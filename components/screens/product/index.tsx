@@ -414,7 +414,9 @@ export default function ProductList() {
                           {product.code}
                         </Text>
                         <Badge size="sm" variant="solid" action="muted">
-                          <BadgeText className="text-[12px]">{`Harga Beli: Rp ${product.purchasePrice}`}</BadgeText>
+                          <BadgeText className="text-xs">{`Harga Beli: Rp ${product.purchasePrice.toLocaleString(
+                            "id-ID"
+                          )}`}</BadgeText>
                         </Badge>
                       </VStack>
                     </HStack>
@@ -422,7 +424,7 @@ export default function ProductList() {
                       <Text className="text-brand-primary text-sm font-bold">
                         {product.stock}
                       </Text>
-                      <Text>
+                      <Text className="text-xs">
                         Retail:{" "}
                         {`${
                           product.sellPrices?.filter(
@@ -432,7 +434,7 @@ export default function ProductList() {
                           ?.filter((r) => r.type === "RETAIL")?.[0]
                           .price.toLocaleString("id-ID")}`}
                       </Text>
-                      <Text>
+                      <Text className="text-xs">
                         Grosir:{" "}
                         {`${
                           product.sellPrices?.filter(

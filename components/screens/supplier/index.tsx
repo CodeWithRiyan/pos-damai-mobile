@@ -11,121 +11,150 @@ import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
-import {
-  Customer,
-  useBulkDeleteCustomer,
-  useCustomers,
-} from "@/lib/api/customers";
+// import { useBulkDeleteSupplier, Supplier, useSuppliers } from "@/lib/api/suppliers";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
-export default function CustomerList() {
+export interface Supplier {
+  id: string;
+  name: string;
+  phone: string;
+  address: string
+}
+
+export const dataSuppliers: Supplier[] = [
+  {
+    id: "1",
+    name: "Supplier 1",
+    phone: "123456789",
+    address: "Address 1"
+  },
+  {
+    id: "2",
+    name: "Supplier 2",
+    phone: "123456789",
+    address: "Address 2"
+  },
+  {
+    id: "3",
+    name: "Supplier 3",
+    phone: "123456789",
+    address: "Address 3"
+  },
+];
+
+export default function SupplierList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
-  const { data, isLoading, refetch } = useCustomers();
-  const [selectedItems, setSelectedItems] = useState<Customer[] | null>(null);
+  // const { data, isLoading, refetch } = useSuppliers();
+  const [selectedSuppliers, setSelectedSuppliers] = useState<any[] | null>(null);
 
-  const customers = data || [];
+  const suppliers = dataSuppliers || [];
 
-  const deleteMutation = useBulkDeleteCustomer();
+  // const deleteMutation = useBulkDeleteSupplier();
   const toast = useToast();
 
-  const handleItemPress = (item: Customer) => {
-    if (selectedItems?.some((r) => r.id === item.id)) {
-      setSelectedItems(selectedItems.filter((r) => r.id !== item.id));
+  const handlePress = (data: Supplier) => {
+    if (selectedSuppliers?.some((r) => r.id === data.id)) {
+      setSelectedSuppliers(selectedSuppliers.filter((r) => r.id !== data.id));
       return;
     }
-    if (!selectedItems) {
-      setSelectedItems([item]);
+    if (!selectedSuppliers) {
+      setSelectedSuppliers([data]);
       return;
     }
-    setSelectedItems([...selectedItems, item]);
+
+    setSelectedSuppliers([...selectedSuppliers, data]);
   };
 
   const showErrorToast = (error: unknown) => {
     toast.show({
       placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={"toast-" + id} action="error" variant="solid">
-          <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-        </Toast>
-      ),
+      render: ({ id }) => {
+        const toastId = "toast-" + id;
+        return (
+          <Toast nativeID={toastId} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
+          </Toast>
+        );
+      },
     });
   };
 
   const handleAdd = () => {
-    setSelectedItems(null);
-    router.push("/(main)/management/customer-supplier/customer/add" as any);
+    setSelectedSuppliers(null);
+    router.push("/(main)/management/customer-supplier/supplier/add");
   };
 
   const handleDeletePress = () => {
-    const ids = selectedItems?.map((m) => m.id) || [];
+    const supplierIds = selectedSuppliers?.map((m) => m.id) || [];
 
     showPopUpConfirm({
-      title: "HAPUS PELANGGAN",
+      title: "HAPUS SUPPLIER",
       icon: "warning",
       description: (
         <Text className="text-slate-500">
           {`Apakah Anda yakin ingin menghapus `}
-          <Text className="font-bold text-slate-900">{ids?.length}</Text>
-          {` pelanggan? Tindakan ini tidak dapat dibatalkan.`}
+          <Text className="font-bold text-slate-900">{supplierIds?.length}</Text>
+          {` supplier? Tindakan ini tidak dapat dibatalkan.`}
         </Text>
       ),
       showClose: true,
       okText: "HAPUS",
       closeText: "BATAL",
       okVariant: "destructive",
-      onOk: () => confirmDelete(ids),
-      loading: deleteMutation.isPending,
+      onOk: () => confirmDelete(supplierIds),
+      // loading: deleteMutation.isPending,
     });
   };
 
-  const confirmDelete = async (ids: string[]) => {
-    if (!ids.length) return;
+  const confirmDelete = async (supplierIds: string[]) => {
+    if (!supplierIds.length) return;
 
-    deleteMutation.mutate(
-      { ids },
-      {
-        onSuccess: () => {
-          setSelectedItems(null);
-          hidePopUpConfirm();
-          refetch();
+    // deleteMutation.mutate(
+    //   { ids: supplierIds },
+    //   {
+    //     onSuccess: () => {
+    //       setSelectedSuppliers(null);
+    //       hidePopUpConfirm();
+    //       refetch();
 
-          toast.show({
-            placement: "top",
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Pelanggan berhasil dihapus</ToastTitle>
-              </Toast>
-            ),
-          });
-        },
-        onError: (error) => {
-          showErrorToast(error);
-          hidePopUpConfirm();
-        },
-      }
-    );
+    //       toast.show({
+    //         placement: "top",
+    //         render: ({ id }) => (
+    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+    //             <ToastTitle>Supplier berhasil dihapus</ToastTitle>
+    //           </Toast>
+    //         ),
+    //       });
+    //     },
+    //     onError: (error) => {
+    //       showErrorToast(error);
+    //       hidePopUpConfirm();
+    //     },
+    //   }
+    // );
   };
 
-  if (isLoading) {
-    return (
-      <Box className="flex-1 justify-center items-center">
-        <Spinner size="large" />
-      </Box>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <Box className="flex-1 justify-center items-center">
+  //       <Spinner size="large" />
+  //     </Box>
+  //   );
+  // }
 
   return (
     <Box className="flex-1 bg-white">
       <Header
-        header="PELANGGAN"
+        header="SUPPLIER"
         isGoBack
         action={
           <HStack space="sm" className="w-[72px]">
-            {!!selectedItems?.length ? (
-              deleteMutation.isPending ? (
+            {!!selectedSuppliers?.length ? (
+              // deleteMutation.isPending
+              false ? (
                 <Box className="p-6">
                   <Spinner size="small" color="#FFFFFF" />
                 </Box>
@@ -151,61 +180,44 @@ export default function CustomerList() {
         <VStack space="lg" className="flex-1">
           <ScrollView className="flex-1">
             <VStack>
-              {customers.map((item) => (
+              {suppliers?.map((supplier) => (
                 <Pressable
-                  key={item.id}
+                  key={supplier.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    selectedItems?.some((r) => r.id === item.id)
+                    selectedSuppliers?.some((r) => r.id === supplier.id)
                       ? "bg-gray-100"
                       : ""
                   }`}
                   onPress={() => {
-                    if (!!selectedItems?.length) {
-                      handleItemPress(item);
+                    if (!!selectedSuppliers?.length) {
+                      handlePress(supplier);
                     } else {
                       router.navigate(
-                        `/(main)/management/customer-supplier/customer/detail/${item.id}` as any
+                        `/(main)/management/customer-supplier/supplier/detail/${supplier.id}`
                       );
-                      setSelectedItems(null);
+                      setSelectedSuppliers(null);
                     }
                   }}
-                  onLongPress={() => handleItemPress(item)}
+                  onLongPress={() => handlePress(supplier)}
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
                       <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
                         <Text className="text-brand-primary font-bold">
-                          {item.name.substring(0, 1).toUpperCase()}
+                          {supplier.name.substring(0, 1).toUpperCase()}
                         </Text>
                       </Box>
                       <VStack>
-                        <Heading size="sm">{item.name}</Heading>
-                        <Text size="xs" className="text-slate-500">
-                          {item.code}
-                        </Text>
+                        <Heading size="sm">{supplier.name}</Heading>
                       </VStack>
                     </HStack>
-                    <VStack className="items-end">
-                      <Text className="text-brand-primary text-sm font-bold">
-                        0 Poin
-                      </Text>
-                      <Text className="text-xs">
-                        Total Transaksi: Rp 0
-                      </Text>
-                      <Text className="text-xs">
-                        Total Omset: Rp 0
-                      </Text>
-                      <Text className="text-xs">
-                        Total Keuntungan: Rp 0
-                      </Text>
-                    </VStack>
                   </HStack>
                 </Pressable>
               ))}
-              {customers?.length === 0 && (
+              {suppliers?.length === 0 && (
                 <Box className="p-8 items-center">
                   <Text className="text-slate-400 italic">
-                    Tidak ada pelanggan
+                    No suppliers found
                   </Text>
                 </Box>
               )}
@@ -217,7 +229,7 @@ export default function CustomerList() {
               className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
               onPress={handleAdd}
             >
-              <ButtonText className="text-white">TAMBAH PELANGGAN</ButtonText>
+              <ButtonText className="text-white">TAMBAH SUPPLIER</ButtonText>
             </Button>
           </HStack>
         </VStack>

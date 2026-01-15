@@ -1,50 +1,97 @@
 import Header from "@/components/header";
 import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
-import { FormControl, FormControlLabel, FormControlLabelText } from "@/components/ui/form-control";
+import {
+  FormControl,
+  FormControlError,
+  FormControlErrorText,
+  FormControlLabel,
+  FormControlLabelText,
+} from "@/components/ui/form-control";
 import { HStack } from "@/components/ui/hstack";
 import { Input, InputField } from "@/components/ui/input";
-import { Select, SelectBackdrop, SelectContent, SelectDragIndicator, SelectDragIndicatorWrapper, SelectIcon, SelectInput, SelectItem, SelectPortal, SelectTrigger } from "@/components/ui/select";
+import {
+  Select,
+  SelectBackdrop,
+  SelectContent,
+  SelectDragIndicator,
+  SelectDragIndicatorWrapper,
+  SelectIcon,
+  SelectInput,
+  SelectItem,
+  SelectPortal,
+  SelectTrigger,
+} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
-import { Textarea, TextareaInput } from "@/components/ui/textarea";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
-import { CustomerCategory, useCustomer, useCreateCustomer, useUpdateCustomer } from "@/lib/api/customers";
-import { ChevronDownIcon } from "lucide-react-native";
+import {
+  useCreateCustomer,
+  useCustomer,
+  useUpdateCustomer
+} from "@/lib/api/customers";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { ChevronDownIcon } from "lucide-react-native";
+import React, { useEffect } from "react";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
+import z from "zod";
 
-interface CustomerFormProps {
-  mode: "add" | "edit";
-}
-
-export default function CustomerForm({ mode }: CustomerFormProps) {
+export default function CustomerForm() {
   const router = useRouter();
   const toast = useToast();
-  const params = useLocalSearchParams<{ id?: string }>();
-  const id = params.id;
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const customerId = id;
+  const isAdd = !id;
 
-  const { data: existingCustomer, isLoading: loadingCustomer } = useCustomer(id || "");
+  const customerSchema = z.object({
+    name: z.string().min(1, "Nama wajib diisi."),
+    code: z.string().min(1, "Kode wajib diisi."),
+    category: z.enum(["RETAIL", "WHOLESALE"]),
+    phone: z.string(),
+    address: z.string(),
+  });
+
+  type CustomerFormValues = z.infer<typeof customerSchema>;
+
+  const initialValues: CustomerFormValues = {
+    name: "",
+    code: "",
+    category: "RETAIL",
+    phone: "",
+    address: "",
+  };
+
+  const form = useForm<CustomerFormValues>({
+    resolver: zodResolver(customerSchema),
+    defaultValues: initialValues,
+  });
+
+  const { data: customer, isLoading: loadingCustomer } = useCustomer(id || "");
   const createMutation = useCreateCustomer();
   const updateMutation = useUpdateCustomer();
 
-  const [name, setName] = useState("");
-  const [code, setCode] = useState("");
-  const [category, setCategory] = useState<CustomerCategory>("RETAIL");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const categories = [
+    { label: "Retail", value: "RETAIL" },
+    { label: "Wholesale", value: "WHOLESALE" },
+  ];
 
   useEffect(() => {
-    if (existingCustomer && mode === "edit") {
-      setName(existingCustomer.name);
-      setCode(existingCustomer.code || "");
-      setCategory(existingCustomer.category);
-      setPhone(existingCustomer.phone || "");
-      setAddress(existingCustomer.address || "");
+    if (customerId && customer) {
+      form.reset({
+        name: customer.name,
+        code: customer.code || "",
+        category: customer.category,
+        phone: customer.phone || "",
+        address: customer.address || "",
+      });
+    } else {
+      form.reset(initialValues);
     }
-  }, [existingCustomer, mode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customer, customerId, form]);
 
   const showSuccessToast = (message: string) => {
     toast.show({
@@ -68,23 +115,12 @@ export default function CustomerForm({ mode }: CustomerFormProps) {
     });
   };
 
-  const handleSubmit = () => {
-    if (!name.trim()) {
-      showErrorToast("Nama pelanggan wajib diisi");
-      return;
-    }
-
-    const data = {
-      name: name.trim(),
-      code: code.trim() || undefined,
-      category,
-      phone: phone.trim() || undefined,
-      address: address.trim() || undefined,
-    };
-
-    if (mode === "edit" && id) {
+  const onSubmit: SubmitHandler<CustomerFormValues> = (
+    data: CustomerFormValues
+  ) => {
+    if (customerId && customer) {
       updateMutation.mutate(
-        { id, ...data },
+        { ...data, id: customerId },
         {
           onSuccess: () => {
             showSuccessToast("Pelanggan berhasil diperbarui");
@@ -106,7 +142,7 @@ export default function CustomerForm({ mode }: CustomerFormProps) {
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  if (mode === "edit" && loadingCustomer) {
+  if (!isAdd && loadingCustomer) {
     return (
       <Box className="flex-1 justify-center items-center">
         <Spinner size="large" />
@@ -116,100 +152,187 @@ export default function CustomerForm({ mode }: CustomerFormProps) {
 
   return (
     <Box className="flex-1 bg-white">
-      <Header header={mode === "add" ? "TAMBAH PELANGGAN" : "EDIT PELANGGAN"} isGoBack />
+      <Header header={isAdd ? "TAMBAH PELANGGAN" : "EDIT PELANGGAN"} isGoBack />
       <ScrollView className="flex-1">
         <VStack space="lg" className="p-4">
-          <FormControl isRequired>
-            <FormControlLabel>
-              <FormControlLabelText>Nama Pelanggan</FormControlLabelText>
-            </FormControlLabel>
-            <Input>
-              <InputField
-                placeholder="Masukkan nama pelanggan"
-                value={name}
-                onChangeText={setName}
-              />
-            </Input>
-          </FormControl>
+          <Controller
+            name="name"
+            control={form.control}
+            render={({
+              field: { onChange, onBlur, value },
+              fieldState: { error },
+            }) => (
+              <FormControl isRequired isInvalid={!!error}>
+                <FormControlLabel>
+                  <FormControlLabelText>Nama Pelanggan</FormControlLabelText>
+                </FormControlLabel>
+                <Input>
+                  <InputField
+                    value={value}
+                    autoComplete="name"
+                    placeholder="Masukkan nama pelanggan"
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                  />
+                </Input>
+                {error && (
+                  <FormControlError>
+                    <FormControlErrorText>{error.message}</FormControlErrorText>
+                  </FormControlError>
+                )}
+              </FormControl>
+            )}
+          />
 
-          <FormControl>
-            <FormControlLabel>
-              <FormControlLabelText>Kode</FormControlLabelText>
-            </FormControlLabel>
-            <Input>
-              <InputField
-                placeholder="Masukkan kode (opsional)"
-                value={code}
-                onChangeText={setCode}
-              />
-            </Input>
-          </FormControl>
+          <Controller
+            name="code"
+            control={form.control}
+            render={({
+              field: { onChange, onBlur, value },
+              fieldState: { error },
+            }) => (
+              <FormControl isInvalid={!!error}>
+                <FormControlLabel>
+                  <FormControlLabelText>Kode</FormControlLabelText>
+                </FormControlLabel>
+                <Input>
+                  <InputField
+                    value={value}
+                    autoComplete="name"
+                    placeholder="Masukkan kode"
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                  />
+                </Input>
+                {error && (
+                  <FormControlError>
+                    <FormControlErrorText>{error.message}</FormControlErrorText>
+                  </FormControlError>
+                )}
+              </FormControl>
+            )}
+          />
 
-          <FormControl>
-            <FormControlLabel>
-              <FormControlLabelText>Kategori</FormControlLabelText>
-            </FormControlLabel>
-            <Select 
-              selectedValue={category} 
-              onValueChange={(val) => setCategory(val as CustomerCategory)}
-            >
-              <SelectTrigger>
-                <SelectInput placeholder="Pilih kategori" />
-                <SelectIcon className="mr-3" as={ChevronDownIcon} />
-              </SelectTrigger>
-              <SelectPortal>
-                <SelectBackdrop />
-                <SelectContent>
-                  <SelectDragIndicatorWrapper>
-                    <SelectDragIndicator />
-                  </SelectDragIndicatorWrapper>
-                  <SelectItem label="Retail" value="RETAIL" />
-                  <SelectItem label="Grosir (Wholesale)" value="WHOLESALE" />
-                </SelectContent>
-              </SelectPortal>
-            </Select>
-          </FormControl>
+          <Controller
+            control={form.control}
+            name="category"
+            render={({
+              field: { onChange, onBlur, value },
+              fieldState: { error },
+            }) => (
+              <FormControl isRequired isInvalid={!!error}>
+                <FormControlLabel>
+                  <FormControlLabelText>Kategori</FormControlLabelText>
+                </FormControlLabel>
+                <Select onValueChange={onChange} onBlur={onBlur}>
+                  <SelectTrigger>
+                    <SelectInput
+                      value={
+                        categories.find((cat) => cat.value === value)?.label
+                      }
+                      placeholder="Pilih Kategori"
+                      className="flex-1 capitalize"
+                    />
+                    <SelectIcon className="mr-3" as={ChevronDownIcon} />
+                  </SelectTrigger>
+                  <SelectPortal>
+                    <SelectBackdrop />
+                    <SelectContent className="px-0">
+                      <SelectDragIndicatorWrapper>
+                        <SelectDragIndicator />
+                      </SelectDragIndicatorWrapper>
+                      {categories.map((cat) => (
+                        <SelectItem
+                          key={cat.value}
+                          label={cat.label}
+                          value={cat.value}
+                          textStyle={{ className: "capitalize flex-1" }}
+                          className="px-4 py-4"
+                        />
+                      ))}
+                    </SelectContent>
+                  </SelectPortal>
+                </Select>
+                {error && (
+                  <FormControlError>
+                    <FormControlErrorText>{error.message}</FormControlErrorText>
+                  </FormControlError>
+                )}
+              </FormControl>
+            )}
+          />
 
-          <FormControl>
-            <FormControlLabel>
-              <FormControlLabelText>Nomor Telepon</FormControlLabelText>
-            </FormControlLabel>
-            <Input>
-              <InputField
-                placeholder="Masukkan nomor telepon (opsional)"
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-              />
-            </Input>
-          </FormControl>
+          <Controller
+            name="phone"
+            control={form.control}
+            render={({
+              field: { onChange, onBlur, value },
+              fieldState: { error },
+            }) => (
+              <FormControl isInvalid={!!error}>
+                <FormControlLabel>
+                  <FormControlLabelText>No Handphone</FormControlLabelText>
+                </FormControlLabel>
+                <Input>
+                  <InputField
+                    value={value}
+                    autoComplete="tel"
+                    placeholder="Masukkan no handphone"
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                  />
+                </Input>
+                {error && (
+                  <FormControlError>
+                    <FormControlErrorText>{error.message}</FormControlErrorText>
+                  </FormControlError>
+                )}
+              </FormControl>
+            )}
+          />
 
-          <FormControl>
-            <FormControlLabel>
-              <FormControlLabelText>Alamat</FormControlLabelText>
-            </FormControlLabel>
-            <Textarea>
-              <TextareaInput
-                placeholder="Masukkan alamat (opsional)"
-                value={address}
-                onChangeText={setAddress}
-              />
-            </Textarea>
-          </FormControl>
+          <Controller
+            name="address"
+            control={form.control}
+            render={({
+              field: { onChange, onBlur, value },
+              fieldState: { error },
+            }) => (
+              <FormControl isInvalid={!!error}>
+                <FormControlLabel>
+                  <FormControlLabelText>Alamat</FormControlLabelText>
+                </FormControlLabel>
+                <Input>
+                  <InputField
+                    value={value}
+                    autoComplete="address-line1"
+                    placeholder="Masukkan alamat"
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                  />
+                </Input>
+                {error && (
+                  <FormControlError>
+                    <FormControlErrorText>{error.message}</FormControlErrorText>
+                  </FormControlError>
+                )}
+              </FormControl>
+            )}
+          />
         </VStack>
       </ScrollView>
       <HStack className="w-full p-4">
         <Button
-          size="sm"
-          className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
-          onPress={handleSubmit}
+          action="primary"
+          onPress={form.handleSubmit(onSubmit)}
           disabled={isLoading}
+          className="bg-brand-primary flex-1"
         >
           {isLoading ? (
             <Spinner size="small" color="#FFFFFF" />
           ) : (
             <ButtonText className="text-white">
-              {mode === "add" ? "SIMPAN" : "PERBARUI"}
+              {isAdd ? "SIMPAN" : "PERBARUI"}
             </ButtonText>
           )}
         </Button>

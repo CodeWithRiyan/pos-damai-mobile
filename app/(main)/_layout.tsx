@@ -14,44 +14,7 @@ export default function MainLayout() {
             animationTypeForReplace: "pop", // This handles the back animation
             presentation: "card",
           }}
-        >
-          <Stack.Screen name="index" options={{ title: "Dashboard" }} />
-          <Stack.Screen
-            name="management/index"
-            options={{ title: "Manajemen" }}
-          />
-          <Stack.Screen
-            name="shift/index"
-            options={{ title: "Shift" }}
-          />
-          
-          {/* Management Module */}
-          <Stack.Screen
-            name="management/role-user/index"
-            options={{ title: "Manajemen Role dan Karyawan" }}
-          />
-          <Stack.Screen
-            name="management/product-category-brand/index"
-            options={{ title: "Manajemen Produk, Kategori dan Brand" }}
-          />
-          <Stack.Screen
-            name="management/consumer-supplier/index"
-            options={{ title: "Manajemen Pelanggan dan Suplier" }}
-          />
-          <Stack.Screen
-            name="management/payable-receivable/index"
-            options={{ title: "Manajemen Hutang dan Piutang" }}
-          />
-
-          <Stack.Screen
-            name="management/role-user/role/index"
-            options={{ title: "Manajemen Role" }}
-          />
-          <Stack.Screen
-            name="management/role-user/user/index"
-            options={{ title: "Manajemen Karyawan" }}
-          />
-        </Stack>
+        />
       </View>
     </View>
   );
