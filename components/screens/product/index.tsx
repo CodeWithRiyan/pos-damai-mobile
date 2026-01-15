@@ -1,5 +1,6 @@
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
+import { Badge, BadgeText } from "@/components/ui/badge";
 import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
@@ -11,52 +12,284 @@ import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
-import { Product, useBulkDeleteProduct, useProducts } from "@/lib/api/products";
+// import { useBulkDeleteProduct, Product, useProducts } from "@/lib/api/products";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
+export interface Price {
+  id: string;
+  type: "RETAIL" | "WHOLESALE";
+  minimumPurchase: number;
+  price: number;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  retailPoint: number;
+  wholesalePoint: number;
+}
+
+export interface Brand {
+  id: string;
+  name: string;
+}
+
+export interface Discount {
+  id: string;
+  name: string;
+  discount: number;
+  type: "PERCENT" | "FIXED";
+  startDate: string;
+  endDate: string;
+}
+
+export interface ProductVariant {
+  id: string;
+  name: string;
+  code: string;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  type: "DEFAULT" | "MULTIUNIT" | "VARIANTS";
+  unit?: "KILOGRAM" | "LITER" | null;
+  code: string;
+  categoryId?: string | null;
+  category?: Category | null;
+  brandId?: string | null;
+  brand?: Brand | null;
+  purchasePrice: number;
+  stock: number;
+  minimumStock: number;
+  variants?: ProductVariant[] | null;
+  sellPrices: Price[];
+  discountId?: string | null;
+  discount?: Discount | null;
+  isActive: boolean;
+  description?: string | null;
+}
+
+export const dataProducts: Product[] = [
+  {
+    id: "1",
+    name: "Daia Rose 800gr",
+    type: "DEFAULT",
+    unit: null,
+    code: "DAIAROSE800GR",
+    category: {
+      id: "1",
+      name: "Deterjen",
+      retailPoint: 1,
+      wholesalePoint: 1.5,
+    },
+    brand: {
+      id: "1",
+      name: "WINGS",
+    },
+    purchasePrice: 14000,
+    stock: 40,
+    minimumStock: 10,
+    sellPrices: [
+      {
+        id: "1",
+        type: "RETAIL",
+        minimumPurchase: 1,
+        price: 16000,
+      },
+      {
+        id: "2",
+        type: "RETAIL",
+        minimumPurchase: 3,
+        price: 15500,
+      },
+      {
+        id: "3",
+        type: "WHOLESALE",
+        minimumPurchase: 10,
+        price: 15000,
+      },
+      {
+        id: "4",
+        type: "WHOLESALE",
+        minimumPurchase: 20,
+        price: 14500,
+      },
+    ],
+    discount: null,
+    isActive: true,
+    description: null,
+  },
+  {
+    id: "2",
+    name: "Gula Pasir 1kg",
+    type: "MULTIUNIT",
+    unit: "KILOGRAM",
+    code: "GULA1KG",
+    category: {
+      id: "2",
+      name: "Bahan Pokok",
+      retailPoint: 1,
+      wholesalePoint: 1.5,
+    },
+    brand: null,
+    purchasePrice: 15000,
+    stock: 50,
+    minimumStock: 0,
+    sellPrices: [
+      {
+        id: "1",
+        type: "RETAIL",
+        minimumPurchase: 1,
+        price: 17500,
+      },
+      {
+        id: "2",
+        type: "RETAIL",
+        minimumPurchase: 3,
+        price: 17000,
+      },
+      {
+        id: "3",
+        type: "RETAIL",
+        minimumPurchase: 5,
+        price: 16500,
+      },
+      {
+        id: "4",
+        type: "WHOLESALE",
+        minimumPurchase: 10,
+        price: 16000,
+      },
+      {
+        id: "5",
+        type: "WHOLESALE",
+        minimumPurchase: 20,
+        price: 15500,
+      },
+    ],
+    discount: null,
+    isActive: true,
+    description: null,
+  },
+  {
+    id: "3",
+    name: "Ultramilk 750gr",
+    code: "ULTRA750GR",
+    type: "VARIANTS",
+    unit: null,
+    category: {
+      id: "2",
+      name: "Bahan Pokok",
+      retailPoint: 1,
+      wholesalePoint: 1.5,
+    },
+    brand: null,
+    purchasePrice: 15000,
+    stock: 50,
+    minimumStock: 0,
+    variants: [
+      {
+        id: "1",
+        name: "Ultramilk Strawberry 750gr",
+        code: "ULTRASTRAWBERRY750GR",
+      },
+      {
+        id: "2",
+        name: "Ultramilk Vanilla 750gr",
+        code: "ULTRAVANILLA750GR",
+      },
+      {
+        id: "3",
+        name: "Ultramilk Chocolate 750gr",
+        code: "ULTRACHOCOLATE750GR",
+      },
+    ],
+    sellPrices: [
+      {
+        id: "1",
+        type: "RETAIL",
+        minimumPurchase: 1,
+        price: 17500,
+      },
+      {
+        id: "2",
+        type: "RETAIL",
+        minimumPurchase: 3,
+        price: 17000,
+      },
+      {
+        id: "3",
+        type: "RETAIL",
+        minimumPurchase: 5,
+        price: 16500,
+      },
+      {
+        id: "4",
+        type: "WHOLESALE",
+        minimumPurchase: 10,
+        price: 16000,
+      },
+      {
+        id: "5",
+        type: "WHOLESALE",
+        minimumPurchase: 20,
+        price: 15500,
+      },
+    ],
+    discount: null,
+    isActive: true,
+    description: null,
+  },
+];
+
 export default function ProductList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
-  const { data, isLoading, refetch } = useProducts();
-  const [selectedItems, setSelectedItems] = useState<Product[] | null>(null);
+  // const { data, isLoading, refetch } = useProducts();
+  const [selectedProducts, setSelectedProducts] = useState<any[] | null>(null);
 
-  const products = data || [];
+  const products = dataProducts || [];
 
-  const deleteMutation = useBulkDeleteProduct();
+  // const deleteMutation = useBulkDeleteProduct();
   const toast = useToast();
 
-  const handleItemPress = (item: Product) => {
-    if (selectedItems?.some((r) => r.id === item.id)) {
-      setSelectedItems(selectedItems.filter((r) => r.id !== item.id));
+  const handlePress = (data: Product) => {
+    if (selectedProducts?.some((r) => r.id === data.id)) {
+      setSelectedProducts(selectedProducts.filter((r) => r.id !== data.id));
       return;
     }
-    if (!selectedItems) {
-      setSelectedItems([item]);
+    if (!selectedProducts) {
+      setSelectedProducts([data]);
       return;
     }
-    setSelectedItems([...selectedItems, item]);
+
+    setSelectedProducts([...selectedProducts, data]);
   };
 
   const showErrorToast = (error: unknown) => {
     toast.show({
       placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={"toast-" + id} action="error" variant="solid">
-          <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-        </Toast>
-      ),
+      render: ({ id }) => {
+        const toastId = "toast-" + id;
+        return (
+          <Toast nativeID={toastId} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
+          </Toast>
+        );
+      },
     });
   };
 
   const handleAdd = () => {
-    setSelectedItems(null);
-    router.push("/(main)/management/product-category-brand/product/add" as any);
+    setSelectedProducts(null);
+    router.push("/(main)/management/product-category-brand/product/add");
   };
 
   const handleDeletePress = () => {
-    const ids = selectedItems?.map((m) => m.id) || [];
+    const productIds = selectedProducts?.map((m) => m.id) || [];
 
     showPopUpConfirm({
       title: "HAPUS PRODUK",
@@ -64,7 +297,7 @@ export default function ProductList() {
       description: (
         <Text className="text-slate-500">
           {`Apakah Anda yakin ingin menghapus `}
-          <Text className="font-bold text-slate-900">{ids?.length}</Text>
+          <Text className="font-bold text-slate-900">{productIds?.length}</Text>
           {` produk? Tindakan ini tidak dapat dibatalkan.`}
         </Text>
       ),
@@ -72,54 +305,46 @@ export default function ProductList() {
       okText: "HAPUS",
       closeText: "BATAL",
       okVariant: "destructive",
-      onOk: () => confirmDelete(ids),
-      loading: deleteMutation.isPending,
+      onOk: () => confirmDelete(productIds),
+      // loading: deleteMutation.isPending,
     });
   };
 
-  const confirmDelete = async (ids: string[]) => {
-    if (!ids.length) return;
+  const confirmDelete = async (productIds: string[]) => {
+    if (!productIds.length) return;
 
-    deleteMutation.mutate(
-      { ids },
-      {
-        onSuccess: () => {
-          setSelectedItems(null);
-          hidePopUpConfirm();
-          refetch();
+    // deleteMutation.mutate(
+    //   { ids: productIds },
+    //   {
+    //     onSuccess: () => {
+    //       setSelectedProducts(null);
+    //       hidePopUpConfirm();
+    //       refetch();
 
-          toast.show({
-            placement: "top",
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Produk berhasil dihapus</ToastTitle>
-              </Toast>
-            ),
-          });
-        },
-        onError: (error) => {
-          showErrorToast(error);
-          hidePopUpConfirm();
-        },
-      }
-    );
+    //       toast.show({
+    //         placement: "top",
+    //         render: ({ id }) => (
+    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+    //             <ToastTitle>Produk berhasil dihapus</ToastTitle>
+    //           </Toast>
+    //         ),
+    //       });
+    //     },
+    //     onError: (error) => {
+    //       showErrorToast(error);
+    //       hidePopUpConfirm();
+    //     },
+    //   }
+    // );
   };
 
-  if (isLoading) {
-    return (
-      <Box className="flex-1 justify-center items-center">
-        <Spinner size="large" />
-      </Box>
-    );
-  }
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
+  // if (isLoading) {
+  //   return (
+  //     <Box className="flex-1 justify-center items-center">
+  //       <Spinner size="large" />
+  //     </Box>
+  //   );
+  // }
 
   return (
     <Box className="flex-1 bg-white">
@@ -128,8 +353,9 @@ export default function ProductList() {
         isGoBack
         action={
           <HStack space="sm" className="w-[72px]">
-            {!!selectedItems?.length ? (
-              deleteMutation.isPending ? (
+            {!!selectedProducts?.length ? (
+              // deleteMutation.isPending
+              false ? (
                 <Box className="p-6">
                   <Spinner size="small" color="#FFFFFF" />
                 </Box>
@@ -155,47 +381,76 @@ export default function ProductList() {
         <VStack space="lg" className="flex-1">
           <ScrollView className="flex-1">
             <VStack>
-              {products.map((item) => (
+              {products?.map((product) => (
                 <Pressable
-                  key={item.id}
+                  key={product.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    selectedItems?.some((r) => r.id === item.id)
+                    selectedProducts?.some((r) => r.id === product.id)
                       ? "bg-gray-100"
                       : ""
                   }`}
                   onPress={() => {
-                    if (!!selectedItems?.length) {
-                      handleItemPress(item);
+                    if (!!selectedProducts?.length) {
+                      handlePress(product);
                     } else {
                       router.navigate(
-                        `/(main)/management/product-category-brand/product/detail/${item.id}` as any
+                        `/(main)/management/product-category-brand/product/detail/${product.id}`
                       );
-                      setSelectedItems(null);
+                      setSelectedProducts(null);
                     }
                   }}
-                  onLongPress={() => handleItemPress(item)}
+                  onLongPress={() => handlePress(product)}
                 >
                   <HStack className="justify-between items-center">
-                    <VStack className="flex-1">
-                      <Heading size="sm">{item.name}</Heading>
-                      {item.barcode && (
-                        <Text size="xs" className="text-slate-400 mt-0.5">
-                          {item.barcode}
+                    <HStack space="md" className="items-center">
+                      <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
+                        <Text className="text-brand-primary font-bold">
+                          {product.name.substring(0, 1).toUpperCase()}
                         </Text>
-                      )}
-                    </VStack>
+                      </Box>
+                      <VStack>
+                        <Heading size="sm">{product.name}</Heading>
+                        <Text size="xs" className="text-slate-500">
+                          {product.code}
+                        </Text>
+                        <Badge size="sm" variant="solid" action="muted">
+                          <BadgeText className="text-[12px]">{`Harga Beli: Rp ${product.purchasePrice}`}</BadgeText>
+                        </Badge>
+                      </VStack>
+                    </HStack>
                     <VStack className="items-end">
                       <Text className="text-brand-primary text-sm font-bold">
-                        Harga Beli
+                        {product.stock}
                       </Text>
-                      <Text>{formatPrice(item.purchasePrice)}</Text>
+                      <Text>
+                        Retail:{" "}
+                        {`${
+                          product.sellPrices?.filter(
+                            (r) => r.type === "RETAIL"
+                          )?.[0].minimumPurchase
+                        }@ Rp ${product.sellPrices
+                          ?.filter((r) => r.type === "RETAIL")?.[0]
+                          .price.toLocaleString("id-ID")}`}
+                      </Text>
+                      <Text>
+                        Grosir:{" "}
+                        {`${
+                          product.sellPrices?.filter(
+                            (r) => r.type === "WHOLESALE"
+                          )?.[0].minimumPurchase
+                        }@ Rp ${product.sellPrices
+                          ?.filter((r) => r.type === "WHOLESALE")?.[0]
+                          .price.toLocaleString("id-ID")}`}
+                      </Text>
                     </VStack>
                   </HStack>
                 </Pressable>
               ))}
               {products?.length === 0 && (
                 <Box className="p-8 items-center">
-                  <Text className="text-slate-400 italic">Tidak ada produk</Text>
+                  <Text className="text-slate-400 italic">
+                    No products found
+                  </Text>
                 </Box>
               )}
             </VStack>
