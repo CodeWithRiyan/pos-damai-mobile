@@ -23,34 +23,40 @@ import {
 import { Badge, BadgeText } from "@/components/ui/badge";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { useBrand, useBrands, useDeleteBrand } from "@/lib/api/brands";
+import {
+  useCategories,
+  useCategory,
+  useDeleteCategory,
+} from "@/lib/api/categories";
 import { getErrorMessage } from "@/lib/api/client";
-import { useBrandStore } from "@/stores/brand";
+import { useCategoryStore } from "@/stores/category";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView } from "react-native";
 import { dataProducts, Product } from "../product";
 
-export default function BrandDetail() {
-  const { setOpen, setData } = useBrandStore();
+export default function CategoryDetail() {
+  const { setOpen, setData } = useCategoryStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const brandId = id as string;
+  const categoryId = id as string;
 
   const [showActionsheet, setShowActionsheet] = useState<boolean>(false);
   const [selectedProducts, setSelectedProducts] = useState<Product[] | null>(
     null
   );
 
-  const { refetch: refetchBrands } = useBrands();
-  const { data: brand, refetch: refetchBrand } = useBrand(brandId || "");
-  const deleteMutation = useDeleteBrand();
+  const { refetch: refetchCategorys } = useCategories();
+  const { data: category, refetch: refetchCategory } = useCategory(
+    categoryId || ""
+  );
+  const deleteMutation = useDeleteCategory();
   const toast = useToast();
 
   const onRefetch = () => {
-    refetchBrands();
-    refetchBrand();
+    refetchCategorys();
+    refetchCategory();
   };
 
   const handleProductPress = (data: Product) => {
@@ -70,20 +76,20 @@ export default function BrandDetail() {
     const productIds = selectedProducts?.map((m) => m.id) || [];
 
     showPopUpConfirm({
-      title: `HAPUS PRODUK DARI ${brand?.name.toUpperCase()}`,
+      title: `HAPUS PRODUK DARI ${category?.name.toUpperCase()}`,
       icon: "warning",
       description: (
         <Text className="text-slate-500">
           {`Apakah Anda yakin ingin menghapus `}
           <Text className="font-bold text-slate-900">{productIds?.length}</Text>
-          {` produk dari brand ${brand?.name}? Tindakan ini tidak dapat dibatalkan.`}
+          {` produk dari kategori ${category?.name}? Tindakan ini tidak dapat dibatalkan.`}
         </Text>
       ),
       showClose: true,
       okText: "HAPUS",
       closeText: "BATAL",
       okVariant: "destructive",
-      onOk: () => {}, // tambahkan fungsi hapus produk dari brand
+      onOk: () => {}, // tambahkan fungsi hapus produk dari category
       // loading: false,
     });
   };
@@ -104,12 +110,12 @@ export default function BrandDetail() {
 
   const handleDeletePress = () => {
     showPopUpConfirm({
-      title: "HAPUS PELANGGAN",
+      title: "HAPUS KATEGORI",
       icon: "warning",
       description: (
         <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus brand `}
-          <Text className="font-bold text-slate-900">{brand?.name}</Text>
+          {`Apakah Anda yakin ingin menghapus kategori `}
+          <Text className="font-bold text-slate-900">{category?.name}</Text>
           {` ? Tindakan ini tidak dapat dibatalkan.`}
         </Text>
       ),
@@ -123,9 +129,9 @@ export default function BrandDetail() {
   };
 
   const confirmDelete = async () => {
-    if (!brand) return;
+    if (!category) return;
 
-    deleteMutation.mutate(brand.id, {
+    deleteMutation.mutate(category.id, {
       onSuccess: () => {
         hidePopUpConfirm();
         onRefetch();
@@ -136,7 +142,7 @@ export default function BrandDetail() {
           placement: "top",
           render: ({ id }) => (
             <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-              <ToastTitle>Brand berhasil dihapus</ToastTitle>
+              <ToastTitle>Kategori berhasil dihapus</ToastTitle>
             </Toast>
           ),
         });
@@ -152,13 +158,13 @@ export default function BrandDetail() {
   return (
     <VStack className="flex-1 bg-white">
       <Header
-        header="DETAIL BRAND"
+        header="DETAIL KATEGORI"
         selectedItemsLength={selectedProducts?.length}
         selectedItemsSuffixLabel="Produk terpilih"
         onCancelSelectedItems={() => setSelectedProducts(null)}
         action={
           !!selectedProducts?.length ? (
-            // deleteProductFromBrandMutation.isPending
+            // deleteProductFromCategoryMutation.isPending
             false ? (
               <Box className="p-6">
                 <Spinner size="small" color="#FFFFFF" />
@@ -189,11 +195,19 @@ export default function BrandDetail() {
         <VStack>
           <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
             <HStack className="w-full flex-row justify-between">
-              <Text className="font-bold text-gray-500">Nama Brand</Text>
-              <Text className="font-bold">{brand?.name || "-"}</Text>
+              <Text className="font-bold text-gray-500">Nama Category</Text>
+              <Text className="font-bold">{category?.name || "-"}</Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Total Produk</Text>
+              <Text className="font-bold">0</Text>
+            </HStack>
+            <HStack className="w-full flex-row justify-between">
+              <Text className="font-bold text-gray-500">Poin Retail</Text>
+              <Text className="font-bold">0</Text>
+            </HStack>
+            <HStack className="w-full flex-row justify-between">
+              <Text className="font-bold text-gray-500">Poin Grosir</Text>
               <Text className="font-bold">0</Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
@@ -238,7 +252,7 @@ export default function BrandDetail() {
                       </VStack>
                     </HStack>
                     <VStack className="items-end">
-                      <Text className="text-brand-primary text-sm font-bold">
+                      <Text className="text-primary-500 text-sm font-bold">
                         {product.stock}
                       </Text>
                       <Text className="text-xs">
@@ -275,7 +289,7 @@ export default function BrandDetail() {
           className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
           onPress={() => {
             router.navigate(
-              `/(main)/management/product-category-brand/brand/select-product/${brand?.id}`
+              `/(main)/management/product-category-brand/category/select-product/${category?.id}`
             );
             setSelectedProducts(null);
           }}
@@ -299,7 +313,7 @@ export default function BrandDetail() {
           <ActionsheetItem
             onPress={() => {
               setOpen(true);
-              setData(brand);
+              setData(category);
               setShowActionsheet(false);
             }}
           >

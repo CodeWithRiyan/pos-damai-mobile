@@ -1,5 +1,6 @@
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
+import { Badge, BadgeText } from "@/components/ui/badge";
 import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
@@ -10,13 +11,19 @@ import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
+import {
+  Category,
+  useBulkDeleteCategory,
+  useCategories,
+} from "@/lib/api/categories";
 import { getErrorMessage } from "@/lib/api/client";
-import { Category, useBulkDeleteCategory, useCategories } from "@/lib/api/categories";
+import { useCategoryStore } from "@/stores/category";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function CategoryList() {
+  const { setOpen } = useCategoryStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data, isLoading, refetch } = useCategories();
@@ -42,20 +49,17 @@ export default function CategoryList() {
   const showErrorToast = (error: unknown) => {
     toast.show({
       placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
+      render: ({ id }) => (
+        <Toast nativeID={"toast-" + id} action="error" variant="solid">
+          <ToastTitle>{getErrorMessage(error)}</ToastTitle>
+        </Toast>
+      ),
     });
   };
 
   const handleAdd = () => {
     setSelectedItems(null);
-    router.push("/(main)/management/product-category-brand/category/add" as any);
+    setOpen(true);
   };
 
   const handleDeletePress = () => {
@@ -121,6 +125,9 @@ export default function CategoryList() {
       <Header
         header="KATEGORI"
         isGoBack
+        selectedItemsLength={selectedItems?.length}
+        selectedItemsSuffixLabel="Kategori terpilih"
+        onCancelSelectedItems={() => setSelectedItems(null)}
         action={
           <HStack space="sm" className="w-[72px]">
             {!!selectedItems?.length ? (
@@ -163,7 +170,7 @@ export default function CategoryList() {
                       handleItemPress(item);
                     } else {
                       router.navigate(
-                        `/(main)/management/product-category-brand/category/detail/${item.id}` as any
+                        `/(main)/management/product-category-brand/category/detail/${item.id}`
                       );
                       setSelectedItems(null);
                     }
@@ -171,26 +178,33 @@ export default function CategoryList() {
                   onLongPress={() => handleItemPress(item)}
                 >
                   <HStack className="justify-between items-center">
-                    <VStack className="flex-1">
+                    <VStack>
                       <Heading size="sm">{item.name}</Heading>
-                      {item.description && (
-                        <Text size="xs" className="text-slate-400 mt-0.5">
-                          {item.description}
-                        </Text>
-                      )}
+                      <HStack space="sm">
+                        <Badge size="sm" variant="solid" action="muted">
+                          <BadgeText className="text-xs">
+                            Total Produk: 0
+                          </BadgeText>
+                        </Badge>
+                      </HStack>
+                      <Text size="xs" className="text-slate-500">
+                        Poin Retail: 0 | Poin Grosir: 0
+                      </Text>
                     </VStack>
                     <VStack className="items-end">
                       <Text className="text-brand-primary text-sm font-bold">
-                        Poin
+                        Nilai Modal
                       </Text>
-                      <Text>{item.point}</Text>
+                      <Text size="xs">Rp 0</Text>
                     </VStack>
                   </HStack>
                 </Pressable>
               ))}
               {categories?.length === 0 && (
                 <Box className="p-8 items-center">
-                  <Text className="text-slate-400 italic">Tidak ada kategori</Text>
+                  <Text className="text-slate-400 italic">
+                    Tidak ada category
+                  </Text>
                 </Box>
               )}
             </VStack>

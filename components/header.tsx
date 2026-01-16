@@ -8,7 +8,7 @@ import {
   Heading,
   HStack,
   Icon,
-  MenuIcon
+  MenuIcon,
 } from "./ui";
 import { Pressable } from "./ui/pressable";
 
@@ -18,6 +18,7 @@ export default function Header({
   isGoBack = false,
   selectedItemsLength,
   selectedItemsSuffixLabel,
+  selectedItemsPosition = "left",
   onCancelSelectedItems,
 }: {
   header?: React.ReactNode;
@@ -25,6 +26,7 @@ export default function Header({
   isGoBack?: boolean;
   selectedItemsLength?: number;
   selectedItemsSuffixLabel?: string;
+  selectedItemsPosition?: "left" | "right";
   onCancelSelectedItems?: () => void;
 }) {
   const { setShowDrawer } = useSidebarStore((state) => state);
@@ -32,19 +34,28 @@ export default function Header({
   const goBack = () => router.back();
   const isCanGoBack = router.canGoBack();
 
+  const CancelSelectedItems = () => {
+    return (
+      <HStack className={`items-center p-3${selectedItemsPosition === "right" ? " flex-row-reverse" : ""}`}>
+        <Pressable onPress={() => onCancelSelectedItems?.()} className="p-3">
+          <Icon as={CloseIcon} size="xl" className="text-typography-0" />
+        </Pressable>
+        <Heading
+          size="sm"
+          className="text-typography-0"
+        >{`${selectedItemsLength}${
+          selectedItemsSuffixLabel
+            ? ` ${selectedItemsSuffixLabel}`
+            : " Item terpilih"
+        }`}</Heading>
+      </HStack>
+    );
+  };
+
   return (
     <View className="relative bg-primary-500 w-full flex flex-row justify-between items-center">
-      {selectedItemsLength && onCancelSelectedItems ? (
-        <HStack className="items-center p-3">
-          <Pressable onPress={() => onCancelSelectedItems?.()} className="p-3">
-            <Icon as={CloseIcon} size="xl" className="text-typography-0" />
-          </Pressable>
-          <Heading size="sm" className="text-typography-0">{`${selectedItemsLength}${
-            selectedItemsSuffixLabel
-              ? ` ${selectedItemsSuffixLabel}`
-              : " Item terpilih"
-          }`}</Heading>
-        </HStack>
+      {selectedItemsPosition === "left" && selectedItemsLength ? (
+        <CancelSelectedItems />
       ) : (
         <Pressable
           onPress={() => {
@@ -67,9 +78,15 @@ export default function Header({
         space="sm"
         className="absolute inset-0 justify-center items-center"
       >
-        <Heading size="sm" className="text-typography-0">{header}</Heading>
+        <Heading size="sm" className="text-typography-0">
+          {header}
+        </Heading>
       </HStack>
-      {action}
+      {selectedItemsPosition === "right" && selectedItemsLength ? (
+        <CancelSelectedItems />
+      ) : (
+        action
+      )}
     </View>
   );
 }

@@ -406,8 +406,8 @@ export default function ProductList() {
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
-                      <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
-                        <Text className="text-brand-primary font-bold">
+                      <Box className="w-10 h-10 rounded-lg bg-primary-200 items-center justify-center">
+                        <Text className="text-primary-500 font-bold">
                           {product.name.substring(0, 1).toUpperCase()}
                         </Text>
                       </Box>

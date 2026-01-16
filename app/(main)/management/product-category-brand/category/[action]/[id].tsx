@@ -1,13 +1,12 @@
-import CategoryForm from "@/components/screens/category/form";
+import CategoryDetail from "@/components/screens/category/detail";
+import SelectProductInCategory from "@/components/screens/category/select-product-in-category";
 import { useLocalSearchParams } from "expo-router";
 
 export default function CategoryActionScreen() {
-  const { action } = useLocalSearchParams<{ action: string; id: string }>();
-  
-  if (action === "edit") {
-    return <CategoryForm mode="edit" />;
-  }
-  
-  // detail view - for now just show edit form as read-only could be added later
-  return <CategoryForm mode="edit" />;
+  const { action } = useLocalSearchParams();
+
+  if (action === "select-product")
+    return <SelectProductInCategory />;
+
+  return <CategoryDetail />;
 }

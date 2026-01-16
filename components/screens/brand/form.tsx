@@ -138,8 +138,8 @@ export default function BrandForm() {
     >
       <ModalBackdrop />
       <ModalContent>
-        <ModalHeader>
-          <Heading size="lg">
+        <ModalHeader className="mb-4">
+          <Heading size="md" className="text-center flex-1">
             {dataBrand ? "EDIT BRAND" : "TAMBAH BRAND"}
           </Heading>
           <ModalCloseButton>
@@ -163,7 +163,7 @@ export default function BrandForm() {
                     <InputField
                       value={value}
                       autoComplete="name"
-                      placeholder="Masukkan nama pelanggan"
+                      placeholder="Masukkan nama brand"
                       onChangeText={onChange}
                       onBlur={onBlur}
                     />
@@ -183,14 +183,14 @@ export default function BrandForm() {
         <ModalFooter>
           <HStack space="md">
             <Pressable
-              className="w-full flex px-4 h-10 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
+              className="w-full flex px-4 h-9 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
               onPress={form.handleSubmit(onSubmit)}
               disabled={isLoading}
             >
               {isLoading ? (
                 <Spinner size="small" color="#FFFFFF" />
               ) : (
-                <Text className="text-white">
+                <Text size="sm" className="text-typography-0 font-bold">
                   {!dataBrand ? "SIMPAN" : "PERBARUI"}
                 </Text>
               )}
