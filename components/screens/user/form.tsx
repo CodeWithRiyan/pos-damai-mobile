@@ -1,7 +1,5 @@
 import Header from "@/components/header";
 import {
-  Button,
-  ButtonText,
   ChevronDownIcon,
   FormControl,
   FormControlError,
@@ -11,6 +9,7 @@ import {
   HStack,
   Input,
   InputField,
+  Pressable,
   Select,
   SelectBackdrop,
   SelectContent,
@@ -22,6 +21,7 @@ import {
   SelectPortal,
   SelectTrigger,
   Switch,
+  Text,
   Toast,
   ToastTitle,
   useToast,
@@ -78,6 +78,9 @@ export default function UserForm() {
   const { data: roles = [] } = useRoles();
   const createMutation = useCreateUser();
   const updateMutation = useUpdateUser();
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+
   const toast = useToast();
 
   const showErrorToast = (error: unknown) => {
@@ -148,7 +151,7 @@ export default function UserForm() {
         },
       });
     } else {
-      const { isActive, ...restData } = data
+      const { isActive, ...restData } = data;
       const createData: CreateUserDTO = restData;
 
       createMutation.mutate(createData, {
@@ -259,9 +262,7 @@ export default function UserForm() {
                 </Input>
                 {error && (
                   <FormControlError>
-                    <FormControlErrorText>
-                      {error.message}
-                    </FormControlErrorText>
+                    <FormControlErrorText>{error.message}</FormControlErrorText>
                   </FormControlError>
                 )}
               </FormControl>
@@ -343,18 +344,15 @@ export default function UserForm() {
         </VStack>
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
-        <Button
-          action="primary"
+        <Pressable
+          className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
+          disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
-          disabled={createMutation.isPending || updateMutation.isPending}
-          className="bg-brand-primary flex-1"
         >
-          <ButtonText className="text-white">
-            {createMutation.isPending || updateMutation.isPending
-              ? "MENYIMPAN..."
-              : "SIMPAN"}
-          </ButtonText>
-        </Button>
+          <Text size="sm" className="text-typography-0 font-bold">
+            {isLoading ? "MENYIMPAN..." : "SIMPAN"}
+          </Text>
+        </Pressable>
       </HStack>
     </VStack>
   );

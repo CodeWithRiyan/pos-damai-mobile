@@ -48,7 +48,7 @@ export default function SupplierList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   // const { data, isLoading, refetch } = useSuppliers();
-  const [selectedSuppliers, setSelectedSuppliers] = useState<any[] | null>(null);
+  const [selectedItems, setSelectedItems] = useState<any[] | null>(null);
 
   const suppliers = dataSuppliers || [];
 
@@ -56,16 +56,16 @@ export default function SupplierList() {
   const toast = useToast();
 
   const handlePress = (data: Supplier) => {
-    if (selectedSuppliers?.some((r) => r.id === data.id)) {
-      setSelectedSuppliers(selectedSuppliers.filter((r) => r.id !== data.id));
+    if (selectedItems?.some((r) => r.id === data.id)) {
+      setSelectedItems(selectedItems.filter((r) => r.id !== data.id));
       return;
     }
-    if (!selectedSuppliers) {
-      setSelectedSuppliers([data]);
+    if (!selectedItems) {
+      setSelectedItems([data]);
       return;
     }
 
-    setSelectedSuppliers([...selectedSuppliers, data]);
+    setSelectedItems([...selectedItems, data]);
   };
 
   const showErrorToast = (error: unknown) => {
@@ -83,12 +83,12 @@ export default function SupplierList() {
   };
 
   const handleAdd = () => {
-    setSelectedSuppliers(null);
+    setSelectedItems(null);
     router.push("/(main)/management/customer-supplier/supplier/add");
   };
 
   const handleDeletePress = () => {
-    const supplierIds = selectedSuppliers?.map((m) => m.id) || [];
+    const supplierIds = selectedItems?.map((m) => m.id) || [];
 
     showPopUpConfirm({
       title: "HAPUS SUPPLIER",
@@ -116,7 +116,7 @@ export default function SupplierList() {
     //   { ids: supplierIds },
     //   {
     //     onSuccess: () => {
-    //       setSelectedSuppliers(null);
+    //       setSelectedItems(null);
     //       hidePopUpConfirm();
     //       refetch();
 
@@ -150,9 +150,12 @@ export default function SupplierList() {
       <Header
         header="SUPPLIER"
         isGoBack
+        selectedItemsLength={selectedItems?.length}
+        selectedItemsSuffixLabel="Produk terpilih"
+        onCancelSelectedItems={() => setSelectedItems(null)}
         action={
           <HStack space="sm" className="w-[72px]">
-            {!!selectedSuppliers?.length ? (
+            {!!selectedItems?.length ? (
               // deleteMutation.isPending
               false ? (
                 <Box className="p-6">
@@ -184,18 +187,18 @@ export default function SupplierList() {
                 <Pressable
                   key={supplier.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    selectedSuppliers?.some((r) => r.id === supplier.id)
+                    selectedItems?.some((r) => r.id === supplier.id)
                       ? "bg-gray-100"
                       : ""
                   }`}
                   onPress={() => {
-                    if (!!selectedSuppliers?.length) {
+                    if (!!selectedItems?.length) {
                       handlePress(supplier);
                     } else {
                       router.navigate(
                         `/(main)/management/customer-supplier/supplier/detail/${supplier.id}`
                       );
-                      setSelectedSuppliers(null);
+                      setSelectedItems(null);
                     }
                   }}
                   onLongPress={() => handlePress(supplier)}

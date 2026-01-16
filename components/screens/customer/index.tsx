@@ -122,6 +122,9 @@ export default function CustomerList() {
       <Header
         header="PELANGGAN"
         isGoBack
+        selectedItemsLength={selectedItems?.length}
+        selectedItemsSuffixLabel="Produk terpilih"
+        onCancelSelectedItems={() => setSelectedItems(null)}
         action={
           <HStack space="sm" className="w-[72px]">
             {!!selectedItems?.length ? (

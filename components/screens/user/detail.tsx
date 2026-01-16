@@ -128,26 +128,24 @@ export default function UserDetail() {
       />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <Box className="p-4 border-b border-background-300 flex-row flex-wrap gap-y-4">
-          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
-            <Text className="text-gray-500 font-bold">Nama</Text>
-            <Text>
-              {user?.firstName || "-"}
+        <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
+          <VStack className="w-1/2 pr-4">
+            <Text className="text-gray-500">Nama</Text>
+            <Text className="font-bold">{user?.firstName}</Text>
+          </VStack>
+          <VStack className="w-1/2 pr-4">
+            <Text className="text-gray-500">Role</Text>
+            <Text className="font-bold">
+              {user?.roles?.[0]?.role?.name || "-"}
             </Text>
           </VStack>
-          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
-            <Text className="text-gray-500 font-bold">Role</Text>
-            <Text>{user?.roles?.[0]?.role?.name || "-"}</Text>
+          <VStack className="w-1/2 pr-4">
+            <Text className="text-gray-500">Username</Text>
+            <Text className="font-bold">{user?.username || "-"}</Text>
           </VStack>
-          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
-            <Text className="text-gray-500 font-bold">Username</Text>
-            <Text>{user?.username}</Text>
-          </VStack>
-          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
-            <Text className="text-gray-500 font-bold">
-              Tanggal Terakhir Login
-            </Text>
-            <Text>
+          <VStack className="w-1/2 pr-4">
+            <Text className="text-gray-500">Tanggal Terakhir Login</Text>
+            <Text className="font-bold">
               {user?.lastLoginAt
                 ? dayjs(user?.lastLoginAt).format("DD MMMM YYYY")
                 : "-"}
@@ -156,7 +154,18 @@ export default function UserDetail() {
         </Box>
       </ScrollView>
 
-      <Actionsheet isOpen={showActionsheet} onClose={() => setShowActionsheet(false)}>
+      <VStack space="md" className="w-full p-4">
+        <Pressable className="w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-primary-500">
+          <Text size="sm" className="text-brand-primary font-bold">
+            LOG AKTIFITAS
+          </Text>
+        </Pressable>
+      </VStack>
+
+      <Actionsheet
+        isOpen={showActionsheet}
+        onClose={() => setShowActionsheet(false)}
+      >
         <ActionsheetBackdrop />
         <ActionsheetContent className="px-0">
           <ActionsheetDragIndicatorWrapper className="pb-4 pt-2">

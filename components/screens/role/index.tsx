@@ -20,7 +20,7 @@ export default function RoleList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data, isLoading, refetch } = useRoles();
-  const [selectedRoles, setSelectedRoles] = useState<Role[] | null>(null);
+  const [selectedItems, setSelectedItems] = useState<Role[] | null>(null);
 
   const roles = data || [];
 
@@ -28,16 +28,16 @@ export default function RoleList() {
   const toast = useToast();
 
   const handleRolePress = (role: Role) => {
-    if (selectedRoles?.some((r) => r.id === role.id)) {
-      setSelectedRoles(selectedRoles.filter((r) => r.id !== role.id));
+    if (selectedItems?.some((r) => r.id === role.id)) {
+      setSelectedItems(selectedItems.filter((r) => r.id !== role.id));
       return;
     }
-    if (!selectedRoles) {
-      setSelectedRoles([role]);
+    if (!selectedItems) {
+      setSelectedItems([role]);
       return;
     }
 
-    setSelectedRoles([...selectedRoles, role]);
+    setSelectedItems([...selectedItems, role]);
   };
 
   const showErrorToast = (error: unknown) => {
@@ -54,13 +54,13 @@ export default function RoleList() {
     });
   };
 
-  const handleAddRole = () => {
-    setSelectedRoles(null);
+  const handleAdd = () => {
+    setSelectedItems(null);
     router.push("/(main)/management/role-user/role/add");
   };
 
   const handleDeletePress = () => {
-    const roleIds = selectedRoles?.map((m) => m.id) || [];
+    const roleIds = selectedItems?.map((m) => m.id) || [];
 
     showPopUpConfirm({
       title: "HAPUS ROLE",
@@ -88,7 +88,7 @@ export default function RoleList() {
       { ids: roleIds },
       {
         onSuccess: () => {
-          setSelectedRoles(null);
+          setSelectedItems(null);
           hidePopUpConfirm();
           refetch();
 
@@ -123,9 +123,12 @@ export default function RoleList() {
       <Header
         header="ROLE"
         isGoBack
+        selectedItemsLength={selectedItems?.length}
+        selectedItemsSuffixLabel="Role terpilih"
+        onCancelSelectedItems={() => setSelectedItems(null)}
         action={
           <HStack space="sm" className="w-[72px]">
-            {!!selectedRoles?.length ? (
+            {!!selectedItems?.length ? (
               deleteMutation.isPending ? (
                 <Box className="p-6">
                   <Spinner size="small" color="#FFFFFF" />
@@ -156,18 +159,18 @@ export default function RoleList() {
                 <Pressable
                   key={role.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    selectedRoles?.some((r) => r.id === role.id)
+                    selectedItems?.some((r) => r.id === role.id)
                       ? "bg-gray-100"
                       : ""
                   }`}
                   onPress={() => {
-                    if (!!selectedRoles?.length) {
+                    if (!!selectedItems?.length) {
                       handleRolePress(role);
                     } else {
                       router.navigate(
                         `/(main)/management/role-user/role/detail/${role.id}`
                       );
-                      setSelectedRoles(null);
+                      setSelectedItems(null);
                     }
                   }}
                   onLongPress={() => handleRolePress(role)}
@@ -182,10 +185,10 @@ export default function RoleList() {
                       )}
                     </VStack>
                     <VStack className="items-end">
-                      <Text className="text-brand-primary text-sm font-bold">
+                      <Text size="xs" className="text-brand-primary text-sm font-bold">
                         User Aktif
                       </Text>
-                      <Text>-</Text>
+                      <Text size="xs">-</Text>
                     </VStack>
                   </HStack>
                 </Pressable>
@@ -201,7 +204,7 @@ export default function RoleList() {
             <Button
               size="sm"
               className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
-              onPress={handleAddRole}
+              onPress={handleAdd}
             >
               <ButtonText className="text-white">TAMBAH ROLE</ButtonText>
             </Button>
