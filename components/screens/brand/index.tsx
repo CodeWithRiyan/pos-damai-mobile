@@ -10,13 +10,15 @@ import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
+import { Brand, useBrands, useBulkDeleteBrand } from "@/lib/api/brands";
 import { getErrorMessage } from "@/lib/api/client";
-import { Brand, useBulkDeleteBrand, useBrands } from "@/lib/api/brands";
+import { useBrandStore } from "@/stores/brand";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function BrandList() {
+  const { setOpen } = useBrandStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data, isLoading, refetch } = useBrands();
@@ -52,7 +54,7 @@ export default function BrandList() {
 
   const handleAdd = () => {
     setSelectedItems(null);
-    router.push("/(main)/management/product-category-brand/brand/add" as any);
+    setOpen(true);
   };
 
   const handleDeletePress = () => {
@@ -118,6 +120,9 @@ export default function BrandList() {
       <Header
         header="BRAND"
         isGoBack
+        selectedItemsLength={selectedItems?.length}
+        selectedItemsSuffixLabel="Brand terpilih"
+        onCancelSelectedItems={() => setSelectedItems(null)}
         action={
           <HStack space="sm" className="w-[72px]">
             {!!selectedItems?.length ? (

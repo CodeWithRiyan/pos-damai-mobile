@@ -176,8 +176,8 @@ export default function CustomerDetail() {
       </ScrollView>
 
       <VStack space="md" className="w-full p-4">
-        <Pressable className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500">
-          <Text className="text-typography-0 font-bold">RIWAYAT TRANSAKSI</Text>
+        <Pressable className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500">
+          <Text size="sm" className="text-typography-0 font-bold">RIWAYAT TRANSAKSI</Text>
         </Pressable>
       </VStack>
 

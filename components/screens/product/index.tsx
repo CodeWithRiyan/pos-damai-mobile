@@ -249,7 +249,9 @@ export default function ProductList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   // const { data, isLoading, refetch } = useProducts();
-  const [selectedProducts, setSelectedProducts] = useState<any[] | null>(null);
+  const [selectedItems, setSelectedItems] = useState<Product[] | null>(
+    null
+  );
 
   const products = dataProducts || [];
 
@@ -257,16 +259,16 @@ export default function ProductList() {
   const toast = useToast();
 
   const handlePress = (data: Product) => {
-    if (selectedProducts?.some((r) => r.id === data.id)) {
-      setSelectedProducts(selectedProducts.filter((r) => r.id !== data.id));
+    if (selectedItems?.some((r) => r.id === data.id)) {
+      setSelectedItems(selectedItems.filter((r) => r.id !== data.id));
       return;
     }
-    if (!selectedProducts) {
-      setSelectedProducts([data]);
+    if (!selectedItems) {
+      setSelectedItems([data]);
       return;
     }
 
-    setSelectedProducts([...selectedProducts, data]);
+    setSelectedItems([...selectedItems, data]);
   };
 
   const showErrorToast = (error: unknown) => {
@@ -284,12 +286,12 @@ export default function ProductList() {
   };
 
   const handleAdd = () => {
-    setSelectedProducts(null);
+    setSelectedItems(null);
     router.push("/(main)/management/product-category-brand/product/add");
   };
 
   const handleDeletePress = () => {
-    const productIds = selectedProducts?.map((m) => m.id) || [];
+    const productIds = selectedItems?.map((m) => m.id) || [];
 
     showPopUpConfirm({
       title: "HAPUS PRODUK",
@@ -317,7 +319,7 @@ export default function ProductList() {
     //   { ids: productIds },
     //   {
     //     onSuccess: () => {
-    //       setSelectedProducts(null);
+    //       setSelectedItems(null);
     //       hidePopUpConfirm();
     //       refetch();
 
@@ -351,30 +353,31 @@ export default function ProductList() {
       <Header
         header="PRODUK"
         isGoBack
+        selectedItemsLength={selectedItems?.length}
+        selectedItemsSuffixLabel="Produk terpilih"
+        onCancelSelectedItems={() => setSelectedItems(null)}
         action={
-          <HStack space="sm" className="w-[72px]">
-            {!!selectedProducts?.length ? (
-              // deleteMutation.isPending
-              false ? (
-                <Box className="p-6">
-                  <Spinner size="small" color="#FFFFFF" />
-                </Box>
-              ) : (
-                <Pressable className="p-6" onPress={() => handleDeletePress()}>
-                  <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
-                </Pressable>
-              )
+          !!selectedItems?.length ? (
+            // deleteMutation.isPending
+            false ? (
+              <Box className="p-6">
+                <Spinner size="small" color="#FFFFFF" />
+              </Box>
             ) : (
-              <Pressable className="p-6" onPress={() => {}}>
-                <SolarIconBold
-                  name="MenuDots"
-                  size={20}
-                  color="#FDFBF9"
-                  style={{ transform: [{ rotate: "90deg" }] }}
-                />
+              <Pressable className="p-6" onPress={() => handleDeletePress()}>
+                <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
               </Pressable>
-            )}
-          </HStack>
+            )
+          ) : (
+            <Pressable className="p-6" onPress={() => {}}>
+              <SolarIconBold
+                name="MenuDots"
+                size={20}
+                color="#FDFBF9"
+                style={{ transform: [{ rotate: "90deg" }] }}
+              />
+            </Pressable>
+          )
         }
       />
       <Box className="flex-1 bg-white">
@@ -385,18 +388,18 @@ export default function ProductList() {
                 <Pressable
                   key={product.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    selectedProducts?.some((r) => r.id === product.id)
+                    selectedItems?.some((r) => r.id === product.id)
                       ? "bg-gray-100"
                       : ""
                   }`}
                   onPress={() => {
-                    if (!!selectedProducts?.length) {
+                    if (!!selectedItems?.length) {
                       handlePress(product);
                     } else {
                       router.navigate(
                         `/(main)/management/product-category-brand/product/detail/${product.id}`
                       );
-                      setSelectedProducts(null);
+                      setSelectedItems(null);
                     }
                   }}
                   onLongPress={() => handlePress(product)}

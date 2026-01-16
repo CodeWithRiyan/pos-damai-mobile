@@ -198,7 +198,7 @@ export default function CustomerForm() {
                 <Input>
                   <InputField
                     value={value}
-                    autoComplete="name"
+                    autoComplete="off"
                     placeholder="Masukkan kode"
                     onChangeText={onChange}
                     onBlur={onBlur}
