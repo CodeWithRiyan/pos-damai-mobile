@@ -19,7 +19,7 @@ export default function ManagementScreen() {
       href: "/management/product-category-brand",
       icon: "Box",
     },
-    { label: "Diskon", href: "/management/discount", icon: "TicketSale" },
+    // { label: "Diskon", href: "/management/discount", icon: "TicketSale" },
     {
       label: "Pelanggan dan Supplier",
       href: "/management/customer-supplier",

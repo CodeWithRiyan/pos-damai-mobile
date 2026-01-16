@@ -166,9 +166,13 @@ export default function ProductForm() {
   // const { data: product, refetch: refetchProduct } = useProduct(productId || "");
   const { data: categories = [] } = useCategories();
   const { data: brands = [] } = useBrands();
+  const product = dataProducts.find((r) => r.id === productId);
+
   // const createMutation = useCreateProduct();
   // const updateMutation = useUpdateProduct();
-  const product = dataProducts.find((r) => r.id === productId);
+
+  const isLoading = false; // createMutation.isPending || updateMutation.isPending;
+
   const toast = useToast();
 
   const productTypeOptions = [
@@ -478,7 +482,10 @@ export default function ProductForm() {
                       </SelectContent>
                     </SelectPortal>
                   </Select>
-                  <Pressable className="size-10 rounded-full bg-primary-500 items-center justify-center" onPress={() => setOpenCategory(true)}>
+                  <Pressable
+                    className="size-10 rounded-full bg-primary-500 items-center justify-center"
+                    onPress={() => setOpenCategory(true)}
+                  >
                     <Icon as={PlusIcon} color="white" />
                   </Pressable>
                 </HStack>
@@ -1006,7 +1013,10 @@ export default function ProductForm() {
                       </SelectContent>
                     </SelectPortal>
                   </Select>
-                  <Pressable className="size-10 rounded-full bg-primary-500 items-center justify-center" onPress={() => setOpenBrand(true)}>
+                  <Pressable
+                    className="size-10 rounded-full bg-primary-500 items-center justify-center"
+                    onPress={() => setOpenBrand(true)}
+                  >
                     <Icon as={PlusIcon} color="white" />
                   </Pressable>
                 </HStack>
@@ -1030,39 +1040,46 @@ export default function ProductForm() {
                   <FormControlLabelText>Diskon</FormControlLabelText>
                 </FormControlLabel>
                 <HStack space="md">
-                <Select onValueChange={onChange} onBlur={onBlur} className="flex-1">
-                  <SelectTrigger>
-                    <SelectInput
-                      value={
-                        ([] as any[]).find((disc) => disc.id === value)?.name
-                      }
-                      placeholder="Pilih Diskon"
-                      className="flex-1 capitalize"
-                    />
-                    <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                  </SelectTrigger>
-                  <SelectPortal>
-                    <SelectBackdrop />
-                    <SelectContent className="px-0">
-                      <SelectDragIndicatorWrapper>
-                        <SelectDragIndicator />
-                      </SelectDragIndicatorWrapper>
-                      {([] as any[]).map((disc) => (
-                        <SelectItem
-                          key={disc.id}
-                          label={disc.name}
-                          value={disc.id}
-                          textStyle={{ className: "capitalize flex-1" }}
-                          className="px-4 py-4"
-                        />
-                      ))}
-                    </SelectContent>
-                  </SelectPortal>
-                </Select>
-                <Pressable className="size-10 rounded-full bg-primary-500 items-center justify-center" onPress={() => setOpenDiscount(true)}>
+                  <Select
+                    onValueChange={onChange}
+                    onBlur={onBlur}
+                    className="flex-1"
+                  >
+                    <SelectTrigger>
+                      <SelectInput
+                        value={
+                          ([] as any[]).find((disc) => disc.id === value)?.name
+                        }
+                        placeholder="Pilih Diskon"
+                        className="flex-1 capitalize"
+                      />
+                      <SelectIcon className="mr-3" as={ChevronDownIcon} />
+                    </SelectTrigger>
+                    <SelectPortal>
+                      <SelectBackdrop />
+                      <SelectContent className="px-0">
+                        <SelectDragIndicatorWrapper>
+                          <SelectDragIndicator />
+                        </SelectDragIndicatorWrapper>
+                        {([] as any[]).map((disc) => (
+                          <SelectItem
+                            key={disc.id}
+                            label={disc.name}
+                            value={disc.id}
+                            textStyle={{ className: "capitalize flex-1" }}
+                            className="px-4 py-4"
+                          />
+                        ))}
+                      </SelectContent>
+                    </SelectPortal>
+                  </Select>
+                  <Pressable
+                    className="size-10 rounded-full bg-primary-500 items-center justify-center"
+                    onPress={() => setOpenDiscount(true)}
+                  >
                     <Icon as={PlusIcon} color="white" />
                   </Pressable>
-                  </HStack>
+                </HStack>
                 {error && (
                   <FormControlError>
                     <FormControlErrorText>{error.message}</FormControlErrorText>
@@ -1106,14 +1123,11 @@ export default function ProductForm() {
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
           className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
-          // disabled={createMutation.isPending || updateMutation.isPending}
+          disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
         >
           <Text size="sm" className="text-typography-0 font-bold">
-            {/* {createMutation.isPending || updateMutation.isPending
-              ? "MENYIMPAN..."
-              : "SIMPAN"} */}
-            SIMPAN
+            {isLoading ? "MENYIMPAN..." : "SIMPAN"}
           </Text>
         </Pressable>
       </HStack>

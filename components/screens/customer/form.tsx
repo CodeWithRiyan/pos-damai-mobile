@@ -1,6 +1,6 @@
 import Header from "@/components/header";
+import { Pressable, Text } from "@/components/ui";
 import { Box } from "@/components/ui/box";
-import { Button, ButtonText } from "@/components/ui/button";
 import {
   FormControl,
   FormControlError,
@@ -29,7 +29,7 @@ import { getErrorMessage } from "@/lib/api/client";
 import {
   useCreateCustomer,
   useCustomer,
-  useUpdateCustomer
+  useUpdateCustomer,
 } from "@/lib/api/customers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -321,21 +321,16 @@ export default function CustomerForm() {
           />
         </VStack>
       </ScrollView>
-      <HStack className="w-full p-4">
-        <Button
-          action="primary"
-          onPress={form.handleSubmit(onSubmit)}
+      <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
+        <Pressable
+          className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
-          className="bg-brand-primary flex-1"
+          onPress={form.handleSubmit(onSubmit)}
         >
-          {isLoading ? (
-            <Spinner size="small" color="#FFFFFF" />
-          ) : (
-            <ButtonText className="text-white">
-              {isAdd ? "SIMPAN" : "PERBARUI"}
-            </ButtonText>
-          )}
-        </Button>
+          <Text size="sm" className="text-typography-0 font-bold">
+            {isLoading ? "MENYIMPAN..." : "SIMPAN"}
+          </Text>
+        </Pressable>
       </HStack>
     </Box>
   );

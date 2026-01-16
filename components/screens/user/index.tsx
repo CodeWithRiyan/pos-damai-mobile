@@ -21,7 +21,7 @@ export default function UserList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data, isLoading, refetch } = useUsers();
-  const [selectedUsers, setSelectedUsers] = useState<User[] | null>(null);
+  const [selectedItems, setSelectedItems] = useState<User[] | null>(null);
 
   const users = data || [];
 
@@ -29,16 +29,16 @@ export default function UserList() {
   const toast = useToast();
 
   const handleUserPress = (user: User) => {
-    if (selectedUsers?.some((r) => r.id === user.id)) {
-      setSelectedUsers(selectedUsers.filter((r) => r.id !== user.id));
+    if (selectedItems?.some((r) => r.id === user.id)) {
+      setSelectedItems(selectedItems.filter((r) => r.id !== user.id));
       return;
     }
-    if (!selectedUsers) {
-      setSelectedUsers([user]);
+    if (!selectedItems) {
+      setSelectedItems([user]);
       return;
     }
 
-    setSelectedUsers([...selectedUsers, user]);
+    setSelectedItems([...selectedItems, user]);
   };
 
   const showErrorToast = (error: unknown) => {
@@ -56,12 +56,12 @@ export default function UserList() {
   };
 
   const handleAddUser = () => {
-    setSelectedUsers(null);
+    setSelectedItems(null);
     router.push("/(main)/management/role-user/user/add");
   };
 
   const handleDeletePress = () => {
-    const userIds = selectedUsers?.map((m) => m.id) || [];
+    const userIds = selectedItems?.map((m) => m.id) || [];
 
     showPopUpConfirm({
       title: "HAPUS KARYAWAN",
@@ -89,7 +89,7 @@ export default function UserList() {
       { ids: userIds },
       {
         onSuccess: () => {
-          setSelectedUsers(null);
+          setSelectedItems(null);
           hidePopUpConfirm();
           refetch();
 
@@ -123,9 +123,12 @@ export default function UserList() {
       <Header
         header="KARYAWAN"
         isGoBack
+        selectedItemsLength={selectedItems?.length}
+        selectedItemsSuffixLabel="Karyawan terpilih"
+        onCancelSelectedItems={() => setSelectedItems(null)}
         action={
           <HStack space="sm" className="w-[72px]">
-            {!!selectedUsers?.length ? (
+            {!!selectedItems?.length ? (
               deleteMutation.isPending ? (
                 <Box className="p-6">
                   <Spinner size="small" color="#FFFFFF" />
@@ -156,18 +159,18 @@ export default function UserList() {
                 <Pressable
                   key={user.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    selectedUsers?.some((r) => r.id === user.id)
+                    selectedItems?.some((r) => r.id === user.id)
                       ? "bg-gray-100"
                       : ""
                   }`}
                   onPress={() => {
-                    if (!!selectedUsers?.length) {
+                    if (!!selectedItems?.length) {
                       handleUserPress(user);
                     } else {
                       router.navigate(
                         `/(main)/management/role-user/user/detail/${user.id}`
                       );
-                      setSelectedUsers(null);
+                      setSelectedItems(null);
                     }
                   }}
                   onLongPress={() => handleUserPress(user)}
@@ -191,14 +194,15 @@ export default function UserList() {
                       </VStack>
                     </HStack>
                     <VStack className="items-end">
-                      <Text className="text-brand-primary text-sm font-bold">
-                        Aktifitas Terakhir
+                      <Text
+                        size="xs"
+                        className="text-brand-primary text-sm font-bold"
+                      >
+                        Terakhir Login
                       </Text>
-                      <Text>
+                      <Text size="xs">
                         {user.lastLoginAt
-                          ? dayjs(user.lastLoginAt).format(
-                              "DD MMMM YYYY, HH:mm"
-                            )
+                          ? dayjs(user.lastLoginAt).format("DD MMMM YYYY")
                           : "-"}
                       </Text>
                     </VStack>

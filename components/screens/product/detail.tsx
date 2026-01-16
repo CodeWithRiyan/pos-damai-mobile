@@ -185,17 +185,20 @@ export default function ProductDetail() {
             </VStack>
           </Box>
           {product?.type === "VARIANTS" && (
-            <VStack space="md" className="pt-4 pb-6 border-b border-background-300">
+            <VStack
+              space="md"
+              className="pt-4 pb-6 border-b border-background-300"
+            >
               <Text className="font-bold text-center">Varian</Text>
               <Box className="w-full flex-row flex-wrap gap-y-4">
                 {product?.variants?.map((variant, index) => (
                   <Box
                     key={index}
-                    className={`w-1/2 ${index % 2 === 0 ? "pr-2 pl-4" : "pr-4 pl-2"}`}
+                    className={`w-1/2 ${
+                      index % 2 === 0 ? "pr-2 pl-4" : "pr-4 pl-2"
+                    }`}
                   >
-                    <VStack
-                      className="border border-background-200 rounded-md shadow bg-info-50 p-4"
-                    >
+                    <VStack className="border border-background-200 rounded-md shadow bg-info-50 p-4">
                       <Text className="font-bold">{variant?.name || "-"}</Text>
                       <Text className="text-gray-500">
                         {variant?.code || "-"}
@@ -239,7 +242,9 @@ export default function ProductDetail() {
 
       <VStack space="md" className="w-full p-4">
         <Pressable className="w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-brand-primary">
-          <Text size="sm" className="text-brand-primary font-bold">LIHAT SUPPLIER</Text>
+          <Text size="sm" className="text-brand-primary font-bold">
+            LIHAT SUPPLIER
+          </Text>
         </Pressable>
       </VStack>
 
