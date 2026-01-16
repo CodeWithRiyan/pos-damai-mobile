@@ -44,6 +44,7 @@ import { getErrorMessage } from "@/lib/api/client";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { useBrandStore } from "@/stores/brand";
 import { useCategoryStore } from "@/stores/category";
+import { useDiscountStore } from "@/stores/discount";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { PlusIcon } from "lucide-react-native";
@@ -59,8 +60,9 @@ import { z } from "zod";
 import { dataProducts } from ".";
 
 export default function ProductForm() {
-  const { setOpen: setOpenBrand } = useBrandStore();
   const { setOpen: setOpenCategory } = useCategoryStore();
+  const { setOpen: setOpenBrand } = useBrandStore();
+  const { setOpen: setOpenDiscount } = useDiscountStore();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const isAdd = !id;
@@ -1057,7 +1059,7 @@ export default function ProductForm() {
                     </SelectContent>
                   </SelectPortal>
                 </Select>
-                <Pressable className="size-10 rounded-full bg-primary-500 items-center justify-center">
+                <Pressable className="size-10 rounded-full bg-primary-500 items-center justify-center" onPress={() => setOpenDiscount(true)}>
                     <Icon as={PlusIcon} color="white" />
                   </Pressable>
                   </HStack>

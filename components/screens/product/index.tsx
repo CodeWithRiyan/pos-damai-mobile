@@ -39,7 +39,7 @@ export interface Brand {
 export interface Discount {
   id: string;
   name: string;
-  discount: number;
+  nominal: number;
   type: "PERCENT" | "FIXED";
   startDate: string;
   endDate: string;
