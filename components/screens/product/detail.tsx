@@ -238,8 +238,8 @@ export default function ProductDetail() {
       </ScrollView>
 
       <VStack space="md" className="w-full p-4">
-        <Pressable className="w-full rounded-sm h-10 flex justify-center items-center bg-background-0 border border-brand-primary">
-          <Text className="text-brand-primary font-bold">LIHAT SUPPLIER</Text>
+        <Pressable className="w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-brand-primary">
+          <Text size="sm" className="text-brand-primary font-bold">LIHAT SUPPLIER</Text>
         </Pressable>
       </VStack>
 

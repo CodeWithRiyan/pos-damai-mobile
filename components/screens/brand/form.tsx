@@ -1,42 +1,80 @@
-import Header from "@/components/header";
-import { Box } from "@/components/ui/box";
-import { Button, ButtonText } from "@/components/ui/button";
-import { FormControl, FormControlLabel, FormControlLabelText } from "@/components/ui/form-control";
-import { HStack } from "@/components/ui/hstack";
+import {
+  CloseIcon,
+  Heading,
+  HStack,
+  Icon,
+  Modal,
+  ModalBackdrop,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Pressable,
+  Text,
+} from "@/components/ui";
+import {
+  FormControl,
+  FormControlError,
+  FormControlErrorText,
+  FormControlLabel,
+  FormControlLabelText,
+} from "@/components/ui/form-control";
 import { Input, InputField } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { Textarea, TextareaInput } from "@/components/ui/textarea";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
+import {
+  useBrand,
+  useBrands,
+  useCreateBrand,
+  useUpdateBrand,
+} from "@/lib/api/brands";
 import { getErrorMessage } from "@/lib/api/client";
-import { useBrand, useCreateBrand, useUpdateBrand } from "@/lib/api/brands";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { ScrollView } from "react-native";
+import { useBrandStore } from "@/stores/brand";
+import { zodResolver } from "@hookform/resolvers/zod";
+import React, { useEffect } from "react";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
+import z from "zod";
 
-interface BrandFormProps {
-  mode: "add" | "edit";
-}
-
-export default function BrandForm({ mode }: BrandFormProps) {
-  const router = useRouter();
+export default function BrandForm() {
+  const { open, setOpen, data: dataBrand } = useBrandStore();
   const toast = useToast();
-  const params = useLocalSearchParams<{ id?: string }>();
-  const id = params.id;
 
-  const { data: existingBrand, isLoading: loadingBrand } = useBrand(id || "");
+  const brandSchema = z.object({
+    name: z.string().min(1, "Nama Brand wajib diisi."),
+  });
+
+  type BrandFormValues = z.infer<typeof brandSchema>;
+
+  const initialValues: BrandFormValues = {
+    name: "",
+  };
+
+  const form = useForm<BrandFormValues>({
+    resolver: zodResolver(brandSchema),
+    defaultValues: initialValues,
+  });
+
+  const { refetch: refetchBrands } = useBrands();
+  const { refetch: refetchBrand } = useBrand(dataBrand?.id || "");
+
   const createMutation = useCreateBrand();
   const updateMutation = useUpdateBrand();
 
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const onRefetch = () => {
+    refetchBrands();
+    if (dataBrand) refetchBrand();
+  };
 
   useEffect(() => {
-    if (existingBrand && mode === "edit") {
-      setName(existingBrand.name);
-      setDescription(existingBrand.description || "");
+    if (dataBrand) {
+      form.setValue("name", dataBrand.name);
+    } else {
+      form.reset(initialValues);
     }
-  }, [existingBrand, mode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataBrand, form]);
 
   const showSuccessToast = (message: string) => {
     toast.show({
@@ -60,24 +98,16 @@ export default function BrandForm({ mode }: BrandFormProps) {
     });
   };
 
-  const handleSubmit = () => {
-    if (!name.trim()) {
-      showErrorToast("Nama brand wajib diisi");
-      return;
-    }
-
-    const data = {
-      name: name.trim(),
-      description: description.trim() || undefined,
-    };
-
-    if (mode === "edit" && id) {
+  const onSubmit: SubmitHandler<BrandFormValues> = (data: BrandFormValues) => {
+    if (dataBrand) {
       updateMutation.mutate(
-        { id, ...data },
+        { id: dataBrand.id, ...data },
         {
           onSuccess: () => {
             showSuccessToast("Brand berhasil diperbarui");
-            router.back();
+            onRefetch();
+            form.reset(initialValues);
+            setOpen(false);
           },
           onError: showErrorToast,
         }
@@ -86,7 +116,9 @@ export default function BrandForm({ mode }: BrandFormProps) {
       createMutation.mutate(data, {
         onSuccess: () => {
           showSuccessToast("Brand berhasil ditambahkan");
-          router.back();
+          onRefetch();
+          form.reset(initialValues);
+          setOpen(false);
         },
         onError: showErrorToast,
       });
@@ -95,62 +127,77 @@ export default function BrandForm({ mode }: BrandFormProps) {
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  if (mode === "edit" && loadingBrand) {
-    return (
-      <Box className="flex-1 justify-center items-center">
-        <Spinner size="large" />
-      </Box>
-    );
-  }
-
   return (
-    <Box className="flex-1 bg-white">
-      <Header header={mode === "add" ? "TAMBAH BRAND" : "EDIT BRAND"} isGoBack />
-      <ScrollView className="flex-1">
-        <VStack space="lg" className="p-4">
-          <FormControl isRequired>
-            <FormControlLabel>
-              <FormControlLabelText>Nama Brand</FormControlLabelText>
-            </FormControlLabel>
-            <Input>
-              <InputField
-                placeholder="Masukkan nama brand"
-                value={name}
-                onChangeText={setName}
-              />
-            </Input>
-          </FormControl>
-
-          <FormControl>
-            <FormControlLabel>
-              <FormControlLabelText>Deskripsi</FormControlLabelText>
-            </FormControlLabel>
-            <Textarea>
-              <TextareaInput
-                placeholder="Masukkan deskripsi (opsional)"
-                value={description}
-                onChangeText={setDescription}
-              />
-            </Textarea>
-          </FormControl>
-        </VStack>
-      </ScrollView>
-      <HStack className="w-full p-4">
-        <Button
-          size="sm"
-          className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
-          onPress={handleSubmit}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <Spinner size="small" color="#FFFFFF" />
-          ) : (
-            <ButtonText className="text-white">
-              {mode === "add" ? "SIMPAN" : "PERBARUI"}
-            </ButtonText>
-          )}
-        </Button>
-      </HStack>
-    </Box>
+    <Modal
+      isOpen={open}
+      onClose={() => {
+        setOpen(false);
+        form.reset(initialValues);
+      }}
+      size="md"
+    >
+      <ModalBackdrop />
+      <ModalContent>
+        <ModalHeader className="mb-4">
+          <Heading size="md" className="text-center flex-1">
+            {dataBrand ? "EDIT BRAND" : "TAMBAH BRAND"}
+          </Heading>
+          <ModalCloseButton>
+            <Icon as={CloseIcon} />
+          </ModalCloseButton>
+        </ModalHeader>
+        <ModalBody>
+          <VStack space="lg">
+            <Controller
+              name="name"
+              control={form.control}
+              render={({
+                field: { onChange, onBlur, value },
+                fieldState: { error },
+              }) => (
+                <FormControl isRequired isInvalid={!!error}>
+                  <FormControlLabel>
+                    <FormControlLabelText>Nama Brand</FormControlLabelText>
+                  </FormControlLabel>
+                  <Input>
+                    <InputField
+                      value={value}
+                      autoComplete="name"
+                      placeholder="Masukkan nama brand"
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                    />
+                  </Input>
+                  {error && (
+                    <FormControlError>
+                      <FormControlErrorText>
+                        {error.message}
+                      </FormControlErrorText>
+                    </FormControlError>
+                  )}
+                </FormControl>
+              )}
+            />
+          </VStack>
+        </ModalBody>
+        <ModalFooter>
+          <HStack space="md">
+            <Pressable
+              className="w-full flex px-4 h-9 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
+              onPress={form.handleSubmit(onSubmit)}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Spinner size="small" color="#FFFFFF" />
+              ) : (
+                <Text size="sm" className="text-typography-0 font-bold">
+                  {!dataBrand ? "SIMPAN" : "PERBARUI"}
+                </Text>
+              )}
+            </Pressable>
+          </HStack>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   );
 }

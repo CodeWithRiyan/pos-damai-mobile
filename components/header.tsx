@@ -4,10 +4,11 @@ import React from "react";
 import { View } from "react-native";
 import {
   ArrowLeftIcon,
+  CloseIcon,
+  Heading,
   HStack,
   Icon,
   MenuIcon,
-  Text
 } from "./ui";
 import { Pressable } from "./ui/pressable";
 
@@ -15,44 +16,77 @@ export default function Header({
   header,
   action,
   isGoBack = false,
+  selectedItemsLength,
+  selectedItemsSuffixLabel,
+  selectedItemsPosition = "left",
+  onCancelSelectedItems,
 }: {
   header?: React.ReactNode;
   action?: React.ReactNode;
   isGoBack?: boolean;
+  selectedItemsLength?: number;
+  selectedItemsSuffixLabel?: string;
+  selectedItemsPosition?: "left" | "right";
+  onCancelSelectedItems?: () => void;
 }) {
   const { setShowDrawer } = useSidebarStore((state) => state);
   const router = useRouter();
   const goBack = () => router.back();
   const isCanGoBack = router.canGoBack();
 
+  const CancelSelectedItems = () => {
+    return (
+      <HStack className={`items-center p-3${selectedItemsPosition === "right" ? " flex-row-reverse" : ""}`}>
+        <Pressable onPress={() => onCancelSelectedItems?.()} className="p-3">
+          <Icon as={CloseIcon} size="xl" className="text-typography-0" />
+        </Pressable>
+        <Heading
+          size="sm"
+          className="text-typography-0"
+        >{`${selectedItemsLength}${
+          selectedItemsSuffixLabel
+            ? ` ${selectedItemsSuffixLabel}`
+            : " Item terpilih"
+        }`}</Heading>
+      </HStack>
+    );
+  };
+
   return (
-    <View className="bg-brand-primary w-full flex flex-row justify-between items-center">
-      <Pressable
-        onPress={() => {
-          if (isCanGoBack && isGoBack) {
-            goBack();
-          } else {
-            setShowDrawer(true);
-          }
-        }}
-        className="p-6"
+    <View className="relative bg-primary-500 w-full flex flex-row justify-between items-center">
+      {selectedItemsPosition === "left" && selectedItemsLength ? (
+        <CancelSelectedItems />
+      ) : (
+        <Pressable
+          onPress={() => {
+            if (isCanGoBack && isGoBack) {
+              goBack();
+            } else {
+              setShowDrawer(true);
+            }
+          }}
+          className="p-6"
+        >
+          {isCanGoBack && isGoBack ? (
+            <Icon as={ArrowLeftIcon} size="xl" className="text-typography-0" />
+          ) : (
+            <Icon as={MenuIcon} size="xl" className="text-typography-0" />
+          )}
+        </Pressable>
+      )}
+      <HStack
+        space="sm"
+        className="absolute inset-0 justify-center items-center"
       >
-        {isCanGoBack && isGoBack ? (
-          <Icon
-            as={ArrowLeftIcon}
-            size="xl"
-            className="text-brand-primary-forground"
-          />
-        ) : (
-          <Icon
-            as={MenuIcon}
-            size="xl"
-            className="text-brand-primary-forground"
-          />
-        )}
-      </Pressable>
-      <Text className="text-brand-primary-forground font-bold">{header}</Text>
-      {action ? action : <HStack space="sm" className="w-[72px]"></HStack>}
+        <Heading size="sm" className="text-typography-0">
+          {header}
+        </Heading>
+      </HStack>
+      {selectedItemsPosition === "right" && selectedItemsLength ? (
+        <CancelSelectedItems />
+      ) : (
+        action
+      )}
     </View>
   );
 }

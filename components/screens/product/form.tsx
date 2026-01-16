@@ -9,8 +9,10 @@ import {
   FormControlLabel,
   FormControlLabelText,
   HStack,
+  Icon,
   Input,
   InputField,
+  Pressable,
   Select,
   SelectBackdrop,
   SelectContent,
@@ -40,8 +42,12 @@ import { getErrorMessage } from "@/lib/api/client";
 //   useProducts,
 // } from "@/lib/api/products";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
+import { useBrandStore } from "@/stores/brand";
+import { useCategoryStore } from "@/stores/category";
+import { useDiscountStore } from "@/stores/discount";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { PlusIcon } from "lucide-react-native";
 import { useEffect } from "react";
 import {
   Controller,
@@ -54,6 +60,9 @@ import { z } from "zod";
 import { dataProducts } from ".";
 
 export default function ProductForm() {
+  const { setOpen: setOpenCategory } = useCategoryStore();
+  const { setOpen: setOpenBrand } = useBrandStore();
+  const { setOpen: setOpenDiscount } = useDiscountStore();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const isAdd = !id;
@@ -437,33 +446,42 @@ export default function ProductForm() {
                 <FormControlLabel>
                   <FormControlLabelText>Kategori</FormControlLabelText>
                 </FormControlLabel>
-                <Select onValueChange={onChange} onBlur={onBlur}>
-                  <SelectTrigger>
-                    <SelectInput
-                      value={categories.find((cat) => cat.id === value)?.name}
-                      placeholder="Pilih Kategori"
-                      className="flex-1 capitalize"
-                    />
-                    <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                  </SelectTrigger>
-                  <SelectPortal>
-                    <SelectBackdrop />
-                    <SelectContent className="px-0">
-                      <SelectDragIndicatorWrapper>
-                        <SelectDragIndicator />
-                      </SelectDragIndicatorWrapper>
-                      {categories.map((cat) => (
-                        <SelectItem
-                          key={cat.id}
-                          label={cat.name}
-                          value={cat.id}
-                          textStyle={{ className: "capitalize flex-1" }}
-                          className="px-4 py-4"
-                        />
-                      ))}
-                    </SelectContent>
-                  </SelectPortal>
-                </Select>
+                <HStack space="md">
+                  <Select
+                    onValueChange={onChange}
+                    onBlur={onBlur}
+                    className="flex-1"
+                  >
+                    <SelectTrigger>
+                      <SelectInput
+                        value={categories.find((cat) => cat.id === value)?.name}
+                        placeholder="Pilih Kategori"
+                        className="flex-1 capitalize"
+                      />
+                      <SelectIcon className="mr-3" as={ChevronDownIcon} />
+                    </SelectTrigger>
+                    <SelectPortal>
+                      <SelectBackdrop />
+                      <SelectContent className="px-0">
+                        <SelectDragIndicatorWrapper>
+                          <SelectDragIndicator />
+                        </SelectDragIndicatorWrapper>
+                        {categories.map((cat) => (
+                          <SelectItem
+                            key={cat.id}
+                            label={cat.name}
+                            value={cat.id}
+                            textStyle={{ className: "capitalize flex-1" }}
+                            className="px-4 py-4"
+                          />
+                        ))}
+                      </SelectContent>
+                    </SelectPortal>
+                  </Select>
+                  <Pressable className="size-10 rounded-full bg-primary-500 items-center justify-center" onPress={() => setOpenCategory(true)}>
+                    <Icon as={PlusIcon} color="white" />
+                  </Pressable>
+                </HStack>
                 {error && (
                   <FormControlError>
                     <FormControlErrorText>{error.message}</FormControlErrorText>
@@ -602,7 +620,11 @@ export default function ProductForm() {
                         field: { onChange, onBlur, value },
                         fieldState: { error },
                       }) => (
-                        <FormControl isRequired isInvalid={!!error} className="flex-1">
+                        <FormControl
+                          isRequired
+                          isInvalid={!!error}
+                          className="flex-1"
+                        >
                           <FormControlLabel>
                             <FormControlLabelText>
                               Nama Varian
@@ -633,7 +655,11 @@ export default function ProductForm() {
                         field: { onChange, onBlur, value },
                         fieldState: { error },
                       }) => (
-                        <FormControl isRequired isInvalid={!!error} className="flex-1">
+                        <FormControl
+                          isRequired
+                          isInvalid={!!error}
+                          className="flex-1"
+                        >
                           <FormControlLabel>
                             <FormControlLabelText>
                               Kode Varian
@@ -948,33 +974,42 @@ export default function ProductForm() {
                 <FormControlLabel>
                   <FormControlLabelText>Brand</FormControlLabelText>
                 </FormControlLabel>
-                <Select onValueChange={onChange} onBlur={onBlur}>
-                  <SelectTrigger>
-                    <SelectInput
-                      value={brands.find((brand) => brand.id === value)?.name}
-                      placeholder="Pilih Brand"
-                      className="flex-1 capitalize"
-                    />
-                    <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                  </SelectTrigger>
-                  <SelectPortal>
-                    <SelectBackdrop />
-                    <SelectContent className="px-0">
-                      <SelectDragIndicatorWrapper>
-                        <SelectDragIndicator />
-                      </SelectDragIndicatorWrapper>
-                      {brands.map((brand) => (
-                        <SelectItem
-                          key={brand.id}
-                          label={brand.name}
-                          value={brand.id}
-                          textStyle={{ className: "capitalize flex-1" }}
-                          className="px-4 py-4"
-                        />
-                      ))}
-                    </SelectContent>
-                  </SelectPortal>
-                </Select>
+                <HStack space="md">
+                  <Select
+                    onValueChange={onChange}
+                    onBlur={onBlur}
+                    className="flex-1"
+                  >
+                    <SelectTrigger>
+                      <SelectInput
+                        value={brands.find((brand) => brand.id === value)?.name}
+                        placeholder="Pilih Brand"
+                        className="flex-1 capitalize"
+                      />
+                      <SelectIcon className="mr-3" as={ChevronDownIcon} />
+                    </SelectTrigger>
+                    <SelectPortal>
+                      <SelectBackdrop />
+                      <SelectContent className="px-0">
+                        <SelectDragIndicatorWrapper>
+                          <SelectDragIndicator />
+                        </SelectDragIndicatorWrapper>
+                        {brands.map((brand) => (
+                          <SelectItem
+                            key={brand.id}
+                            label={brand.name}
+                            value={brand.id}
+                            textStyle={{ className: "capitalize flex-1" }}
+                            className="px-4 py-4"
+                          />
+                        ))}
+                      </SelectContent>
+                    </SelectPortal>
+                  </Select>
+                  <Pressable className="size-10 rounded-full bg-primary-500 items-center justify-center" onPress={() => setOpenBrand(true)}>
+                    <Icon as={PlusIcon} color="white" />
+                  </Pressable>
+                </HStack>
                 {error && (
                   <FormControlError>
                     <FormControlErrorText>{error.message}</FormControlErrorText>
@@ -994,7 +1029,8 @@ export default function ProductForm() {
                 <FormControlLabel>
                   <FormControlLabelText>Diskon</FormControlLabelText>
                 </FormControlLabel>
-                <Select onValueChange={onChange} onBlur={onBlur}>
+                <HStack space="md">
+                <Select onValueChange={onChange} onBlur={onBlur} className="flex-1">
                   <SelectTrigger>
                     <SelectInput
                       value={
@@ -1023,6 +1059,10 @@ export default function ProductForm() {
                     </SelectContent>
                   </SelectPortal>
                 </Select>
+                <Pressable className="size-10 rounded-full bg-primary-500 items-center justify-center" onPress={() => setOpenDiscount(true)}>
+                    <Icon as={PlusIcon} color="white" />
+                  </Pressable>
+                  </HStack>
                 {error && (
                   <FormControlError>
                     <FormControlErrorText>{error.message}</FormControlErrorText>
@@ -1064,19 +1104,18 @@ export default function ProductForm() {
         </VStack>
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
-        <Button
-          action="primary"
-          onPress={form.handleSubmit(onSubmit)}
+        <Pressable
+          className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
           // disabled={createMutation.isPending || updateMutation.isPending}
-          className="bg-brand-primary flex-1"
+          onPress={form.handleSubmit(onSubmit)}
         >
-          <ButtonText className="text-white">
+          <Text size="sm" className="text-typography-0 font-bold">
             {/* {createMutation.isPending || updateMutation.isPending
               ? "MENYIMPAN..."
               : "SIMPAN"} */}
             SIMPAN
-          </ButtonText>
-        </Button>
+          </Text>
+        </Pressable>
       </HStack>
     </VStack>
   );

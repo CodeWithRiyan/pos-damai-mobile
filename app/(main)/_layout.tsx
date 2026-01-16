@@ -1,3 +1,6 @@
+import BrandForm from "@/components/screens/brand/form";
+import CategoryForm from "@/components/screens/category/form";
+import DiscountForm from "@/components/screens/discount/form";
 import { Sidebar } from "@/components/sidebar";
 import { Stack } from "expo-router";
 import { View } from "react-native";
@@ -16,6 +19,9 @@ export default function MainLayout() {
           }}
         />
       </View>
+      <CategoryForm />
+      <BrandForm />
+      <DiscountForm />
     </View>
   );
 }
