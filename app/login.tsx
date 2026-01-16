@@ -16,6 +16,7 @@ import {
   InputField,
   InputIcon,
   InputSlot,
+  HStack,
   Spinner,
   Text,
   Toast,
@@ -26,6 +27,7 @@ import {
 } from '@/components/ui';
 import { useLogin } from '@/lib/api/auth';
 import { getErrorMessage } from '@/lib/api/client';
+import { SyncEngine } from '@/lib/sync/sync-engine';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image } from 'react-native';
@@ -39,6 +41,8 @@ export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('');
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -68,9 +72,39 @@ export default function LoginScreen() {
     loginMutation.mutate(
       { username, password },
       {
-        onSuccess: () => {
-          console.log('Login success');
-          router.replace('/');
+        onSuccess: async () => {
+          console.log('Login success, starting sync');
+          try {
+            setIsSyncing(true);
+            setSyncStatus('Synchronizing data...');
+            
+            // Perform initial full sync
+            await SyncEngine.sync();
+            
+            console.log('Sync success');
+            router.replace('/');
+          } catch (syncError: any) {
+            console.error('Initial sync failed:', syncError);
+            // Even if sync fails, we might want to let them in if offline is allowed
+            // but for first login, it's better to ensure they have data.
+            toast.show({
+              placement: 'top',
+              render: ({ id }) => {
+                const toastId = "toast-" + id;
+                return (
+                  <Toast nativeID={toastId} action="warning" variant="outline">
+                    <VStack space="xs">
+                      <ToastTitle>Sync Warning</ToastTitle>
+                      <ToastDescription>Login successful, but initial data sync failed. Some data may be missing.</ToastDescription>
+                    </VStack>
+                  </Toast>
+                );
+              },
+            });
+            router.replace('/');
+          } finally {
+            setIsSyncing(false);
+          }
         },
         onError: (error: any) => {
           console.log('Login error callback', error);
@@ -164,10 +198,15 @@ export default function LoginScreen() {
               size="lg"
               className="mt-4 rounded-xl bg-brand-primary active:bg-brand-primary/90"
               onPress={handleLogin}
-              disabled={loginMutation.isPending}
+              disabled={loginMutation.isPending || isSyncing}
             >
-              {loginMutation.isPending ? (
-                <Spinner color="white" />
+              {loginMutation.isPending || isSyncing ? (
+                <HStack space="sm" className="items-center">
+                  <Spinner color="white" />
+                  <ButtonText className="font-bold text-white">
+                    {isSyncing ? syncStatus : 'Signing In...'}
+                  </ButtonText>
+                </HStack>
               ) : (
                 <ButtonText className="font-bold text-white">Sign In</ButtonText>
               )}

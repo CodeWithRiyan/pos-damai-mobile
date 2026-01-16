@@ -10,6 +10,7 @@ import { PopUpConfirmProvider } from '@/components/pop-up-confirm';
 import { SyncConfirmationModal } from '@/components/sync-confirmation-modal';
 import { useSyncManager } from '@/hooks/use-sync-manager';
 import { authStorageAdapter, initializeStorage } from '@/lib/storage';
+import { initializeDb } from '@/lib/db';
 import { QueryProvider } from '@/providers/query-provider';
 import { useNetworkMonitoring } from '@/stores/network-store';
 import * as NavigationBar from "expo-navigation-bar";
@@ -40,6 +41,7 @@ export default function RootLayout() {
   useEffect(() => {
     const init = async () => {
       await initializeStorage();
+      await initializeDb(); // Initialize SQLite tables
       setIsStorageReady(true);
       setIsMounted(true);
     };

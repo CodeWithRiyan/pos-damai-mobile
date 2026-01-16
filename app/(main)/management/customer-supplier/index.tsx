@@ -2,8 +2,8 @@ import Header from "@/components/header";
 import { Box, Text, VStack } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import {
-  SolarIconLinear,
-  SolarIconLinearProps
+    SolarIconLinear,
+    SolarIconLinearProps
 } from "@/components/ui/solar-icon-wrapper";
 import { Link } from "expo-router";
 import { ScrollView } from "react-native";
@@ -16,12 +16,12 @@ export default function ConsumerSupplierScreen() {
   }[] = [
     {
       label: "Pelanggan",
-      href: "/management/consumer-supplier/consumer",
+      href: "/management/customer-supplier/customer",
       icon: "Card2",
     },
     {
       label: "Supplier",
-      href: "/management/consumer-supplier/supplier",
+      href: "/management/customer-supplier/supplier",
       icon: "Card2",
     },
   ];

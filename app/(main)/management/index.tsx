@@ -21,8 +21,8 @@ export default function ManagementScreen() {
     },
     { label: "Diskon", href: "/management/discount", icon: "TicketSale" },
     {
-      label: "Pelanggan dan Suplier",
-      href: "/management/consumer-supplier",
+      label: "Pelanggan dan Supplier",
+      href: "/management/customer-supplier",
       icon: "Card2",
     },
     {

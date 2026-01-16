@@ -7,7 +7,7 @@ module.exports = {
     "./hooks/**/*.{js,jsx,ts,tsx}",
     "./providers/**/*.{js,jsx,ts,tsx}",
     "./stores/**/*.{js,jsx,ts,tsx}",
-    "./lib/**/*.{js,jsx,ts,tsx}"
+    "./lib/**/*.{js,jsx,ts,tsx}",
   ],
   presets: [require("nativewind/preset")],
   theme: {
@@ -92,9 +92,22 @@ module.exports = {
           900: "#111827",
           950: "#030712",
         },
+        primary: {
+          50: "#faf8f7",
+          100: "#f5f0ed",
+          200: "#e8ddd6",
+          300: "#d4c1b4",
+          400: "#b89a85",
+          500: "#3d2117",
+          600: "#331b13",
+          700: "#29160f",
+          800: "#1f100b",
+          900: "#150b07",
+        },
       },
       boxShadow: {
-        "hard-5": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+        "hard-5":
+          "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
       },
       fontFamily: {
         body: ["Inter", "sans-serif"],

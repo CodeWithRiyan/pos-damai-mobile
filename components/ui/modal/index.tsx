@@ -110,7 +110,6 @@ type IModalCloseButtonProps = React.ComponentProps<typeof UIModal.CloseButton> &
 
 const Modal = React.forwardRef<React.ComponentRef<typeof UIModal>, IModalProps>(
   ({ className, size = 'md', ...props }, ref) => {
-    console.log('UI Modal: root rendering with isOpen =', props.isOpen);
     return (
       <UIModal
         ref={ref}
