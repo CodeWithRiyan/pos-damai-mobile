@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as schema from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { apiClient } from '../api/client';
 import { storageAdapter } from '../storage';
 
@@ -58,6 +58,7 @@ export class SyncEngine {
         brands: schema.brands,
         products: schema.products,
         prices: schema.productPrices, // Backend 'prices' -> Local 'productPrices'
+        variants: schema.productVariants, // Backend 'variants' -> Local 'product_variants'
         customers: schema.customers,
       };
 
@@ -115,11 +116,31 @@ export class SyncEngine {
     const dirtyProducts = await db.select().from(schema.products).where(eq(schema.products._dirty, true));
     const dirtyCustomers = await db.select().from(schema.customers).where(eq(schema.customers._dirty, true));
     
+    // Also consider products whose prices or variants are dirty
+    const dirtyPrices = await db.select().from(schema.productPrices).where(eq(schema.productPrices._dirty, true));
+    const dirtyVariants = await db.select().from(schema.productVariants).where(eq(schema.productVariants._dirty, true));
+
+    // Get unique product IDs that need matching/pushing due to price/variant changes
+    const extraProductIds = [...new Set([
+      ...dirtyPrices.map(p => p.productId),
+      ...dirtyVariants.map(v => v.productId)
+    ])];
+
+    // Fetch those products if they aren't already in dirtyProducts
+    const existingDirtyProductIds = new Set(dirtyProducts.map(p => p.id));
+    const missingProductIds = extraProductIds.filter(id => !existingDirtyProductIds.has(id));
+    
+    let allProductsToPush = [...dirtyProducts];
+    if (missingProductIds.length > 0) {
+      const extraProducts = await db.select().from(schema.products).where(inArray(schema.products.id, missingProductIds));
+      allProductsToPush = [...allProductsToPush, ...extraProducts];
+    }
+
     // Collect dirty transactional data
     const dirtyPurchases = await db.select().from(schema.purchases).where(eq(schema.purchases._dirty, true));
     const dirtyTransactions = await db.select().from(schema.inventoryTransactions).where(eq(schema.inventoryTransactions._dirty, true));
 
-    const totalDirty = dirtyCategories.length + dirtyBrands.length + dirtyProducts.length + 
+    const totalDirty = dirtyCategories.length + dirtyBrands.length + allProductsToPush.length + 
                        dirtyCustomers.length + dirtyPurchases.length + dirtyTransactions.length;
 
     if (totalDirty === 0) {
@@ -127,7 +148,12 @@ export class SyncEngine {
       return;
     }
 
-    console.log(`[Sync] Pushing ${dirtyCategories.length} categories, ${dirtyBrands.length} brands, ${dirtyProducts.length} products, ${dirtyCustomers.length} customers, ${dirtyPurchases.length} purchases, ${dirtyTransactions.length} transactions`);
+    console.log(`[Sync] Pushing ${dirtyCategories.length} categories, ${dirtyBrands.length} brands, ${allProductsToPush.length} products, ${dirtyCustomers.length} customers, ${dirtyPurchases.length} purchases, ${dirtyTransactions.length} transactions`);
+
+    // Fetch ALL prices and variants for all products we are pushing
+    const productIdsToPush = allProductsToPush.map(p => p.id);
+    const allPrices = await db.select().from(schema.productPrices).where(inArray(schema.productPrices.productId, productIdsToPush));
+    const allVariants = await db.select().from(schema.productVariants).where(inArray(schema.productVariants.productId, productIdsToPush));
 
     const pushPayload = {
       categories: dirtyCategories.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
@@ -138,9 +164,17 @@ export class SyncEngine {
         ...rest,
         deletedAt: deletedAt ? deletedAt.toISOString() : null,
       })),
-      products: dirtyProducts.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
+      products: allProductsToPush.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
         ...rest,
         deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        prices: allPrices.filter(p => p.productId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...pRest }) => ({
+          ...pRest,
+          deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        })),
+        variants: allVariants.filter(v => v.productId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...vRest }) => ({
+          ...vRest,
+          deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        })),
       })),
       customers: dirtyCustomers.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
         ...rest,
@@ -174,6 +208,15 @@ export class SyncEngine {
           await tx.update(schema.products)
             .set({ _dirty: false, _syncedAt: new Date() })
             .where(eq(schema.products.id, res.id));
+          
+          // Also mark related prices and variants as synced for this product
+          await tx.update(schema.productPrices)
+            .set({ _dirty: false, _syncedAt: new Date() })
+            .where(eq(schema.productPrices.productId, res.id));
+            
+          await tx.update(schema.productVariants)
+            .set({ _dirty: false, _syncedAt: new Date() })
+            .where(eq(schema.productVariants.productId, res.id));
         }
         
         for (const res of (results.customers || [])) {

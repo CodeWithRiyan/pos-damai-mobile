@@ -12,250 +12,22 @@ import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
-// import { useBulkDeleteProduct, Product, useProducts } from "@/lib/api/products";
+import { Product, useBulkDeleteProduct, useProducts } from "@/lib/api/products";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
-export interface Price {
-  id: string;
-  type: "RETAIL" | "WHOLESALE";
-  minimumPurchase: number;
-  price: number;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  retailPoint: number;
-  wholesalePoint: number;
-}
-
-export interface Brand {
-  id: string;
-  name: string;
-}
-
-export interface Discount {
-  id: string;
-  name: string;
-  nominal: number;
-  type: "PERCENT" | "FIXED";
-  startDate: string;
-  endDate: string;
-}
-
-export interface ProductVariant {
-  id: string;
-  name: string;
-  code: string;
-}
-
-export interface Product {
-  id: string;
-  name: string;
-  type: "DEFAULT" | "MULTIUNIT" | "VARIANTS";
-  unit?: "KILOGRAM" | "LITER" | null;
-  code: string;
-  categoryId?: string | null;
-  category?: Category | null;
-  brandId?: string | null;
-  brand?: Brand | null;
-  purchasePrice: number;
-  stock: number;
-  minimumStock: number;
-  variants?: ProductVariant[] | null;
-  sellPrices: Price[];
-  discountId?: string | null;
-  discount?: Discount | null;
-  isActive: boolean;
-  description?: string | null;
-}
-
-export const dataProducts: Product[] = [
-  {
-    id: "1",
-    name: "Daia Rose 800gr",
-    type: "DEFAULT",
-    unit: null,
-    code: "DAIAROSE800GR",
-    category: {
-      id: "1",
-      name: "Deterjen",
-      retailPoint: 1,
-      wholesalePoint: 1.5,
-    },
-    brand: {
-      id: "1",
-      name: "WINGS",
-    },
-    purchasePrice: 14000,
-    stock: 40,
-    minimumStock: 10,
-    sellPrices: [
-      {
-        id: "1",
-        type: "RETAIL",
-        minimumPurchase: 1,
-        price: 16000,
-      },
-      {
-        id: "2",
-        type: "RETAIL",
-        minimumPurchase: 3,
-        price: 15500,
-      },
-      {
-        id: "3",
-        type: "WHOLESALE",
-        minimumPurchase: 10,
-        price: 15000,
-      },
-      {
-        id: "4",
-        type: "WHOLESALE",
-        minimumPurchase: 20,
-        price: 14500,
-      },
-    ],
-    discount: null,
-    isActive: true,
-    description: null,
-  },
-  {
-    id: "2",
-    name: "Gula Pasir 1kg",
-    type: "MULTIUNIT",
-    unit: "KILOGRAM",
-    code: "GULA1KG",
-    category: {
-      id: "2",
-      name: "Bahan Pokok",
-      retailPoint: 1,
-      wholesalePoint: 1.5,
-    },
-    brand: null,
-    purchasePrice: 15000,
-    stock: 50,
-    minimumStock: 0,
-    sellPrices: [
-      {
-        id: "1",
-        type: "RETAIL",
-        minimumPurchase: 1,
-        price: 17500,
-      },
-      {
-        id: "2",
-        type: "RETAIL",
-        minimumPurchase: 3,
-        price: 17000,
-      },
-      {
-        id: "3",
-        type: "RETAIL",
-        minimumPurchase: 5,
-        price: 16500,
-      },
-      {
-        id: "4",
-        type: "WHOLESALE",
-        minimumPurchase: 10,
-        price: 16000,
-      },
-      {
-        id: "5",
-        type: "WHOLESALE",
-        minimumPurchase: 20,
-        price: 15500,
-      },
-    ],
-    discount: null,
-    isActive: true,
-    description: null,
-  },
-  {
-    id: "3",
-    name: "Ultramilk 750gr",
-    code: "ULTRA750GR",
-    type: "VARIANTS",
-    unit: null,
-    category: {
-      id: "2",
-      name: "Bahan Pokok",
-      retailPoint: 1,
-      wholesalePoint: 1.5,
-    },
-    brand: null,
-    purchasePrice: 15000,
-    stock: 50,
-    minimumStock: 0,
-    variants: [
-      {
-        id: "1",
-        name: "Ultramilk Strawberry 750gr",
-        code: "ULTRASTRAWBERRY750GR",
-      },
-      {
-        id: "2",
-        name: "Ultramilk Vanilla 750gr",
-        code: "ULTRAVANILLA750GR",
-      },
-      {
-        id: "3",
-        name: "Ultramilk Chocolate 750gr",
-        code: "ULTRACHOCOLATE750GR",
-      },
-    ],
-    sellPrices: [
-      {
-        id: "1",
-        type: "RETAIL",
-        minimumPurchase: 1,
-        price: 17500,
-      },
-      {
-        id: "2",
-        type: "RETAIL",
-        minimumPurchase: 3,
-        price: 17000,
-      },
-      {
-        id: "3",
-        type: "RETAIL",
-        minimumPurchase: 5,
-        price: 16500,
-      },
-      {
-        id: "4",
-        type: "WHOLESALE",
-        minimumPurchase: 10,
-        price: 16000,
-      },
-      {
-        id: "5",
-        type: "WHOLESALE",
-        minimumPurchase: 20,
-        price: 15500,
-      },
-    ],
-    discount: null,
-    isActive: true,
-    description: null,
-  },
-];
-
 export default function ProductList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
-  // const { data, isLoading, refetch } = useProducts();
+  const { data, isLoading, refetch } = useProducts();
   const [selectedItems, setSelectedItems] = useState<Product[] | null>(
     null
   );
 
-  const products = dataProducts || [];
+  const products = data || [];
 
-  // const deleteMutation = useBulkDeleteProduct();
+  const deleteMutation = useBulkDeleteProduct();
   const toast = useToast();
 
   const handlePress = (data: Product) => {
@@ -308,45 +80,45 @@ export default function ProductList() {
       closeText: "BATAL",
       okVariant: "destructive",
       onOk: () => confirmDelete(productIds),
-      // loading: deleteMutation.isPending,
+      loading: deleteMutation.isPending,
     });
   };
 
   const confirmDelete = async (productIds: string[]) => {
     if (!productIds.length) return;
 
-    // deleteMutation.mutate(
-    //   { ids: productIds },
-    //   {
-    //     onSuccess: () => {
-    //       setSelectedItems(null);
-    //       hidePopUpConfirm();
-    //       refetch();
+    deleteMutation.mutate(
+      { ids: productIds },
+      {
+        onSuccess: () => {
+          setSelectedItems(null);
+          hidePopUpConfirm();
+          refetch();
 
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //             <ToastTitle>Produk berhasil dihapus</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //     onError: (error) => {
-    //       showErrorToast(error);
-    //       hidePopUpConfirm();
-    //     },
-    //   }
-    // );
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastTitle>Produk berhasil dihapus</ToastTitle>
+              </Toast>
+            ),
+          });
+        },
+        onError: (error) => {
+          showErrorToast(error);
+          hidePopUpConfirm();
+        },
+      }
+    );
   };
 
-  // if (isLoading) {
-  //   return (
-  //     <Box className="flex-1 justify-center items-center">
-  //       <Spinner size="large" />
-  //     </Box>
-  //   );
-  // }
+  if (isLoading) {
+    return (
+      <Box className="flex-1 justify-center items-center">
+        <Spinner size="large" />
+      </Box>
+    );
+  }
 
   return (
     <Box className="flex-1 bg-white">
@@ -358,8 +130,7 @@ export default function ProductList() {
         onCancelSelectedItems={() => setSelectedItems(null)}
         action={
           !!selectedItems?.length ? (
-            // deleteMutation.isPending
-            false ? (
+            deleteMutation.isPending ? (
               <Box className="p-6">
                 <Spinner size="small" color="#FFFFFF" />
               </Box>
@@ -397,7 +168,7 @@ export default function ProductList() {
                       handlePress(product);
                     } else {
                       router.navigate(
-                        `/(main)/management/product-category-brand/product/detail/${product.id}`
+                        `/(main)/management/product-category-brand/product/detail/${product.id}` as any
                       );
                       setSelectedItems(null);
                     }
@@ -417,7 +188,7 @@ export default function ProductList() {
                           {product.code}
                         </Text>
                         <Badge size="sm" variant="solid" action="muted">
-                          <BadgeText className="text-xs">{`Harga Beli: Rp ${product.purchasePrice.toLocaleString(
+                          <BadgeText className="text-xs">{`Harga Beli: Rp ${(product.purchasePrice ?? 0).toLocaleString(
                             "id-ID"
                           )}`}</BadgeText>
                         </Badge>
@@ -425,27 +196,27 @@ export default function ProductList() {
                     </HStack>
                     <VStack className="items-end">
                       <Text className="text-brand-primary text-sm font-bold">
-                        {product.stock}
+                        Stok: {product.stock ?? 0}
                       </Text>
                       <Text className="text-xs">
                         Retail:{" "}
                         {`${
                           product.sellPrices?.filter(
                             (r) => r.type === "RETAIL"
-                          )?.[0].minimumPurchase
+                          )?.[0]?.minimumPurchase ?? 0
                         }@ Rp ${product.sellPrices
                           ?.filter((r) => r.type === "RETAIL")?.[0]
-                          .price.toLocaleString("id-ID")}`}
+                          ?.price.toLocaleString("id-ID") ?? 0}`}
                       </Text>
                       <Text className="text-xs">
                         Grosir:{" "}
                         {`${
                           product.sellPrices?.filter(
                             (r) => r.type === "WHOLESALE"
-                          )?.[0].minimumPurchase
+                          )?.[0]?.minimumPurchase ?? 0
                         }@ Rp ${product.sellPrices
                           ?.filter((r) => r.type === "WHOLESALE")?.[0]
-                          .price.toLocaleString("id-ID")}`}
+                          ?.price.toLocaleString("id-ID") ?? 0}`}
                       </Text>
                     </VStack>
                   </HStack>
@@ -454,7 +225,7 @@ export default function ProductList() {
               {products?.length === 0 && (
                 <Box className="p-8 items-center">
                   <Text className="text-slate-400 italic">
-                    No products found
+                    Belum ada produk
                   </Text>
                 </Box>
               )}

@@ -16,21 +16,21 @@ import {
   VStack,
 } from "@/components/ui";
 import { getErrorMessage } from "@/lib/api/client";
-// import {
-//   CreateSupplierDTO,
-//   UpdateSupplierDTO,
-//   useCreateSupplier,
-//   useUpdateSupplier,
-//   useSupplier,
-//   useSuppliers,
-// } from "@/lib/api/suppliers";
+import {
+  CreateSupplierDTO,
+  UpdateSupplierDTO,
+  useCreateSupplier,
+  useUpdateSupplier,
+  useSupplier,
+  useSuppliers,
+} from "@/lib/api/suppliers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
-import { dataSuppliers } from ".";
+
 
 export default function SupplierForm() {
   const router = useRouter();
@@ -57,14 +57,13 @@ export default function SupplierForm() {
     defaultValues: initialValues,
   });
 
-  // const { refetch: refetchSuppliers } = useSuppliers();
-  // const { data: supplier, refetch: refetchSupplier } = useSupplier(supplierId || "");
-  const supplier = dataSuppliers.find((r) => r.id === supplierId);
+  const { refetch: refetchSuppliers } = useSuppliers();
+  const { data: supplier, refetch: refetchSupplier } = useSupplier(supplierId || "");
 
-  // const createMutation = useCreateSupplier();
-  // const updateMutation = useUpdateSupplier();
+  const createMutation = useCreateSupplier();
+  const updateMutation = useUpdateSupplier();
 
-  const isLoading = false; //createMutation.isPending || updateMutation.isPending;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   const toast = useToast();
 
@@ -96,10 +95,10 @@ export default function SupplierForm() {
   }, [form, supplier, supplierId]);
 
   const onRefetch = () => {
-    // refetchSuppliers();
-    // if (supplierId) {
-    //   refetchSupplier();
-    // }
+    refetchSuppliers();
+    if (supplierId) {
+      refetchSupplier();
+    }
   };
 
   const handleCancel = () => {
@@ -109,50 +108,48 @@ export default function SupplierForm() {
   const onSubmit: SubmitHandler<SupplierFormValues> = (
     data: SupplierFormValues
   ) => {
-    // if (supplierId && supplier) {
-    //   const updateData: UpdateSupplierDTO = {
-    //     ...data,
-    //     id: supplier.id,
-    //     password: supplier.password || undefined,
-    //   };
-    //   updateMutation.mutate(updateData, {
-    //     onSuccess: () => {
-    //       onRefetch();
-    //       handleCancel();
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //             <ToastTitle>Supplier berhasil diubah</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //     onError: (error) => {
-    //       showErrorToast(error);
-    //     },
-    //   });
-    // } else {
-    //   const { isActive, ...restData } = data
-    //   const createData: CreateSupplierDTO = restData;
-    //   createMutation.mutate(createData, {
-    //     onSuccess: () => {
-    //       onRefetch();
-    //       handleCancel();
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //             <ToastTitle>Supplier berhasil diubah</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //     onError: (error) => {
-    //       showErrorToast(error);
-    //     },
-    //   });
-    // }
+    if (supplierId && supplier) {
+      const updateData: UpdateSupplierDTO = {
+        ...data,
+        id: supplier.id,
+      };
+      updateMutation.mutate(updateData, {
+        onSuccess: () => {
+          onRefetch();
+          handleCancel();
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastTitle>Supplier berhasil diubah</ToastTitle>
+              </Toast>
+            ),
+          });
+        },
+        onError: (error) => {
+          showErrorToast(error);
+        },
+      });
+    } else {
+      const createData: CreateSupplierDTO = data;
+      createMutation.mutate(createData, {
+        onSuccess: () => {
+          onRefetch();
+          handleCancel();
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastTitle>Supplier berhasil ditambahkan</ToastTitle>
+              </Toast>
+            ),
+          });
+        },
+        onError: (error) => {
+          showErrorToast(error);
+        },
+      });
+    }
   };
 
   return (

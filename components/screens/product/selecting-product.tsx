@@ -1,5 +1,4 @@
 import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import { Badge, BadgeText } from "@/components/ui/badge";
 import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
@@ -7,51 +6,28 @@ import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
 import { Text } from "@/components/ui/text";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-import { getErrorMessage } from "@/lib/api/client";
-// import { useBulkDeleteProduct, Product, useProducts } from "@/lib/api/products";
-import { useRouter } from "expo-router";
+import { ProductListItem, useProducts } from "@/lib/api/products";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
-import { dataProducts, Product } from ".";
 
-export default function SelectingProductList({ header, selectedItems, onSubmit }: { header: string, selectedItems?: Product[], onSubmit?: (value: Product[]) => void }) {
-  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
-  const router = useRouter();
-  const [newSelectedItems, setNewSelectedItems] = useState<Product[]>(selectedItems || []);
+export default function SelectingProductList({ header, selectedItems, onSubmit }: { header: string, selectedItems?: ProductListItem[], onSubmit?: (value: ProductListItem[]) => void }) {
+  const [newSelectedItems, setNewSelectedItems] = useState<ProductListItem[]>(selectedItems || []);
   
-  // const { data, isLoading, refetch } = useProducts();
-  const products = dataProducts || [];
-  // const deleteMutation = useBulkDeleteProduct();
+  const { data } = useProducts();
+  const products = data || [];
 
-  const toast = useToast();
-
-  const handlePress = (data: Product) => {
-    if (newSelectedItems.some((r) => r.id === data.id)) {
-      setNewSelectedItems(newSelectedItems.filter((r) => r.id !== data.id));
+  const handlePress = (item: ProductListItem) => {
+    if (newSelectedItems.some((r) => r.id === item.id)) {
+      setNewSelectedItems(newSelectedItems.filter((r) => r.id !== item.id));
       return;
     }
     if (!newSelectedItems) {
-      setNewSelectedItems([data]);
+      setNewSelectedItems([item]);
       return;
     }
 
-    setNewSelectedItems([...newSelectedItems, data]);
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
+    setNewSelectedItems([...newSelectedItems, item]);
   };
 
   return (
@@ -96,7 +72,7 @@ export default function SelectingProductList({ header, selectedItems, onSubmit }
                           {product.code}
                         </Text>
                         <Badge size="sm" variant="solid" action="muted">
-                          <BadgeText className="text-xs">{`Harga Beli: Rp ${product.purchasePrice.toLocaleString(
+                          <BadgeText className="text-xs">{`Harga Beli: Rp ${(product.purchasePrice ?? 0).toLocaleString(
                             "id-ID"
                           )}`}</BadgeText>
                         </Badge>
@@ -104,27 +80,7 @@ export default function SelectingProductList({ header, selectedItems, onSubmit }
                     </HStack>
                     <VStack className="items-end">
                       <Text className="text-brand-primary text-sm font-bold">
-                        {product.stock}
-                      </Text>
-                      <Text className="text-xs">
-                        Retail:{" "}
-                        {`${
-                          product.sellPrices?.filter(
-                            (r) => r.type === "RETAIL"
-                          )?.[0].minimumPurchase
-                        }@ Rp ${product.sellPrices
-                          ?.filter((r) => r.type === "RETAIL")?.[0]
-                          .price.toLocaleString("id-ID")}`}
-                      </Text>
-                      <Text className="text-xs">
-                        Grosir:{" "}
-                        {`${
-                          product.sellPrices?.filter(
-                            (r) => r.type === "WHOLESALE"
-                          )?.[0].minimumPurchase
-                        }@ Rp ${product.sellPrices
-                          ?.filter((r) => r.type === "WHOLESALE")?.[0]
-                          .price.toLocaleString("id-ID")}`}
+                        Stok: {product.stock ?? 0}
                       </Text>
                     </VStack>
                   </HStack>

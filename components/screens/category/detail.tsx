@@ -28,12 +28,12 @@ import {
   useCategory,
   useDeleteCategory,
 } from "@/lib/api/categories";
+import { Product, useProductsByCategory } from "@/lib/api/products";
 import { getErrorMessage } from "@/lib/api/client";
 import { useCategoryStore } from "@/stores/category";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView } from "react-native";
-import { dataProducts, Product } from "../product";
 
 export default function CategoryDetail() {
   const { setOpen, setData } = useCategoryStore();
@@ -51,6 +51,7 @@ export default function CategoryDetail() {
   const { data: category, refetch: refetchCategory } = useCategory(
     categoryId || ""
   );
+  const { data: products = [] } = useProductsByCategory(categoryId || "");
   const deleteMutation = useDeleteCategory();
   const toast = useToast();
 
@@ -200,15 +201,15 @@ export default function CategoryDetail() {
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Total Produk</Text>
-              <Text className="font-bold">0</Text>
+              <Text className="font-bold">{products.length}</Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Poin Retail</Text>
-              <Text className="font-bold">0</Text>
+              <Text className="font-bold">{category?.retailPoint ?? 0}</Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Poin Grosir</Text>
-              <Text className="font-bold">0</Text>
+              <Text className="font-bold">{category?.wholesalePoint ?? 0}</Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Nilai Modal</Text>
@@ -217,7 +218,7 @@ export default function CategoryDetail() {
           </Box>
           <Box className="pr-4">
             <VStack>
-              {dataProducts?.map((product) => (
+              {products?.map((product) => (
                 <Pressable
                   key={product.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
