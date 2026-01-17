@@ -15,6 +15,7 @@ import {
   Category,
   useBulkDeleteCategory,
   useCategories,
+  useProductCountsByCategory,
 } from "@/lib/api/categories";
 import { getErrorMessage } from "@/lib/api/client";
 import { useCategoryStore } from "@/stores/category";
@@ -27,6 +28,7 @@ export default function CategoryList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data, isLoading, refetch } = useCategories();
+  const { data: productCounts } = useProductCountsByCategory();
   const [selectedItems, setSelectedItems] = useState<Category[] | null>(null);
 
   const categories = data || [];
@@ -183,12 +185,12 @@ export default function CategoryList() {
                       <HStack space="sm">
                         <Badge size="sm" variant="solid" action="muted">
                           <BadgeText className="text-xs">
-                            Total Produk: 0
+                            Total Produk: {productCounts?.[item.id] ?? 0}
                           </BadgeText>
                         </Badge>
                       </HStack>
                       <Text size="xs" className="text-slate-500">
-                        Poin Retail: 0 | Poin Grosir: 0
+                        Poin Retail: {item.retailPoint ?? 0} | Poin Grosir: {item.wholesalePoint ?? 0}
                       </Text>
                     </VStack>
                     <VStack className="items-end">

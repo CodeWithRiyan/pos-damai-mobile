@@ -44,6 +44,7 @@ export function useBrands() {
     queryKey: ['brands'],
     queryFn: async () => {
       const orgId = getOrganizationId();
+      console.log('[Brands] Fetching for orgId:', orgId);
       const result = await db
         .select()
         .from(schema.brands)
@@ -51,6 +52,7 @@ export function useBrands() {
           eq(schema.brands.organizationId, orgId),
           isNull(schema.brands.deletedAt)
         ));
+      console.log('[Brands] Found:', result.length, result);
       return result as Brand[];
     },
   });
@@ -72,6 +74,34 @@ export function useBrand(id: string) {
   });
 }
 
+// Get product counts by brand
+export function useProductCountsByBrand() {
+  return useQuery({
+    queryKey: ['productCountsByBrand'],
+    queryFn: async () => {
+      const orgId = getOrganizationId();
+      const products = await db
+        .select({ brandId: schema.products.brandId })
+        .from(schema.products)
+        .where(
+          and(
+            eq(schema.products.organizationId, orgId),
+            isNull(schema.products.deletedAt)
+          )
+        );
+
+      const counts: Record<string, number> = {};
+      products.forEach((p) => {
+        if (p.brandId) {
+          counts[p.brandId] = (counts[p.brandId] || 0) + 1;
+        }
+      });
+
+      return counts;
+    },
+  });
+}
+
 // Create brand (saved to local SQLite, synced via SyncEngine)
 export function useCreateBrand() {
   const queryClient = useQueryClient();
@@ -79,6 +109,7 @@ export function useCreateBrand() {
   return useMutation({
     mutationFn: async (data: CreateBrandDTO) => {
       const orgId = getOrganizationId();
+      console.log('[CreateBrand] creating for orgId:', orgId, data);
       const id = `brand_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
 
@@ -95,10 +126,12 @@ export function useCreateBrand() {
       };
 
       await db.insert(schema.brands).values(newBrand);
+      console.log('[CreateBrand] inserted:', newBrand);
 
       return newBrand as Brand;
     },
     onSuccess: () => {
+      console.log('[CreateBrand] success, invalidating brands query');
       queryClient.invalidateQueries({ queryKey: ['brands'] });
     },
   });

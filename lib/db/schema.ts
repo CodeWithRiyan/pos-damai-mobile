@@ -13,6 +13,8 @@ export const categories = sqliteTable('categories', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   point: real('point').default(0),
+  retailPoint: real('retailPoint').default(0),
+  wholesalePoint: real('wholesalePoint').default(0),
   description: text('description'),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
@@ -33,8 +35,43 @@ export const products = sqliteTable('products', {
   purchasePrice: real('purchasePrice').default(0),
   description: text('description'),
   isFavorite: integer('isFavorite', { mode: 'boolean' }).default(false),
+  isActive: integer('isActive', { mode: 'boolean' }).default(true),
+  type: text('type').default('DEFAULT'),
+  unit: text('unit'),
+  minimumStock: real('minimumStock').default(0),
   categoryId: text('categoryId').notNull(),
   brandId: text('brandId'),
+  discountId: text('discountId'), // Added
+  supplierId: text('supplierId'), // Added
+  organizationId: text('organizationId').notNull(),
+  ...syncColumns,
+});
+
+export const suppliers = sqliteTable('suppliers', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  phone: text('phone'),
+  address: text('address'),
+  organizationId: text('organizationId').notNull(),
+  ...syncColumns,
+});
+
+export const discounts = sqliteTable('discounts', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  nominal: real('nominal').notNull(),
+  type: text('type').default('FLAT'), // 'PERCENTAGE' or 'FLAT'
+  startDate: integer('startDate', { mode: 'timestamp' }).notNull(),
+  endDate: integer('endDate', { mode: 'timestamp' }).notNull(),
+  organizationId: text('organizationId').notNull(),
+  ...syncColumns,
+});
+
+export const productVariants = sqliteTable('product_variants', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  code: text('code').notNull(),
+  productId: text('productId').notNull(),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
 });
@@ -43,6 +80,8 @@ export const productPrices = sqliteTable('product_prices', {
   id: text('id').primaryKey(),
   label: text('label').notNull(),
   price: real('price').notNull(),
+  minimumPurchase: real('minimumPurchase').default(1),
+  type: text('type').default('RETAIL'),
   productId: text('productId').notNull(),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,

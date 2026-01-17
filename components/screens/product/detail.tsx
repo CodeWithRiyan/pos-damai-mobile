@@ -22,11 +22,10 @@ import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import useBreakpoint from "@/hooks/use-breakpoint";
 import { getErrorMessage } from "@/lib/api/client";
-// import { useDeleteProduct, useProduct, useProducts } from "@/lib/api/products";
+import { useDeleteProduct, useProduct, useProducts } from "@/lib/api/products";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView } from "react-native";
-import { dataProducts } from ".";
 
 export default function ProductDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -34,18 +33,17 @@ export default function ProductDetail() {
   const { id } = useLocalSearchParams();
   const productId = id as string;
 
-  const { sm } = useBreakpoint();
+  // const { sm } = useBreakpoint();
   const [showActionsheet, setShowActionsheet] = useState<boolean>(false);
 
-  // const { refetch: refetchProducts } = useProducts();
-  // const { data: product, refetch: refetchProduct } = useProduct(productId || "");
-  // const deleteMutation = useDeleteProduct();
-  const product = dataProducts.find((r) => r.id === productId);
+  const { refetch: refetchProducts } = useProducts();
+  const { data: product, refetch: refetchProduct } = useProduct(productId || "");
+  const deleteMutation = useDeleteProduct();
   const toast = useToast();
 
   const onRefetch = () => {
-    // refetchProducts();
-    // refetchProduct();
+    refetchProducts();
+    refetchProduct();
   };
 
   const showErrorToast = (error: unknown) => {
@@ -78,35 +76,35 @@ export default function ProductDetail() {
       closeText: "BATAL",
       okVariant: "destructive",
       onOk: () => confirmDelete(),
-      // loading: deleteMutation.isPending,
+      loading: deleteMutation.isPending,
     });
   };
 
   const confirmDelete = async () => {
     if (!product) return;
 
-    // deleteMutation.mutate(product.id, {
-    //   onSuccess: () => {
-    //     hidePopUpConfirm();
-    //     onRefetch();
-    //     setShowActionsheet(false);
-    //     router.back();
+    deleteMutation.mutate(product.id, {
+      onSuccess: () => {
+        hidePopUpConfirm();
+        onRefetch();
+        setShowActionsheet(false);
+        router.back();
 
-    //     toast.show({
-    //       placement: "top",
-    //       render: ({ id }) => (
-    //         <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //           <ToastTitle>Produk berhasil dihapus</ToastTitle>
-    //         </Toast>
-    //       ),
-    //     });
-    //   },
-    //   onError: (error) => {
-    //     showErrorToast(error);
-    //     hidePopUpConfirm();
-    //     setShowActionsheet(false);
-    //   },
-    // });
+        toast.show({
+          placement: "top",
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+              <ToastTitle>Produk berhasil dihapus</ToastTitle>
+            </Toast>
+          ),
+        });
+      },
+      onError: (error) => {
+        showErrorToast(error);
+        hidePopUpConfirm();
+        setShowActionsheet(false);
+      },
+    });
   };
 
   return (
@@ -241,7 +239,25 @@ export default function ProductDetail() {
       </ScrollView>
 
       <VStack space="md" className="w-full p-4">
-        <Pressable className="w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-brand-primary">
+        <Pressable
+          className="w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-brand-primary"
+          onPress={() => {
+            if (product?.supplierId) {
+              router.push(
+                `/(main)/management/customer-supplier/supplier/detail/${product.supplierId}`
+              );
+            } else {
+              toast.show({
+                placement: "top",
+                render: ({ id }) => (
+                  <Toast nativeID={`toast-${id}`} action="warning" variant="solid">
+                    <ToastTitle>Produk tidak memiliki supplier</ToastTitle>
+                  </Toast>
+                ),
+              });
+            }
+          }}
+        >
           <Text size="sm" className="text-brand-primary font-bold">
             LIHAT SUPPLIER
           </Text>

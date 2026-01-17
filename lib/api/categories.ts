@@ -8,6 +8,8 @@ export interface Category {
   id: string;
   name: string;
   point: number;
+  retailPoint: number;
+  wholesalePoint: number;
   description: string | null;
   organizationId: string;
   createdAt: Date | null;
@@ -17,14 +19,13 @@ export interface Category {
 export interface CreateCategoryDTO {
   name: string;
   point?: number;
+  retailPoint?: number;
+  wholesalePoint?: number;
   description?: string;
 }
 
-export interface UpdateCategoryDTO {
+export interface UpdateCategoryDTO extends Partial<CreateCategoryDTO> {
   id: string;
-  name?: string;
-  point?: number;
-  description?: string;
 }
 
 // Get user's organization ID
@@ -39,6 +40,30 @@ function getOrganizationId(): string {
     }
   }
   return '';
+}
+
+// Get product counts by category
+export function useProductCountsByCategory() {
+  return useQuery({
+    queryKey: ['productCountsByCategory'],
+    queryFn: async () => {
+      const orgId = getOrganizationId();
+      const products = await db
+        .select({ categoryId: schema.products.categoryId })
+        .from(schema.products)
+        .where(and(
+          eq(schema.products.organizationId, orgId),
+          isNull(schema.products.deletedAt)
+        ));
+      
+      // Count products per category
+      const counts: Record<string, number> = {};
+      for (const product of products) {
+        counts[product.categoryId] = (counts[product.categoryId] || 0) + 1;
+      }
+      return counts;
+    },
+  });
 }
 
 // Get all categories from local SQLite (excluding soft-deleted)
@@ -91,6 +116,8 @@ export function useCreateCategory() {
         id,
         name: data.name,
         point: data.point ?? 0,
+        retailPoint: data.retailPoint ?? 0,
+        wholesalePoint: data.wholesalePoint ?? 0,
         description: data.description ?? null,
         organizationId: orgId,
         createdAt: now,

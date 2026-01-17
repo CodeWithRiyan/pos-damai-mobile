@@ -25,11 +25,11 @@ import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { useBrand, useBrands, useDeleteBrand } from "@/lib/api/brands";
 import { getErrorMessage } from "@/lib/api/client";
+import { Product, useProductsByBrand } from "@/lib/api/products";
 import { useBrandStore } from "@/stores/brand";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ScrollView } from "react-native";
-import { dataProducts, Product } from "../product";
 
 export default function BrandDetail() {
   const { setOpen, setData } = useBrandStore();
@@ -45,8 +45,17 @@ export default function BrandDetail() {
 
   const { refetch: refetchBrands } = useBrands();
   const { data: brand, refetch: refetchBrand } = useBrand(brandId || "");
+  const { data: products } = useProductsByBrand(brandId || "");
   const deleteMutation = useDeleteBrand();
   const toast = useToast();
+
+  const dataProducts = useMemo(() => products || [], [products]);
+
+  const totalModal = useMemo(() => {
+    return dataProducts.reduce((acc, curr) => {
+      return acc + (curr.purchasePrice || 0) * (curr.stock || 0);
+    }, 0);
+  }, [dataProducts]);
 
   const onRefetch = () => {
     refetchBrands();
@@ -194,11 +203,11 @@ export default function BrandDetail() {
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Total Produk</Text>
-              <Text className="font-bold">0</Text>
+              <Text className="font-bold">{dataProducts.length}</Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Nilai Modal</Text>
-              <Text className="font-bold">Rp 0</Text>
+              <Text className="font-bold">Rp {totalModal.toLocaleString("id-ID")}</Text>
             </HStack>
           </Box>
           <Box className="pr-4">
@@ -231,7 +240,7 @@ export default function BrandDetail() {
                           {product.code}
                         </Text>
                         <Badge size="sm" variant="solid" action="muted">
-                          <BadgeText className="text-xs">{`Harga Beli: Rp ${product.purchasePrice.toLocaleString(
+                          <BadgeText className="text-xs">{`Harga Beli: Rp ${(product.purchasePrice ?? 0).toLocaleString(
                             "id-ID"
                           )}`}</BadgeText>
                         </Badge>
@@ -239,27 +248,27 @@ export default function BrandDetail() {
                     </HStack>
                     <VStack className="items-end">
                       <Text className="text-brand-primary text-sm font-bold">
-                        {product.stock}
+                        Stok: {product.stock ?? 0}
                       </Text>
                       <Text className="text-xs">
                         Retail:{" "}
                         {`${
                           product.sellPrices?.filter(
                             (r) => r.type === "RETAIL"
-                          )?.[0].minimumPurchase
+                          )?.[0]?.minimumPurchase ?? 0
                         }@ Rp ${product.sellPrices
                           ?.filter((r) => r.type === "RETAIL")?.[0]
-                          .price.toLocaleString("id-ID")}`}
+                          ?.price.toLocaleString("id-ID") ?? 0}`}
                       </Text>
                       <Text className="text-xs">
                         Grosir:{" "}
                         {`${
                           product.sellPrices?.filter(
                             (r) => r.type === "WHOLESALE"
-                          )?.[0].minimumPurchase
+                          )?.[0]?.minimumPurchase ?? 0
                         }@ Rp ${product.sellPrices
                           ?.filter((r) => r.type === "WHOLESALE")?.[0]
-                          .price.toLocaleString("id-ID")}`}
+                          ?.price.toLocaleString("id-ID") ?? 0}`}
                       </Text>
                     </VStack>
                   </HStack>

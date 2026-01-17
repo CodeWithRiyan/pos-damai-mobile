@@ -22,11 +22,11 @@ import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import useBreakpoint from "@/hooks/use-breakpoint";
 import { getErrorMessage } from "@/lib/api/client";
-// import { useDeleteSupplier, useSupplier, useSuppliers } from "@/lib/api/suppliers";
+import { useDeleteSupplier, useSupplier, useSuppliers } from "@/lib/api/suppliers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView } from "react-native";
-import { dataSuppliers } from ".";
+
 
 export default function SupplierDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -34,18 +34,17 @@ export default function SupplierDetail() {
   const { id } = useLocalSearchParams();
   const supplierId = id as string;
 
-  const { sm } = useBreakpoint();
+  // const { sm } = useBreakpoint();
   const [showActionsheet, setShowActionsheet] = useState<boolean>(false);
 
-  // const { refetch: refetchSuppliers } = useSuppliers();
-  // const { data: supplier, refetch: refetchSupplier } = useSupplier(supplierId || "");
-  // const deleteMutation = useDeleteSupplier();
-  const supplier = dataSuppliers.find((r) => r.id === supplierId);
+  const { refetch: refetchSuppliers } = useSuppliers();
+  const { data: supplier, refetch: refetchSupplier } = useSupplier(supplierId || "");
+  const deleteMutation = useDeleteSupplier();
   const toast = useToast();
 
   const onRefetch = () => {
-    // refetchSuppliers();
-    // refetchSupplier();
+    refetchSuppliers();
+    refetchSupplier();
   };
 
   const showErrorToast = (error: unknown) => {
@@ -78,35 +77,35 @@ export default function SupplierDetail() {
       closeText: "BATAL",
       okVariant: "destructive",
       onOk: () => confirmDelete(),
-      // loading: deleteMutation.isPending,
+      loading: deleteMutation.isPending,
     });
   };
 
   const confirmDelete = async () => {
     if (!supplier) return;
 
-    // deleteMutation.mutate(supplier.id, {
-    //   onSuccess: () => {
-    //     hidePopUpConfirm();
-    //     onRefetch();
-    //     setShowActionsheet(false);
-    //     router.back();
+    deleteMutation.mutate(supplier.id, {
+      onSuccess: () => {
+        hidePopUpConfirm();
+        onRefetch();
+        setShowActionsheet(false);
+        router.back();
 
-    //     toast.show({
-    //       placement: "top",
-    //       render: ({ id }) => (
-    //         <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //           <ToastTitle>Produk berhasil dihapus</ToastTitle>
-    //         </Toast>
-    //       ),
-    //     });
-    //   },
-    //   onError: (error) => {
-    //     showErrorToast(error);
-    //     hidePopUpConfirm();
-    //     setShowActionsheet(false);
-    //   },
-    // });
+        toast.show({
+          placement: "top",
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+              <ToastTitle>Supplier berhasil dihapus</ToastTitle>
+            </Toast>
+          ),
+        });
+      },
+      onError: (error) => {
+        showErrorToast(error);
+        hidePopUpConfirm();
+        setShowActionsheet(false);
+      },
+    });
   };
 
   return (
