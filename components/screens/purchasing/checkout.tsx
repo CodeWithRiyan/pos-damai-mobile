@@ -51,12 +51,12 @@ import InputVirtualKeyboard from "@/components/ui/input-virtual-keyboard";
 import { usePurchasingStore } from "@/stores/purchasing";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
-import { Check } from "lucide-react-native";
+import { CalendarIcon, Check } from "lucide-react-native";
 
 export default function PurchasingCheckoutForm() {
   const router = useRouter();
 
-  const { cartTotal, resetCart } = usePurchasingStore();
+  const { cartTotal, resetCart, status } = usePurchasingStore();
 
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
   const [showTransactionDatePicker, setShowTransactionDatePicker] =
@@ -73,25 +73,29 @@ export default function PurchasingCheckoutForm() {
       transactionDate: z.date().nullable(),
       dueDate: z.date().nullable(),
       isCashdrawer: z.boolean(),
+      status: z.string(),
       note: z.string(),
     })
     .superRefine((data, ctx) => {
-      if (parseFloat(data.totalPaid) < data.totalPurchase) {
+      if (parseFloat(data.totalPaid || "0") < data.totalPurchase) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Total pembayaran tidak boleh kurang dari total pembelian",
+          path: ["totalPaid"],
         });
       }
       if (data.transactionDate === null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Tanggal transaksi harus diisi",
+          path: ["transactionDate"],
         });
       }
       if (data.isPayable && data.dueDate === null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Tanggal jatuh tempo harus diisi",
+          path: ["dueDate"],
         });
       }
     });
@@ -106,6 +110,7 @@ export default function PurchasingCheckoutForm() {
     isPayable: false,
     dueDate: null,
     isCashdrawer: false,
+    status: "DRAFT",
     note: "",
   };
 
@@ -143,11 +148,26 @@ export default function PurchasingCheckoutForm() {
   useEffect(() => {
     if (cartTotal) {
       form.setValue("totalPurchase", cartTotal);
+      form.setValue("status", status);
     } else {
       form.reset(initialValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, cartTotal]);
+
+  useEffect(() => {
+    if (form.formState.errors.totalPaid) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{form.formState.errors.totalPaid?.message}</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.formState.errors.totalPaid]);
 
   const onRefetch = () => {};
 
@@ -159,6 +179,7 @@ export default function PurchasingCheckoutForm() {
     data: PurchasingFormValues,
   ) => {
     handleCancel();
+    resetCart();
     // if (purchasingId && purchasing) {
     //   const updateData: UpdatePurchasingDTO = {
     //     ...data,
@@ -205,6 +226,7 @@ export default function PurchasingCheckoutForm() {
     // }
   };
 
+  console.log("form errors", form.formState.errors);
   return (
     <VStack className="flex-1 bg-white">
       <Header
@@ -245,13 +267,16 @@ export default function PurchasingCheckoutForm() {
                     >
                       <Pressable
                         onPress={() => setShowTransactionDatePicker(true)}
-                        className="border border-background-300 rounded px-3 py-2"
+                        className={`border border-background-300 rounded px-3 py-2${error ? " border-red-500" : ""}`}
                       >
-                        <Text>
-                          {value instanceof Date
-                            ? dayjs(value).format("DD/MM/YYYY")
-                            : "Tanggal Transaksi"}
-                        </Text>
+                        <HStack className="items-center justify-between">
+                          <Text>
+                            {value instanceof Date
+                              ? dayjs(value).format("DD/MM/YYYY")
+                              : "Tanggal Transaksi"}
+                          </Text>
+                          <Icon as={CalendarIcon} size="md" className="mr-2" />
+                        </HStack>
                       </Pressable>
                       {showTransactionDatePicker && (
                         <DateTimePicker
@@ -366,20 +391,23 @@ export default function PurchasingCheckoutForm() {
                       field: { onChange, value },
                       fieldState: { error },
                     }) => (
-                      <FormControl
-                        isRequired
-                        isInvalid={!!error}
-                        className="flex-1"
-                      >
+                      <FormControl isInvalid={!!error} className="flex-1">
                         <Pressable
                           onPress={() => setShowDueDatePicker(true)}
-                          className="border border-background-300 rounded px-3 py-2"
+                          className={`border border-background-300 rounded px-3 py-2${error ? " border-red-500" : ""}`}
                         >
-                          <Text>
-                            {value instanceof Date
-                              ? dayjs(value).format("DD/MM/YYYY")
-                              : "Tanggal Jatuh Tempo"}
-                          </Text>
+                          <HStack className="items-center justify-between">
+                            <Text>
+                              {value instanceof Date
+                                ? dayjs(value).format("DD/MM/YYYY")
+                                : "Tanggal Jatuh Tempo"}
+                            </Text>
+                            <Icon
+                              as={CalendarIcon}
+                              size="md"
+                              className="mr-2"
+                            />
+                          </HStack>
                         </Pressable>
                         {showDueDatePicker && (
                           <DateTimePicker
