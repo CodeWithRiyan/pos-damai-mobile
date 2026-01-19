@@ -3,29 +3,24 @@ import { create } from "zustand";
 
 interface CartItem {
   product: Product;
-  newPurchasePrice: number;
-  quantity: number;
-  note?: string;
+  physicalStock: number;
 }
 
-interface PurchasingState {
+interface StockOpnameState {
   openAddProduct: Product | null;
+  openConfirm: boolean;
   cart: CartItem[];
-  cartTotal?: number;
-  status: "DRAFT" | "COMPLETED";
-  setStatus: (status: "DRAFT" | "COMPLETED") => void;
   setOpenAddProduct: (state: Product | null) => void;
+  setOpenConfirm: (state: boolean) => void;
   addCartItem: (item: CartItem) => void;
   removeCartItem: (productId: string) => void;
   resetCart: () => void;
 }
 
-export const usePurchasingStore = create<PurchasingState>((set) => ({
+export const useStockOpnameStore = create<StockOpnameState>((set) => ({
   openAddProduct: null,
+  openConfirm: false,
   cart: [],
-  cartTotal: 0,
-  status: "DRAFT",
-  setStatus: (status) => set({ status }),
   setOpenAddProduct: (state) => set({ openAddProduct: state }),
   addCartItem: (item) =>
     set((state) => {
@@ -46,25 +41,16 @@ export const usePurchasingStore = create<PurchasingState>((set) => ({
         updatedCart = state.cart ? [...state.cart, item] : [item];
       }
 
-      const total = updatedCart.reduce(
-        (sum, cartItem) => sum + cartItem.quantity * cartItem.newPurchasePrice,
-        0,
-      );
-
-      return { cart: updatedCart, cartTotal: total };
+      return { cart: updatedCart };
     }),
+  setOpenConfirm: (state) => set({ openConfirm: state }),
   removeCartItem: (productId) =>
     set((state) => {
       const updatedCart = state.cart?.filter(
         (cartItem) => cartItem.product.id !== productId,
       );
 
-      const total = updatedCart.reduce(
-        (sum, cartItem) => sum + cartItem.quantity * cartItem.newPurchasePrice,
-        0,
-      );
-
-      return { cart: updatedCart, cartTotal: total };
+      return { cart: updatedCart };
     }),
-  resetCart: () => set({ cart: [], cartTotal: 0 }),
+  resetCart: () => set({ cart: [] }),
 }));

@@ -12,23 +12,20 @@ import {
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
-import {
-  SolarIconBold,
-  SolarIconLinear,
-} from "@/components/ui/solar-icon-wrapper";
 import { useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-// import { useBulkDeletePurchasing, Purchasing, usePurchasing } from "@/lib/api/purchasing";
+// import { useBulkDeleteStockOpname, StockOpname, useStockOpname } from "@/lib/api/purchasing";
 import { useProducts } from "@/lib/api/products";
-import { usePurchasingStore } from "@/stores/purchasing";
+import { useStockOpnameStore } from "@/stores/stock-opname";
 import { useRouter } from "expo-router";
 import React from "react";
 import { ScrollView } from "react-native";
-import PopupAddProduct from "./popup-add";
+import StockOpnameConfirmForm from "./form";
+import PopupAddStockOpname from "./popup-add";
 
-export default function PurchasingList() {
+export default function StockOpnameInput() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
-  const { cart, setOpenAddProduct, setStatus } = usePurchasingStore();
+  const { cart, setOpenAddProduct, setOpenConfirm } = useStockOpnameStore();
   const { data: products } = useProducts();
   const router = useRouter();
 
@@ -36,43 +33,13 @@ export default function PurchasingList() {
 
   return (
     <Box className="flex-1 bg-white">
-      <Header
-        header="PEMBELIAN BARANG"
-        action={
-          <HStack space="sm" className="pr-4">
-            <Pressable
-              className="size-10 items-center justify-center"
-              onPress={() => {}}
-            >
-              <SolarIconBold name="ClipboardList" size={20} color="#FDFBF9" />
-            </Pressable>
-            <Pressable
-              className="size-10 items-center justify-center"
-              onPress={() => {}}
-            >
-              <SolarIconBold name="History" size={20} color="#FDFBF9" />
-            </Pressable>
-          </HStack>
-        }
-      />
+      <Header header="INPUT BARANG" isGoBack />
       <HStack className="flex-1 bg-white">
         <VStack className="flex-1 border-r border-gray-300">
           <HStack
             space="sm"
             className="p-4 shadow-lg bg-background-0 items-center"
           >
-            <Pressable
-              className="size-10 items-center justify-center"
-              onPress={() => {}}
-            >
-              <SolarIconLinear name="Bell" size={20} color="#3d2117" />
-            </Pressable>
-            <Pressable
-              className="size-10 items-center justify-center"
-              onPress={() => {}}
-            >
-              <SolarIconLinear name="Filter" size={20} color="#3d2117" />
-            </Pressable>
             <Input className="flex-1 border border-background-300 rounded-lg h-10">
               <InputSlot className="pl-3">
                 <InputIcon as={SearchIcon} />
@@ -100,22 +67,9 @@ export default function PurchasingList() {
                           {product.name}
                         </Heading>
                         <Text size="sm" className="text-slate-500">
-                          {`Rp ${product.purchasePrice.toLocaleString("id-ID")}`}
+                          {product.code}
                         </Text>
                       </VStack>
-                      <HStack space="sm">
-                        <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
-                          <Text className="font-bold">
-                            {cart?.find((f) => f.product.id === product.id)
-                              ?.quantity || 0}
-                          </Text>
-                        </Box>
-                        <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
-                          <Text className="text-typography-0 font-bold">
-                            {product.stock}
-                          </Text>
-                        </Box>
-                      </HStack>
                     </HStack>
                   </HStack>
                 </Pressable>
@@ -142,21 +96,14 @@ export default function PurchasingList() {
                           {item.product.name}
                         </Heading>
                         <Text size="sm" className="text-slate-500">
-                          {item.quantity} x Rp{" "}
-                          {item.newPurchasePrice.toLocaleString("id-ID")} = Rp{" "}
-                          {(
-                            item.quantity * item.newPurchasePrice
-                          ).toLocaleString("id-ID")}
+                          {item.product.code}
                         </Text>
-                        {item.note && (
-                          <Text size="sm" className="text-slate-500">
-                            {item.note}
-                          </Text>
-                        )}
                       </VStack>
                       <HStack space="sm">
                         <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
-                          <Text className="font-bold">{item.quantity}</Text>
+                          <Text className="font-bold">
+                            {item.physicalStock}
+                          </Text>
                         </Box>
                       </HStack>
                     </HStack>
@@ -168,40 +115,19 @@ export default function PurchasingList() {
           {!!cart.length && (
             <HStack space="md" className="w-full p-4">
               <Pressable
-                className="flex-1 flex-row items-center justify-between h-16 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
-                onPress={() => {
-                  router.navigate("/(main)/purchasing/checkout");
-                  setStatus("COMPLETED");
-                }}
+                className="flex-1 flex-row items-center justify-center h-16 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
+                onPress={() => setOpenConfirm(true)}
               >
-                <HStack space="md" className="items-center">
-                  <Text size="4xl" className="text-white font-bold">
-                    {cart
-                      .reduce((total, item) => total + item.quantity, 0)
-                      .toLocaleString("id-ID")}
-                  </Text>
-                  <Text size="lg" className="text-white font-bold">
-                    ITEM
-                  </Text>
-                </HStack>
                 <Text size="lg" className="text-white font-bold">
-                  LANJUT
+                  SIMPAN STOCK OPNAME
                 </Text>
-              </Pressable>
-              <Pressable
-                className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
-                onPress={() => {
-                  router.navigate("/(main)/purchasing/checkout");
-                  setStatus("DRAFT");
-                }}
-              >
-                <SolarIconBold name="ClipboardAdd" size={32} color="#3d2117" />
               </Pressable>
             </HStack>
           )}
         </VStack>
       </HStack>
-      <PopupAddProduct />
+      <PopupAddStockOpname />
+      <StockOpnameConfirmForm />
     </Box>
   );
 }
