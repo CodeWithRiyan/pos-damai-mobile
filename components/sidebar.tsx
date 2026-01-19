@@ -7,7 +7,7 @@ import { VStack } from "@/components/ui/vstack";
 import useBreakpoint from "@/hooks/use-breakpoint";
 import { useCurrentUser, useLogout } from "@/lib/api/auth";
 import { useSidebarStore } from "@/stores/sidebar";
-import { Link, usePathname, useRouter } from "expo-router";
+import { Link, LinkProps, usePathname, useRouter } from "expo-router";
 import React from "react";
 import { CloseIcon, Icon } from "./ui";
 import {
@@ -45,18 +45,18 @@ export function Sidebar() {
   const menuItems: {
     label: string;
     icon: SolarIconBoldDuotoneProps["name"];
-    href: string;
+    href: LinkProps["href"];
   }[] = [
     { label: "Dashboard", icon: "Widget5", href: "/" },
     { label: "Manajemen", icon: "Database", href: "/management" },
+    { label: "Pembelian Barang", icon: "Cart3", href: "/purchasing" },
     { label: "Transaksi Penjualan", icon: "Plain", href: "/transaction" },
-    { label: "Pembelian Barang", icon: "Cart3", href: "/purchase" },
     { label: "Keuangan", icon: "WalletMoney", href: "/finance" },
     { label: "Shift", icon: "WatchSquareMinimalistic", href: "/shift/current" },
     { label: "Laporan", icon: "PieChart2", href: "/report" },
-    { label: "Pengaturan", icon: "Settings", href: "/settings" },
+    { label: "Pengaturan", icon: "Settings", href: "/setting" },
   ];
-  console.log("user: ", user)
+
   return (
     <>
       <Drawer
@@ -104,10 +104,11 @@ export function Sidebar() {
               {menuItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
-                  (item.href !== "/" && pathname.startsWith(item.href));
+                  (item.href !== "/" &&
+                    pathname.startsWith(item.href as string));
 
                 return (
-                  <Link href={item.href as any} key={item.href} asChild>
+                  <Link href={item.href} key={item.label} asChild>
                     <Pressable
                       className={`flex-row items-center p-3 rounded-xl gap-3 ${
                         isActive ? "bg-brand-primary" : "active:bg-slate-200"
