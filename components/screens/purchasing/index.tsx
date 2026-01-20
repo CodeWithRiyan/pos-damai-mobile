@@ -48,7 +48,7 @@ export default function PurchasingList() {
             </Pressable>
             <Pressable
               className="size-10 items-center justify-center"
-              onPress={() => {}}
+              onPress={() => router.navigate("/(main)/purchasing/history")}
             >
               <SolarIconBold name="History" size={20} color="#FDFBF9" />
             </Pressable>

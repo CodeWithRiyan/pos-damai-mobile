@@ -73,7 +73,10 @@ export default function InputVirtualKeyboard({
         </Pressable>
       </GridItem>
       <GridItem _extra={{ className: "col-span-1" }}>
-        <Pressable className="h-20 w-full items-center justify-center active:bg-background-100">
+        <Pressable
+          className="h-20 w-full items-center justify-center active:bg-background-100"
+          onPress={() => onChange?.(nominal + "6")}
+        >
           <Heading size="3xl" className="font-bold mb-2">
             6
           </Heading>
