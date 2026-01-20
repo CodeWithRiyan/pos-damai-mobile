@@ -14,11 +14,11 @@ import {
 import { useRouter } from "expo-router";
 import { ScrollView } from "react-native";
 
-export default function PurchasingHistory() {
+export default function ReturPurchasing() {
   const router = useRouter();
   return (
     <VStack className="flex-1 bg-white">
-      <Header header="HISTORI PEMBELIAN" isGoBack />
+      <Header header="RETUR PEMBELIAN BARANG" isGoBack />
       <HStack space="sm" className="p-4 shadow-lg bg-background-0 items-center">
         <Input className="flex-1 border border-background-300 rounded-lg h-10">
           <InputSlot className="pl-3">
