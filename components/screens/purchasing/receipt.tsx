@@ -5,7 +5,7 @@ import { ScrollView } from "react-native";
 export default function PurchasingReceipt() {
   return (
     <VStack className="flex-1 bg-primary-200">
-      <Header header="STRUK PEMBELIAN" isGoBack />
+      <Header header="STRUK PEMBELIAN BARANG" isGoBack />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <Box className="p-4 flex-1">
           <VStack className="flex-1 bg-background-0 p-6 shadow">

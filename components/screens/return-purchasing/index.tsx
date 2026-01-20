@@ -30,7 +30,9 @@ export default function ReturPurchasing() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <Pressable
           className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
-          onPress={() => router.navigate("/(main)/purchasing/receipt")}
+          onPress={() =>
+            router.navigate("/(main)/management/return/purchasing/input")
+          }
         >
           <HStack space="xl" className="items-center">
             <VStack>
