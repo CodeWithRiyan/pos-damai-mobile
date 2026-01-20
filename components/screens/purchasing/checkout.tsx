@@ -48,59 +48,61 @@ import { ScrollView } from "react-native";
 import { z } from "zod";
 // import { usePurchasing } from "@/lib/api/purchasing";
 import InputVirtualKeyboard from "@/components/ui/input-virtual-keyboard";
+import { useCurrentUser } from "@/lib/api/auth";
 import { usePurchasingStore } from "@/stores/purchasing";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { CalendarIcon, Check } from "lucide-react-native";
 
+const purchasingSchema = z
+  .object({
+    totalPurchase: z
+      .number()
+      .min(0, "Total pembelian harus lebih besar atau sama dengan 0"),
+    totalPaid: z.string(),
+    supplierId: z.string().min(1, "Supplier harus dipilih"),
+    isPayable: z.boolean(),
+    transactionDate: z.date().nullable(),
+    dueDate: z.date().nullable(),
+    isCashdrawer: z.boolean(),
+    status: z.string(),
+    note: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    if (parseFloat(data.totalPaid || "0") < data.totalPurchase) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Total pembayaran tidak boleh kurang dari total pembelian",
+        path: ["totalPaid"],
+      });
+    }
+    if (data.transactionDate === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Tanggal transaksi harus diisi",
+        path: ["transactionDate"],
+      });
+    }
+    if (data.isPayable && data.dueDate === null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Tanggal jatuh tempo harus diisi",
+        path: ["dueDate"],
+      });
+    }
+  });
+
+export type PurchasingFormValues = z.infer<typeof purchasingSchema>;
+
 export default function PurchasingCheckoutForm() {
   const router = useRouter();
 
-  const { cartTotal, resetCart, status } = usePurchasingStore();
+  const { data: user } = useCurrentUser();
+  const { cart, cartTotal, status, setCheckoutData } = usePurchasingStore();
 
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
   const [showTransactionDatePicker, setShowTransactionDatePicker] =
     useState(false);
-
-  const purchasingSchema = z
-    .object({
-      totalPurchase: z
-        .number()
-        .min(0, "Total pembelian harus lebih besar atau sama dengan 0"),
-      totalPaid: z.string(),
-      supplierId: z.string().min(1, "Supplier harus dipilih"),
-      isPayable: z.boolean(),
-      transactionDate: z.date().nullable(),
-      dueDate: z.date().nullable(),
-      isCashdrawer: z.boolean(),
-      status: z.string(),
-      note: z.string(),
-    })
-    .superRefine((data, ctx) => {
-      if (parseFloat(data.totalPaid || "0") < data.totalPurchase) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Total pembayaran tidak boleh kurang dari total pembelian",
-          path: ["totalPaid"],
-        });
-      }
-      if (data.transactionDate === null) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Tanggal transaksi harus diisi",
-          path: ["transactionDate"],
-        });
-      }
-      if (data.isPayable && data.dueDate === null) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Tanggal jatuh tempo harus diisi",
-          path: ["dueDate"],
-        });
-      }
-    });
-
-  type PurchasingFormValues = z.infer<typeof purchasingSchema>;
 
   const initialValues: PurchasingFormValues = {
     totalPurchase: 0,
@@ -178,8 +180,20 @@ export default function PurchasingCheckoutForm() {
   const onSubmit: SubmitHandler<PurchasingFormValues> = (
     data: PurchasingFormValues,
   ) => {
-    handleCancel();
-    resetCart();
+    setCheckoutData({
+      ...data,
+      id: "",
+      referenceNumber: "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdById: user?.id || "",
+      createdByName: user?.name || "",
+      updatedById: user?.id || "",
+      updatedByName: user?.name || "",
+      items: cart,
+    });
+    router.replace("/purchasing/success");
+
     // if (purchasingId && purchasing) {
     //   const updateData: UpdatePurchasingDTO = {
     //     ...data,
@@ -233,12 +247,12 @@ export default function PurchasingCheckoutForm() {
         header="CHECKOUT"
         isGoBack
         action={
-          <HStack space="sm" className="pr-4">
+          <HStack space="md" className="pr-4">
             <Pressable
-              className="size-10 items-center justify-center"
+              className="size-10 items-center justify-center border-primary-500 border rounded-lg bg-primary-100 active:bg-primary-200"
               onPress={form.handleSubmit(onSubmit)}
             >
-              <Icon as={Check} size="xl" color="#FDFBF9" />
+              <Icon as={Check} size="md" color="#3d2117" />
             </Pressable>
           </HStack>
         }

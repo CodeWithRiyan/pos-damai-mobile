@@ -32,8 +32,7 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
 export default function PopupAddProduct() {
-  const { openAddProduct, cart, setOpenAddProduct, addCartItem } =
-    usePurchasingStore();
+  const { addProduct, cart, setAddProduct, addCartItem } = usePurchasingStore();
 
   const addProductSchema = z.object({
     purchasePrice: z.number().min(1, "Harga beli harus diisi"),
@@ -45,7 +44,7 @@ export default function PopupAddProduct() {
   type AddProductFormValues = z.infer<typeof addProductSchema>;
 
   const initialValues: AddProductFormValues = {
-    purchasePrice: openAddProduct?.purchasePrice || 0,
+    purchasePrice: addProduct?.purchasePrice || 0,
     quantity: 1,
     addNote: false,
     note: "",
@@ -60,46 +59,40 @@ export default function PopupAddProduct() {
   const isAddNoteChecked = form.watch("addNote");
 
   useEffect(() => {
-    if (openAddProduct) {
+    if (addProduct) {
       form.reset({
-        purchasePrice: openAddProduct.purchasePrice || 0,
+        purchasePrice: addProduct.purchasePrice || 0,
         quantity:
-          cart?.find((item) => item.product.id === openAddProduct.id)
-            ?.quantity || 0,
-        addNote: cart?.find((item) => item.product.id === openAddProduct.id)
-          ?.note
+          cart?.find((item) => item.product.id === addProduct.id)?.quantity ||
+          0,
+        addNote: cart?.find((item) => item.product.id === addProduct.id)?.note
           ? true
           : false,
         note:
-          cart?.find((item) => item.product.id === openAddProduct.id)?.note ||
-          "",
+          cart?.find((item) => item.product.id === addProduct.id)?.note || "",
       });
     } else {
       form.reset(initialValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, openAddProduct]);
+  }, [form, addProduct]);
 
   const onSubmit: SubmitHandler<AddProductFormValues> = (
     data: AddProductFormValues,
   ) => {
-    if (openAddProduct) {
+    if (addProduct) {
       addCartItem({
-        product: openAddProduct,
+        product: addProduct,
         newPurchasePrice: data.purchasePrice,
         quantity: data.quantity,
         note: data.addNote ? data.note : undefined,
       });
     }
-    setOpenAddProduct(null);
+    setAddProduct(null);
   };
 
   return (
-    <Modal
-      isOpen={!!openAddProduct}
-      onClose={() => setOpenAddProduct(null)}
-      size="md"
-    >
+    <Modal isOpen={!!addProduct} onClose={() => setAddProduct(null)} size="md">
       <ModalBackdrop />
       <ModalContent className="p-0 max-h-[90%]">
         <ModalHeader className="p-4 border-b border-background-300">
@@ -116,15 +109,15 @@ export default function PopupAddProduct() {
                 </Box>
                 <VStack className="flex-1">
                   <Heading size="md" className="line-clamp-2">
-                    {openAddProduct?.name}
+                    {addProduct?.name}
                   </Heading>
                   <Text size="sm" className="text-slate-500">
-                    {openAddProduct?.code}
+                    {addProduct?.code}
                   </Text>
                 </VStack>
                 <HStack space="sm">
                   <Heading size="md">
-                    Rp {openAddProduct?.purchasePrice.toLocaleString("id-ID")}
+                    Rp {addProduct?.purchasePrice.toLocaleString("id-ID")}
                   </Heading>
                 </HStack>
               </HStack>
@@ -264,7 +257,7 @@ export default function PopupAddProduct() {
             <HStack space="md" className="w-full p-4">
               <Pressable
                 className="flex-1 items-center justify-center h-12 px-4 rounded-lg border border-error-500 bg-error-100 active:bg-error-200"
-                onPress={() => setOpenAddProduct(null)}
+                onPress={() => setAddProduct(null)}
               >
                 <Text size="lg" className="text-error-500 font-bold">
                   BATAL
