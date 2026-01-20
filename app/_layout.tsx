@@ -41,6 +41,9 @@ export default function RootLayout() {
   useEffect(() => {
     const init = async () => {
       await initializeStorage();
+      // Rehydrate auth store after storage is ready
+      const { useAuthStore } = await import('@/stores/auth');
+      useAuthStore.getState().rehydrate();
       await initializeDb(); // Initialize SQLite tables
       setIsStorageReady(true);
       setIsMounted(true);

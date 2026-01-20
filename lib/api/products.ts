@@ -2,7 +2,7 @@ import { db } from '../db';
 import * as schema from '../db/schema';
 import { and, eq, isNull } from 'drizzle-orm';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { storageAdapter } from '../storage';
+import { useAuthStore } from '@/stores/auth';
 
 export type ProductListItem = Omit<Product, 'sellPrices' | 'variants'>;
 
@@ -69,26 +69,13 @@ export interface UpdateProductDTO extends Partial<CreateProductDTO> {
   id: string;
 }
 
-// Get user's organization ID
-function getOrganizationId(): string {
-  const profile = storageAdapter.getItem('userProfile');
-  if (profile) {
-    try {
-      const parsed = JSON.parse(profile);
-      return parsed.selectedOrganizationId || '';
-    } catch {
-      return '';
-    }
-  }
-  return '';
-}
 
 // Get all products from local SQLite (excluding soft-deleted)
 export function useProducts() {
+  const orgId = useAuthStore(state => state.getOrganizationId());
   return useQuery({
-    queryKey: ['products'],
+    queryKey: ["products", orgId],
     queryFn: async () => {
-      const orgId = getOrganizationId();
       const productResult = await db
         .select()
         .from(schema.products)
@@ -108,13 +95,24 @@ export function useProducts() {
             .select()
             .from(schema.productVariants)
             .where(eq(schema.productVariants.productId, product.id));
+
+          // Calculate stock from inventory transactions (only COMPLETED)
+          const transactions = await db
+            .select()
+            .from(schema.inventoryTransactions)
+            .where(and(
+              eq(schema.inventoryTransactions.productId, product.id),
+              eq(schema.inventoryTransactions.status, 'COMPLETED')
+            ));
+          
+          const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
           
           return {
             ...product,
             code: product.barcode,
             sellPrices: prices,
             variants: variants,
-            stock: (product as any).stock || 0,
+            stock: totalStock,
             discountId: product.discountId,
           };
         })
@@ -122,15 +120,16 @@ export function useProducts() {
 
       return productsWithPrices as unknown as Product[];
     },
+    enabled: !!orgId,
   });
 }
 
 // Get products by category
 export function useProductsByCategory(categoryId: string) {
+  const orgId = useAuthStore(state => state.getOrganizationId());
   return useQuery({
-    queryKey: ['products', 'byCategory', categoryId],
+    queryKey: ['products', orgId, 'byCategory', categoryId],
     queryFn: async () => {
-      const orgId = getOrganizationId();
       const productResult = await db
         .select()
         .from(schema.products)
@@ -147,13 +146,24 @@ export function useProductsByCategory(categoryId: string) {
             .select()
             .from(schema.productPrices)
             .where(eq(schema.productPrices.productId, product.id));
+
+          // Calculate stock from inventory transactions (only COMPLETED)
+          const transactions = await db
+            .select()
+            .from(schema.inventoryTransactions)
+            .where(and(
+              eq(schema.inventoryTransactions.productId, product.id),
+              eq(schema.inventoryTransactions.status, 'COMPLETED')
+            ));
+          
+          const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
           
           return {
             ...product,
             code: product.barcode,
             sellPrices: prices,
             variants: [],
-            stock: (product as any).stock || 0,
+            stock: totalStock,
             discountId: product.discountId,
           };
         })
@@ -167,10 +177,10 @@ export function useProductsByCategory(categoryId: string) {
 
 // Get products by brand
 export function useProductsByBrand(brandId: string) {
+  const orgId = useAuthStore(state => state.getOrganizationId());
   return useQuery({
-    queryKey: ['products', 'byBrand', brandId],
+    queryKey: ['products', orgId, 'byBrand', brandId],
     queryFn: async () => {
-      const orgId = getOrganizationId();
       const productResult = await db
         .select()
         .from(schema.products)
@@ -187,13 +197,24 @@ export function useProductsByBrand(brandId: string) {
             .select()
             .from(schema.productPrices)
             .where(eq(schema.productPrices.productId, product.id));
+
+          // Calculate stock from inventory transactions (only COMPLETED)
+          const transactions = await db
+            .select()
+            .from(schema.inventoryTransactions)
+            .where(and(
+              eq(schema.inventoryTransactions.productId, product.id),
+              eq(schema.inventoryTransactions.status, 'COMPLETED')
+            ));
+          
+          const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
           
           return {
             ...product,
             code: product.barcode,
             sellPrices: prices,
             variants: [],
-            stock: (product as any).stock || 0,
+            stock: totalStock,
             discountId: product.discountId,
           };
         })
@@ -229,10 +250,21 @@ export function useProduct(id: string) {
       const { product, category, brand, discount } = productResult[0];
       const prices = await db.select().from(schema.productPrices).where(eq(schema.productPrices.productId, id));
       const variants = await db.select().from(schema.productVariants).where(eq(schema.productVariants.productId, id));
+
+      // Calculate stock from inventory transactions (only COMPLETED)
+      const transactions = await db
+        .select()
+        .from(schema.inventoryTransactions)
+        .where(and(
+          eq(schema.inventoryTransactions.productId, id),
+          eq(schema.inventoryTransactions.status, 'COMPLETED')
+        ));
+      
+      const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
       
       return {
         ...product,
-        stock: (product as any).stock || 0,
+        stock: totalStock,
         code: product.barcode,
         sellPrices: prices,
         variants,
@@ -252,7 +284,7 @@ export function useCreateProduct() {
 
   return useMutation({
     mutationFn: async (data: CreateProductDTO) => {
-      const orgId = getOrganizationId();
+      const orgId = useAuthStore.getState().getOrganizationId();
       const id = `prod_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
 
@@ -301,12 +333,29 @@ export function useCreateProduct() {
             });
           }
         }
+
+        // Create initial stock transaction if stock > 0
+        if (productData.stock && productData.stock > 0) {
+          await tx.insert(schema.inventoryTransactions).values({
+            id: `invtx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            local_ref_id: `initial_${id}`,
+            productId: id,
+            type: 'INITIAL_STOCK',
+            quantity: productData.stock,
+            organizationId: orgId,
+            createdAt: now,
+            updatedAt: now,
+            _dirty: true,
+            _syncedAt: null,
+          });
+        }
       });
 
       return { id, ...data } as any;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+    onSuccess: (data) => {
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ['products', orgId] });
     },
   });
 }
@@ -319,7 +368,7 @@ export function useUpdateProduct() {
     mutationFn: async (data: UpdateProductDTO) => {
       const { id, prices, variants, ...productData } = data;
       const now = new Date();
-      const orgId = getOrganizationId();
+      const orgId = useAuthStore.getState().getOrganizationId();
 
       await db.transaction(async (tx) => {
         await tx
@@ -369,8 +418,10 @@ export function useUpdateProduct() {
 
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+    onSuccess: (data) => {
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ['products', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['products', data.id] });
     },
   });
 }
@@ -391,7 +442,8 @@ export function useDeleteProduct() {
       return { id };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ['products', orgId] });
     },
   });
 }

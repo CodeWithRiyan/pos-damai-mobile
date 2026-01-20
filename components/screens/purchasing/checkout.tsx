@@ -33,13 +33,10 @@ import {
 } from "@/components/ui";
 import { getErrorMessage } from "@/lib/api/client";
 import { useSuppliers } from "@/lib/api/suppliers";
-// import {
-//   CreatePurchasingDTO,
-//   UpdatePurchasingDTO,
-//   useCreatePurchasing,
-//   useUpdatePurchasing,
-//   usePurchasing,
-// } from "@/lib/api/purchasing";
+import {
+  CreatePurchasingDTO,
+  useCreatePurchasing,
+} from "@/lib/api/purchasing";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -69,7 +66,7 @@ const purchasingSchema = z
     note: z.string(),
   })
   .superRefine((data, ctx) => {
-    if (parseFloat(data.totalPaid || "0") < data.totalPurchase) {
+    if (data.status === "COMPLETED" && parseFloat(data.totalPaid || "0") < data.totalPurchase) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Total pembayaran tidak boleh kurang dari total pembelian",
@@ -123,13 +120,8 @@ export default function PurchasingCheckoutForm() {
 
   const totalPaid = form.watch("totalPaid");
   const isPayable = form.watch("isPayable");
-
   const { data: suppliers = [] } = useSuppliers();
-  // const { data: purchasings = [], refetch: refetchPurchasings } = usePurchasing(purchasingId);
-  // const createMutation = useCreatePurchasing();
-  // const updateMutation = useUpdatePurchasing();
-
-  const isLoading = false; //createMutation.isPending || updateMutation.isPending;
+  const createMutation = useCreatePurchasing();
 
   const toast = useToast();
 
@@ -171,28 +163,53 @@ export default function PurchasingCheckoutForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.formState.errors.totalPaid]);
 
-  const onRefetch = () => {};
-
-  const handleCancel = () => {
-    router.back();
-  };
 
   const onSubmit: SubmitHandler<PurchasingFormValues> = (
     data: PurchasingFormValues,
   ) => {
-    setCheckoutData({
+    const submissionData: CreatePurchasingDTO = {
       ...data,
-      id: "",
-      referenceNumber: "",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdById: user?.id || "",
-      createdByName: user?.name || "",
-      updatedById: user?.id || "",
-      updatedByName: user?.name || "",
-      items: cart,
+      items: cart.map(item => ({
+        product: { id: item.product.id, purchasePrice: item.product.purchasePrice },
+        newPurchasePrice: item.newPurchasePrice,
+        quantity: item.quantity,
+        note: item.note,
+      })),
+    };
+
+    createMutation.mutate(submissionData, {
+      onSuccess: (responseData) => {
+        setCheckoutData({
+          ...data,
+          id: responseData.id,
+          referenceNumber: responseData.localRefId || "",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          createdById: user?.id || "",
+          createdByName: user?.name || "",
+          updatedById: user?.id || "",
+          updatedByName: user?.name || "",
+          items: cart,
+        });
+        toast.show({
+          placement: "top",
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+              <ToastTitle>Transaksi pembelian barang berhasil disimpan</ToastTitle>
+            </Toast>
+          ),
+        });
+        if (data.status === "DRAFT") {
+          router.replace("/(main)/purchasing");
+        } else {
+          // @ts-ignore - route typing internal issue
+          router.replace("/(main)/purchasing/success");
+        }
+      },
+      onError: (error) => {
+        showErrorToast(error);
+      },
     });
-    router.replace("/purchasing/success");
 
     // if (purchasingId && purchasing) {
     //   const updateData: UpdatePurchasingDTO = {
@@ -244,7 +261,7 @@ export default function PurchasingCheckoutForm() {
   return (
     <VStack className="flex-1 bg-white">
       <Header
-        header="CHECKOUT"
+        header={status === "DRAFT" ? "SIMPAN DRAFT" : "CHECKOUT"}
         isGoBack
         action={
           <HStack space="md" className="pr-4">

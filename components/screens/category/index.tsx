@@ -24,11 +24,11 @@ import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function CategoryList() {
-  const { setOpen } = useCategoryStore();
+  const { setOpen, setData } = useCategoryStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data, isLoading, refetch } = useCategories();
-  const { data: productCounts } = useProductCountsByCategory();
+  const { data: productCounts, refetch: refetchCounts } = useProductCountsByCategory();
   const [selectedItems, setSelectedItems] = useState<Category[] | null>(null);
 
   const categories = data || [];
@@ -61,7 +61,11 @@ export default function CategoryList() {
 
   const handleAdd = () => {
     setSelectedItems(null);
-    setOpen(true);
+    setData(null);
+    setOpen(true, () => {
+      refetch();
+      refetchCounts();
+    });
   };
 
   const handleDeletePress = () => {

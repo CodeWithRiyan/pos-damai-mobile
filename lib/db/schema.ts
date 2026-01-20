@@ -104,6 +104,7 @@ export const purchases = sqliteTable('purchases', {
   supplierId: text('supplierId').notNull(),
   totalAmount: real('totalAmount').notNull(),
   paymentType: text('paymentType').default('CASH'),
+  status: text('status').default('COMPLETED'),
   dueDate: integer('dueDate', { mode: 'timestamp' }),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
@@ -115,7 +116,28 @@ export const inventoryTransactions = sqliteTable('inventory_transactions', {
   productId: text('productId').notNull(),
   type: text('type').notNull(),
   quantity: real('quantity').notNull(),
+  status: text('status').default('COMPLETED'),
   inventoryBatchId: text('inventoryBatchId'),
+  organizationId: text('organizationId').notNull(),
+  ...syncColumns,
+});
+
+export const purchaseReturns = sqliteTable('purchase_returns', {
+  id: text('id').primaryKey(),
+  local_ref_id: text('local_ref_id').unique(),
+  supplierId: text('supplierId').notNull(),
+  totalAmount: real('totalAmount').notNull(),
+  returnType: text('returnType').default('CASH'),
+  organizationId: text('organizationId').notNull(),
+  ...syncColumns,
+});
+
+export const purchaseReturnItems = sqliteTable('purchase_return_items', {
+  id: text('id').primaryKey(),
+  purchaseReturnId: text('purchaseReturnId').notNull(),
+  productId: text('productId').notNull(),
+  quantity: real('quantity').notNull(),
+  purchasePrice: real('purchasePrice').default(0),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
 });

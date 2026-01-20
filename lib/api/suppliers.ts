@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { suppliers } from "@/lib/db/schema";
-import { storageAdapter } from "@/lib/storage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@/stores/auth";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 
 export interface Supplier {
@@ -19,30 +19,19 @@ export interface Supplier {
 export type CreateSupplierDTO = Omit<Supplier, "id" | "createdAt" | "updatedAt" | "organizationId" | "_dirty">;
 export type UpdateSupplierDTO = Partial<CreateSupplierDTO> & { id: string };
 
-function getOrganizationId(): string {
-  const profile = storageAdapter.getItem("userProfile");
-  if (profile) {
-    try {
-      const parsed = JSON.parse(profile);
-      return parsed.selectedOrganizationId || "";
-    } catch {
-      return "";
-    }
-  }
-  return "";
-}
 
 export function useSuppliers() {
+  const orgId = useAuthStore(state => state.getOrganizationId());
   return useQuery({
-    queryKey: ["suppliers"],
+    queryKey: ["suppliers", orgId],
     queryFn: async () => {
-      const orgId = getOrganizationId();
       const result = await db
         .select()
         .from(suppliers)
         .where(and(eq(suppliers.organizationId, orgId), isNull(suppliers.deletedAt)));
       return result as Supplier[];
     },
+    enabled: !!orgId,
   });
 }
 
@@ -65,7 +54,7 @@ export function useCreateSupplier() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: CreateSupplierDTO) => {
-      const orgId = getOrganizationId();
+      const orgId = useAuthStore.getState().getOrganizationId();
       const id = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
       
@@ -81,8 +70,8 @@ export function useCreateSupplier() {
       await db.insert(suppliers).values(newSupplier);
       return newSupplier;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["suppliers", data.organizationId] });
     },
   });
 }
@@ -105,7 +94,8 @@ export function useUpdateSupplier() {
       return id;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ["suppliers", orgId] });
       queryClient.invalidateQueries({ queryKey: ["supplier", variables.id] });
     },
   });
@@ -127,7 +117,8 @@ export function useDeleteSupplier() {
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ["suppliers", orgId] });
     },
   });
 }
@@ -148,7 +139,8 @@ export function useBulkDeleteSupplier() {
       return ids;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ["suppliers", orgId] });
     },
   });
 }

@@ -114,9 +114,12 @@ export default function BrandForm() {
       );
     } else {
       createMutation.mutate(data, {
-        onSuccess: () => {
+        onSuccess: (newBrand) => {
           showSuccessToast("Brand berhasil ditambahkan");
           onRefetch();
+          if (useBrandStore.getState().onSuccess) {
+            useBrandStore.getState().onSuccess?.(newBrand);
+          }
           form.reset(initialValues);
           setOpen(false);
         },

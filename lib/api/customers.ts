@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '../db';
 import * as schema from '../db/schema';
-import { storageAdapter } from '../storage';
+import { useAuthStore } from '@/stores/auth';
 
 export type CustomerCategory = 'RETAIL' | 'WHOLESALE';
 
@@ -35,26 +35,12 @@ export interface UpdateCustomerDTO {
   address?: string;
 }
 
-// Get user's organization ID
-function getOrganizationId(): string {
-  const profile = storageAdapter.getItem('userProfile');
-  if (profile) {
-    try {
-      const parsed = JSON.parse(profile);
-      return parsed.selectedOrganizationId || '';
-    } catch {
-      return '';
-    }
-  }
-  return '';
-}
-
 // Get all customers from local SQLite (excluding soft-deleted)
 export function useCustomers() {
+  const orgId = useAuthStore(state => state.getOrganizationId());
   return useQuery({
-    queryKey: ['customers'],
+    queryKey: ['customers', orgId],
     queryFn: async () => {
-      const orgId = getOrganizationId();
       const result = await db
         .select()
         .from(schema.customers)
@@ -64,6 +50,7 @@ export function useCustomers() {
         ));
       return result as Customer[];
     },
+    enabled: !!orgId,
   });
 }
 
@@ -89,7 +76,7 @@ export function useCreateCustomer() {
 
   return useMutation({
     mutationFn: async (data: CreateCustomerDTO) => {
-      const orgId = getOrganizationId();
+      const orgId = useAuthStore.getState().getOrganizationId();
       const id = `cust_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
 
@@ -112,8 +99,8 @@ export function useCreateCustomer() {
 
       return newCustomer as Customer;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['customers', data.organizationId] });
     },
   });
 }
@@ -134,8 +121,11 @@ export function useUpdateCustomer() {
 
       return { id, ...rest };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    onSuccess: (data) => {
+      const orgId = useAuthStore.getState().getOrganizationId();
+      // Invalidate both list and single customer queries
+      queryClient.invalidateQueries({ queryKey: ['customers', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['customers', data.id] });
     },
   });
 }
@@ -156,7 +146,8 @@ export function useDeleteCustomer() {
       return { id };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ['customers', orgId] });
     },
   });
 }
@@ -179,7 +170,8 @@ export function useBulkDeleteCustomer() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ['customers', orgId] });
     },
   });
 }

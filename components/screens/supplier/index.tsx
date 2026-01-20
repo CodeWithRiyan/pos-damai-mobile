@@ -12,8 +12,8 @@ import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
 import { useBulkDeleteSupplier, Supplier, useSuppliers } from "@/lib/api/suppliers";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useState, useCallback } from "react";
 import { ScrollView } from "react-native";
 
 
@@ -23,6 +23,12 @@ export default function SupplierList() {
   const router = useRouter();
   const { data, isLoading, refetch } = useSuppliers();
   const [selectedItems, setSelectedItems] = useState<any[] | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const suppliers = data || [];
 

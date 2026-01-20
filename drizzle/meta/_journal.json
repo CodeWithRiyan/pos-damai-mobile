@@ -29,6 +29,27 @@
       "when": 1768636072036,
       "tag": "0003_massive_kate_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1768915592137,
+      "tag": "0004_add_status_to_purchase",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1768916280373,
+      "tag": "0005_add_status_to_inventory_transactions",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1769009113000,
+      "tag": "0006_add_purchase_returns",
+      "breakpoints": true
     }
   ]
 }

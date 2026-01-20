@@ -26,7 +26,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
-import { useCreateDiscount, useUpdateDiscount } from "@/lib/api/discounts";
+import { useCreateDiscount, useUpdateDiscount, useDiscounts, useDiscount } from "@/lib/api/discounts";
 import { useDiscountStore } from "@/stores/discount";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -68,9 +68,12 @@ export default function DiscountForm() {
     defaultValues: initialValues,
   });
 
+  const { refetch: refetchDiscounts } = useDiscounts();
+  const { refetch: refetchDiscount } = useDiscount(dataDiscount?.id || "");
+
   const onRefetch = () => {
-    // refetchDiscounts();
-    // if (dataDiscount) refetchDiscount();
+    refetchDiscounts();
+    if (dataDiscount) refetchDiscount();
   };
 
   useEffect(() => {
@@ -123,6 +126,7 @@ export default function DiscountForm() {
         {
           onSuccess: () => {
             showSuccessToast("Diskon berhasil diperbarui");
+            form.reset(initialValues);
             setOpen(false);
             onRefetch();
           },
@@ -133,10 +137,14 @@ export default function DiscountForm() {
       );
     } else {
       createMutation.mutate(data, {
-        onSuccess: () => {
+        onSuccess: (newDiscount) => {
           showSuccessToast("Diskon berhasil ditambahkan");
-          setOpen(false);
           onRefetch();
+          if (useDiscountStore.getState().onSuccess) {
+            useDiscountStore.getState().onSuccess?.(newDiscount);
+          }
+          form.reset(initialValues);
+          setOpen(false);
         },
         onError: (error: any) => {
           showErrorToast(error);

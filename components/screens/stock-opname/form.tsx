@@ -21,11 +21,7 @@ import {
 } from "@/components/ui/form-control";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-// import {
-//   useStockOpname,
-//   useCreateStockOpname,
-//   useUpdateStockOpname,
-// } from "@/lib/api/stock-opname";
+import { useCreateStockOpname } from "@/lib/api/stock-opname";
 import { getErrorMessage } from "@/lib/api/client";
 import { useStockOpnameStore } from "@/stores/stock-opname";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,7 +31,7 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
 export default function StockOpnameConfirmForm() {
-  const { openConfirm, setOpenConfirm, resetCart } = useStockOpnameStore();
+  const { openConfirm, setOpenConfirm, resetCart, cart } = useStockOpnameStore();
   const router = useRouter();
   const toast = useToast();
 
@@ -54,13 +50,8 @@ export default function StockOpnameConfirmForm() {
     defaultValues: initialValues,
   });
 
-  // const createMutation = useCreateStockOpname();
-  // const updateMutation = useUpdateStockOpname();
+  const createMutation = useCreateStockOpname();
 
-  const onRefetch = () => {
-    // refetchStockOpname();
-    // if (dataStockOpname) refetchStockOpname();
-  };
 
   const showSuccessToast = (message: string) => {
     toast.show({
@@ -87,9 +78,23 @@ export default function StockOpnameConfirmForm() {
   const onSubmit: SubmitHandler<StockOpnameFormValues> = (
     data: StockOpnameFormValues,
   ) => {
-    setOpenConfirm(false);
-    resetCart();
-    router.back();
+    const submissionData = {
+      note: data.note,
+      items: (cart || []).map((item: any) => ({
+        product: { id: item.product.id },
+        physicalStock: item.physicalStock,
+      })),
+    };
+
+    createMutation.mutate(submissionData, {
+      onSuccess: () => {
+        showSuccessToast("Stock Opname berhasil disimpan");
+        setOpenConfirm(false);
+        resetCart();
+        router.back();
+      },
+      onError: showErrorToast,
+    });
     // if (dataStockOpname) {
     //   updateMutation.mutate(
     //     { id: dataStockOpname.id, ...data },
@@ -116,7 +121,7 @@ export default function StockOpnameConfirmForm() {
     // }
   };
 
-  const isLoading = false; //createMutation.isPending || updateMutation.isPending;
+  // const isLoading = createMutation.isPending;
 
   return (
     <Modal

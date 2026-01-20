@@ -23,7 +23,7 @@ export default function BrandList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data, isLoading, refetch } = useBrands();
-  const { data: productCounts } = useProductCountsByBrand();
+  const { data: productCounts, refetch: refetchCounts } = useProductCountsByBrand();
   const [selectedItems, setSelectedItems] = useState<Brand[] | null>(null);
 
   const brands = data || [];
@@ -57,7 +57,10 @@ export default function BrandList() {
   const handleAdd = () => {
     setSelectedItems(null);
     setData(null);
-    setOpen(true);
+    setOpen(true, () => {
+      refetch();
+      refetchCounts();
+    });
   };
 
   const handleDeletePress = () => {

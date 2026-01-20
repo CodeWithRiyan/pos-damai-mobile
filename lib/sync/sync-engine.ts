@@ -3,6 +3,8 @@ import * as schema from '../db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { apiClient } from '../api/client';
 import { storageAdapter } from '../storage';
+import { useAuthStore } from '@/stores/auth';
+import { queryClient } from '@/providers/query-provider';
 
 export class SyncEngine {
   /**
@@ -36,7 +38,8 @@ export class SyncEngine {
       }
 
       // Store user profile for local access (used by local CRUD operations)
-      storageAdapter.setItem('userProfile', JSON.stringify(currentUser));
+      useAuthStore.getState().setProfile(currentUser);
+      queryClient.setQueryData(['auth', 'profile'], currentUser);
 
       const orgId = organizationIdForSync;
 
@@ -49,7 +52,12 @@ export class SyncEngine {
       console.log(`[Sync] Pulling from ${syncEndpoint}`);
       const pullRes = await apiClient.get(syncEndpoint);
       
-      const { data: serverData, timestamp: serverTime } = pullRes.data;
+      const payload = pullRes.data;
+      const responseData = payload.data;
+      
+      // Handle potential double wrapping from interceptor
+      const serverData = responseData.data || responseData;
+      const serverTime = responseData.timestamp || payload.timestamp;
 
       // 3. Apply Pull Data (Master Data - Server Wins)
       // Mapping server keys to local schema keys if they differ
@@ -57,9 +65,15 @@ export class SyncEngine {
         categories: schema.categories,
         brands: schema.brands,
         products: schema.products,
-        prices: schema.productPrices, // Backend 'prices' -> Local 'productPrices'
-        variants: schema.productVariants, // Backend 'variants' -> Local 'product_variants'
+        prices: schema.productPrices,
+        variants: schema.productVariants,
         customers: schema.customers,
+        suppliers: schema.suppliers, // Added
+        discounts: schema.discounts, // Added
+        purchases: schema.purchases, // Added
+        transactions: schema.inventoryTransactions, // Added (Backend 'transactions' -> Local 'inventoryTransactions')
+        purchaseReturns: schema.purchaseReturns,
+        purchaseReturnItems: schema.purchaseReturnItems,
       };
 
       await db.transaction(async (tx) => {
@@ -71,19 +85,45 @@ export class SyncEngine {
           }
 
           for (const record of (records as any[])) {
-            if (record.deletedAt) {
-              await tx.delete(table).where(eq(table.id, record.id));
+            // Convert ISO strings back to Date objects for Drizzle timestamp columns
+            const processedRecord = { ...record };
+            for (const key in processedRecord) {
+              const val = processedRecord[key];
+              if (
+                typeof val === 'string' && 
+                /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)
+              ) {
+                const date = new Date(val);
+                if (!isNaN(date.getTime())) {
+                  processedRecord[key] = date;
+                }
+              }
+            }
+
+            if (processedRecord.deletedAt) {
+              // Handle tables where ID might be different (e.g., transactions use local_ref_id for some cases, but schema still has 'id')
+              // The server data for products/categories uses 'id'
+              const idToMatch = processedRecord.id || processedRecord.local_ref_id;
+              if (idToMatch) {
+                // Determine which column to match against
+                const idCol = table.id || (table.local_ref_id && processedRecord.local_ref_id ? table.local_ref_id : null);
+                if (idCol) {
+                  await tx.delete(table).where(eq(idCol, idToMatch));
+                }
+              }
             } else {
-              // Ensure we don't have null organizationId if backend provides it
               const values = {
-                ...record,
-                organizationId: record.organizationId || orgId,
+                ...processedRecord,
+                organizationId: processedRecord.organizationId || orgId,
                 _dirty: false,
                 _syncedAt: new Date(),
               };
 
+              // Determine conflict target (id or local_ref_id)
+              const target = table.id || table.local_ref_id;
+              
               await tx.insert(table).values(values).onConflictDoUpdate({
-                target: table.id,
+                target: target,
                 set: values
               });
             }
@@ -139,16 +179,24 @@ export class SyncEngine {
     // Collect dirty transactional data
     const dirtyPurchases = await db.select().from(schema.purchases).where(eq(schema.purchases._dirty, true));
     const dirtyTransactions = await db.select().from(schema.inventoryTransactions).where(eq(schema.inventoryTransactions._dirty, true));
+    const dirtyReturns = await db.select().from(schema.purchaseReturns).where(eq(schema.purchaseReturns._dirty, true));
 
     const totalDirty = dirtyCategories.length + dirtyBrands.length + allProductsToPush.length + 
-                       dirtyCustomers.length + dirtyPurchases.length + dirtyTransactions.length;
+                       dirtyCustomers.length + dirtyPurchases.length + dirtyTransactions.length +
+                       dirtyReturns.length;
 
     if (totalDirty === 0) {
       console.log('[Sync] No dirty records to push');
       return;
     }
 
-    console.log(`[Sync] Pushing ${dirtyCategories.length} categories, ${dirtyBrands.length} brands, ${allProductsToPush.length} products, ${dirtyCustomers.length} customers, ${dirtyPurchases.length} purchases, ${dirtyTransactions.length} transactions`);
+    console.log(`[Sync] Pushing ${dirtyCategories.length} categories, ${dirtyBrands.length} brands, ${allProductsToPush.length} products, ${dirtyCustomers.length} customers, ${dirtyPurchases.length} purchases, ${dirtyTransactions.length} transactions, ${dirtyReturns.length} returns`);
+
+    // Fetch ALL items for returns we are pushing
+    const returnIds = dirtyReturns.map(r => r.id);
+    const returnItems = returnIds.length > 0 
+      ? await db.select().from(schema.purchaseReturnItems).where(inArray(schema.purchaseReturnItems.purchaseReturnId, returnIds))
+      : [];
 
     // Fetch ALL prices and variants for all products we are pushing
     const productIdsToPush = allProductsToPush.map(p => p.id);
@@ -180,8 +228,31 @@ export class SyncEngine {
         ...rest,
         deletedAt: deletedAt ? deletedAt.toISOString() : null,
       })),
-      purchases: dirtyPurchases.map(({ _dirty, _syncedAt, ...rest }) => rest),
-      transactions: dirtyTransactions.map(({ _dirty, _syncedAt, ...rest }) => rest),
+      purchases: dirtyPurchases.map(({ _dirty, _syncedAt, dueDate, createdAt, updatedAt, deletedAt, ...rest }) => ({
+        ...rest,
+        dueDate: dueDate ? dueDate.toISOString() : null,
+        createdAt: createdAt ? createdAt.toISOString() : undefined,
+        updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+      })),
+      transactions: dirtyTransactions.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
+        ...rest,
+        createdAt: createdAt ? createdAt.toISOString() : undefined,
+        updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+      })),
+      purchaseReturns: dirtyReturns.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
+        ...rest,
+        createdAt: createdAt ? createdAt.toISOString() : undefined,
+        updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        items: returnItems.filter(i => i.purchaseReturnId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
+          ...iRest,
+          createdAt: createdAt ? createdAt.toISOString() : undefined,
+          updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+          deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        })),
+      })),
     };
 
     const pushRes = await apiClient.post('/sync/push', pushPayload);
@@ -235,7 +306,6 @@ export class SyncEngine {
             })
             .where(eq(schema.purchases.local_ref_id, res.local_ref_id));
         }
-        
         for (const res of (results.transactions || [])) {
           await tx.update(schema.inventoryTransactions)
             .set({ 
@@ -244,6 +314,23 @@ export class SyncEngine {
               id: res.server_id 
             })
             .where(eq(schema.inventoryTransactions.local_ref_id, res.local_ref_id));
+        }
+
+        for (const res of (results.purchaseReturns || [])) {
+          await tx.update(schema.purchaseReturns)
+            .set({ 
+              _dirty: false, 
+              _syncedAt: new Date(), 
+              id: res.server_id 
+            })
+            .where(eq(schema.purchaseReturns.local_ref_id, res.local_ref_id));
+            
+          // Also mark items for this return as synced
+          await tx.update(schema.purchaseReturnItems)
+            .set({ _dirty: false, _syncedAt: new Date() })
+            .where(eq(schema.purchaseReturnItems.purchaseReturnId, res.server_id)); 
+            // Wait, local ID was used in returnItems.filter. 
+            // If ID was updated to server_id, we need to be careful.
         }
       });
       

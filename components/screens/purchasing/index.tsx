@@ -1,5 +1,4 @@
 import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
   Heading,
   Input,
@@ -16,7 +15,6 @@ import {
   SolarIconBold,
   SolarIconLinear,
 } from "@/components/ui/solar-icon-wrapper";
-import { useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 // import { useBulkDeletePurchasing, Purchasing, usePurchasing } from "@/lib/api/purchasing";
 import { useProducts } from "@/lib/api/products";
@@ -27,12 +25,9 @@ import { ScrollView } from "react-native";
 import PopupAddProduct from "./popup-add";
 
 export default function PurchasingList() {
-  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { cart, setAddProduct, setStatus } = usePurchasingStore();
   const { data: products } = useProducts();
   const router = useRouter();
-
-  const toast = useToast();
 
   return (
     <Box className="flex-1 bg-white">
@@ -42,7 +37,7 @@ export default function PurchasingList() {
           <HStack space="sm" className="pr-4">
             <Pressable
               className="size-10 items-center justify-center"
-              onPress={() => {}}
+              onPress={() => router.navigate("/(main)/purchasing/draft")}
             >
               <SolarIconBold name="ClipboardList" size={20} color="#FDFBF9" />
             </Pressable>

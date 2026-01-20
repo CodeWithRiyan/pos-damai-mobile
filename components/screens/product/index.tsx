@@ -13,8 +13,8 @@ import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
 import { Product, useBulkDeleteProduct, useProducts } from "@/lib/api/products";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useState, useCallback } from "react";
 import { ScrollView } from "react-native";
 
 export default function ProductList() {
@@ -23,6 +23,12 @@ export default function ProductList() {
   const { data, isLoading, refetch } = useProducts();
   const [selectedItems, setSelectedItems] = useState<Product[] | null>(
     null
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
   );
 
   const products = data || [];

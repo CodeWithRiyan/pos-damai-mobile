@@ -29,6 +29,7 @@ import { VStack } from "@/components/ui/vstack";
 // } from "@/lib/api/return-purchasing";
 import { getErrorMessage } from "@/lib/api/client";
 import { useReturnPurchasingStore } from "@/stores/return-purchasing";
+import { useCreatePurchaseReturn } from "@/lib/api/return-purchasing";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -36,9 +37,10 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
 export default function ReturnPurchasingConfirmForm() {
-  const { openConfirm, setOpenConfirm, resetCart } = useReturnPurchasingStore();
+  const { cart, openConfirm, setOpenConfirm, resetCart, selectedPurchase } = useReturnPurchasingStore();
   const router = useRouter();
   const toast = useToast();
+  const createMutation = useCreatePurchaseReturn();
 
   const returnPurchaseSchema = z.object({
     reason: z.string().min(1, "Alasan wajib diisi."),
@@ -56,14 +58,6 @@ export default function ReturnPurchasingConfirmForm() {
     resolver: zodResolver(returnPurchaseSchema),
     defaultValues: initialValues,
   });
-
-  // const createMutation = useCreateReturnPurchasing();
-  // const updateMutation = useUpdateReturnPurchasing();
-
-  const onRefetch = () => {
-    // refetchReturnPurchasing();
-    // if (dataReturnPurchasing) refetchReturnPurchasing();
-  };
 
   const showSuccessToast = (message: string) => {
     toast.show({
@@ -90,37 +84,33 @@ export default function ReturnPurchasingConfirmForm() {
   const onSubmit: SubmitHandler<ReturnPurchasingFormValues> = (
     data: ReturnPurchasingFormValues,
   ) => {
-    setOpenConfirm(false);
-    resetCart();
-    router.back();
-    router.navigate("/(main)/purchasing/receipt");
-    // if (dataReturnPurchasing) {
-    //   updateMutation.mutate(
-    //     { id: dataReturnPurchasing.id, ...data },
-    //     {
-    //       onSuccess: () => {
-    //         showSuccessToast("ReturnPurchasing berhasil diperbarui");
-    //         onRefetch();
-    //         form.reset(initialValues);
-    //         setOpen(false);
-    //       },
-    //       onError: showErrorToast,
-    //     },
-    //   );
-    // } else {
-    //   createMutation.mutate(data, {
-    //     onSuccess: () => {
-    //       showSuccessToast("ReturnPurchasing berhasil ditambahkan");
-    //       onRefetch();
-    //       form.reset(initialValues);
-    //       setOpen(false);
-    //     },
-    //     onError: showErrorToast,
-    //   });
-    // }
+    if (!selectedPurchase) {
+      showErrorToast(new Error("Pilih pembelian terlebih dahulu"));
+      return;
+    }
+
+    const totalAmount = cart.reduce((acc, item) => acc + (item.quantity * item.product.purchasePrice), 0);
+
+    createMutation.mutate({
+      supplierId: selectedPurchase.supplierId,
+      totalAmount,
+      returnType: data.returnType as 'CASH' | 'ITEM',
+      items: cart.map(item => ({
+        productId: item.product.id,
+        quantity: item.quantity,
+        purchasePrice: item.product.purchasePrice,
+      }))
+    }, {
+      onSuccess: () => {
+        showSuccessToast("Retur berhasil disimpan");
+        setOpenConfirm(false);
+        resetCart();
+        router.back();
+      },
+      onError: showErrorToast
+    });
   };
 
-  const isLoading = false; //createMutation.isPending || updateMutation.isPending;
 
   return (
     <Modal
