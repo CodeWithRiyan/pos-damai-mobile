@@ -23,7 +23,7 @@ export default function PurchasingSuccess() {
               onPress={() => {
                 resetCart();
                 setCheckoutData(null);
-                router.navigate("/purchasing");
+                router.back();
               }}
             >
               <Icon as={Check} size="md" color="#3d2117" />
@@ -75,7 +75,14 @@ export default function PurchasingSuccess() {
             </HStack>
           </Box>
           <VStack space="md" className="w-full p-4">
-            <Pressable className="w-full rounded-lg h-12 px-4 flex-row gap-4 items-center justify-between bg-background-0 border border-primary-500 active:bg-primary-100">
+            <Pressable
+              className="w-full rounded-lg h-12 px-4 flex-row gap-4 items-center justify-between bg-background-0 border border-primary-500 active:bg-primary-100"
+              onPress={() => {
+                resetCart();
+                setCheckoutData(null);
+                router.replace("/(main)/purchasing/receipt");
+              }}
+            >
               <Icon as={Printer} size="xl" color="#3d2117" />
               <Text size="md" className="text-brand-primary font-bold">
                 LIHAT STRUK
