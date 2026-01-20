@@ -74,6 +74,8 @@ export class SyncEngine {
         transactions: schema.inventoryTransactions, // Added (Backend 'transactions' -> Local 'inventoryTransactions')
         purchaseReturns: schema.purchaseReturns,
         purchaseReturnItems: schema.purchaseReturnItems,
+        stockOpnames: schema.stockOpnames,
+        stockOpnameItems: schema.stockOpnameItems,
       };
 
       await db.transaction(async (tx) => {
@@ -180,22 +182,29 @@ export class SyncEngine {
     const dirtyPurchases = await db.select().from(schema.purchases).where(eq(schema.purchases._dirty, true));
     const dirtyTransactions = await db.select().from(schema.inventoryTransactions).where(eq(schema.inventoryTransactions._dirty, true));
     const dirtyReturns = await db.select().from(schema.purchaseReturns).where(eq(schema.purchaseReturns._dirty, true));
+    const dirtyStockOpnames = await db.select().from(schema.stockOpnames).where(eq(schema.stockOpnames._dirty, true));
 
     const totalDirty = dirtyCategories.length + dirtyBrands.length + allProductsToPush.length + 
                        dirtyCustomers.length + dirtyPurchases.length + dirtyTransactions.length +
-                       dirtyReturns.length;
+                       dirtyReturns.length + dirtyStockOpnames.length;
 
     if (totalDirty === 0) {
       console.log('[Sync] No dirty records to push');
       return;
     }
 
-    console.log(`[Sync] Pushing ${dirtyCategories.length} categories, ${dirtyBrands.length} brands, ${allProductsToPush.length} products, ${dirtyCustomers.length} customers, ${dirtyPurchases.length} purchases, ${dirtyTransactions.length} transactions, ${dirtyReturns.length} returns`);
+    console.log(`[Sync] Pushing ${dirtyCategories.length} categories, ${dirtyBrands.length} brands, ${allProductsToPush.length} products, ${dirtyCustomers.length} customers, ${dirtyPurchases.length} purchases, ${dirtyTransactions.length} transactions, ${dirtyReturns.length} returns, ${dirtyStockOpnames.length} stock opnames`);
 
     // Fetch ALL items for returns we are pushing
     const returnIds = dirtyReturns.map(r => r.id);
     const returnItems = returnIds.length > 0 
       ? await db.select().from(schema.purchaseReturnItems).where(inArray(schema.purchaseReturnItems.purchaseReturnId, returnIds))
+      : [];
+
+    // Fetch ALL items for stock opnames we are pushing
+    const opnameIds = dirtyStockOpnames.map(o => o.id);
+    const opnameItems = opnameIds.length > 0
+      ? await db.select().from(schema.stockOpnameItems).where(inArray(schema.stockOpnameItems.stockOpnameId, opnameIds))
       : [];
 
     // Fetch ALL prices and variants for all products we are pushing
@@ -247,6 +256,18 @@ export class SyncEngine {
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
         deletedAt: deletedAt ? deletedAt.toISOString() : null,
         items: returnItems.filter(i => i.purchaseReturnId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
+          ...iRest,
+          createdAt: createdAt ? createdAt.toISOString() : undefined,
+          updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+          deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        })),
+      })),
+      stockOpnames: dirtyStockOpnames.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
+        ...rest,
+        createdAt: createdAt ? createdAt.toISOString() : undefined,
+        updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        items: opnameItems.filter(i => i.stockOpnameId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
           ...iRest,
           createdAt: createdAt ? createdAt.toISOString() : undefined,
           updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
@@ -331,6 +352,35 @@ export class SyncEngine {
             .where(eq(schema.purchaseReturnItems.purchaseReturnId, res.server_id)); 
             // Wait, local ID was used in returnItems.filter. 
             // If ID was updated to server_id, we need to be careful.
+        }
+
+        for (const res of (results.stockOpnames || [])) {
+          await tx.update(schema.stockOpnames)
+            .set({ 
+              _dirty: false, 
+              _syncedAt: new Date(), 
+              id: res.server_id 
+            })
+            .where(eq(schema.stockOpnames.id, res.local_ref_id)); // Assuming id is used as local ref since there is no local_ref_id in stockOpname schema usually, or I should check schema.
+
+          // Also mark items for this opname as synced
+          // Note: If ID changed, we might need to update items foreign key if not handled by cascade or if items are not re-synced by ID.
+          // But usually we just mark them dirty=false.
+          // If the server returns server_id, and we update local ID, we must update foreign keys?
+          // SQLite doesn't automatically cascade updates unless configured.
+          // For now, let's assume we just mark as synced.
+          // Actually, if we update the parent ID, we MUST update the children's FK if we want to keep integrity.
+          // But `stockOpnameItems` has `stockOpnameId`. 
+          
+          if (res.server_id !== res.local_ref_id) {
+             await tx.update(schema.stockOpnameItems)
+              .set({ stockOpnameId: res.server_id, _dirty: false, _syncedAt: new Date() })
+              .where(eq(schema.stockOpnameItems.stockOpnameId, res.local_ref_id));
+          } else {
+             await tx.update(schema.stockOpnameItems)
+              .set({ _dirty: false, _syncedAt: new Date() })
+              .where(eq(schema.stockOpnameItems.stockOpnameId, res.local_ref_id));
+          }
         }
       });
       

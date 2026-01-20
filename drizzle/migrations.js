@@ -8,6 +8,7 @@ import m0003 from './0003_massive_kate_bishop.sql';
 import m0004 from './0004_add_status_to_purchase.sql';
 import m0005 from './0005_add_status_to_inventory_transactions.sql';
 import m0006 from './0006_add_purchase_returns.sql';
+import m0007 from './0007_add_stock_opnames.sql';
 
 export default {
   journal,
@@ -18,6 +19,7 @@ export default {
     m0003,
     m0004,
     m0005,
-    m0006
+    m0006,
+    m0007
   }
 }

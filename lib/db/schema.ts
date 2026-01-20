@@ -142,6 +142,32 @@ export const purchaseReturnItems = sqliteTable('purchase_return_items', {
   ...syncColumns,
 });
 
+export const stockOpnames = sqliteTable('stock_opnames', {
+  id: text('id').primaryKey(),
+  local_ref_id: text('local_ref_id').unique(),
+  date: integer('date', { mode: 'timestamp' }).notNull(),
+  note: text('note'),
+  status: text('status').default('DIFFERENCE'),
+  totalGain: real('totalGain').default(0),
+  totalLoss: real('totalLoss').default(0),
+  createdBy: text('createdBy'),
+  organizationId: text('organizationId').notNull(),
+  ...syncColumns,
+});
+
+export const stockOpnameItems = sqliteTable('stock_opname_items', {
+  id: text('id').primaryKey(),
+  stockOpnameId: text('stockOpnameId').notNull(),
+  productId: text('productId').notNull(),
+  quantitySystem: real('quantitySystem').notNull(),
+  quantityPhysical: real('quantityPhysical').notNull(),
+  difference: real('difference').notNull(),
+  purchasePrice: real('purchasePrice').default(0),
+  financialImpact: real('financialImpact').default(0),
+  organizationId: text('organizationId').notNull(),
+  ...syncColumns,
+});
+
 export const syncState = sqliteTable('sync_state', {
   key: text('key').primaryKey(), // e.g., 'lastSyncAt'
   value: text('value').notNull(),
