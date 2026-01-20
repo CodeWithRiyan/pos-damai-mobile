@@ -18,15 +18,10 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
 export default function PopupAddStockOpname() {
-  const {
-    openAddProduct,
-    cart,
-    setOpenAddProduct,
-    addCartItem,
-    removeCartItem,
-  } = useStockOpnameStore();
+  const { addProduct, cart, setAddProduct, addCartItem, removeCartItem } =
+    useStockOpnameStore();
 
-  const product = cart.find((item) => item.product.id === openAddProduct?.id);
+  const product = cart.find((item) => item.product.id === addProduct?.id);
 
   const addStockOpnameSchema = z.object({
     physicalStock: z
@@ -48,7 +43,7 @@ export default function PopupAddStockOpname() {
   const physicalStock = form.watch("physicalStock");
 
   useEffect(() => {
-    if (openAddProduct && product) {
+    if (addProduct && product) {
       form.reset({
         physicalStock: product.physicalStock || 0,
       });
@@ -56,26 +51,22 @@ export default function PopupAddStockOpname() {
       form.reset(initialValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, openAddProduct]);
+  }, [form, addProduct]);
 
   const onSubmit: SubmitHandler<AddStockOpnameFormValues> = (
     data: AddStockOpnameFormValues,
   ) => {
-    if (openAddProduct) {
+    if (addProduct) {
       addCartItem({
-        product: openAddProduct,
+        product: addProduct,
         physicalStock: data.physicalStock,
       });
     }
-    setOpenAddProduct(null);
+    setAddProduct(null);
   };
 
   return (
-    <Modal
-      isOpen={!!openAddProduct}
-      onClose={() => setOpenAddProduct(null)}
-      size="md"
-    >
+    <Modal isOpen={!!addProduct} onClose={() => setAddProduct(null)} size="md">
       <ModalBackdrop />
       <ModalContent className="p-0 max-h-[90%]">
         <ModalHeader className="p-4 border-b border-background-300">
@@ -92,17 +83,17 @@ export default function PopupAddStockOpname() {
                 </Box>
                 <VStack className="flex-1">
                   <Heading size="md" className="line-clamp-2">
-                    {openAddProduct?.name}
+                    {addProduct?.name}
                   </Heading>
                   <Text size="sm" className="text-slate-500">
-                    {openAddProduct?.code}
+                    {addProduct?.code}
                   </Text>
                 </VStack>
                 <VStack className="items-end">
                   <Text size="sm" className="text-slate-500">
                     Stok Sistem
                   </Text>
-                  <Heading size="md">{openAddProduct?.stock}</Heading>
+                  <Heading size="md">{addProduct?.stock}</Heading>
                 </VStack>
               </HStack>
             </HStack>
@@ -143,8 +134,8 @@ export default function PopupAddStockOpname() {
               <Pressable
                 className="flex-1 items-center justify-center h-12 px-4 rounded-lg border border-error-500 bg-error-100 active:bg-error-200"
                 onPress={() => {
-                  removeCartItem(openAddProduct?.id || "");
-                  setOpenAddProduct(null);
+                  removeCartItem(addProduct?.id || "");
+                  setAddProduct(null);
                 }}
               >
                 <Text size="lg" className="text-error-500 font-bold">

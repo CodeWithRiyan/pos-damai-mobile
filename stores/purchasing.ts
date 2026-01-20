@@ -8,25 +8,50 @@ interface CartItem {
   note?: string;
 }
 
+type PurchasingCheckoutResponse = {
+  id: string;
+  referenceNumber: string;
+  createdById: string;
+  createdByName: string;
+  createdAt: string;
+  updatedById: string;
+  updatedByName: string;
+  updatedAt: string;
+  items: CartItem[];
+  totalPurchase: number;
+  totalPaid: string;
+  supplierId: string;
+  isPayable: boolean;
+  transactionDate: Date | null;
+  dueDate: Date | null;
+  isCashdrawer: boolean;
+  status: string;
+  note: string;
+};
+
 interface PurchasingState {
-  openAddProduct: Product | null;
+  addProduct: Product | null;
   cart: CartItem[];
-  cartTotal?: number;
+  cartTotal: number;
+  checkoutData: PurchasingCheckoutResponse | null;
   status: "DRAFT" | "COMPLETED";
   setStatus: (status: "DRAFT" | "COMPLETED") => void;
-  setOpenAddProduct: (state: Product | null) => void;
+  setAddProduct: (state: Product | null) => void;
+  setCheckoutData: (state: PurchasingCheckoutResponse | null) => void;
   addCartItem: (item: CartItem) => void;
   removeCartItem: (productId: string) => void;
   resetCart: () => void;
 }
 
 export const usePurchasingStore = create<PurchasingState>((set) => ({
-  openAddProduct: null,
+  addProduct: null,
   cart: [],
   cartTotal: 0,
+  checkoutData: null,
   status: "DRAFT",
   setStatus: (status) => set({ status }),
-  setOpenAddProduct: (state) => set({ openAddProduct: state }),
+  setAddProduct: (state) => set({ addProduct: state }),
+  setCheckoutData: (state) => set({ checkoutData: state }),
   addCartItem: (item) =>
     set((state) => {
       const existingItemIndex = state.cart?.findIndex(

@@ -25,7 +25,7 @@ import PopupAddStockOpname from "./popup-add";
 
 export default function StockOpnameInput() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
-  const { cart, setOpenAddProduct, setOpenConfirm } = useStockOpnameStore();
+  const { cart, setAddProduct, setOpenConfirm } = useStockOpnameStore();
   const { data: products } = useProducts();
   const router = useRouter();
 
@@ -53,7 +53,7 @@ export default function StockOpnameInput() {
                 <Pressable
                   key={index}
                   className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                  onPress={() => setOpenAddProduct(product)}
+                  onPress={() => setAddProduct(product)}
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
@@ -84,7 +84,7 @@ export default function StockOpnameInput() {
                 <Pressable
                   key={item.product.id}
                   className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                  onPress={() => setOpenAddProduct(item.product)}
+                  onPress={() => setAddProduct(item.product)}
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">

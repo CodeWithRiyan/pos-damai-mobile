@@ -28,7 +28,7 @@ import PopupAddProduct from "./popup-add";
 
 export default function PurchasingList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
-  const { cart, setOpenAddProduct, setStatus } = usePurchasingStore();
+  const { cart, setAddProduct, setStatus } = usePurchasingStore();
   const { data: products } = useProducts();
   const router = useRouter();
 
@@ -86,7 +86,7 @@ export default function PurchasingList() {
                 <Pressable
                   key={index}
                   className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                  onPress={() => setOpenAddProduct(product)}
+                  onPress={() => setAddProduct(product)}
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
@@ -130,7 +130,7 @@ export default function PurchasingList() {
                 <Pressable
                   key={item.product.id}
                   className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                  onPress={() => setOpenAddProduct(item.product)}
+                  onPress={() => setAddProduct(item.product)}
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">

@@ -7,10 +7,10 @@ interface CartItem {
 }
 
 interface StockOpnameState {
-  openAddProduct: Product | null;
+  addProduct: Product | null;
   openConfirm: boolean;
   cart: CartItem[];
-  setOpenAddProduct: (state: Product | null) => void;
+  setAddProduct: (state: Product | null) => void;
   setOpenConfirm: (state: boolean) => void;
   addCartItem: (item: CartItem) => void;
   removeCartItem: (productId: string) => void;
@@ -18,10 +18,10 @@ interface StockOpnameState {
 }
 
 export const useStockOpnameStore = create<StockOpnameState>((set) => ({
-  openAddProduct: null,
+  addProduct: null,
   openConfirm: false,
   cart: [],
-  setOpenAddProduct: (state) => set({ openAddProduct: state }),
+  setAddProduct: (state) => set({ addProduct: state }),
   addCartItem: (item) =>
     set((state) => {
       const existingItemIndex = state.cart?.findIndex(
