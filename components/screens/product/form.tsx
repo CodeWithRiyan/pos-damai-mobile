@@ -60,9 +60,9 @@ import { ScrollView } from "react-native";
 import { z } from "zod";
 
 export default function ProductForm() {
-  const { setOpen: setOpenCategory } = useCategoryStore();
-  const { setOpen: setOpenBrand } = useBrandStore();
-  const { setOpen: setOpenDiscount } = useDiscountStore();
+  const { setOpen: setOpenCategory, setData: setDataCategory } = useCategoryStore();
+  const { setOpen: setOpenBrand, setData: setDataBrand } = useBrandStore();
+  const { setOpen: setOpenDiscount, setData: setDataDiscount } = useDiscountStore();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const isAdd = !id;
@@ -164,9 +164,9 @@ export default function ProductForm() {
 
   const { refetch: refetchProducts } = useProducts();
   const { data: product, refetch: refetchProduct } = useProduct(productId || "");
-  const { data: categories = [] } = useCategories();
-  const { data: brands = [] } = useBrands();
-  const { data: discounts = [] } = useDiscounts();
+  const { data: categories = [], refetch: refetchCategories } = useCategories();
+  const { data: brands = [], refetch: refetchBrands } = useBrands();
+  const { data: discounts = [], refetch: refetchDiscounts } = useDiscounts();
   const createMutation = useCreateProduct();
   const updateMutation = useUpdateProduct();
   const isLoading = createMutation.isPending || updateMutation.isPending;
@@ -226,6 +226,9 @@ export default function ProductForm() {
 
   const onRefetch = () => {
     refetchProducts();
+    refetchCategories();
+    refetchBrands();
+    refetchDiscounts();
     if (productId) {
       refetchProduct();
     }
@@ -278,6 +281,7 @@ export default function ProductForm() {
       createMutation.mutate(createData, {
         onSuccess: () => {
           onRefetch();
+          form.reset(initialValues);
           handleCancel();
           toast.show({
             placement: "top",
@@ -425,20 +429,28 @@ export default function ProductForm() {
               field: { onChange, onBlur, value },
               fieldState: { error },
             }) => (
-              <FormControl isRequired isInvalid={!!error}>
+              <FormControl isRequired={isAdd} isInvalid={!!error} isReadOnly={!isAdd} isDisabled={!isAdd}>
                 <FormControlLabel>
-                  <FormControlLabelText>Stok</FormControlLabelText>
+                  <FormControlLabelText>
+                    {isAdd ? "Stok Awal" : "Stok Terkini"}
+                  </FormControlLabelText>
                 </FormControlLabel>
-                <Input>
+                <Input isReadOnly={!isAdd} isDisabled={!isAdd}>
                   <InputField
                     value={value.toString()}
                     autoComplete="off"
                     onChangeText={(text) => onChange(Number(text) || 0)}
                     onBlur={onBlur}
-                    placeholder="Masukkan stok"
+                    placeholder={isAdd ? "Masukkan stok awal" : ""}
                     keyboardType="numeric"
+                    editable={isAdd}
                   />
                 </Input>
+                {!isAdd && (
+                  <Text size="xs" className="text-gray-500 mt-1">
+                    Stok hanya bisa diubah melalui Pembelian, Penjualan, Retur, atau Stock Opname
+                  </Text>
+                )}
                 {error && (
                   <FormControlError>
                     <FormControlErrorText className="text-red-500">
@@ -494,7 +506,13 @@ export default function ProductForm() {
                   </Select>
                   <Pressable
                     className="size-10 rounded-full bg-primary-500 items-center justify-center"
-                    onPress={() => setOpenCategory(true)}
+                    onPress={() => {
+                      setDataCategory(null);
+                      setOpenCategory(true, (newCat) => {
+                        form.setValue("categoryId", newCat.id);
+                        refetchCategories();
+                      });
+                    }}
                   >
                     <Icon as={PlusIcon} color="white" />
                   </Pressable>
@@ -1026,7 +1044,13 @@ export default function ProductForm() {
                   </Select>
                   <Pressable
                     className="size-10 rounded-full bg-primary-500 items-center justify-center"
-                    onPress={() => setOpenBrand(true)}
+                    onPress={() => {
+                      setDataBrand(null);
+                      setOpenBrand(true, (newBrand) => {
+                        form.setValue("brandId", newBrand.id);
+                        refetchBrands();
+                      });
+                    }}
                   >
                     <Icon as={PlusIcon} color="white" />
                   </Pressable>
@@ -1080,9 +1104,18 @@ export default function ProductForm() {
                     </SelectContent>
                   </SelectPortal>
                 </Select>
-                <Pressable className="size-10 rounded-full bg-primary-500 items-center justify-center" onPress={() => setOpenDiscount(true)}>
-                    <Icon as={PlusIcon} color="white" />
-                  </Pressable>
+                <Pressable
+                  className="size-10 rounded-full bg-primary-500 items-center justify-center"
+                  onPress={() => {
+                    setDataDiscount(null);
+                    setOpenDiscount(true, (newDisc) => {
+                      form.setValue("discountId", newDisc.id);
+                      refetchDiscounts();
+                    });
+                  }}
+                >
+                  <Icon as={PlusIcon} color="white" />
+                </Pressable>
                 </HStack>
                 {error && (
                   <FormControlError>

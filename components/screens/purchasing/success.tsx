@@ -79,8 +79,16 @@ export default function PurchasingSuccess() {
               className="w-full rounded-lg h-12 px-4 flex-row gap-4 items-center justify-between bg-background-0 border border-primary-500 active:bg-primary-100"
               onPress={() => {
                 resetCart();
+                const id = checkoutData?.id;
                 setCheckoutData(null);
-                router.replace("/(main)/purchasing/receipt");
+                if (id) {
+                  router.replace({
+                    pathname: "/(main)/purchasing/receipt/[id]",
+                    params: { id }
+                  });
+                } else {
+                  router.replace("/(main)/purchasing");
+                }
               }}
             >
               <Icon as={Printer} size="xl" color="#3d2117" />

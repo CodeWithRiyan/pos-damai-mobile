@@ -124,12 +124,15 @@ export default function CategoryForm() {
       );
     } else {
       createMutation.mutate(data, {
-        onSuccess: () => {
-          showSuccessToast("Kategori berhasil ditambahkan");
-          onRefetch();
-          form.reset(initialValues);
-          setOpen(false);
-        },
+          onSuccess: (newCat) => {
+            showSuccessToast("Kategori berhasil ditambahkan");
+            onRefetch();
+            if (useCategoryStore.getState().onSuccess) {
+              useCategoryStore.getState().onSuccess?.(newCat);
+            }
+            form.reset(initialValues);
+            setOpen(false);
+          },
         onError: showErrorToast,
       });
     }

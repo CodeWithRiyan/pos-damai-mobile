@@ -1,5 +1,4 @@
 import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import { Heading, Icon } from "@/components/ui";
 import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
@@ -10,98 +9,35 @@ import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { useStockOpnameStore } from "@/stores/stock-opname";
 import dayjs from "dayjs";
-// import { useBulkDeleteStockOpname, StockOpname, useStockOpname } from "@/lib/api/stock-opname";
-import { useRouter } from "expo-router";
+import { useStockOpnames } from "@/lib/api/stock-opname";
+import { useRouter, useFocusEffect } from "expo-router";
 import { CircleAlert } from "lucide-react-native";
-import React from "react";
-import { ScrollView } from "react-native";
-
-export interface StockOpname {
-  id: string;
-  date: string;
-  products: {
-    productId: string;
-    code: string;
-    name: string;
-    quantitySystem: number;
-    quantityPhysical: number;
-    type: string;
-  }[];
-  note: string;
-  status: "DIFFERENCE" | "DONE";
-  createdBy: string;
-  createdAt: string;
-}
-
-export const _data: StockOpname[] = [
-  {
-    id: "2",
-    date: "2026-01-10",
-    products: [
-      {
-        productId: "p1",
-        code: "PRD001",
-        name: "Product 1",
-        quantitySystem: 95,
-        quantityPhysical: 95,
-        type: "DEFAULT",
-      },
-      {
-        productId: "p2",
-        code: "PRD002",
-        name: "Product 2",
-        quantitySystem: 48,
-        quantityPhysical: 48,
-        type: "DEFAULT",
-      },
-    ],
-    note: "Stock opname for January",
-    status: "DONE",
-    createdBy: "admin",
-    createdAt: "2026-01-10T10:00:00Z",
-  },
-  {
-    id: "1",
-    date: "2026-01-10",
-    products: [
-      {
-        productId: "p1",
-        code: "PRD001",
-        name: "Product 1",
-        quantitySystem: 100,
-        quantityPhysical: 95,
-        type: "DEFAULT",
-      },
-      {
-        productId: "p2",
-        code: "PRD002",
-        name: "Product 2",
-        quantitySystem: 50,
-        quantityPhysical: 48,
-        type: "DEFAULT",
-      },
-    ],
-    note: "Stock opname for January",
-    status: "DIFFERENCE",
-    createdBy: "admin",
-    createdAt: "2026-01-10T10:00:00Z",
-  },
-];
+import React, { useState, useCallback } from "react";
+import { ScrollView, RefreshControl } from "react-native";
 
 export default function StockOpnameList() {
   const { cart } = useStockOpnameStore();
-  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
-  // const { data, isLoading, refetch } = useStockOpname();
+  const { data: stockOpname, isLoading, refetch } = useStockOpnames();
+  
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
-  const stockOpname = _data;
-  const isLoading = false;
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
   const handleAddStockOpname = () => {
     router.push("/(main)/management/stock-opname/input");
   };
 
-  if (isLoading) {
+  if (isLoading && !refreshing) {
     return (
       <Box className="flex-1 justify-center items-center">
         <Spinner size="large" />
@@ -114,7 +50,12 @@ export default function StockOpnameList() {
       <Header header="STOCK OPNAME" isGoBack />
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
-          <ScrollView className="flex-1">
+          <ScrollView 
+            className="flex-1"
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          >
             <VStack>
               {stockOpname?.map((so) => (
                 <Pressable
@@ -135,7 +76,7 @@ export default function StockOpnameList() {
                     </VStack>
                     <VStack className="flex-1">
                       <Text className="text-gray-500 font-bold">Nama</Text>
-                      <Text>{so.createdBy}</Text>
+                      <Text>{so.createdBy || "-"}</Text>
                     </VStack>
                     <HStack className="absolute right-0 top-0 h-full">
                       <HStack className="h-full items-center justify-center">
@@ -144,7 +85,10 @@ export default function StockOpnameList() {
                             Sesuai
                           </Heading>
                         ) : (
-                          <Icon as={CircleAlert} size="md" color="#ef4444" />
+                          <VStack className="items-center">
+                            <Icon as={CircleAlert} size="md" color="#ef4444" />
+                            <Text size="xs" className="text-error-500 font-bold">Selisih</Text>
+                          </VStack>
                         )}
                       </HStack>
                       <HStack className="h-full ml-4 items-center justify-center">
@@ -159,7 +103,7 @@ export default function StockOpnameList() {
               {stockOpname?.length === 0 && (
                 <Box className="p-8 items-center">
                   <Text className="text-slate-400 italic">
-                    No Stock Opname found
+                    Belum ada data Stock Opname
                   </Text>
                 </Box>
               )}

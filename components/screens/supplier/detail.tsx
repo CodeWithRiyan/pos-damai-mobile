@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/actionsheet";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import useBreakpoint from "@/hooks/use-breakpoint";
 import { getErrorMessage } from "@/lib/api/client";
 import { useDeleteSupplier, useSupplier, useSuppliers } from "@/lib/api/suppliers";
 import { useLocalSearchParams, useRouter } from "expo-router";

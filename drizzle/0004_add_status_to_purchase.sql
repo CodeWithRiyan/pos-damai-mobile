@@ -1,0 +1,1 @@
+ALTER TABLE `purchases` ADD `status` text DEFAULT 'COMPLETED';

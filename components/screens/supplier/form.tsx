@@ -135,6 +135,7 @@ export default function SupplierForm() {
       createMutation.mutate(createData, {
         onSuccess: () => {
           onRefetch();
+          form.reset(initialValues);
           handleCancel();
           toast.show({
             placement: "top",

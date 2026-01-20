@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/actionsheet";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import useBreakpoint from "@/hooks/use-breakpoint";
 import { getErrorMessage } from "@/lib/api/client";
 import { useDeleteProduct, useProduct, useProducts } from "@/lib/api/products";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -33,7 +32,7 @@ export default function ProductDetail() {
   const { id } = useLocalSearchParams();
   const productId = id as string;
 
-  // const { sm } = useBreakpoint();
+
   const [showActionsheet, setShowActionsheet] = useState<boolean>(false);
 
   const { refetch: refetchProducts } = useProducts();
@@ -135,6 +134,14 @@ export default function ProductDetail() {
             <Text className="text-gray-500">{product?.code || "-"}</Text>
           </VStack>
           <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
+            {/* Stok Terkini - Highlighted */}
+            <VStack className="w-full mb-2 p-3 bg-primary-50 border border-primary-200 rounded-md">
+              <Text className="text-primary-600 text-sm">Stok Terkini</Text>
+              <Text className="font-bold text-2xl text-primary-700">
+                {product?.stock ?? 0} {product?.unit || "pcs"}
+              </Text>
+            </VStack>
+            
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Jenis Produk</Text>
               <Text className="font-bold">{product?.type || "-"}</Text>

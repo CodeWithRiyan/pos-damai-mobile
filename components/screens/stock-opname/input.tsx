@@ -1,5 +1,4 @@
 import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
   Heading,
   Input,
@@ -12,24 +11,30 @@ import {
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
-import { useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 // import { useBulkDeleteStockOpname, StockOpname, useStockOpname } from "@/lib/api/purchasing";
 import { useProducts } from "@/lib/api/products";
 import { useStockOpnameStore } from "@/stores/stock-opname";
-import { useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import { ScrollView } from "react-native";
 import StockOpnameConfirmForm from "./form";
 import PopupAddStockOpname from "./popup-add";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import dayjs from "dayjs";
+import { Calendar } from "lucide-react-native";
 
 export default function StockOpnameInput() {
-  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { cart, setAddProduct, setOpenConfirm } = useStockOpnameStore();
   const { data: products } = useProducts();
-  const router = useRouter();
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const toast = useToast();
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      setDate(selectedDate);
+    }
+  };
 
   return (
     <Box className="flex-1 bg-white">
@@ -38,7 +43,7 @@ export default function StockOpnameInput() {
         <VStack className="flex-1 border-r border-gray-300">
           <HStack
             space="sm"
-            className="p-4 shadow-lg bg-background-0 items-center"
+            className="p-4 shadow-lg bg-background-0 items-center justify-between"
           >
             <Input className="flex-1 border border-background-300 rounded-lg h-10">
               <InputSlot className="pl-3">
@@ -46,7 +51,24 @@ export default function StockOpnameInput() {
               </InputSlot>
               <InputField placeholder="Cari nama atau kode" />
             </Input>
+            <Pressable
+              onPress={() => setShowDatePicker(true)}
+              className="flex-row items-center h-10 px-3 border border-background-300 rounded-lg bg-background-0"
+            >
+              <Calendar size={20} color="#64748B" />
+              <Text className="ml-2 text-slate-600">
+                {dayjs(date).format("DD MMM YYYY")}
+              </Text>
+            </Pressable>
           </HStack>
+          {showDatePicker && (
+            <DateTimePicker
+              value={date}
+              mode="date"
+              display="default"
+              onChange={onDateChange}
+            />
+          )}
           <ScrollView className="flex-1">
             <VStack className="flex-1">
               {products?.map((product, index) => (
@@ -127,7 +149,8 @@ export default function StockOpnameInput() {
         </VStack>
       </HStack>
       <PopupAddStockOpname />
-      <StockOpnameConfirmForm />
+      <PopupAddStockOpname />
+      <StockOpnameConfirmForm date={date} />
     </Box>
   );
 }

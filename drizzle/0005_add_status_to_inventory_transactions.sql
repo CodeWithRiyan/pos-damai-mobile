@@ -1,0 +1,1 @@
+ALTER TABLE `inventory_transactions` ADD `status` text DEFAULT 'COMPLETED';

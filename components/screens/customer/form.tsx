@@ -133,6 +133,7 @@ export default function CustomerForm() {
       createMutation.mutate(data, {
         onSuccess: () => {
           showSuccessToast("Pelanggan berhasil ditambahkan");
+          form.reset(initialValues);
           router.back();
         },
         onError: showErrorToast,
