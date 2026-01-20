@@ -8,31 +8,31 @@ import {
 import { Link } from "expo-router";
 import { ScrollView } from "react-native";
 
-export default function RejectScreen() {
-  const rejectItems: {
+export default function ReturnScreen() {
+  const returnItems: {
     label: string;
     href: string;
     icon: SolarIconLinearProps["name"];
   }[] = [
     {
       label: "Pembelian Barang",
-      href: "/management/retur/purchasing",
+      href: "/management/return/purchasing",
       icon: "Cart3",
     },
     {
       label: "Transaksi Penjualan",
-      href: "/management/retur/sales",
+      href: "/management/return/sales",
       icon: "Plain",
     },
   ];
 
   return (
     <Box className="flex-1 bg-white">
-      <Header header="REJECT" isGoBack />
+      <Header header="RETUR" isGoBack />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack>
-          {rejectItems.map((item, index) => (
+          {returnItems.map((item, index) => (
             <Link href={item.href as any} key={item.href} asChild>
               <Pressable className="flex-row items-center gap-4 p-4 border-bottom bg--white active:bg-gray-50">
                 <SolarIconLinear
