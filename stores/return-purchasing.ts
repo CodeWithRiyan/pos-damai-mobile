@@ -1,21 +1,20 @@
-import { Product } from "@/lib/api/products";
-import { Purchase } from "@/lib/api/purchasing";
+import { Purchase, PurchaseItem } from "@/lib/api/purchasing";
 import { create } from "zustand";
 
 interface CartItem {
-  product: Product;
+  product: PurchaseItem;
   quantity: number;
   note?: string;
 }
 
 interface ReturnPurchasingState {
-  addProduct: Product | null;
+  addProduct: PurchaseItem | null;
   selectedPurchase: Purchase | null;
   cart: CartItem[];
   cartTotal: number;
   openConfirm: boolean;
   setOpenConfirm: (state: boolean) => void;
-  setAddProduct: (state: Product | null) => void;
+  setAddProduct: (state: PurchaseItem | null) => void;
   setSelectedPurchase: (state: Purchase | null) => void;
   addCartItem: (item: CartItem) => void;
   removeCartItem: (productId: string) => void;

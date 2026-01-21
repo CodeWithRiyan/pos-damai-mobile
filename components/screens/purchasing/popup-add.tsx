@@ -58,18 +58,17 @@ export default function PopupAddProduct() {
   const quantity = form.watch("quantity");
   const isAddNoteChecked = form.watch("addNote");
 
+  const currentProductInCart = cart.find(
+    (item) => item.product.id === addProduct?.id,
+  );
+
   useEffect(() => {
     if (addProduct) {
       form.reset({
         purchasePrice: addProduct.purchasePrice || 0,
-        quantity:
-          cart?.find((item) => item.product.id === addProduct.id)?.quantity ||
-          0,
-        addNote: cart?.find((item) => item.product.id === addProduct.id)?.note
-          ? true
-          : false,
-        note:
-          cart?.find((item) => item.product.id === addProduct.id)?.note || "",
+        quantity: currentProductInCart?.quantity || 0,
+        addNote: currentProductInCart?.note ? true : false,
+        note: currentProductInCart?.note || "",
       });
     } else {
       form.reset(initialValues);
@@ -100,7 +99,7 @@ export default function PopupAddProduct() {
             TAMBAH PRODUK
           </Heading>
         </ModalHeader>
-        <ModalBody className="m-0">
+        <ModalBody className="m-0" showsVerticalScrollIndicator={false}>
           <VStack space="md">
             <HStack className="justify-between items-center px-4 py-2 rounded-sm border-b border-gray-300">
               <HStack space="md" className="items-center">
@@ -123,9 +122,13 @@ export default function PopupAddProduct() {
               </HStack>
             </HStack>
             <VStack space="lg" className="px-4">
-              <HStack className="w-full justify-between items-center">
+              <HStack
+                space="md"
+                className="w-full justify-between items-center"
+              >
                 <Pressable
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
+                  disabled={quantity <= 0}
                   onPress={() => {
                     const currentQuantity = quantity;
 
@@ -138,9 +141,38 @@ export default function PopupAddProduct() {
                     -
                   </Heading>
                 </Pressable>
-                <Heading size="3xl" className="font-bold">
-                  {quantity}
-                </Heading>
+                <Controller
+                  name="quantity"
+                  control={form.control}
+                  render={({
+                    field: { onChange, onBlur, value },
+                    fieldState: { error },
+                  }) => (
+                    <FormControl
+                      isRequired
+                      isInvalid={!!error}
+                      className="w-44 h-full"
+                    >
+                      <Input className="flex-1 border-white data-[focus=true]:border-white">
+                        <InputField
+                          value={value.toString()}
+                          autoComplete="off"
+                          onChangeText={(text) => onChange(Number(text) || 0)}
+                          onBlur={onBlur}
+                          keyboardType="numeric"
+                          className="text-4xl text-center font-bold border-none"
+                        />
+                      </Input>
+                      {error && (
+                        <FormControlError>
+                          <FormControlErrorText className="text-red-500">
+                            {error.message}
+                          </FormControlErrorText>
+                        </FormControlError>
+                      )}
+                    </FormControl>
+                  )}
+                />
                 <Pressable
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                   onPress={() => {

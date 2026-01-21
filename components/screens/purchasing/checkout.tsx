@@ -32,11 +32,8 @@ import {
   VStack,
 } from "@/components/ui";
 import { getErrorMessage } from "@/lib/api/client";
+import { CreatePurchasingDTO, useCreatePurchasing } from "@/lib/api/purchasing";
 import { useSuppliers } from "@/lib/api/suppliers";
-import {
-  CreatePurchasingDTO,
-  useCreatePurchasing,
-} from "@/lib/api/purchasing";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -49,7 +46,7 @@ import { useCurrentUser } from "@/lib/api/auth";
 import { usePurchasingStore } from "@/stores/purchasing";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
-import { CalendarIcon, Check } from "lucide-react-native";
+import { CalendarIcon, Check, PlusIcon } from "lucide-react-native";
 
 const purchasingSchema = z
   .object({
@@ -66,7 +63,10 @@ const purchasingSchema = z
     note: z.string(),
   })
   .superRefine((data, ctx) => {
-    if (data.status === "COMPLETED" && parseFloat(data.totalPaid || "0") < data.totalPurchase) {
+    if (
+      data.status === "COMPLETED" &&
+      parseFloat(data.totalPaid || "0") < data.totalPurchase
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Total pembayaran tidak boleh kurang dari total pembelian",
@@ -163,14 +163,16 @@ export default function PurchasingCheckoutForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.formState.errors.totalPaid]);
 
-
   const onSubmit: SubmitHandler<PurchasingFormValues> = (
     data: PurchasingFormValues,
   ) => {
     const submissionData: CreatePurchasingDTO = {
       ...data,
-      items: cart.map(item => ({
-        product: { id: item.product.id, purchasePrice: item.product.purchasePrice },
+      items: cart.map((item) => ({
+        product: {
+          id: item.product.id,
+          purchasePrice: item.product.purchasePrice,
+        },
         newPurchasePrice: item.newPurchasePrice,
         quantity: item.quantity,
         note: item.note,
@@ -191,18 +193,10 @@ export default function PurchasingCheckoutForm() {
           updatedByName: user?.name || "",
           items: cart,
         });
-        toast.show({
-          placement: "top",
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-              <ToastTitle>Transaksi pembelian barang berhasil disimpan</ToastTitle>
-            </Toast>
-          ),
-        });
+
         if (data.status === "DRAFT") {
           router.replace("/(main)/purchasing");
         } else {
-          // @ts-ignore - route typing internal issue
           router.replace("/(main)/purchasing/success");
         }
       },
@@ -257,7 +251,6 @@ export default function PurchasingCheckoutForm() {
     // }
   };
 
-  console.log("form errors", form.formState.errors);
   return (
     <VStack className="flex-1 bg-white">
       <Header
@@ -340,37 +333,57 @@ export default function PurchasingCheckoutForm() {
                     fieldState: { error },
                   }) => (
                     <FormControl isRequired isInvalid={!!error}>
-                      <Select onValueChange={onChange} onBlur={onBlur}>
-                        <SelectTrigger>
-                          <SelectInput
-                            value={
-                              suppliers.find(
-                                (supplier) => supplier.id === value,
-                              )?.name
-                            }
-                            placeholder="Supplier"
-                            className="flex-1 capitalize"
-                          />
-                          <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                        </SelectTrigger>
-                        <SelectPortal>
-                          <SelectBackdrop />
-                          <SelectContent className="px-0">
-                            <SelectDragIndicatorWrapper>
-                              <SelectDragIndicator />
-                            </SelectDragIndicatorWrapper>
-                            {suppliers.map((supplier) => (
-                              <SelectItem
-                                key={supplier.id}
-                                label={supplier.name}
-                                value={supplier.id}
-                                textStyle={{ className: "capitalize flex-1" }}
-                                className="px-4 py-4"
-                              />
-                            ))}
-                          </SelectContent>
-                        </SelectPortal>
-                      </Select>
+                      <HStack space="md">
+                        <Select
+                          onValueChange={onChange}
+                          onBlur={onBlur}
+                          className="flex-1"
+                        >
+                          <SelectTrigger>
+                            <SelectInput
+                              value={
+                                suppliers.find(
+                                  (supplier) => supplier.id === value,
+                                )?.name
+                              }
+                              placeholder="Supplier"
+                              className="flex-1 capitalize"
+                            />
+                            <SelectIcon className="mr-3" as={ChevronDownIcon} />
+                          </SelectTrigger>
+                          <SelectPortal>
+                            <SelectBackdrop />
+                            <SelectContent>
+                              <SelectDragIndicatorWrapper>
+                                <SelectDragIndicator />
+                              </SelectDragIndicatorWrapper>
+                              <VStack className="pt-5 pb-8">
+                                {suppliers.map((supplier) => (
+                                  <SelectItem
+                                    key={supplier.id}
+                                    label={supplier.name}
+                                    value={supplier.id}
+                                    textStyle={{
+                                      className: "capitalize flex-1",
+                                    }}
+                                    className="px-4 py-4"
+                                  />
+                                ))}
+                              </VStack>
+                            </SelectContent>
+                          </SelectPortal>
+                        </Select>
+                        <Pressable
+                          className="size-10 rounded-full bg-primary-500 items-center justify-center"
+                          onPress={() =>
+                            router.navigate(
+                              "/(main)/management/customer-supplier/supplier/add",
+                            )
+                          }
+                        >
+                          <Icon as={PlusIcon} color="white" />
+                        </Pressable>
+                      </HStack>
                       {error && (
                         <FormControlError>
                           <FormControlErrorText>

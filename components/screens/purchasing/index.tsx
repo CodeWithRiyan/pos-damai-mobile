@@ -1,6 +1,7 @@
 import Header from "@/components/header";
 import {
   Heading,
+  Icon,
   Input,
   InputField,
   InputIcon,
@@ -20,6 +21,7 @@ import { VStack } from "@/components/ui/vstack";
 import { useProducts } from "@/lib/api/products";
 import { usePurchasingStore } from "@/stores/purchasing";
 import { useRouter } from "expo-router";
+import { Plus } from "lucide-react-native";
 import React from "react";
 import { ScrollView } from "react-native";
 import PopupAddProduct from "./popup-add";
@@ -77,6 +79,21 @@ export default function PurchasingList() {
           </HStack>
           <ScrollView className="flex-1">
             <VStack className="flex-1">
+              <VStack className="p-4">
+                <Pressable
+                  className="w-full rounded-md h-10 flex-row justify-center items-center gap-4 bg-primary-100 border border-primary-500 active:bg-primary-200"
+                  onPress={() =>
+                    router.navigate(
+                      "/(main)/management/product-category-brand/product/add",
+                    )
+                  }
+                >
+                  <Icon as={Plus} size="sm" color="#3d2117" />
+                  <Text size="sm" className="text-brand-primary font-bold">
+                    Tambah Barang
+                  </Text>
+                </Pressable>
+              </VStack>
               {products?.map((product, index) => (
                 <Pressable
                   key={index}

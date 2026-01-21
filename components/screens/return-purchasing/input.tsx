@@ -12,25 +12,34 @@ import {
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
+import { Spinner } from "@/components/ui/spinner";
+import { usePurchase, usePurchases } from "@/lib/api/purchasing";
 import { useReturnPurchasingStore } from "@/stores/return-purchasing";
-import React, { useState, useEffect } from "react";
+import dayjs from "dayjs";
+import React, { useEffect, useState } from "react";
 import { ScrollView } from "react-native";
 import ReturnPurchasingConfirmForm from "./form";
 import PopupAddProduct from "./popup-add";
-import { usePurchases, usePurchase } from "@/lib/api/purchasing";
-import { Spinner } from "@/components/ui/spinner";
-import dayjs from "dayjs";
 
 export default function PurchasingList() {
-  const { cart, setAddProduct, setOpenConfirm, selectedPurchase, setSelectedPurchase, resetCart } = useReturnPurchasingStore();
+  const {
+    cart,
+    setAddProduct,
+    setOpenConfirm,
+    selectedPurchase,
+    setSelectedPurchase,
+    resetCart,
+  } = useReturnPurchasingStore();
   const { data: purchases, isLoading: loadingPurchases } = usePurchases();
-  const { data: purchaseDetail, isLoading: loadingDetail } = usePurchase(selectedPurchase?.id || "");
+  const { data: purchaseDetail, isLoading: loadingDetail } = usePurchase(
+    selectedPurchase?.id || "",
+  );
   const [search, setSearch] = useState("");
 
   // Reset state when component mounts (navigating to this screen)
   useEffect(() => {
     resetCart();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!selectedPurchase) {
@@ -38,13 +47,16 @@ export default function PurchasingList() {
       <Box className="flex-1 bg-white">
         <Header header="PILIH PEMBELIAN UNTUK DIRETUR" isGoBack />
         <VStack className="flex-1">
-          <HStack space="sm" className="p-4 shadow-lg bg-background-0 items-center">
+          <HStack
+            space="sm"
+            className="p-4 shadow-lg bg-background-0 items-center"
+          >
             <Input className="flex-1 border border-background-300 rounded-lg h-10">
               <InputSlot className="pl-3">
                 <InputIcon as={SearchIcon} />
               </InputSlot>
-              <InputField 
-                placeholder="Cari no transaksi..." 
+              <InputField
+                placeholder="Cari no transaksi..."
                 value={search}
                 onChangeText={setSearch}
               />
@@ -52,25 +64,31 @@ export default function PurchasingList() {
           </HStack>
           <ScrollView className="flex-1">
             {loadingPurchases ? (
-              <VStack className="items-center py-10"><Spinner /></VStack>
+              <VStack className="items-center py-10">
+                <Spinner />
+              </VStack>
             ) : (
-              purchases?.filter(p => !search || p.local_ref_id?.includes(search)).map((p) => (
-                <Pressable
-                  key={p.id}
-                  className="px-4 py-4 border-b border-gray-200 active:bg-gray-100"
-                  onPress={() => setSelectedPurchase(p)}
-                >
-                  <HStack className="justify-between items-center">
-                    <VStack>
-                      <Heading size="sm">No: {p.local_ref_id}</Heading>
-                      <Text size="xs" className="text-gray-500">
-                        {dayjs(p.createdAt).format("DD MMM YYYY HH:mm")}
+              purchases
+                ?.filter((p) => !search || p.local_ref_id?.includes(search))
+                .map((p) => (
+                  <Pressable
+                    key={p.id}
+                    className="px-4 py-4 border-b border-gray-200 active:bg-gray-100"
+                    onPress={() => setSelectedPurchase(p)}
+                  >
+                    <HStack className="justify-between items-center">
+                      <VStack>
+                        <Heading size="sm">No: {p.local_ref_id}</Heading>
+                        <Text size="xs" className="text-gray-500">
+                          {dayjs(p.createdAt).format("DD MMM YYYY HH:mm")}
+                        </Text>
+                      </VStack>
+                      <Text className="font-bold">
+                        Rp {p.totalAmount.toLocaleString("id-ID")}
                       </Text>
-                    </VStack>
-                    <Text className="font-bold">Rp {p.totalAmount.toLocaleString("id-ID")}</Text>
-                  </HStack>
-                </Pressable>
-              ))
+                    </HStack>
+                  </Pressable>
+                ))
             )}
           </ScrollView>
         </VStack>
@@ -100,25 +118,22 @@ export default function PurchasingList() {
           <ScrollView className="flex-1">
             <VStack className="flex-1">
               {loadingDetail ? (
-                <VStack className="items-center py-10"><Spinner /></VStack>
+                <VStack className="items-center py-10">
+                  <Spinner />
+                </VStack>
               ) : !products.length ? (
                 <VStack className="items-center py-10">
-                  <Text className="text-gray-400">Tidak ada item dalam pembelian ini</Text>
+                  <Text className="text-gray-400">
+                    Tidak ada item dalam pembelian ini
+                  </Text>
                 </VStack>
               ) : (
-                products.map((item: any, index: number) => {
-                  // usePurchase returns flat structure: { productId, productName, quantity, purchasePrice }
-                  const productForCart = { 
-                    id: item.productId, 
-                    name: item.productName, 
-                    purchasePrice: item.purchasePrice 
-                  } as any;
-                  
+                products.map((item, index) => {
                   return (
                     <Pressable
                       key={index}
                       className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                      onPress={() => setAddProduct(productForCart)}
+                      onPress={() => setAddProduct(item)}
                     >
                       <HStack className="justify-between items-center">
                         <HStack space="md" className="items-center">
@@ -138,8 +153,9 @@ export default function PurchasingList() {
                           <HStack space="sm">
                             <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
                               <Text className="font-bold">
-                                {cart?.find((f) => f.product.id === item.productId)
-                                  ?.quantity || 0}
+                                {cart?.find(
+                                  (f) => f.product.id === item.productId,
+                                )?.quantity || 0}
                               </Text>
                             </Box>
                             <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
@@ -173,14 +189,14 @@ export default function PurchasingList() {
                       </Box>
                       <VStack className="flex-1">
                         <Heading size="md" className="line-clamp-2">
-                          {item.product.name}
+                          {item.product.productName}
                         </Heading>
                         <Text size="sm" className="text-slate-500">
                           {item.quantity} x Rp{" "}
-                          {item.product.purchasePrice.toLocaleString("id-ID")} =
-                          Rp{" "}
+                          {item.product.purchasePrice?.toLocaleString("id-ID")}{" "}
+                          = Rp{" "}
                           {(
-                            item.quantity * item.product.purchasePrice
+                            item.quantity * (item.product.purchasePrice || 0)
                           ).toLocaleString("id-ID")}
                         </Text>
                         {item.note && (
