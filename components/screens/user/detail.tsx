@@ -1,3 +1,4 @@
+import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
@@ -9,33 +10,20 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
-import {
-  Actionsheet,
-  ActionsheetBackdrop,
-  ActionsheetContent,
-  ActionsheetDragIndicator,
-  ActionsheetDragIndicatorWrapper,
-  ActionsheetItem,
-  ActionsheetItemText,
-} from "@/components/ui/actionsheet";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import useBreakpoint from "@/hooks/use-breakpoint";
 import { getErrorMessage } from "@/lib/api/client";
 import { useDeleteUser, useUser, useUsers } from "@/lib/api/users";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function UserDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const userId = id as string;
-
-  const { sm } = useBreakpoint();
-  const [showActionsheet, setShowActionsheet] = useState<boolean>(false);
 
   const { refetch: refetchUsers } = useUsers();
   const { data: user, refetch: refetchUser } = useUser(userId || "");
@@ -88,7 +76,6 @@ export default function UserDetail() {
       onSuccess: () => {
         hidePopUpConfirm();
         onRefetch();
-        setShowActionsheet(false);
         router.back();
 
         toast.show({
@@ -103,8 +90,33 @@ export default function UserDetail() {
       onError: (error) => {
         showErrorToast(error);
         hidePopUpConfirm();
-        setShowActionsheet(false);
       },
+    });
+  };
+
+  const handleAction = () => {
+    showActionDrawer({
+      actions: [
+        {
+          label: "Edit",
+          icon: "Pen",
+          onPress: () => {
+            router.navigate(
+              `/(main)/management/role-user/user/edit/${user?.id}`,
+            );
+            hideActionDrawer();
+          },
+        },
+        {
+          label: "Delete",
+          icon: "TrashBin2",
+          theme: "red",
+          onPress: () => {
+            handleDeletePress();
+            hideActionDrawer();
+          },
+        },
+      ],
     });
   };
 
@@ -114,7 +126,7 @@ export default function UserDetail() {
         header="DETAIL KARYAWAN"
         action={
           <HStack space="sm">
-            <Pressable className="p-6" onPress={() => setShowActionsheet(true)}>
+            <Pressable className="p-6" onPress={handleAction}>
               <SolarIconBold
                 name="MenuDots"
                 size={20}
@@ -128,26 +140,24 @@ export default function UserDetail() {
       />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <Box className="p-4 border-b border-background-300 flex-row flex-wrap gap-y-4">
-          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
-            <Text className="text-gray-500 font-bold">Nama</Text>
-            <Text>
-              {user?.firstName || "-"}
+        <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
+          <VStack className="w-1/2 pr-4">
+            <Text className="text-gray-500">Nama</Text>
+            <Text className="font-bold">{user?.firstName}</Text>
+          </VStack>
+          <VStack className="w-1/2 pr-4">
+            <Text className="text-gray-500">Role</Text>
+            <Text className="font-bold">
+              {user?.roles?.[0]?.role?.name || "-"}
             </Text>
           </VStack>
-          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
-            <Text className="text-gray-500 font-bold">Role</Text>
-            <Text>{user?.roles?.[0]?.role?.name || "-"}</Text>
+          <VStack className="w-1/2 pr-4">
+            <Text className="text-gray-500">Username</Text>
+            <Text className="font-bold">{user?.username || "-"}</Text>
           </VStack>
-          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
-            <Text className="text-gray-500 font-bold">Username</Text>
-            <Text>{user?.username}</Text>
-          </VStack>
-          <VStack className={`${sm ? "w-1/2" : "w-full"}`}>
-            <Text className="text-gray-500 font-bold">
-              Tanggal Terakhir Login
-            </Text>
-            <Text>
+          <VStack className="w-1/2 pr-4">
+            <Text className="text-gray-500">Tanggal Terakhir Login</Text>
+            <Text className="font-bold">
               {user?.lastLoginAt
                 ? dayjs(user?.lastLoginAt).format("DD MMMM YYYY")
                 : "-"}
@@ -156,43 +166,13 @@ export default function UserDetail() {
         </Box>
       </ScrollView>
 
-      <Actionsheet isOpen={showActionsheet} onClose={() => setShowActionsheet(false)}>
-        <ActionsheetBackdrop />
-        <ActionsheetContent className="px-0">
-          <ActionsheetDragIndicatorWrapper className="pb-4 pt-2">
-            <ActionsheetDragIndicator />
-          </ActionsheetDragIndicatorWrapper>
-
-          <ActionsheetItem
-            onPress={() => {
-              router.navigate(
-                `/(main)/management/role-user/user/edit/${user?.id}`
-              );
-              setShowActionsheet(false);
-            }}
-          >
-            <HStack className="w-full justify-between items-center px-4 py-2">
-              <ActionsheetItemText className="font-bold">
-                Edit
-              </ActionsheetItemText>
-              <SolarIconBold name="Pen" size={16} />
-            </HStack>
-          </ActionsheetItem>
-
-          <ActionsheetItem
-            onPress={() => {
-              handleDeletePress();
-            }}
-          >
-            <HStack className="w-full justify-between items-center px-4 py-2">
-              <ActionsheetItemText className="font-bold text-red-500">
-                Delete
-              </ActionsheetItemText>
-              <SolarIconBold name="TrashBin2" size={16} color="#ef4444" />
-            </HStack>
-          </ActionsheetItem>
-        </ActionsheetContent>
-      </Actionsheet>
+      <VStack space="md" className="w-full p-4">
+        <Pressable className="w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-primary-500">
+          <Text size="sm" className="text-brand-primary font-bold">
+            LOG AKTIFITAS
+          </Text>
+        </Pressable>
+      </VStack>
     </VStack>
   );
 }

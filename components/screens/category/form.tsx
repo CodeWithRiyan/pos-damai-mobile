@@ -43,8 +43,8 @@ export default function CategoryForm() {
 
   const categorySchema = z.object({
     name: z.string().min(1, "Nama Category wajib diisi."),
-    retailPoint: z.number(),
-    wholesalePoint: z.number(),
+    retailPoint: z.number().min(0, "Poin harus >= 0"),
+    wholesalePoint: z.number().min(0, "Poin harus >= 0"),
   });
 
   type CategoryFormValues = z.infer<typeof categorySchema>;
@@ -75,8 +75,8 @@ export default function CategoryForm() {
     if (dataCategory) {
       form.reset({
         name: dataCategory.name,
-        retailPoint: 0,
-        wholesalePoint: 0,
+        retailPoint: dataCategory.retailPoint || 0,
+        wholesalePoint: dataCategory.wholesalePoint || 0,
       });
     } else {
       form.reset(initialValues);
@@ -124,12 +124,15 @@ export default function CategoryForm() {
       );
     } else {
       createMutation.mutate(data, {
-        onSuccess: () => {
-          showSuccessToast("Kategori berhasil ditambahkan");
-          onRefetch();
-          form.reset(initialValues);
-          setOpen(false);
-        },
+          onSuccess: (newCat) => {
+            showSuccessToast("Kategori berhasil ditambahkan");
+            onRefetch();
+            if (useCategoryStore.getState().onSuccess) {
+              useCategoryStore.getState().onSuccess?.(newCat);
+            }
+            form.reset(initialValues);
+            setOpen(false);
+          },
         onError: showErrorToast,
       });
     }
@@ -203,9 +206,12 @@ export default function CategoryForm() {
                     <Input>
                       <InputField
                         value={value.toString()}
-                        autoComplete="name"
+                        keyboardType="numeric"
                         placeholder="Masukkan poin retail"
-                        onChangeText={onChange}
+                        onChangeText={(text) => {
+                          const num = parseFloat(text) || 0;
+                          onChange(num);
+                        }}
                         onBlur={onBlur}
                       />
                     </Input>
@@ -233,9 +239,12 @@ export default function CategoryForm() {
                     <Input>
                       <InputField
                         value={value.toString()}
-                        autoComplete="name"
+                        keyboardType="numeric"
                         placeholder="Masukkan poin grosir"
-                        onChangeText={onChange}
+                        onChangeText={(text) => {
+                          const num = parseFloat(text) || 0;
+                          onChange(num);
+                        }}
                         onBlur={onBlur}
                       />
                     </Input>

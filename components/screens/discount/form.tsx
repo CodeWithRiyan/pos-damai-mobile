@@ -26,6 +26,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
+import { useCreateDiscount, useUpdateDiscount, useDiscounts, useDiscount } from "@/lib/api/discounts";
 import { useDiscountStore } from "@/stores/discount";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -37,6 +38,8 @@ import z from "zod";
 export default function DiscountForm() {
   const { open, setOpen, data: dataDiscount } = useDiscountStore();
   const toast = useToast();
+  const createMutation = useCreateDiscount();
+  const updateMutation = useUpdateDiscount();
 
   // State untuk mengontrol visibility date picker
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
@@ -45,7 +48,7 @@ export default function DiscountForm() {
   const discountSchema = z.object({
     name: z.string().min(1, "Nama Discount wajib diisi."),
     nominal: z.number().min(1, "Nominal wajib diisi."),
-    type: z.string(),
+    type: z.enum(["FLAT", "PERCENTAGE"]),
     startDate: z.date(),
     endDate: z.date(),
   });
@@ -65,9 +68,12 @@ export default function DiscountForm() {
     defaultValues: initialValues,
   });
 
+  const { refetch: refetchDiscounts } = useDiscounts();
+  const { refetch: refetchDiscount } = useDiscount(dataDiscount?.id || "");
+
   const onRefetch = () => {
-    // refetchDiscounts();
-    // if (dataDiscount) refetchDiscount();
+    refetchDiscounts();
+    if (dataDiscount) refetchDiscount();
   };
 
   useEffect(() => {
@@ -115,13 +121,39 @@ export default function DiscountForm() {
     data: DiscountFormValues
   ) => {
     if (dataDiscount) {
-      // updateMutation.mutate(...)
+      updateMutation.mutate(
+        { ...data, id: dataDiscount.id },
+        {
+          onSuccess: () => {
+            showSuccessToast("Diskon berhasil diperbarui");
+            form.reset(initialValues);
+            setOpen(false);
+            onRefetch();
+          },
+          onError: (error: any) => {
+            showErrorToast(error);
+          },
+        }
+      );
     } else {
-      // createMutation.mutate(...)
+      createMutation.mutate(data, {
+        onSuccess: (newDiscount) => {
+          showSuccessToast("Diskon berhasil ditambahkan");
+          onRefetch();
+          if (useDiscountStore.getState().onSuccess) {
+            useDiscountStore.getState().onSuccess?.(newDiscount);
+          }
+          form.reset(initialValues);
+          setOpen(false);
+        },
+        onError: (error: any) => {
+          showErrorToast(error);
+        },
+      });
     }
   };
 
-  const isLoading = false;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
     <Modal
@@ -140,7 +172,7 @@ export default function DiscountForm() {
           <Heading size="md" className="text-center flex-1">
             {dataDiscount ? "EDIT DISKON" : "TAMBAH DISKON"}
           </Heading>
-          <ModalCloseButton>
+          <ModalCloseButton onPress={() => setOpen(false)}>
             <Icon as={CloseIcon} />
           </ModalCloseButton>
         </ModalHeader>
@@ -230,12 +262,12 @@ export default function DiscountForm() {
                               </RadioLabel>
                             </Radio>
                             <Radio
-                              value="FIXED"
+                              value="FLAT"
                               size="md"
                               isInvalid={false}
                               isDisabled={false}
                               className={`size-10 border rounded-sm flex items-center justify-center${
-                                value === "FIXED"
+                                value === "FLAT"
                                   ? " bg-primary-200 text-primary-500 border-primary-500"
                                   : " bg-background-100 border-background-300"
                               }`}

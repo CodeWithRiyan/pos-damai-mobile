@@ -1,7 +1,5 @@
 import Header from "@/components/header";
 import {
-  Button,
-  ButtonText,
   FormControl,
   FormControlError,
   FormControlErrorText,
@@ -10,12 +8,13 @@ import {
   HStack,
   Input,
   InputField,
+  Pressable,
   Switch,
   Text,
   Toast,
   ToastTitle,
   useToast,
-  VStack,
+  VStack
 } from "@/components/ui";
 import { getErrorMessage } from "@/lib/api/client";
 import {
@@ -65,6 +64,9 @@ export default function RoleForm() {
 
   const createMutation = useCreateRole();
   const updateMutation = useUpdateRole();
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+
   const toast = useToast();
 
   const showErrorToast = (error: unknown) => {
@@ -240,7 +242,7 @@ export default function RoleForm() {
                     Izin Akses
                   </FormControlLabelText>
                 </FormControlLabel>
-                
+
                 {isLoadingPermissions ? (
                   <Text>Loading izin akses...</Text>
                 ) : permissions.length === 0 ? (
@@ -262,7 +264,7 @@ export default function RoleForm() {
                           <VStack>
                             {modulePermissions.map((permission) => {
                               const isChecked = value.includes(permission.id);
-                              
+
                               return (
                                 <HStack
                                   key={permission.id}
@@ -276,7 +278,9 @@ export default function RoleForm() {
                                     value={isChecked}
                                     onToggle={() => {
                                       const newValue = isChecked
-                                        ? value.filter((id) => id !== permission.id)
+                                        ? value.filter(
+                                            (id) => id !== permission.id
+                                          )
                                         : [...value, permission.id];
                                       onChange(newValue);
                                     }}
@@ -290,7 +294,7 @@ export default function RoleForm() {
                     )}
                   </>
                 )}
-                
+
                 {error && (
                   <FormControlError>
                     <FormControlErrorText>{error.message}</FormControlErrorText>
@@ -301,20 +305,17 @@ export default function RoleForm() {
           />
         </VStack>
       </ScrollView>
-      
+
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
-        <Button
-          action="primary"
+        <Pressable
+          className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
+          disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
-          disabled={createMutation.isPending || updateMutation.isPending}
-          className="bg-brand-primary flex-1"
         >
-          <ButtonText className="text-white">
-            {createMutation.isPending || updateMutation.isPending
-              ? "MENYIMPAN..."
-              : "SIMPAN"}
-          </ButtonText>
-        </Button>
+          <Text size="sm" className="text-typography-0 font-bold">
+            {isLoading ? "MENYIMPAN..." : "SIMPAN"}
+          </Text>
+        </Pressable>
       </HStack>
     </VStack>
   );

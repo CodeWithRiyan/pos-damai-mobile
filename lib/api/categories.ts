@@ -2,12 +2,14 @@ import { db } from '../db';
 import * as schema from '../db/schema';
 import { and, eq, isNull } from 'drizzle-orm';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { storageAdapter } from '../storage';
+import { useAuthStore } from '@/stores/auth';
 
 export interface Category {
   id: string;
   name: string;
   point: number;
+  retailPoint: number;
+  wholesalePoint: number;
   description: string | null;
   organizationId: string;
   createdAt: Date | null;
@@ -17,37 +19,47 @@ export interface Category {
 export interface CreateCategoryDTO {
   name: string;
   point?: number;
+  retailPoint?: number;
+  wholesalePoint?: number;
   description?: string;
 }
 
-export interface UpdateCategoryDTO {
+export interface UpdateCategoryDTO extends Partial<CreateCategoryDTO> {
   id: string;
-  name?: string;
-  point?: number;
-  description?: string;
 }
 
-// Get user's organization ID
-function getOrganizationId(): string {
-  const profile = storageAdapter.getItem('userProfile');
-  if (profile) {
-    try {
-      const parsed = JSON.parse(profile);
-      return parsed.selectedOrganizationId || '';
-    } catch {
-      return '';
-    }
-  }
-  return '';
+
+// Get product counts by category
+export function useProductCountsByCategory() {
+  const orgId = useAuthStore(state => state.getOrganizationId());
+  return useQuery({
+    queryKey: ['productCountsByCategory', orgId],
+    queryFn: async () => {
+      const products = await db
+        .select({ categoryId: schema.products.categoryId })
+        .from(schema.products)
+        .where(and(
+          eq(schema.products.organizationId, orgId),
+          isNull(schema.products.deletedAt)
+        ));
+      
+      // Count products per category
+      const counts: Record<string, number> = {};
+      for (const product of products) {
+        counts[product.categoryId] = (counts[product.categoryId] || 0) + 1;
+      }
+      return counts;
+    },
+    enabled: !!orgId,
+  });
 }
 
 // Get all categories from local SQLite (excluding soft-deleted)
 export function useCategories() {
+  const orgId = useAuthStore(state => state.getOrganizationId());
   return useQuery({
-    queryKey: ['categories'],
+    queryKey: ['categories', orgId],
     queryFn: async () => {
-      const orgId = getOrganizationId();
-      console.log('[Categories] Fetching for orgId:', orgId);
       const result = await db
         .select()
         .from(schema.categories)
@@ -55,9 +67,9 @@ export function useCategories() {
           eq(schema.categories.organizationId, orgId),
           isNull(schema.categories.deletedAt)
         ));
-      console.log('[Categories] Found:', result.length);
       return result as Category[];
     },
+    enabled: !!orgId,
   });
 }
 
@@ -83,7 +95,12 @@ export function useCreateCategory() {
 
   return useMutation({
     mutationFn: async (data: CreateCategoryDTO) => {
-      const orgId = getOrganizationId();
+      const orgId = useAuthStore.getState().getOrganizationId();
+      
+      if (!orgId) {
+        throw new Error('Gagal menambahkan kategori: ID Organisasi tidak ditemukan. Silakan login kembali.');
+      }
+
       const id = `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
 
@@ -91,6 +108,8 @@ export function useCreateCategory() {
         id,
         name: data.name,
         point: data.point ?? 0,
+        retailPoint: data.retailPoint ?? 0,
+        wholesalePoint: data.wholesalePoint ?? 0,
         description: data.description ?? null,
         organizationId: orgId,
         createdAt: now,
@@ -101,11 +120,10 @@ export function useCreateCategory() {
       };
 
       await db.insert(schema.categories).values(newCategory);
-
       return newCategory as Category;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['categories', data.organizationId] });
     },
   });
 }
@@ -126,8 +144,10 @@ export function useUpdateCategory() {
 
       return { id, ...rest };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
+    onSuccess: (data) => {
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ['categories', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['categories', data.id] });
     },
   });
 }
@@ -149,7 +169,8 @@ export function useDeleteCategory() {
       return { id };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ['categories', orgId] });
     },
   });
 }
@@ -172,7 +193,8 @@ export function useBulkDeleteCategory() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ['categories', orgId] });
     },
   });
 }

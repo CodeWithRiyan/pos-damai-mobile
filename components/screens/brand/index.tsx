@@ -11,7 +11,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-import { Brand, useBrands, useBulkDeleteBrand } from "@/lib/api/brands";
+import { Brand, useBrands, useBulkDeleteBrand, useProductCountsByBrand } from "@/lib/api/brands";
 import { getErrorMessage } from "@/lib/api/client";
 import { useBrandStore } from "@/stores/brand";
 import { useRouter } from "expo-router";
@@ -19,10 +19,11 @@ import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function BrandList() {
-  const { setOpen } = useBrandStore();
+  const { setOpen, setData } = useBrandStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data, isLoading, refetch } = useBrands();
+  const { data: productCounts, refetch: refetchCounts } = useProductCountsByBrand();
   const [selectedItems, setSelectedItems] = useState<Brand[] | null>(null);
 
   const brands = data || [];
@@ -55,7 +56,11 @@ export default function BrandList() {
 
   const handleAdd = () => {
     setSelectedItems(null);
-    setOpen(true);
+    setData(null);
+    setOpen(true, () => {
+      refetch();
+      refetchCounts();
+    });
   };
 
   const handleDeletePress = () => {
@@ -179,7 +184,7 @@ export default function BrandList() {
                       <HStack space="sm">
                         <Badge size="sm" variant="solid" action="muted">
                           <BadgeText className="text-xs">
-                            Total Produk: 0
+                            Total Produk: {productCounts?.[item.id] || 0}
                           </BadgeText>
                         </Badge>
                       </HStack>

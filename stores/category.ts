@@ -4,13 +4,15 @@ import { create } from "zustand";
 interface CategoryState {
   open: boolean;
   data?: Category | null;
-  setOpen: (state: boolean) => void;
+  onSuccess?: (category: Category) => void;
+  setOpen: (state: boolean, onSuccess?: (category: Category) => void) => void;
   setData: (data?: Category | null) => void;
 }
 
 export const useCategoryStore = create<CategoryState>((set) => ({
   open: false,
   data: null,
-  setOpen: (state) => set({ open: state }),
+  onSuccess: undefined,
+  setOpen: (state, onSuccess) => set({ open: state, onSuccess }),
   setData: (data) => set({ data }),
 }));

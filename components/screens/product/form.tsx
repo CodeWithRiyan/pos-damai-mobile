@@ -33,14 +33,15 @@ import {
 import { useBrands } from "@/lib/api/brands";
 import { useCategories } from "@/lib/api/categories";
 import { getErrorMessage } from "@/lib/api/client";
-// import {
-//   CreateProductDTO,
-//   UpdateProductDTO,
-//   useCreateProduct,
-//   useUpdateProduct,
-//   useProduct,
-//   useProducts,
-// } from "@/lib/api/products";
+import { useDiscounts } from "@/lib/api/discounts";
+import {
+  CreateProductDTO,
+  UpdateProductDTO,
+  useCreateProduct,
+  useUpdateProduct,
+  useProduct,
+  useProducts,
+} from "@/lib/api/products";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { useBrandStore } from "@/stores/brand";
 import { useCategoryStore } from "@/stores/category";
@@ -57,12 +58,11 @@ import {
 } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
-import { dataProducts } from ".";
 
 export default function ProductForm() {
-  const { setOpen: setOpenCategory } = useCategoryStore();
-  const { setOpen: setOpenBrand } = useBrandStore();
-  const { setOpen: setOpenDiscount } = useDiscountStore();
+  const { setOpen: setOpenCategory, setData: setDataCategory } = useCategoryStore();
+  const { setOpen: setOpenBrand, setData: setDataBrand } = useBrandStore();
+  const { setOpen: setOpenDiscount, setData: setDataDiscount } = useDiscountStore();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const isAdd = !id;
@@ -100,7 +100,7 @@ export default function ProductForm() {
         price: z.number().min(1, "Harga wajib diisi."),
       })
     ),
-    discountId: z.string(),
+    discountId: z.string().optional().nullable(),
     isActive: z.boolean(),
     description: z.string(),
   });
@@ -162,13 +162,14 @@ export default function ProductForm() {
     name: "wholesalePrice",
   });
 
-  // const { refetch: refetchProducts } = useProducts();
-  // const { data: product, refetch: refetchProduct } = useProduct(productId || "");
-  const { data: categories = [] } = useCategories();
-  const { data: brands = [] } = useBrands();
-  // const createMutation = useCreateProduct();
-  // const updateMutation = useUpdateProduct();
-  const product = dataProducts.find((r) => r.id === productId);
+  const { refetch: refetchProducts } = useProducts();
+  const { data: product, refetch: refetchProduct } = useProduct(productId || "");
+  const { data: categories = [], refetch: refetchCategories } = useCategories();
+  const { data: brands = [], refetch: refetchBrands } = useBrands();
+  const { data: discounts = [], refetch: refetchDiscounts } = useDiscounts();
+  const createMutation = useCreateProduct();
+  const updateMutation = useUpdateProduct();
+  const isLoading = createMutation.isPending || updateMutation.isPending;
   const toast = useToast();
 
   const productTypeOptions = [
@@ -200,7 +201,7 @@ export default function ProductForm() {
     if (productId && product) {
       form.reset({
         name: product.name,
-        code: product.code,
+        code: product.code || "",
         type: product.type,
         unit: product.unit,
         categoryId: product.categoryId || "",
@@ -209,9 +210,9 @@ export default function ProductForm() {
         stock: product.stock,
         minimumStock: product.minimumStock,
         variants: product.variants,
-        retailPrice: product.sellPrices.filter((r) => r.type === "RETAIL"),
+        retailPrice: product.sellPrices.filter((r: any) => r.type === "RETAIL"),
         wholesalePrice: product.sellPrices.filter(
-          (r) => r.type === "WHOLESALE"
+          (r: any) => r.type === "WHOLESALE"
         ),
         discountId: product.discountId || "",
         isActive: product.isActive,
@@ -224,10 +225,13 @@ export default function ProductForm() {
   }, [form, product, productId]);
 
   const onRefetch = () => {
-    // refetchProducts();
-    // if (productId) {
-    //   refetchProduct();
-    // }
+    refetchProducts();
+    refetchCategories();
+    refetchBrands();
+    refetchDiscounts();
+    if (productId) {
+      refetchProduct();
+    }
   };
 
   const handleCancel = () => {
@@ -237,50 +241,62 @@ export default function ProductForm() {
   const onSubmit: SubmitHandler<ProductFormValues> = (
     data: ProductFormValues
   ) => {
-    // if (productId && product) {
-    //   const updateData: UpdateProductDTO = {
-    //     ...data,
-    //     id: product.id,
-    //     password: product.password || undefined,
-    //   };
-    //   updateMutation.mutate(updateData, {
-    //     onSuccess: () => {
-    //       onRefetch();
-    //       handleCancel();
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //             <ToastTitle>Produk berhasil diubah</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //     onError: (error) => {
-    //       showErrorToast(error);
-    //     },
-    //   });
-    // } else {
-    //   const { isActive, ...restData } = data
-    //   const createData: CreateProductDTO = restData;
-    //   createMutation.mutate(createData, {
-    //     onSuccess: () => {
-    //       onRefetch();
-    //       handleCancel();
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //             <ToastTitle>Produk berhasil diubah</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //     onError: (error) => {
-    //       showErrorToast(error);
-    //     },
-    //   });
-    // }
+    const prices = [
+      ...data.retailPrice.map((p) => ({ ...p, type: "RETAIL" as const, label: "Retail" })),
+      ...data.wholesalePrice.map((p) => ({ ...p, type: "WHOLESALE" as const, label: "Grosir" })),
+    ];
+
+    if (productId && product) {
+      const updateData: UpdateProductDTO = {
+        ...data,
+        type: data.type as any,
+        id: product.id,
+        prices,
+        variants: data.variants || [],
+      };
+      updateMutation.mutate(updateData, {
+        onSuccess: () => {
+          onRefetch();
+          handleCancel();
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastTitle>Produk berhasil diubah</ToastTitle>
+              </Toast>
+            ),
+          });
+        },
+        onError: (error) => {
+          showErrorToast(error);
+        },
+      });
+    } else {
+      const createData: CreateProductDTO = {
+        ...data,
+        type: data.type as any,
+        prices,
+        variants: data.variants || [],
+      };
+      createMutation.mutate(createData, {
+        onSuccess: () => {
+          onRefetch();
+          form.reset(initialValues);
+          handleCancel();
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastTitle>Produk berhasil ditambahkan</ToastTitle>
+              </Toast>
+            ),
+          });
+        },
+        onError: (error) => {
+          showErrorToast(error);
+        },
+      });
+    }
   };
 
   const selectedType = form.watch("type");
@@ -389,9 +405,10 @@ export default function ProductForm() {
                   <InputField
                     value={value.toString()}
                     autoComplete="off"
-                    onChangeText={onChange}
+                    onChangeText={(text) => onChange(Number(text) || 0)}
                     onBlur={onBlur}
                     placeholder="Masukkan harga beli"
+                    keyboardType="numeric"
                   />
                 </Input>
                 {error && (
@@ -412,19 +429,28 @@ export default function ProductForm() {
               field: { onChange, onBlur, value },
               fieldState: { error },
             }) => (
-              <FormControl isRequired isInvalid={!!error}>
+              <FormControl isRequired={isAdd} isInvalid={!!error} isReadOnly={!isAdd} isDisabled={!isAdd}>
                 <FormControlLabel>
-                  <FormControlLabelText>Stok</FormControlLabelText>
+                  <FormControlLabelText>
+                    {isAdd ? "Stok Awal" : "Stok Terkini"}
+                  </FormControlLabelText>
                 </FormControlLabel>
-                <Input>
+                <Input isReadOnly={!isAdd} isDisabled={!isAdd}>
                   <InputField
                     value={value.toString()}
                     autoComplete="off"
-                    onChangeText={onChange}
+                    onChangeText={(text) => onChange(Number(text) || 0)}
                     onBlur={onBlur}
-                    placeholder="Masukkan stok"
+                    placeholder={isAdd ? "Masukkan stok awal" : ""}
+                    keyboardType="numeric"
+                    editable={isAdd}
                   />
                 </Input>
+                {!isAdd && (
+                  <Text size="xs" className="text-gray-500 mt-1">
+                    Stok hanya bisa diubah melalui Pembelian, Penjualan, Retur, atau Stock Opname
+                  </Text>
+                )}
                 {error && (
                   <FormControlError>
                     <FormControlErrorText className="text-red-500">
@@ -478,7 +504,16 @@ export default function ProductForm() {
                       </SelectContent>
                     </SelectPortal>
                   </Select>
-                  <Pressable className="size-10 rounded-full bg-primary-500 items-center justify-center" onPress={() => setOpenCategory(true)}>
+                  <Pressable
+                    className="size-10 rounded-full bg-primary-500 items-center justify-center"
+                    onPress={() => {
+                      setDataCategory(null);
+                      setOpenCategory(true, (newCat) => {
+                        form.setValue("categoryId", newCat.id);
+                        refetchCategories();
+                      });
+                    }}
+                  >
                     <Icon as={PlusIcon} color="white" />
                   </Pressable>
                 </HStack>
@@ -711,7 +746,7 @@ export default function ProductForm() {
             </VStack>
           )}
 
-          {/* RETAIL PRICE SECTION */}
+            {/* RETAIL PRICE SECTION */}
           <VStack space="sm">
             <Text className="font-bold text-typography-700">Harga Retail</Text>
             <VStack
@@ -948,9 +983,10 @@ export default function ProductForm() {
                   <InputField
                     value={value.toString()}
                     autoComplete="off"
-                    onChangeText={onChange}
+                    onChangeText={(text) => onChange(Number(text) || 0)}
                     onBlur={onBlur}
                     placeholder="Masukkan stok minimum"
+                    keyboardType="numeric"
                   />
                 </Input>
                 {error && (
@@ -1006,7 +1042,16 @@ export default function ProductForm() {
                       </SelectContent>
                     </SelectPortal>
                   </Select>
-                  <Pressable className="size-10 rounded-full bg-primary-500 items-center justify-center" onPress={() => setOpenBrand(true)}>
+                  <Pressable
+                    className="size-10 rounded-full bg-primary-500 items-center justify-center"
+                    onPress={() => {
+                      setDataBrand(null);
+                      setOpenBrand(true, (newBrand) => {
+                        form.setValue("brandId", newBrand.id);
+                        refetchBrands();
+                      });
+                    }}
+                  >
                     <Icon as={PlusIcon} color="white" />
                   </Pressable>
                 </HStack>
@@ -1034,7 +1079,7 @@ export default function ProductForm() {
                   <SelectTrigger>
                     <SelectInput
                       value={
-                        ([] as any[]).find((disc) => disc.id === value)?.name
+                        (discounts || []).find((disc) => disc.id === value)?.name
                       }
                       placeholder="Pilih Diskon"
                       className="flex-1 capitalize"
@@ -1047,7 +1092,7 @@ export default function ProductForm() {
                       <SelectDragIndicatorWrapper>
                         <SelectDragIndicator />
                       </SelectDragIndicatorWrapper>
-                      {([] as any[]).map((disc) => (
+                      {(discounts || []).map((disc) => (
                         <SelectItem
                           key={disc.id}
                           label={disc.name}
@@ -1059,10 +1104,19 @@ export default function ProductForm() {
                     </SelectContent>
                   </SelectPortal>
                 </Select>
-                <Pressable className="size-10 rounded-full bg-primary-500 items-center justify-center" onPress={() => setOpenDiscount(true)}>
-                    <Icon as={PlusIcon} color="white" />
-                  </Pressable>
-                  </HStack>
+                <Pressable
+                  className="size-10 rounded-full bg-primary-500 items-center justify-center"
+                  onPress={() => {
+                    setDataDiscount(null);
+                    setOpenDiscount(true, (newDisc) => {
+                      form.setValue("discountId", newDisc.id);
+                      refetchDiscounts();
+                    });
+                  }}
+                >
+                  <Icon as={PlusIcon} color="white" />
+                </Pressable>
+                </HStack>
                 {error && (
                   <FormControlError>
                     <FormControlErrorText>{error.message}</FormControlErrorText>
@@ -1106,14 +1160,11 @@ export default function ProductForm() {
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
           className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
-          // disabled={createMutation.isPending || updateMutation.isPending}
+          disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
         >
           <Text size="sm" className="text-typography-0 font-bold">
-            {/* {createMutation.isPending || updateMutation.isPending
-              ? "MENYIMPAN..."
-              : "SIMPAN"} */}
-            SIMPAN
+            {isLoading ? "MENYIMPAN..." : "SIMPAN"}
           </Text>
         </Pressable>
       </HStack>

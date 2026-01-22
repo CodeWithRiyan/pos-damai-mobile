@@ -1,8 +1,10 @@
 import { db } from '../db';
 import * as schema from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { apiClient } from '../api/client';
 import { storageAdapter } from '../storage';
+import { useAuthStore } from '@/stores/auth';
+import { queryClient } from '@/providers/query-provider';
 
 export class SyncEngine {
   /**
@@ -36,7 +38,8 @@ export class SyncEngine {
       }
 
       // Store user profile for local access (used by local CRUD operations)
-      storageAdapter.setItem('userProfile', JSON.stringify(currentUser));
+      useAuthStore.getState().setProfile(currentUser);
+      queryClient.setQueryData(['auth', 'profile'], currentUser);
 
       const orgId = organizationIdForSync;
 
@@ -49,7 +52,12 @@ export class SyncEngine {
       console.log(`[Sync] Pulling from ${syncEndpoint}`);
       const pullRes = await apiClient.get(syncEndpoint);
       
-      const { data: serverData, timestamp: serverTime } = pullRes.data;
+      const payload = pullRes.data;
+      const responseData = payload.data;
+      
+      // Handle potential double wrapping from interceptor
+      const serverData = responseData.data || responseData;
+      const serverTime = responseData.timestamp || payload.timestamp;
 
       // 3. Apply Pull Data (Master Data - Server Wins)
       // Mapping server keys to local schema keys if they differ
@@ -57,8 +65,17 @@ export class SyncEngine {
         categories: schema.categories,
         brands: schema.brands,
         products: schema.products,
-        prices: schema.productPrices, // Backend 'prices' -> Local 'productPrices'
+        prices: schema.productPrices,
+        variants: schema.productVariants,
         customers: schema.customers,
+        suppliers: schema.suppliers, // Added
+        discounts: schema.discounts, // Added
+        purchases: schema.purchases, // Added
+        transactions: schema.inventoryTransactions, // Added (Backend 'transactions' -> Local 'inventoryTransactions')
+        purchaseReturns: schema.purchaseReturns,
+        purchaseReturnItems: schema.purchaseReturnItems,
+        stockOpnames: schema.stockOpnames,
+        stockOpnameItems: schema.stockOpnameItems,
       };
 
       await db.transaction(async (tx) => {
@@ -70,19 +87,45 @@ export class SyncEngine {
           }
 
           for (const record of (records as any[])) {
-            if (record.deletedAt) {
-              await tx.delete(table).where(eq(table.id, record.id));
+            // Convert ISO strings back to Date objects for Drizzle timestamp columns
+            const processedRecord = { ...record };
+            for (const key in processedRecord) {
+              const val = processedRecord[key];
+              if (
+                typeof val === 'string' && 
+                /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)
+              ) {
+                const date = new Date(val);
+                if (!isNaN(date.getTime())) {
+                  processedRecord[key] = date;
+                }
+              }
+            }
+
+            if (processedRecord.deletedAt) {
+              // Handle tables where ID might be different (e.g., transactions use local_ref_id for some cases, but schema still has 'id')
+              // The server data for products/categories uses 'id'
+              const idToMatch = processedRecord.id || processedRecord.local_ref_id;
+              if (idToMatch) {
+                // Determine which column to match against
+                const idCol = table.id || (table.local_ref_id && processedRecord.local_ref_id ? table.local_ref_id : null);
+                if (idCol) {
+                  await tx.delete(table).where(eq(idCol, idToMatch));
+                }
+              }
             } else {
-              // Ensure we don't have null organizationId if backend provides it
               const values = {
-                ...record,
-                organizationId: record.organizationId || orgId,
+                ...processedRecord,
+                organizationId: processedRecord.organizationId || orgId,
                 _dirty: false,
                 _syncedAt: new Date(),
               };
 
+              // Determine conflict target (id or local_ref_id)
+              const target = table.id || table.local_ref_id;
+              
               await tx.insert(table).values(values).onConflictDoUpdate({
-                target: table.id,
+                target: target,
                 set: values
               });
             }
@@ -115,19 +158,59 @@ export class SyncEngine {
     const dirtyProducts = await db.select().from(schema.products).where(eq(schema.products._dirty, true));
     const dirtyCustomers = await db.select().from(schema.customers).where(eq(schema.customers._dirty, true));
     
+    // Also consider products whose prices or variants are dirty
+    const dirtyPrices = await db.select().from(schema.productPrices).where(eq(schema.productPrices._dirty, true));
+    const dirtyVariants = await db.select().from(schema.productVariants).where(eq(schema.productVariants._dirty, true));
+
+    // Get unique product IDs that need matching/pushing due to price/variant changes
+    const extraProductIds = [...new Set([
+      ...dirtyPrices.map(p => p.productId),
+      ...dirtyVariants.map(v => v.productId)
+    ])];
+
+    // Fetch those products if they aren't already in dirtyProducts
+    const existingDirtyProductIds = new Set(dirtyProducts.map(p => p.id));
+    const missingProductIds = extraProductIds.filter(id => !existingDirtyProductIds.has(id));
+    
+    let allProductsToPush = [...dirtyProducts];
+    if (missingProductIds.length > 0) {
+      const extraProducts = await db.select().from(schema.products).where(inArray(schema.products.id, missingProductIds));
+      allProductsToPush = [...allProductsToPush, ...extraProducts];
+    }
+
     // Collect dirty transactional data
     const dirtyPurchases = await db.select().from(schema.purchases).where(eq(schema.purchases._dirty, true));
     const dirtyTransactions = await db.select().from(schema.inventoryTransactions).where(eq(schema.inventoryTransactions._dirty, true));
+    const dirtyReturns = await db.select().from(schema.purchaseReturns).where(eq(schema.purchaseReturns._dirty, true));
+    const dirtyStockOpnames = await db.select().from(schema.stockOpnames).where(eq(schema.stockOpnames._dirty, true));
 
-    const totalDirty = dirtyCategories.length + dirtyBrands.length + dirtyProducts.length + 
-                       dirtyCustomers.length + dirtyPurchases.length + dirtyTransactions.length;
+    const totalDirty = dirtyCategories.length + dirtyBrands.length + allProductsToPush.length + 
+                       dirtyCustomers.length + dirtyPurchases.length + dirtyTransactions.length +
+                       dirtyReturns.length + dirtyStockOpnames.length;
 
     if (totalDirty === 0) {
       console.log('[Sync] No dirty records to push');
       return;
     }
 
-    console.log(`[Sync] Pushing ${dirtyCategories.length} categories, ${dirtyBrands.length} brands, ${dirtyProducts.length} products, ${dirtyCustomers.length} customers, ${dirtyPurchases.length} purchases, ${dirtyTransactions.length} transactions`);
+    console.log(`[Sync] Pushing ${dirtyCategories.length} categories, ${dirtyBrands.length} brands, ${allProductsToPush.length} products, ${dirtyCustomers.length} customers, ${dirtyPurchases.length} purchases, ${dirtyTransactions.length} transactions, ${dirtyReturns.length} returns, ${dirtyStockOpnames.length} stock opnames`);
+
+    // Fetch ALL items for returns we are pushing
+    const returnIds = dirtyReturns.map(r => r.id);
+    const returnItems = returnIds.length > 0 
+      ? await db.select().from(schema.purchaseReturnItems).where(inArray(schema.purchaseReturnItems.purchaseReturnId, returnIds))
+      : [];
+
+    // Fetch ALL items for stock opnames we are pushing
+    const opnameIds = dirtyStockOpnames.map(o => o.id);
+    const opnameItems = opnameIds.length > 0
+      ? await db.select().from(schema.stockOpnameItems).where(inArray(schema.stockOpnameItems.stockOpnameId, opnameIds))
+      : [];
+
+    // Fetch ALL prices and variants for all products we are pushing
+    const productIdsToPush = allProductsToPush.map(p => p.id);
+    const allPrices = await db.select().from(schema.productPrices).where(inArray(schema.productPrices.productId, productIdsToPush));
+    const allVariants = await db.select().from(schema.productVariants).where(inArray(schema.productVariants.productId, productIdsToPush));
 
     const pushPayload = {
       categories: dirtyCategories.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
@@ -138,16 +221,59 @@ export class SyncEngine {
         ...rest,
         deletedAt: deletedAt ? deletedAt.toISOString() : null,
       })),
-      products: dirtyProducts.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
+      products: allProductsToPush.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
         ...rest,
         deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        prices: allPrices.filter(p => p.productId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...pRest }) => ({
+          ...pRest,
+          deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        })),
+        variants: allVariants.filter(v => v.productId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...vRest }) => ({
+          ...vRest,
+          deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        })),
       })),
       customers: dirtyCustomers.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
         ...rest,
         deletedAt: deletedAt ? deletedAt.toISOString() : null,
       })),
-      purchases: dirtyPurchases.map(({ _dirty, _syncedAt, ...rest }) => rest),
-      transactions: dirtyTransactions.map(({ _dirty, _syncedAt, ...rest }) => rest),
+      purchases: dirtyPurchases.map(({ _dirty, _syncedAt, dueDate, createdAt, updatedAt, deletedAt, ...rest }) => ({
+        ...rest,
+        dueDate: dueDate ? dueDate.toISOString() : null,
+        createdAt: createdAt ? createdAt.toISOString() : undefined,
+        updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+      })),
+      transactions: dirtyTransactions.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
+        ...rest,
+        createdAt: createdAt ? createdAt.toISOString() : undefined,
+        updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+      })),
+      purchaseReturns: dirtyReturns.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
+        ...rest,
+        createdAt: createdAt ? createdAt.toISOString() : undefined,
+        updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        items: returnItems.filter(i => i.purchaseReturnId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
+          ...iRest,
+          createdAt: createdAt ? createdAt.toISOString() : undefined,
+          updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+          deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        })),
+      })),
+      stockOpnames: dirtyStockOpnames.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
+        ...rest,
+        createdAt: createdAt ? createdAt.toISOString() : undefined,
+        updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        items: opnameItems.filter(i => i.stockOpnameId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
+          ...iRest,
+          createdAt: createdAt ? createdAt.toISOString() : undefined,
+          updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+          deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        })),
+      })),
     };
 
     const pushRes = await apiClient.post('/sync/push', pushPayload);
@@ -174,6 +300,15 @@ export class SyncEngine {
           await tx.update(schema.products)
             .set({ _dirty: false, _syncedAt: new Date() })
             .where(eq(schema.products.id, res.id));
+          
+          // Also mark related prices and variants as synced for this product
+          await tx.update(schema.productPrices)
+            .set({ _dirty: false, _syncedAt: new Date() })
+            .where(eq(schema.productPrices.productId, res.id));
+            
+          await tx.update(schema.productVariants)
+            .set({ _dirty: false, _syncedAt: new Date() })
+            .where(eq(schema.productVariants.productId, res.id));
         }
         
         for (const res of (results.customers || [])) {
@@ -192,7 +327,6 @@ export class SyncEngine {
             })
             .where(eq(schema.purchases.local_ref_id, res.local_ref_id));
         }
-        
         for (const res of (results.transactions || [])) {
           await tx.update(schema.inventoryTransactions)
             .set({ 
@@ -201,6 +335,52 @@ export class SyncEngine {
               id: res.server_id 
             })
             .where(eq(schema.inventoryTransactions.local_ref_id, res.local_ref_id));
+        }
+
+        for (const res of (results.purchaseReturns || [])) {
+          await tx.update(schema.purchaseReturns)
+            .set({ 
+              _dirty: false, 
+              _syncedAt: new Date(), 
+              id: res.server_id 
+            })
+            .where(eq(schema.purchaseReturns.local_ref_id, res.local_ref_id));
+            
+          // Also mark items for this return as synced
+          await tx.update(schema.purchaseReturnItems)
+            .set({ _dirty: false, _syncedAt: new Date() })
+            .where(eq(schema.purchaseReturnItems.purchaseReturnId, res.server_id)); 
+            // Wait, local ID was used in returnItems.filter. 
+            // If ID was updated to server_id, we need to be careful.
+        }
+
+        for (const res of (results.stockOpnames || [])) {
+          await tx.update(schema.stockOpnames)
+            .set({ 
+              _dirty: false, 
+              _syncedAt: new Date(), 
+              id: res.server_id 
+            })
+            .where(eq(schema.stockOpnames.id, res.local_ref_id)); // Assuming id is used as local ref since there is no local_ref_id in stockOpname schema usually, or I should check schema.
+
+          // Also mark items for this opname as synced
+          // Note: If ID changed, we might need to update items foreign key if not handled by cascade or if items are not re-synced by ID.
+          // But usually we just mark them dirty=false.
+          // If the server returns server_id, and we update local ID, we must update foreign keys?
+          // SQLite doesn't automatically cascade updates unless configured.
+          // For now, let's assume we just mark as synced.
+          // Actually, if we update the parent ID, we MUST update the children's FK if we want to keep integrity.
+          // But `stockOpnameItems` has `stockOpnameId`. 
+          
+          if (res.server_id !== res.local_ref_id) {
+             await tx.update(schema.stockOpnameItems)
+              .set({ stockOpnameId: res.server_id, _dirty: false, _syncedAt: new Date() })
+              .where(eq(schema.stockOpnameItems.stockOpnameId, res.local_ref_id));
+          } else {
+             await tx.update(schema.stockOpnameItems)
+              .set({ _dirty: false, _syncedAt: new Date() })
+              .where(eq(schema.stockOpnameItems.stockOpnameId, res.local_ref_id));
+          }
         }
       });
       

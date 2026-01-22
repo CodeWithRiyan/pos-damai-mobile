@@ -1,3 +1,4 @@
+import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
@@ -11,15 +12,6 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
-import {
-  Actionsheet,
-  ActionsheetBackdrop,
-  ActionsheetContent,
-  ActionsheetDragIndicator,
-  ActionsheetDragIndicatorWrapper,
-  ActionsheetItem,
-  ActionsheetItemText,
-} from "@/components/ui/actionsheet";
 import { Badge, BadgeText } from "@/components/ui/badge";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
@@ -29,28 +21,29 @@ import {
   useDeleteCategory,
 } from "@/lib/api/categories";
 import { getErrorMessage } from "@/lib/api/client";
+import { Product, useProductsByCategory } from "@/lib/api/products";
 import { useCategoryStore } from "@/stores/category";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView } from "react-native";
-import { dataProducts, Product } from "../product";
 
 export default function CategoryDetail() {
   const { setOpen, setData } = useCategoryStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const categoryId = id as string;
 
-  const [showActionsheet, setShowActionsheet] = useState<boolean>(false);
   const [selectedProducts, setSelectedProducts] = useState<Product[] | null>(
-    null
+    null,
   );
 
   const { refetch: refetchCategorys } = useCategories();
   const { data: category, refetch: refetchCategory } = useCategory(
-    categoryId || ""
+    categoryId || "",
   );
+  const { data: products = [] } = useProductsByCategory(categoryId || "");
   const deleteMutation = useDeleteCategory();
   const toast = useToast();
 
@@ -135,7 +128,6 @@ export default function CategoryDetail() {
       onSuccess: () => {
         hidePopUpConfirm();
         onRefetch();
-        setShowActionsheet(false);
         router.back();
 
         toast.show({
@@ -150,8 +142,32 @@ export default function CategoryDetail() {
       onError: (error) => {
         showErrorToast(error);
         hidePopUpConfirm();
-        setShowActionsheet(false);
       },
+    });
+  };
+
+  const handleAction = () => {
+    showActionDrawer({
+      actions: [
+        {
+          label: "Edit",
+          icon: "Pen",
+          onPress: () => {
+            setOpen(true);
+            setData(category);
+            hideActionDrawer();
+          },
+        },
+        {
+          label: "Delete",
+          icon: "TrashBin2",
+          theme: "red",
+          onPress: () => {
+            handleDeletePress();
+            hideActionDrawer();
+          },
+        },
+      ],
     });
   };
 
@@ -178,7 +194,7 @@ export default function CategoryDetail() {
               </Pressable>
             )
           ) : (
-            <Pressable className="p-6" onPress={() => setShowActionsheet(true)}>
+            <Pressable className="p-6" onPress={handleAction}>
               <SolarIconBold
                 name="MenuDots"
                 size={20}
@@ -200,15 +216,15 @@ export default function CategoryDetail() {
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Total Produk</Text>
-              <Text className="font-bold">0</Text>
+              <Text className="font-bold">{products.length}</Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Poin Retail</Text>
-              <Text className="font-bold">0</Text>
+              <Text className="font-bold">{category?.retailPoint ?? 0}</Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Poin Grosir</Text>
-              <Text className="font-bold">0</Text>
+              <Text className="font-bold">{category?.wholesalePoint ?? 0}</Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Nilai Modal</Text>
@@ -217,7 +233,7 @@ export default function CategoryDetail() {
           </Box>
           <Box className="pr-4">
             <VStack>
-              {dataProducts?.map((product) => (
+              {products?.map((product) => (
                 <Pressable
                   key={product.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
@@ -246,7 +262,7 @@ export default function CategoryDetail() {
                         </Text>
                         <Badge size="sm" variant="solid" action="muted">
                           <BadgeText className="text-xs">{`Harga Beli: Rp ${product.purchasePrice.toLocaleString(
-                            "id-ID"
+                            "id-ID",
                           )}`}</BadgeText>
                         </Badge>
                       </VStack>
@@ -259,7 +275,7 @@ export default function CategoryDetail() {
                         Retail:{" "}
                         {`${
                           product.sellPrices?.filter(
-                            (r) => r.type === "RETAIL"
+                            (r) => r.type === "RETAIL",
                           )?.[0].minimumPurchase
                         }@ Rp ${product.sellPrices
                           ?.filter((r) => r.type === "RETAIL")?.[0]
@@ -269,7 +285,7 @@ export default function CategoryDetail() {
                         Grosir:{" "}
                         {`${
                           product.sellPrices?.filter(
-                            (r) => r.type === "WHOLESALE"
+                            (r) => r.type === "WHOLESALE",
                           )?.[0].minimumPurchase
                         }@ Rp ${product.sellPrices
                           ?.filter((r) => r.type === "WHOLESALE")?.[0]
@@ -289,7 +305,7 @@ export default function CategoryDetail() {
           className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
           onPress={() => {
             router.navigate(
-              `/(main)/management/product-category-brand/category/select-product/${category?.id}`
+              `/(main)/management/product-category-brand/category/select-product/${category?.id}`,
             );
             setSelectedProducts(null);
           }}
@@ -299,46 +315,6 @@ export default function CategoryDetail() {
           </Text>
         </Pressable>
       </VStack>
-
-      <Actionsheet
-        isOpen={showActionsheet}
-        onClose={() => setShowActionsheet(false)}
-      >
-        <ActionsheetBackdrop />
-        <ActionsheetContent className="px-0">
-          <ActionsheetDragIndicatorWrapper className="pb-4 pt-2">
-            <ActionsheetDragIndicator />
-          </ActionsheetDragIndicatorWrapper>
-
-          <ActionsheetItem
-            onPress={() => {
-              setOpen(true);
-              setData(category);
-              setShowActionsheet(false);
-            }}
-          >
-            <HStack className="w-full justify-between items-center px-4 py-2">
-              <ActionsheetItemText className="font-bold">
-                Edit
-              </ActionsheetItemText>
-              <SolarIconBold name="Pen" size={16} />
-            </HStack>
-          </ActionsheetItem>
-
-          <ActionsheetItem
-            onPress={() => {
-              handleDeletePress();
-            }}
-          >
-            <HStack className="w-full justify-between items-center px-4 py-2">
-              <ActionsheetItemText className="font-bold text-red-500">
-                Delete
-              </ActionsheetItemText>
-              <SolarIconBold name="TrashBin2" size={16} color="#ef4444" />
-            </HStack>
-          </ActionsheetItem>
-        </ActionsheetContent>
-      </Actionsheet>
     </VStack>
   );
 }

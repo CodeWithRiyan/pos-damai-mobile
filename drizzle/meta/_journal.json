@@ -8,6 +8,55 @@
       "when": 1768360070053,
       "tag": "0000_mysterious_ben_grimm",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1768626536252,
+      "tag": "0001_windy_venom",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1768632619689,
+      "tag": "0002_odd_the_stranger",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1768636072036,
+      "tag": "0003_massive_kate_bishop",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1768915592137,
+      "tag": "0004_add_status_to_purchase",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1768916280373,
+      "tag": "0005_add_status_to_inventory_transactions",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1769009113000,
+      "tag": "0006_add_purchase_returns",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1769016000000,
+      "tag": "0007_add_stock_opnames",
+      "breakpoints": true
     }
   ]
 }

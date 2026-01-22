@@ -3,7 +3,7 @@ import { Box, Text, VStack } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import {
   SolarIconLinear,
-  SolarIconLinearProps
+  SolarIconLinearProps,
 } from "@/components/ui/solar-icon-wrapper";
 import { Link } from "expo-router";
 import { ScrollView } from "react-native";
@@ -19,7 +19,7 @@ export default function ManagementScreen() {
       href: "/management/product-category-brand",
       icon: "Box",
     },
-    { label: "Diskon", href: "/management/discount", icon: "TicketSale" },
+    // { label: "Diskon", href: "/management/discount", icon: "TicketSale" },
     {
       label: "Pelanggan dan Supplier",
       href: "/management/customer-supplier",
@@ -35,7 +35,7 @@ export default function ManagementScreen() {
       href: "/management/stock-opname",
       icon: "ArchiveCheck",
     },
-    { label: "Retur", href: "/management/retur", icon: "History" },
+    { label: "Retur", href: "/management/return", icon: "History" },
     {
       label: "Jenis Pembayaran",
       href: "/management/payment-type",

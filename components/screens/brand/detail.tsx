@@ -1,3 +1,4 @@
+import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
@@ -11,42 +12,42 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
-import {
-  Actionsheet,
-  ActionsheetBackdrop,
-  ActionsheetContent,
-  ActionsheetDragIndicator,
-  ActionsheetDragIndicatorWrapper,
-  ActionsheetItem,
-  ActionsheetItemText,
-} from "@/components/ui/actionsheet";
 import { Badge, BadgeText } from "@/components/ui/badge";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { useBrand, useBrands, useDeleteBrand } from "@/lib/api/brands";
 import { getErrorMessage } from "@/lib/api/client";
+import { Product, useProductsByBrand } from "@/lib/api/products";
 import { useBrandStore } from "@/stores/brand";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ScrollView } from "react-native";
-import { dataProducts, Product } from "../product";
 
 export default function BrandDetail() {
   const { setOpen, setData } = useBrandStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const brandId = id as string;
 
-  const [showActionsheet, setShowActionsheet] = useState<boolean>(false);
   const [selectedProducts, setSelectedProducts] = useState<Product[] | null>(
-    null
+    null,
   );
 
   const { refetch: refetchBrands } = useBrands();
   const { data: brand, refetch: refetchBrand } = useBrand(brandId || "");
+  const { data: products } = useProductsByBrand(brandId || "");
   const deleteMutation = useDeleteBrand();
   const toast = useToast();
+
+  const dataProducts = useMemo(() => products || [], [products]);
+
+  const totalModal = useMemo(() => {
+    return dataProducts.reduce((acc, curr) => {
+      return acc + (curr.purchasePrice || 0) * (curr.stock || 0);
+    }, 0);
+  }, [dataProducts]);
 
   const onRefetch = () => {
     refetchBrands();
@@ -129,7 +130,6 @@ export default function BrandDetail() {
       onSuccess: () => {
         hidePopUpConfirm();
         onRefetch();
-        setShowActionsheet(false);
         router.back();
 
         toast.show({
@@ -144,8 +144,32 @@ export default function BrandDetail() {
       onError: (error) => {
         showErrorToast(error);
         hidePopUpConfirm();
-        setShowActionsheet(false);
       },
+    });
+  };
+
+  const handleAction = () => {
+    showActionDrawer({
+      actions: [
+        {
+          label: "Edit",
+          icon: "Pen",
+          onPress: () => {
+            setOpen(true);
+            setData(brand);
+            hideActionDrawer();
+          },
+        },
+        {
+          label: "Delete",
+          icon: "TrashBin2",
+          theme: "red",
+          onPress: () => {
+            handleDeletePress();
+            hideActionDrawer();
+          },
+        },
+      ],
     });
   };
 
@@ -172,7 +196,7 @@ export default function BrandDetail() {
               </Pressable>
             )
           ) : (
-            <Pressable className="p-6" onPress={() => setShowActionsheet(true)}>
+            <Pressable className="p-6" onPress={handleAction}>
               <SolarIconBold
                 name="MenuDots"
                 size={20}
@@ -194,11 +218,13 @@ export default function BrandDetail() {
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Total Produk</Text>
-              <Text className="font-bold">0</Text>
+              <Text className="font-bold">{dataProducts.length}</Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Nilai Modal</Text>
-              <Text className="font-bold">Rp 0</Text>
+              <Text className="font-bold">
+                Rp {totalModal.toLocaleString("id-ID")}
+              </Text>
             </HStack>
           </Box>
           <Box className="pr-4">
@@ -231,35 +257,39 @@ export default function BrandDetail() {
                           {product.code}
                         </Text>
                         <Badge size="sm" variant="solid" action="muted">
-                          <BadgeText className="text-xs">{`Harga Beli: Rp ${product.purchasePrice.toLocaleString(
-                            "id-ID"
-                          )}`}</BadgeText>
+                          <BadgeText className="text-xs">{`Harga Beli: Rp ${(
+                            product.purchasePrice ?? 0
+                          ).toLocaleString("id-ID")}`}</BadgeText>
                         </Badge>
                       </VStack>
                     </HStack>
                     <VStack className="items-end">
                       <Text className="text-brand-primary text-sm font-bold">
-                        {product.stock}
+                        Stok: {product.stock ?? 0}
                       </Text>
                       <Text className="text-xs">
                         Retail:{" "}
                         {`${
                           product.sellPrices?.filter(
-                            (r) => r.type === "RETAIL"
-                          )?.[0].minimumPurchase
-                        }@ Rp ${product.sellPrices
-                          ?.filter((r) => r.type === "RETAIL")?.[0]
-                          .price.toLocaleString("id-ID")}`}
+                            (r) => r.type === "RETAIL",
+                          )?.[0]?.minimumPurchase ?? 0
+                        }@ Rp ${
+                          product.sellPrices
+                            ?.filter((r) => r.type === "RETAIL")?.[0]
+                            ?.price.toLocaleString("id-ID") ?? 0
+                        }`}
                       </Text>
                       <Text className="text-xs">
                         Grosir:{" "}
                         {`${
                           product.sellPrices?.filter(
-                            (r) => r.type === "WHOLESALE"
-                          )?.[0].minimumPurchase
-                        }@ Rp ${product.sellPrices
-                          ?.filter((r) => r.type === "WHOLESALE")?.[0]
-                          .price.toLocaleString("id-ID")}`}
+                            (r) => r.type === "WHOLESALE",
+                          )?.[0]?.minimumPurchase ?? 0
+                        }@ Rp ${
+                          product.sellPrices
+                            ?.filter((r) => r.type === "WHOLESALE")?.[0]
+                            ?.price.toLocaleString("id-ID") ?? 0
+                        }`}
                       </Text>
                     </VStack>
                   </HStack>
@@ -275,7 +305,7 @@ export default function BrandDetail() {
           className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
           onPress={() => {
             router.navigate(
-              `/(main)/management/product-category-brand/brand/select-product/${brand?.id}`
+              `/(main)/management/product-category-brand/brand/select-product/${brand?.id}`,
             );
             setSelectedProducts(null);
           }}
@@ -285,46 +315,6 @@ export default function BrandDetail() {
           </Text>
         </Pressable>
       </VStack>
-
-      <Actionsheet
-        isOpen={showActionsheet}
-        onClose={() => setShowActionsheet(false)}
-      >
-        <ActionsheetBackdrop />
-        <ActionsheetContent className="px-0">
-          <ActionsheetDragIndicatorWrapper className="pb-4 pt-2">
-            <ActionsheetDragIndicator />
-          </ActionsheetDragIndicatorWrapper>
-
-          <ActionsheetItem
-            onPress={() => {
-              setOpen(true);
-              setData(brand);
-              setShowActionsheet(false);
-            }}
-          >
-            <HStack className="w-full justify-between items-center px-4 py-2">
-              <ActionsheetItemText className="font-bold">
-                Edit
-              </ActionsheetItemText>
-              <SolarIconBold name="Pen" size={16} />
-            </HStack>
-          </ActionsheetItem>
-
-          <ActionsheetItem
-            onPress={() => {
-              handleDeletePress();
-            }}
-          >
-            <HStack className="w-full justify-between items-center px-4 py-2">
-              <ActionsheetItemText className="font-bold text-red-500">
-                Delete
-              </ActionsheetItemText>
-              <SolarIconBold name="TrashBin2" size={16} color="#ef4444" />
-            </HStack>
-          </ActionsheetItem>
-        </ActionsheetContent>
-      </Actionsheet>
     </VStack>
   );
 }

@@ -11,61 +11,41 @@ import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
-// import { useBulkDeleteSupplier, Supplier, useSuppliers } from "@/lib/api/suppliers";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useBulkDeleteSupplier, Supplier, useSuppliers } from "@/lib/api/suppliers";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useState, useCallback } from "react";
 import { ScrollView } from "react-native";
 
-export interface Supplier {
-  id: string;
-  name: string;
-  phone: string;
-  address: string
-}
 
-export const dataSuppliers: Supplier[] = [
-  {
-    id: "1",
-    name: "Supplier 1",
-    phone: "123456789",
-    address: "Address 1"
-  },
-  {
-    id: "2",
-    name: "Supplier 2",
-    phone: "123456789",
-    address: "Address 2"
-  },
-  {
-    id: "3",
-    name: "Supplier 3",
-    phone: "123456789",
-    address: "Address 3"
-  },
-];
 
 export default function SupplierList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
-  // const { data, isLoading, refetch } = useSuppliers();
-  const [selectedSuppliers, setSelectedSuppliers] = useState<any[] | null>(null);
+  const { data, isLoading, refetch } = useSuppliers();
+  const [selectedItems, setSelectedItems] = useState<any[] | null>(null);
 
-  const suppliers = dataSuppliers || [];
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
-  // const deleteMutation = useBulkDeleteSupplier();
+  const suppliers = data || [];
+
+  const deleteMutation = useBulkDeleteSupplier();
   const toast = useToast();
 
   const handlePress = (data: Supplier) => {
-    if (selectedSuppliers?.some((r) => r.id === data.id)) {
-      setSelectedSuppliers(selectedSuppliers.filter((r) => r.id !== data.id));
+    if (selectedItems?.some((r) => r.id === data.id)) {
+      setSelectedItems(selectedItems.filter((r) => r.id !== data.id));
       return;
     }
-    if (!selectedSuppliers) {
-      setSelectedSuppliers([data]);
+    if (!selectedItems) {
+      setSelectedItems([data]);
       return;
     }
 
-    setSelectedSuppliers([...selectedSuppliers, data]);
+    setSelectedItems([...selectedItems, data]);
   };
 
   const showErrorToast = (error: unknown) => {
@@ -83,12 +63,12 @@ export default function SupplierList() {
   };
 
   const handleAdd = () => {
-    setSelectedSuppliers(null);
+    setSelectedItems(null);
     router.push("/(main)/management/customer-supplier/supplier/add");
   };
 
   const handleDeletePress = () => {
-    const supplierIds = selectedSuppliers?.map((m) => m.id) || [];
+    const supplierIds = selectedItems?.map((m) => m.id) || [];
 
     showPopUpConfirm({
       title: "HAPUS SUPPLIER",
@@ -105,56 +85,58 @@ export default function SupplierList() {
       closeText: "BATAL",
       okVariant: "destructive",
       onOk: () => confirmDelete(supplierIds),
-      // loading: deleteMutation.isPending,
+      loading: deleteMutation.isPending,
     });
   };
 
   const confirmDelete = async (supplierIds: string[]) => {
     if (!supplierIds.length) return;
 
-    // deleteMutation.mutate(
-    //   { ids: supplierIds },
-    //   {
-    //     onSuccess: () => {
-    //       setSelectedSuppliers(null);
-    //       hidePopUpConfirm();
-    //       refetch();
+    deleteMutation.mutate(
+      { ids: supplierIds },
+      {
+        onSuccess: () => {
+          setSelectedItems(null);
+          hidePopUpConfirm();
+          refetch();
 
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //             <ToastTitle>Supplier berhasil dihapus</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //     onError: (error) => {
-    //       showErrorToast(error);
-    //       hidePopUpConfirm();
-    //     },
-    //   }
-    // );
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastTitle>Supplier berhasil dihapus</ToastTitle>
+              </Toast>
+            ),
+          });
+        },
+        onError: (error) => {
+          showErrorToast(error);
+          hidePopUpConfirm();
+        },
+      }
+    );
   };
 
-  // if (isLoading) {
-  //   return (
-  //     <Box className="flex-1 justify-center items-center">
-  //       <Spinner size="large" />
-  //     </Box>
-  //   );
-  // }
+  if (isLoading) {
+    return (
+      <Box className="flex-1 justify-center items-center">
+        <Spinner size="large" />
+      </Box>
+    );
+  }
 
   return (
     <Box className="flex-1 bg-white">
       <Header
         header="SUPPLIER"
         isGoBack
+        selectedItemsLength={selectedItems?.length}
+        selectedItemsSuffixLabel="Produk terpilih"
+        onCancelSelectedItems={() => setSelectedItems(null)}
         action={
           <HStack space="sm" className="w-[72px]">
-            {!!selectedSuppliers?.length ? (
-              // deleteMutation.isPending
-              false ? (
+            {!!selectedItems?.length ? (
+              deleteMutation.isPending ? (
                 <Box className="p-6">
                   <Spinner size="small" color="#FFFFFF" />
                 </Box>
@@ -184,18 +166,18 @@ export default function SupplierList() {
                 <Pressable
                   key={supplier.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    selectedSuppliers?.some((r) => r.id === supplier.id)
+                    selectedItems?.some((r) => r.id === supplier.id)
                       ? "bg-gray-100"
                       : ""
                   }`}
                   onPress={() => {
-                    if (!!selectedSuppliers?.length) {
+                    if (!!selectedItems?.length) {
                       handlePress(supplier);
                     } else {
                       router.navigate(
                         `/(main)/management/customer-supplier/supplier/detail/${supplier.id}`
                       );
-                      setSelectedSuppliers(null);
+                      setSelectedItems(null);
                     }
                   }}
                   onLongPress={() => handlePress(supplier)}

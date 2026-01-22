@@ -1,7 +1,5 @@
 import Header from "@/components/header";
 import {
-  Button,
-  ButtonText,
   FormControl,
   FormControlError,
   FormControlErrorText,
@@ -10,31 +8,29 @@ import {
   HStack,
   Input,
   InputField,
+  Pressable,
+  Text,
   Toast,
   ToastTitle,
   useToast,
-  VStack
+  VStack,
 } from "@/components/ui";
 import { getErrorMessage } from "@/lib/api/client";
-// import {
-//   CreateSupplierDTO,
-//   UpdateSupplierDTO,
-//   useCreateSupplier,
-//   useUpdateSupplier,
-//   useSupplier,
-//   useSuppliers,
-// } from "@/lib/api/suppliers";
+import {
+  CreateSupplierDTO,
+  UpdateSupplierDTO,
+  useCreateSupplier,
+  useUpdateSupplier,
+  useSupplier,
+  useSuppliers,
+} from "@/lib/api/suppliers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect } from "react";
-import {
-  Controller,
-  SubmitHandler,
-  useForm
-} from "react-hook-form";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
-import { dataSuppliers } from ".";
+
 
 export default function SupplierForm() {
   const router = useRouter();
@@ -61,11 +57,14 @@ export default function SupplierForm() {
     defaultValues: initialValues,
   });
 
-  // const { refetch: refetchSuppliers } = useSuppliers();
-  // const { data: supplier, refetch: refetchSupplier } = useSupplier(supplierId || "");
-  // const createMutation = useCreateSupplier();
-  // const updateMutation = useUpdateSupplier();
-  const supplier = dataSuppliers.find((r) => r.id === supplierId);
+  const { refetch: refetchSuppliers } = useSuppliers();
+  const { data: supplier, refetch: refetchSupplier } = useSupplier(supplierId || "");
+
+  const createMutation = useCreateSupplier();
+  const updateMutation = useUpdateSupplier();
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
+
   const toast = useToast();
 
   const showErrorToast = (error: unknown) => {
@@ -96,10 +95,10 @@ export default function SupplierForm() {
   }, [form, supplier, supplierId]);
 
   const onRefetch = () => {
-    // refetchSuppliers();
-    // if (supplierId) {
-    //   refetchSupplier();
-    // }
+    refetchSuppliers();
+    if (supplierId) {
+      refetchSupplier();
+    }
   };
 
   const handleCancel = () => {
@@ -109,50 +108,49 @@ export default function SupplierForm() {
   const onSubmit: SubmitHandler<SupplierFormValues> = (
     data: SupplierFormValues
   ) => {
-    // if (supplierId && supplier) {
-    //   const updateData: UpdateSupplierDTO = {
-    //     ...data,
-    //     id: supplier.id,
-    //     password: supplier.password || undefined,
-    //   };
-    //   updateMutation.mutate(updateData, {
-    //     onSuccess: () => {
-    //       onRefetch();
-    //       handleCancel();
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //             <ToastTitle>Supplier berhasil diubah</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //     onError: (error) => {
-    //       showErrorToast(error);
-    //     },
-    //   });
-    // } else {
-    //   const { isActive, ...restData } = data
-    //   const createData: CreateSupplierDTO = restData;
-    //   createMutation.mutate(createData, {
-    //     onSuccess: () => {
-    //       onRefetch();
-    //       handleCancel();
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //             <ToastTitle>Supplier berhasil diubah</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //     onError: (error) => {
-    //       showErrorToast(error);
-    //     },
-    //   });
-    // }
+    if (supplierId && supplier) {
+      const updateData: UpdateSupplierDTO = {
+        ...data,
+        id: supplier.id,
+      };
+      updateMutation.mutate(updateData, {
+        onSuccess: () => {
+          onRefetch();
+          handleCancel();
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastTitle>Supplier berhasil diubah</ToastTitle>
+              </Toast>
+            ),
+          });
+        },
+        onError: (error) => {
+          showErrorToast(error);
+        },
+      });
+    } else {
+      const createData: CreateSupplierDTO = data;
+      createMutation.mutate(createData, {
+        onSuccess: () => {
+          onRefetch();
+          form.reset(initialValues);
+          handleCancel();
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastTitle>Supplier berhasil ditambahkan</ToastTitle>
+              </Toast>
+            ),
+          });
+        },
+        onError: (error) => {
+          showErrorToast(error);
+        },
+      });
+    }
   };
 
   return (
@@ -248,19 +246,15 @@ export default function SupplierForm() {
         </VStack>
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
-        <Button
-          action="primary"
+        <Pressable
+          className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
+          disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
-          // disabled={createMutation.isPending || updateMutation.isPending}
-          className="bg-brand-primary flex-1"
         >
-          <ButtonText className="text-white">
-            {/* {createMutation.isPending || updateMutation.isPending
-              ? "MENYIMPAN..."
-              : "SIMPAN"} */}
-            SIMPAN
-          </ButtonText>
-        </Button>
+          <Text size="sm" className="text-typography-0 font-bold">
+            {isLoading ? "MENYIMPAN..." : "SIMPAN"}
+          </Text>
+        </Pressable>
       </HStack>
     </VStack>
   );

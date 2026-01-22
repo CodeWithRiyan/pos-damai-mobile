@@ -16,8 +16,8 @@ import {
   useBulkDeleteCustomer,
   useCustomers,
 } from "@/lib/api/customers";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useState, useCallback } from "react";
 import { ScrollView } from "react-native";
 
 export default function CustomerList() {
@@ -25,6 +25,12 @@ export default function CustomerList() {
   const router = useRouter();
   const { data, isLoading, refetch } = useCustomers();
   const [selectedItems, setSelectedItems] = useState<Customer[] | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const customers = data || [];
 
@@ -122,6 +128,9 @@ export default function CustomerList() {
       <Header
         header="PELANGGAN"
         isGoBack
+        selectedItemsLength={selectedItems?.length}
+        selectedItemsSuffixLabel="Produk terpilih"
+        onCancelSelectedItems={() => setSelectedItems(null)}
         action={
           <HStack space="sm" className="w-[72px]">
             {!!selectedItems?.length ? (

@@ -1,3 +1,4 @@
+import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
@@ -9,43 +10,30 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
-import {
-  Actionsheet,
-  ActionsheetBackdrop,
-  ActionsheetContent,
-  ActionsheetDragIndicator,
-  ActionsheetDragIndicatorWrapper,
-  ActionsheetItem,
-  ActionsheetItemText,
-} from "@/components/ui/actionsheet";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import useBreakpoint from "@/hooks/use-breakpoint";
 import { getErrorMessage } from "@/lib/api/client";
-// import { useDeleteProduct, useProduct, useProducts } from "@/lib/api/products";
+import { useDeleteProduct, useProduct, useProducts } from "@/lib/api/products";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
 import { ScrollView } from "react-native";
-import { dataProducts } from ".";
 
 export default function ProductDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const productId = id as string;
 
-  const { sm } = useBreakpoint();
-  const [showActionsheet, setShowActionsheet] = useState<boolean>(false);
-
-  // const { refetch: refetchProducts } = useProducts();
-  // const { data: product, refetch: refetchProduct } = useProduct(productId || "");
-  // const deleteMutation = useDeleteProduct();
-  const product = dataProducts.find((r) => r.id === productId);
+  const { refetch: refetchProducts } = useProducts();
+  const { data: product, refetch: refetchProduct } = useProduct(
+    productId || "",
+  );
+  const deleteMutation = useDeleteProduct();
   const toast = useToast();
 
   const onRefetch = () => {
-    // refetchProducts();
-    // refetchProduct();
+    refetchProducts();
+    refetchProduct();
   };
 
   const showErrorToast = (error: unknown) => {
@@ -78,35 +66,59 @@ export default function ProductDetail() {
       closeText: "BATAL",
       okVariant: "destructive",
       onOk: () => confirmDelete(),
-      // loading: deleteMutation.isPending,
+      loading: deleteMutation.isPending,
     });
   };
 
   const confirmDelete = async () => {
     if (!product) return;
 
-    // deleteMutation.mutate(product.id, {
-    //   onSuccess: () => {
-    //     hidePopUpConfirm();
-    //     onRefetch();
-    //     setShowActionsheet(false);
-    //     router.back();
+    deleteMutation.mutate(product.id, {
+      onSuccess: () => {
+        hidePopUpConfirm();
+        onRefetch();
+        router.back();
 
-    //     toast.show({
-    //       placement: "top",
-    //       render: ({ id }) => (
-    //         <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //           <ToastTitle>Produk berhasil dihapus</ToastTitle>
-    //         </Toast>
-    //       ),
-    //     });
-    //   },
-    //   onError: (error) => {
-    //     showErrorToast(error);
-    //     hidePopUpConfirm();
-    //     setShowActionsheet(false);
-    //   },
-    // });
+        toast.show({
+          placement: "top",
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+              <ToastTitle>Produk berhasil dihapus</ToastTitle>
+            </Toast>
+          ),
+        });
+      },
+      onError: (error) => {
+        showErrorToast(error);
+        hidePopUpConfirm();
+      },
+    });
+  };
+
+  const handleAction = () => {
+    showActionDrawer({
+      actions: [
+        {
+          label: "Edit",
+          icon: "Pen",
+          onPress: () => {
+            router.navigate(
+              `/(main)/management/product-category-brand/product/edit/${product?.id}`,
+            );
+            hideActionDrawer();
+          },
+        },
+        {
+          label: "Delete",
+          icon: "TrashBin2",
+          theme: "red",
+          onPress: () => {
+            handleDeletePress();
+            hideActionDrawer();
+          },
+        },
+      ],
+    });
   };
 
   return (
@@ -115,7 +127,7 @@ export default function ProductDetail() {
         header="DETAIL PRODUK"
         action={
           <HStack space="sm">
-            <Pressable className="p-6" onPress={() => setShowActionsheet(true)}>
+            <Pressable className="p-6" onPress={handleAction}>
               <SolarIconBold
                 name="MenuDots"
                 size={20}
@@ -137,6 +149,14 @@ export default function ProductDetail() {
             <Text className="text-gray-500">{product?.code || "-"}</Text>
           </VStack>
           <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
+            {/* Stok Terkini - Highlighted */}
+            <VStack className="w-full mb-2 p-3 bg-primary-50 border border-primary-200 rounded-md">
+              <Text className="text-primary-600 text-sm">Stok Terkini</Text>
+              <Text className="font-bold text-2xl text-primary-700">
+                {product?.stock ?? 0} {product?.unit || "pcs"}
+              </Text>
+            </VStack>
+
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Jenis Produk</Text>
               <Text className="font-bold">{product?.type || "-"}</Text>
@@ -185,17 +205,20 @@ export default function ProductDetail() {
             </VStack>
           </Box>
           {product?.type === "VARIANTS" && (
-            <VStack space="md" className="pt-4 pb-6 border-b border-background-300">
+            <VStack
+              space="md"
+              className="pt-4 pb-6 border-b border-background-300"
+            >
               <Text className="font-bold text-center">Varian</Text>
               <Box className="w-full flex-row flex-wrap gap-y-4">
                 {product?.variants?.map((variant, index) => (
                   <Box
                     key={index}
-                    className={`w-1/2 ${index % 2 === 0 ? "pr-2 pl-4" : "pr-4 pl-2"}`}
+                    className={`w-1/2 ${
+                      index % 2 === 0 ? "pr-2 pl-4" : "pr-4 pl-2"
+                    }`}
                   >
-                    <VStack
-                      className="border border-background-200 rounded-md shadow bg-info-50 p-4"
-                    >
+                    <VStack className="border border-background-200 rounded-md shadow bg-info-50 p-4">
                       <Text className="font-bold">{variant?.name || "-"}</Text>
                       <Text className="text-gray-500">
                         {variant?.code || "-"}
@@ -238,51 +261,34 @@ export default function ProductDetail() {
       </ScrollView>
 
       <VStack space="md" className="w-full p-4">
-        <Pressable className="w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-brand-primary">
-          <Text size="sm" className="text-brand-primary font-bold">LIHAT SUPPLIER</Text>
+        <Pressable
+          className="w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-brand-primary"
+          onPress={() => {
+            if (product?.supplierId) {
+              router.push(
+                `/(main)/management/customer-supplier/supplier/detail/${product.supplierId}`,
+              );
+            } else {
+              toast.show({
+                placement: "top",
+                render: ({ id }) => (
+                  <Toast
+                    nativeID={`toast-${id}`}
+                    action="warning"
+                    variant="solid"
+                  >
+                    <ToastTitle>Produk tidak memiliki supplier</ToastTitle>
+                  </Toast>
+                ),
+              });
+            }
+          }}
+        >
+          <Text size="sm" className="text-brand-primary font-bold">
+            LIHAT SUPPLIER
+          </Text>
         </Pressable>
       </VStack>
-
-      <Actionsheet
-        isOpen={showActionsheet}
-        onClose={() => setShowActionsheet(false)}
-      >
-        <ActionsheetBackdrop />
-        <ActionsheetContent className="px-0">
-          <ActionsheetDragIndicatorWrapper className="pb-4 pt-2">
-            <ActionsheetDragIndicator />
-          </ActionsheetDragIndicatorWrapper>
-
-          <ActionsheetItem
-            onPress={() => {
-              router.navigate(
-                `/(main)/management/product-category-brand/product/edit/${product?.id}`
-              );
-              setShowActionsheet(false);
-            }}
-          >
-            <HStack className="w-full justify-between items-center px-4 py-2">
-              <ActionsheetItemText className="font-bold">
-                Edit
-              </ActionsheetItemText>
-              <SolarIconBold name="Pen" size={16} />
-            </HStack>
-          </ActionsheetItem>
-
-          <ActionsheetItem
-            onPress={() => {
-              handleDeletePress();
-            }}
-          >
-            <HStack className="w-full justify-between items-center px-4 py-2">
-              <ActionsheetItemText className="font-bold text-red-500">
-                Delete
-              </ActionsheetItemText>
-              <SolarIconBold name="TrashBin2" size={16} color="#ef4444" />
-            </HStack>
-          </ActionsheetItem>
-        </ActionsheetContent>
-      </Actionsheet>
     </VStack>
   );
 }

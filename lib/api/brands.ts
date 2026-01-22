@@ -2,7 +2,7 @@ import { db } from '../db';
 import * as schema from '../db/schema';
 import { and, eq, isNull } from 'drizzle-orm';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { storageAdapter } from '../storage';
+import { useAuthStore } from '@/stores/auth';
 
 export interface Brand {
   id: string;
@@ -24,26 +24,13 @@ export interface UpdateBrandDTO {
   description?: string;
 }
 
-// Get user's organization ID
-function getOrganizationId(): string {
-  const profile = storageAdapter.getItem('userProfile');
-  if (profile) {
-    try {
-      const parsed = JSON.parse(profile);
-      return parsed.selectedOrganizationId || '';
-    } catch {
-      return '';
-    }
-  }
-  return '';
-}
 
 // Get all brands from local SQLite (excluding soft-deleted)
 export function useBrands() {
+  const orgId = useAuthStore(state => state.getOrganizationId());
   return useQuery({
-    queryKey: ['brands'],
+    queryKey: ['brands', orgId],
     queryFn: async () => {
-      const orgId = getOrganizationId();
       const result = await db
         .select()
         .from(schema.brands)
@@ -53,6 +40,7 @@ export function useBrands() {
         ));
       return result as Brand[];
     },
+    enabled: !!orgId,
   });
 }
 
@@ -72,13 +60,43 @@ export function useBrand(id: string) {
   });
 }
 
+// Get product counts by brand
+export function useProductCountsByBrand() {
+  const orgId = useAuthStore(state => state.getOrganizationId());
+  return useQuery({
+    queryKey: ['productCountsByBrand', orgId],
+    queryFn: async () => {
+      const products = await db
+        .select({ brandId: schema.products.brandId })
+        .from(schema.products)
+        .where(
+          and(
+            eq(schema.products.organizationId, orgId),
+            isNull(schema.products.deletedAt)
+          )
+        );
+
+      const counts: Record<string, number> = {};
+      products.forEach((p) => {
+        if (p.brandId) {
+          counts[p.brandId] = (counts[p.brandId] || 0) + 1;
+        }
+      });
+
+      return counts;
+    },
+    enabled: !!orgId,
+  });
+}
+
 // Create brand (saved to local SQLite, synced via SyncEngine)
 export function useCreateBrand() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: CreateBrandDTO) => {
-      const orgId = getOrganizationId();
+      const orgId = useAuthStore.getState().getOrganizationId();
+      console.log('[CreateBrand] creating for orgId:', orgId, data);
       const id = `brand_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
 
@@ -95,11 +113,13 @@ export function useCreateBrand() {
       };
 
       await db.insert(schema.brands).values(newBrand);
+      console.log('[CreateBrand] inserted:', newBrand);
 
       return newBrand as Brand;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['brands'] });
+    onSuccess: (newBrand) => {
+      console.log('[CreateBrand] success, invalidating brands query');
+      queryClient.invalidateQueries({ queryKey: ['brands', newBrand.organizationId] });
     },
   });
 }
@@ -120,8 +140,10 @@ export function useUpdateBrand() {
 
       return { id, ...rest };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['brands'] });
+    onSuccess: (data) => {
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ['brands', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['brands', data.id] });
     },
   });
 }
@@ -142,7 +164,8 @@ export function useDeleteBrand() {
       return { id };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['brands'] });
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ['brands', orgId] });
     },
   });
 }
@@ -165,7 +188,8 @@ export function useBulkDeleteBrand() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['brands'] });
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ['brands', orgId] });
     },
   });
 }
