@@ -1,3 +1,4 @@
+import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
@@ -9,35 +10,30 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
-import {
-  Actionsheet,
-  ActionsheetBackdrop,
-  ActionsheetContent,
-  ActionsheetDragIndicator,
-  ActionsheetDragIndicatorWrapper,
-  ActionsheetItem,
-  ActionsheetItemText,
-} from "@/components/ui/actionsheet";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { getErrorMessage } from "@/lib/api/client";
-import { useDeleteSupplier, useSupplier, useSuppliers } from "@/lib/api/suppliers";
+import {
+  useDeleteSupplier,
+  useSupplier,
+  useSuppliers,
+} from "@/lib/api/suppliers";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
 import { ScrollView } from "react-native";
-
 
 export default function SupplierDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const supplierId = id as string;
 
   // const { sm } = useBreakpoint();
-  const [showActionsheet, setShowActionsheet] = useState<boolean>(false);
 
   const { refetch: refetchSuppliers } = useSuppliers();
-  const { data: supplier, refetch: refetchSupplier } = useSupplier(supplierId || "");
+  const { data: supplier, refetch: refetchSupplier } = useSupplier(
+    supplierId || "",
+  );
   const deleteMutation = useDeleteSupplier();
   const toast = useToast();
 
@@ -87,7 +83,6 @@ export default function SupplierDetail() {
       onSuccess: () => {
         hidePopUpConfirm();
         onRefetch();
-        setShowActionsheet(false);
         router.back();
 
         toast.show({
@@ -102,7 +97,6 @@ export default function SupplierDetail() {
       onError: (error) => {
         showErrorToast(error);
         hidePopUpConfirm();
-        setShowActionsheet(false);
       },
     });
   };
@@ -113,7 +107,34 @@ export default function SupplierDetail() {
         header="DETAIL SUPPLIER"
         action={
           <HStack space="sm">
-            <Pressable className="p-6" onPress={() => setShowActionsheet(true)}>
+            <Pressable
+              className="p-6"
+              onPress={() =>
+                showActionDrawer({
+                  actions: [
+                    {
+                      label: "Edit",
+                      icon: "Pen",
+                      onPress: () => {
+                        router.navigate(
+                          `/(main)/management/customer-supplier/supplier/edit/${supplier?.id}`,
+                        );
+                        hideActionDrawer();
+                      },
+                    },
+                    {
+                      label: "Delete",
+                      icon: "TrashBin2",
+                      theme: "red",
+                      onPress: () => {
+                        handleDeletePress();
+                        hideActionDrawer();
+                      },
+                    },
+                  ],
+                })
+              }
+            >
               <SolarIconBold
                 name="MenuDots"
                 size={20}
@@ -139,9 +160,7 @@ export default function SupplierDetail() {
             </VStack>
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Alamat</Text>
-              <Text className="font-bold">
-                {supplier?.address || "-"}
-              </Text>
+              <Text className="font-bold">{supplier?.address || "-"}</Text>
             </VStack>
           </Box>
         </VStack>
@@ -149,53 +168,16 @@ export default function SupplierDetail() {
 
       <VStack space="md" className="w-full p-4">
         <Pressable className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500">
-          <Text size="sm" className="text-typography-0 font-bold">RIWAYAT TRANSAKSI</Text>
+          <Text size="sm" className="text-typography-0 font-bold">
+            RIWAYAT TRANSAKSI
+          </Text>
         </Pressable>
         <Pressable className="w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-primary-500">
-          <Text size="sm" className="text-brand-primary font-bold">RIWAYAT HUTANG</Text>
+          <Text size="sm" className="text-brand-primary font-bold">
+            RIWAYAT HUTANG
+          </Text>
         </Pressable>
       </VStack>
-
-      <Actionsheet
-        isOpen={showActionsheet}
-        onClose={() => setShowActionsheet(false)}
-      >
-        <ActionsheetBackdrop />
-        <ActionsheetContent className="px-0">
-          <ActionsheetDragIndicatorWrapper className="pb-4 pt-2">
-            <ActionsheetDragIndicator />
-          </ActionsheetDragIndicatorWrapper>
-
-          <ActionsheetItem
-            onPress={() => {
-              router.navigate(
-                `/(main)/management/customer-supplier/supplier/edit/${supplier?.id}`
-              );
-              setShowActionsheet(false);
-            }}
-          >
-            <HStack className="w-full justify-between items-center px-4 py-2">
-              <ActionsheetItemText className="font-bold">
-                Edit
-              </ActionsheetItemText>
-              <SolarIconBold name="Pen" size={16} />
-            </HStack>
-          </ActionsheetItem>
-
-          <ActionsheetItem
-            onPress={() => {
-              handleDeletePress();
-            }}
-          >
-            <HStack className="w-full justify-between items-center px-4 py-2">
-              <ActionsheetItemText className="font-bold text-red-500">
-                Delete
-              </ActionsheetItemText>
-              <SolarIconBold name="TrashBin2" size={16} color="#ef4444" />
-            </HStack>
-          </ActionsheetItem>
-        </ActionsheetContent>
-      </Actionsheet>
     </VStack>
   );
 }

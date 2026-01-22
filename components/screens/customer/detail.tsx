@@ -1,3 +1,4 @@
+import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
@@ -9,15 +10,6 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
-import {
-  Actionsheet,
-  ActionsheetBackdrop,
-  ActionsheetContent,
-  ActionsheetDragIndicator,
-  ActionsheetDragIndicatorWrapper,
-  ActionsheetItem,
-  ActionsheetItemText,
-} from "@/components/ui/actionsheet";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { getErrorMessage } from "@/lib/api/client";
@@ -27,20 +19,18 @@ import {
   useDeleteCustomer,
 } from "@/lib/api/customers";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function CustomerDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const customerId = id as string;
 
-  const [showActionsheet, setShowActionsheet] = useState<boolean>(false);
-
   const { refetch: refetchCustomers } = useCustomers();
   const { data: customer, refetch: refetchCustomer } = useCustomer(
-    customerId || ""
+    customerId || "",
   );
   const deleteMutation = useDeleteCustomer();
   const toast = useToast();
@@ -91,7 +81,6 @@ export default function CustomerDetail() {
       onSuccess: () => {
         hidePopUpConfirm();
         onRefetch();
-        setShowActionsheet(false);
         router.back();
 
         toast.show({
@@ -106,8 +95,33 @@ export default function CustomerDetail() {
       onError: (error) => {
         showErrorToast(error);
         hidePopUpConfirm();
-        setShowActionsheet(false);
       },
+    });
+  };
+
+  const handleAction = () => {
+    showActionDrawer({
+      actions: [
+        {
+          label: "Edit",
+          icon: "Pen",
+          onPress: () => {
+            router.navigate(
+              `/(main)/management/customer-supplier/customer/edit/${customer?.id}`,
+            );
+            hideActionDrawer();
+          },
+        },
+        {
+          label: "Delete",
+          icon: "TrashBin2",
+          theme: "red",
+          onPress: () => {
+            handleDeletePress();
+            hideActionDrawer();
+          },
+        },
+      ],
     });
   };
 
@@ -117,7 +131,7 @@ export default function CustomerDetail() {
         header="DETAIL CUSTOMER"
         action={
           <HStack space="sm">
-            <Pressable className="p-6" onPress={() => setShowActionsheet(true)}>
+            <Pressable className="p-6" onPress={handleAction}>
               <SolarIconBold
                 name="MenuDots"
                 size={20}
@@ -177,50 +191,11 @@ export default function CustomerDetail() {
 
       <VStack space="md" className="w-full p-4">
         <Pressable className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500">
-          <Text size="sm" className="text-typography-0 font-bold">RIWAYAT TRANSAKSI</Text>
+          <Text size="sm" className="text-typography-0 font-bold">
+            RIWAYAT TRANSAKSI
+          </Text>
         </Pressable>
       </VStack>
-
-      <Actionsheet
-        isOpen={showActionsheet}
-        onClose={() => setShowActionsheet(false)}
-      >
-        <ActionsheetBackdrop />
-        <ActionsheetContent className="px-0">
-          <ActionsheetDragIndicatorWrapper className="pb-4 pt-2">
-            <ActionsheetDragIndicator />
-          </ActionsheetDragIndicatorWrapper>
-
-          <ActionsheetItem
-            onPress={() => {
-              router.navigate(
-                `/(main)/management/customer-supplier/customer/edit/${customer?.id}`
-              );
-              setShowActionsheet(false);
-            }}
-          >
-            <HStack className="w-full justify-between items-center px-4 py-2">
-              <ActionsheetItemText className="font-bold">
-                Edit
-              </ActionsheetItemText>
-              <SolarIconBold name="Pen" size={16} />
-            </HStack>
-          </ActionsheetItem>
-
-          <ActionsheetItem
-            onPress={() => {
-              handleDeletePress();
-            }}
-          >
-            <HStack className="w-full justify-between items-center px-4 py-2">
-              <ActionsheetItemText className="font-bold text-red-500">
-                Delete
-              </ActionsheetItemText>
-              <SolarIconBold name="TrashBin2" size={16} color="#ef4444" />
-            </HStack>
-          </ActionsheetItem>
-        </ActionsheetContent>
-      </Actionsheet>
     </VStack>
   );
 }
