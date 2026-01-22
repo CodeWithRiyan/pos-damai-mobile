@@ -85,15 +85,15 @@ export function PopUpConfirm({
 
   const getTextStyles = (variant: TVariant): string => {
     if (variant === "solid") {
-      return "text-white font-medium text-center";
+      return "text-white font-bold text-center";
     } else if (variant === "outline") {
-      return "text-gray-700 font-medium text-center";
+      return "text-gray-700 font-bold text-center";
     } else if (variant === "link") {
-      return "text-blue-600 font-medium text-center";
+      return "text-blue-600 font-bold text-center";
     } else if (variant === "destructive") {
-      return "text-white font-medium text-center";
+      return "text-white font-bold text-center";
     }
-    return "text-gray-700 text-center";
+    return "text-gray-700 font-bold text-center";
   };
 
   return (
