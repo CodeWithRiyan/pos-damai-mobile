@@ -1,7 +1,11 @@
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
-import { useCategory } from '@/lib/api/categories';
+import { useCategory } from "@/lib/api/categories";
 import { getErrorMessage } from "@/lib/api/client";
-import { ProductListItem, useAssignProductsToCategory } from "@/lib/api/products";
+import {
+  ProductListItem,
+  useAssignProductsToCategory,
+  useProducts,
+} from "@/lib/api/products";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import SelectingProductList from "../product/selecting-product";
 
@@ -11,6 +15,7 @@ export default function SelectProductInCategory() {
   const { id } = useLocalSearchParams();
   const categoryId = id as string;
   const { data, refetch } = useCategory(categoryId);
+  const { data: products } = useProducts();
   const assignMutation = useAssignProductsToCategory();
 
   const handleSubmit = (selectedProducts: ProductListItem[]) => {
@@ -26,7 +31,7 @@ export default function SelectProductInCategory() {
       return;
     }
 
-    const productIds = selectedProducts.map(p => p.id);
+    const productIds = selectedProducts.map((p) => p.id);
 
     assignMutation.mutate(
       { productIds, categoryId },
@@ -36,7 +41,9 @@ export default function SelectProductInCategory() {
             placement: "top",
             render: ({ id }) => (
               <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>{selectedProducts.length} produk berhasil ditambahkan ke {data?.name}</ToastTitle>
+                <ToastTitle>
+                  {`Produk berhasil ditambahkan ke ${data?.name}`}
+                </ToastTitle>
               </Toast>
             ),
           });
@@ -53,14 +60,15 @@ export default function SelectProductInCategory() {
             ),
           });
         },
-      }
+      },
     );
   };
 
   return (
     <SelectingProductList
+      usedFor="category"
       header="TAMBAH PRODUK"
-      selectedItems={[]}
+      selectedItems={products?.filter((p) => p.categoryId.includes(categoryId))}
       onSubmit={handleSubmit}
     />
   );

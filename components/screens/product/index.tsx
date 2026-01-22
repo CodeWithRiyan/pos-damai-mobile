@@ -1,12 +1,16 @@
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
+import { Input, InputField, InputIcon, InputSlot } from "@/components/ui";
 import { Badge, BadgeText } from "@/components/ui/badge";
 import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
+import {
+  SolarIconBold,
+  SolarIconLinear,
+} from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
@@ -14,21 +18,20 @@ import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
 import { Product, useBulkDeleteProduct, useProducts } from "@/lib/api/products";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useState, useCallback } from "react";
+import { SearchIcon } from "lucide-react-native";
+import React, { useCallback, useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function ProductList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data, isLoading, refetch } = useProducts();
-  const [selectedItems, setSelectedItems] = useState<Product[] | null>(
-    null
-  );
-
+  const [selectedItems, setSelectedItems] = useState<Product[] | null>(null);
+  console.log(data);
   useFocusEffect(
     useCallback(() => {
       refetch();
-    }, [refetch])
+    }, [refetch]),
   );
 
   const products = data || [];
@@ -114,7 +117,7 @@ export default function ProductList() {
           showErrorToast(error);
           hidePopUpConfirm();
         },
-      }
+      },
     );
   };
 
@@ -158,7 +161,30 @@ export default function ProductList() {
         }
       />
       <Box className="flex-1 bg-white">
-        <VStack space="lg" className="flex-1">
+        <VStack className="flex-1">
+          <HStack
+            space="sm"
+            className="p-4 shadow-lg bg-background-0 items-center"
+          >
+            <Pressable
+              className="size-10 items-center justify-center"
+              onPress={() => {}}
+            >
+              <SolarIconLinear name="Bell" size={20} color="#3d2117" />
+            </Pressable>
+            <Pressable
+              className="size-10 items-center justify-center"
+              onPress={() => {}}
+            >
+              <SolarIconLinear name="Filter" size={20} color="#3d2117" />
+            </Pressable>
+            <Input className="flex-1 border border-background-300 rounded-lg h-10">
+              <InputSlot className="pl-3">
+                <InputIcon as={SearchIcon} />
+              </InputSlot>
+              <InputField placeholder="Cari nama atau kode" />
+            </Input>
+          </HStack>
           <ScrollView className="flex-1">
             <VStack>
               {products?.map((product) => (
@@ -174,7 +200,7 @@ export default function ProductList() {
                       handlePress(product);
                     } else {
                       router.navigate(
-                        `/(main)/management/product-category-brand/product/detail/${product.id}` as any
+                        `/(main)/management/product-category-brand/product/detail/${product.id}` as any,
                       );
                       setSelectedItems(null);
                     }
@@ -194,9 +220,9 @@ export default function ProductList() {
                           {product.code}
                         </Text>
                         <Badge size="sm" variant="solid" action="muted">
-                          <BadgeText className="text-xs">{`Harga Beli: Rp ${(product.purchasePrice ?? 0).toLocaleString(
-                            "id-ID"
-                          )}`}</BadgeText>
+                          <BadgeText className="text-xs">{`Harga Beli: Rp ${(
+                            product.purchasePrice ?? 0
+                          ).toLocaleString("id-ID")}`}</BadgeText>
                         </Badge>
                       </VStack>
                     </HStack>
@@ -208,22 +234,30 @@ export default function ProductList() {
                         Retail:{" "}
                         {`${
                           product.sellPrices?.filter(
-                            (r) => r.type === "RETAIL"
+                            (r) => r.type === "RETAIL",
                           )?.[0]?.minimumPurchase ?? 0
-                        }@ Rp ${product.sellPrices
-                          ?.filter((r) => r.type === "RETAIL")?.[0]
-                          ?.price.toLocaleString("id-ID") ?? 0}`}
+                        }@ Rp ${
+                          product.sellPrices
+                            ?.filter((r) => r.type === "RETAIL")?.[0]
+                            ?.price.toLocaleString("id-ID") ?? 0
+                        }`}
                       </Text>
-                      <Text className="text-xs">
-                        Grosir:{" "}
-                        {`${
-                          product.sellPrices?.filter(
-                            (r) => r.type === "WHOLESALE"
-                          )?.[0]?.minimumPurchase ?? 0
-                        }@ Rp ${product.sellPrices
-                          ?.filter((r) => r.type === "WHOLESALE")?.[0]
-                          ?.price.toLocaleString("id-ID") ?? 0}`}
-                      </Text>
+                      {!!product.sellPrices?.filter(
+                        (r) => r.type === "WHOLESALE",
+                      ).length && (
+                        <Text className="text-xs">
+                          Grosir:{" "}
+                          {`${
+                            product.sellPrices?.filter(
+                              (r) => r.type === "WHOLESALE",
+                            )?.[0]?.minimumPurchase ?? 0
+                          }@ Rp ${
+                            product.sellPrices
+                              ?.filter((r) => r.type === "WHOLESALE")?.[0]
+                              ?.price.toLocaleString("id-ID") ?? 0
+                          }`}
+                        </Text>
+                      )}
                     </VStack>
                   </HStack>
                 </Pressable>

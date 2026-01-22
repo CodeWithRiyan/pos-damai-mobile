@@ -1,5 +1,5 @@
 import Header from "@/components/header";
-import { Badge, BadgeText } from "@/components/ui/badge";
+import { Checkbox, CheckboxIcon, CheckboxIndicator } from "@/components/ui";
 import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
@@ -8,14 +8,38 @@ import { Pressable } from "@/components/ui/pressable";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { ProductListItem, useProducts } from "@/lib/api/products";
+import { CheckIcon } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
-export default function SelectingProductList({ header, selectedItems, onSubmit }: { header: string, selectedItems?: ProductListItem[], onSubmit?: (value: ProductListItem[]) => void }) {
-  const [newSelectedItems, setNewSelectedItems] = useState<ProductListItem[]>(selectedItems || []);
-  
+export default function SelectingProductList({
+  usedFor,
+  header,
+  selectedItems,
+  onSubmit,
+}: {
+  usedFor: "brand" | "category";
+  header: string;
+  selectedItems?: ProductListItem[];
+  onSubmit?: (value: ProductListItem[]) => void;
+}) {
+  const [newSelectedItems, setNewSelectedItems] = useState<ProductListItem[]>(
+    selectedItems || [],
+  );
+
   const { data } = useProducts();
   const products = data || [];
+  const filteredProduct =
+    usedFor === "brand"
+      ? products.filter(
+          (p) =>
+            selectedItems?.some((r) => r.brandId === p.brandId) || !p.brandId,
+        )
+      : products.filter(
+          (p) =>
+            selectedItems?.some((r) => r.categoryId === p.categoryId) ||
+            !p.categoryId,
+        );
 
   const handlePress = (item: ProductListItem) => {
     if (newSelectedItems.some((r) => r.id === item.id)) {
@@ -44,7 +68,7 @@ export default function SelectingProductList({ header, selectedItems, onSubmit }
         <VStack space="lg" className="flex-1">
           <ScrollView className="flex-1">
             <VStack>
-              {products?.map((product) => (
+              {filteredProduct?.map((product) => (
                 <Pressable
                   key={product.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
@@ -52,15 +76,23 @@ export default function SelectingProductList({ header, selectedItems, onSubmit }
                       ? "bg-gray-100"
                       : ""
                   }`}
-                  onPress={() => {
-                    if (!!newSelectedItems.length) {
-                      handlePress(product);
-                    }
-                  }}
-                  onLongPress={() => handlePress(product)}
+                  onPress={() => handlePress(product)}
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
+                      <Checkbox
+                        value={newSelectedItems
+                          .some((r) => r.id === product.id)
+                          .toString()}
+                        isChecked={newSelectedItems.some(
+                          (r) => r.id === product.id,
+                        )}
+                        size="md"
+                      >
+                        <CheckboxIndicator>
+                          <CheckboxIcon as={CheckIcon} />
+                        </CheckboxIndicator>
+                      </Checkbox>
                       <Box className="w-10 h-10 rounded-lg bg-primary-200 items-center justify-center">
                         <Text className="text-primary-500 font-bold">
                           {product.name.substring(0, 1).toUpperCase()}
@@ -71,11 +103,6 @@ export default function SelectingProductList({ header, selectedItems, onSubmit }
                         <Text size="xs" className="text-slate-500">
                           {product.code}
                         </Text>
-                        <Badge size="sm" variant="solid" action="muted">
-                          <BadgeText className="text-xs">{`Harga Beli: Rp ${(product.purchasePrice ?? 0).toLocaleString(
-                            "id-ID"
-                          )}`}</BadgeText>
-                        </Badge>
                       </VStack>
                     </HStack>
                     <VStack className="items-end">
