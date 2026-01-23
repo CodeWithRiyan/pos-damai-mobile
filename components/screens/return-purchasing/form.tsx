@@ -28,8 +28,8 @@ import { VStack } from "@/components/ui/vstack";
 //   useUpdateReturnPurchasing,
 // } from "@/lib/api/return-purchasing";
 import { getErrorMessage } from "@/lib/api/client";
-import { useReturnPurchasingStore } from "@/stores/return-purchasing";
 import { useCreatePurchaseReturn } from "@/lib/api/return-purchasing";
+import { useReturnPurchasingStore } from "@/stores/return-purchasing";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -37,7 +37,8 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
 export default function ReturnPurchasingConfirmForm() {
-  const { cart, openConfirm, setOpenConfirm, resetCart, selectedPurchase } = useReturnPurchasingStore();
+  const { cart, openConfirm, setOpenConfirm, resetCart, selectedPurchase } =
+    useReturnPurchasingStore();
   const router = useRouter();
   const toast = useToast();
   const createMutation = useCreatePurchaseReturn();
@@ -89,28 +90,34 @@ export default function ReturnPurchasingConfirmForm() {
       return;
     }
 
-    const totalAmount = cart.reduce((acc, item) => acc + (item.quantity * item.product.purchasePrice), 0);
+    const totalAmount = cart.reduce(
+      (acc, item) => acc + item.quantity * (item.product.purchasePrice || 0),
+      0,
+    );
 
-    createMutation.mutate({
-      supplierId: selectedPurchase.supplierId,
-      totalAmount,
-      returnType: data.returnType as 'CASH' | 'ITEM',
-      items: cart.map(item => ({
-        productId: item.product.id,
-        quantity: item.quantity,
-        purchasePrice: item.product.purchasePrice,
-      }))
-    }, {
-      onSuccess: () => {
-        showSuccessToast("Retur berhasil disimpan");
-        setOpenConfirm(false);
-        resetCart();
-        router.back();
+    createMutation.mutate(
+      {
+        supplierId: selectedPurchase.supplierId,
+        totalAmount,
+        returnType: data.returnType as "CASH" | "ITEM",
+        items: cart.map((item) => ({
+          productId: item.product.productId,
+          productName: item.product.productName || "",
+          quantity: item.quantity,
+          purchasePrice: item.product.purchasePrice || 0,
+        })),
       },
-      onError: showErrorToast
-    });
+      {
+        onSuccess: () => {
+          showSuccessToast("Retur berhasil disimpan");
+          setOpenConfirm(false);
+          resetCart();
+          router.back();
+        },
+        onError: showErrorToast,
+      },
+    );
   };
-
 
   return (
     <Modal

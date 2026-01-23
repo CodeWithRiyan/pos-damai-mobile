@@ -30,6 +30,7 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
+import SelectModal from "@/components/ui/select/select-modal";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { useBrands } from "@/lib/api/brands";
 import { useCategories } from "@/lib/api/categories";
@@ -49,7 +50,7 @@ import { useDiscountStore } from "@/stores/discount";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { PlusIcon } from "lucide-react-native";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Controller,
   SubmitHandler,
@@ -65,6 +66,9 @@ export default function ProductForm() {
   const { setOpen: setOpenBrand, setData: setDataBrand } = useBrandStore();
   const { setOpen: setOpenDiscount, setData: setDataDiscount } =
     useDiscountStore();
+  const [searchCategory, setSearchCategory] = useState<string>("");
+  const [searchBrand, setSearchBrand] = useState<string>("");
+  const [searchDiscount, setSearchDiscount] = useState<string>("");
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const isAdd = !id;
@@ -507,46 +511,23 @@ export default function ProductForm() {
           <Controller
             control={form.control}
             name="categoryId"
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Kategori</FormControlLabelText>
                 </FormControlLabel>
                 <HStack space="md">
-                  <Select
-                    onValueChange={onChange}
-                    onBlur={onBlur}
+                  <SelectModal
+                    value={value}
+                    placeholder="Pilih Kategori"
+                    searchPlaceholder="Cari Kategori"
+                    options={categories.map((cat) => ({
+                      label: cat.name,
+                      value: cat.id,
+                    }))}
                     className="flex-1"
-                  >
-                    <SelectTrigger>
-                      <SelectInput
-                        value={categories.find((cat) => cat.id === value)?.name}
-                        placeholder="Pilih Kategori"
-                        className="flex-1 capitalize"
-                      />
-                      <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                    </SelectTrigger>
-                    <SelectPortal>
-                      <SelectBackdrop />
-                      <SelectContent className="px-0">
-                        <SelectDragIndicatorWrapper>
-                          <SelectDragIndicator />
-                        </SelectDragIndicatorWrapper>
-                        {categories.map((cat) => (
-                          <SelectItem
-                            key={cat.id}
-                            label={cat.name}
-                            value={cat.id}
-                            textStyle={{ className: "capitalize flex-1" }}
-                            className="px-4 py-4"
-                          />
-                        ))}
-                      </SelectContent>
-                    </SelectPortal>
-                  </Select>
+                    onChange={onChange}
+                  />
                   <Pressable
                     className="size-10 rounded-full bg-primary-500 items-center justify-center"
                     onPress={() => {
@@ -1047,46 +1028,23 @@ export default function ProductForm() {
           <Controller
             control={form.control}
             name="brandId"
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Brand</FormControlLabelText>
                 </FormControlLabel>
                 <HStack space="md">
-                  <Select
-                    onValueChange={onChange}
-                    onBlur={onBlur}
+                  <SelectModal
+                    value={value}
+                    placeholder="Pilih Brand"
+                    searchPlaceholder="Cari Brand"
+                    options={brands.map((brand) => ({
+                      label: brand.name,
+                      value: brand.id,
+                    }))}
                     className="flex-1"
-                  >
-                    <SelectTrigger>
-                      <SelectInput
-                        value={brands.find((brand) => brand.id === value)?.name}
-                        placeholder="Pilih Brand"
-                        className="flex-1 capitalize"
-                      />
-                      <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                    </SelectTrigger>
-                    <SelectPortal>
-                      <SelectBackdrop />
-                      <SelectContent className="px-0">
-                        <SelectDragIndicatorWrapper>
-                          <SelectDragIndicator />
-                        </SelectDragIndicatorWrapper>
-                        {brands.map((brand) => (
-                          <SelectItem
-                            key={brand.id}
-                            label={brand.name}
-                            value={brand.id}
-                            textStyle={{ className: "capitalize flex-1" }}
-                            className="px-4 py-4"
-                          />
-                        ))}
-                      </SelectContent>
-                    </SelectPortal>
-                  </Select>
+                    onChange={onChange}
+                  />
                   <Pressable
                     className="size-10 rounded-full bg-primary-500 items-center justify-center"
                     onPress={() => {
@@ -1111,49 +1069,23 @@ export default function ProductForm() {
           <Controller
             control={form.control}
             name="discountId"
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Diskon</FormControlLabelText>
                 </FormControlLabel>
                 <HStack space="md">
-                  <Select
-                    onValueChange={onChange}
-                    onBlur={onBlur}
+                  <SelectModal
+                    value={value || ""}
+                    placeholder="Pilih Diskon"
+                    searchPlaceholder="Cari Diskon"
+                    options={discounts.map((disc) => ({
+                      label: disc.name,
+                      value: disc.id,
+                    }))}
                     className="flex-1"
-                  >
-                    <SelectTrigger>
-                      <SelectInput
-                        value={
-                          (discounts || []).find((disc) => disc.id === value)
-                            ?.name
-                        }
-                        placeholder="Pilih Diskon"
-                        className="flex-1 capitalize"
-                      />
-                      <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                    </SelectTrigger>
-                    <SelectPortal>
-                      <SelectBackdrop />
-                      <SelectContent className="px-0">
-                        <SelectDragIndicatorWrapper>
-                          <SelectDragIndicator />
-                        </SelectDragIndicatorWrapper>
-                        {(discounts || []).map((disc) => (
-                          <SelectItem
-                            key={disc.id}
-                            label={disc.name}
-                            value={disc.id}
-                            textStyle={{ className: "capitalize flex-1" }}
-                            className="px-4 py-4"
-                          />
-                        ))}
-                      </SelectContent>
-                    </SelectPortal>
-                  </Select>
+                    onChange={onChange}
+                  />
                   <Pressable
                     className="size-10 rounded-full bg-primary-500 items-center justify-center"
                     onPress={() => {

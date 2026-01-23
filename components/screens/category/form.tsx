@@ -1,12 +1,9 @@
 import {
-  CloseIcon,
   Heading,
   HStack,
-  Icon,
   Modal,
   ModalBackdrop,
   ModalBody,
-  ModalCloseButton,
   ModalContent,
   ModalFooter,
   ModalHeader,
@@ -107,7 +104,7 @@ export default function CategoryForm() {
   };
 
   const onSubmit: SubmitHandler<CategoryFormValues> = (
-    data: CategoryFormValues
+    data: CategoryFormValues,
   ) => {
     if (dataCategory) {
       updateMutation.mutate(
@@ -120,19 +117,19 @@ export default function CategoryForm() {
             setOpen(false);
           },
           onError: showErrorToast,
-        }
+        },
       );
     } else {
       createMutation.mutate(data, {
-          onSuccess: (newCat) => {
-            showSuccessToast("Kategori berhasil ditambahkan");
-            onRefetch();
-            if (useCategoryStore.getState().onSuccess) {
-              useCategoryStore.getState().onSuccess?.(newCat);
-            }
-            form.reset(initialValues);
-            setOpen(false);
-          },
+        onSuccess: (newCat) => {
+          showSuccessToast("Kategori berhasil ditambahkan");
+          onRefetch();
+          if (useCategoryStore.getState().onSuccess) {
+            useCategoryStore.getState().onSuccess?.(newCat);
+          }
+          form.reset(initialValues);
+          setOpen(false);
+        },
         onError: showErrorToast,
       });
     }
@@ -150,17 +147,14 @@ export default function CategoryForm() {
       size="md"
     >
       <ModalBackdrop />
-      <ModalContent>
-        <ModalHeader className="mb-4">
+      <ModalContent className="p-0 max-h-[90%]">
+        <ModalHeader className="p-4 border-b border-background-300">
           <Heading size="md" className="text-center flex-1">
             {dataCategory ? "EDIT KATEGORI" : "TAMBAH KATEGORI"}
           </Heading>
-          <ModalCloseButton>
-            <Icon as={CloseIcon} />
-          </ModalCloseButton>
         </ModalHeader>
-        <ModalBody>
-          <VStack space="lg">
+        <ModalBody className="m-0" showsVerticalScrollIndicator={false}>
+          <VStack space="lg" className="p-4">
             <Controller
               name="name"
               control={form.control}
@@ -199,7 +193,11 @@ export default function CategoryForm() {
                   field: { onChange, onBlur, value },
                   fieldState: { error },
                 }) => (
-                  <FormControl isRequired isInvalid={!!error} className="flex-1">
+                  <FormControl
+                    isRequired
+                    isInvalid={!!error}
+                    className="flex-1"
+                  >
                     <FormControlLabel>
                       <FormControlLabelText>Poin Retail</FormControlLabelText>
                     </FormControlLabel>
@@ -232,7 +230,11 @@ export default function CategoryForm() {
                   field: { onChange, onBlur, value },
                   fieldState: { error },
                 }) => (
-                  <FormControl isRequired isInvalid={!!error} className="flex-1">
+                  <FormControl
+                    isRequired
+                    isInvalid={!!error}
+                    className="flex-1"
+                  >
                     <FormControlLabel>
                       <FormControlLabelText>Poin Grosir</FormControlLabelText>
                     </FormControlLabel>
@@ -261,7 +263,7 @@ export default function CategoryForm() {
             </HStack>
           </VStack>
         </ModalBody>
-        <ModalFooter>
+        <ModalFooter className="p-4 pt-0">
           <HStack space="md">
             <Pressable
               className="w-full flex px-4 h-9 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"

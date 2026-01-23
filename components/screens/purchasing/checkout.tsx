@@ -5,7 +5,6 @@ import {
   CheckboxIndicator,
   CheckboxLabel,
   CheckIcon,
-  ChevronDownIcon,
   FormControl,
   FormControlError,
   FormControlErrorText,
@@ -13,16 +12,6 @@ import {
   HStack,
   Icon,
   Pressable,
-  Select,
-  SelectBackdrop,
-  SelectContent,
-  SelectDragIndicator,
-  SelectDragIndicatorWrapper,
-  SelectIcon,
-  SelectInput,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
   Text,
   Textarea,
   TextareaInput,
@@ -42,6 +31,7 @@ import { ScrollView } from "react-native";
 import { z } from "zod";
 // import { usePurchasing } from "@/lib/api/purchasing";
 import InputVirtualKeyboard from "@/components/ui/input-virtual-keyboard";
+import SelectModal from "@/components/ui/select/select-modal";
 import { useCurrentUser } from "@/lib/api/auth";
 import { usePurchasingStore } from "@/stores/purchasing";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -329,50 +319,22 @@ export default function PurchasingCheckoutForm() {
                   control={form.control}
                   name="supplierId"
                   render={({
-                    field: { onChange, onBlur, value },
+                    field: { onChange, value },
                     fieldState: { error },
                   }) => (
                     <FormControl isRequired isInvalid={!!error}>
                       <HStack space="md">
-                        <Select
-                          onValueChange={onChange}
-                          onBlur={onBlur}
+                        <SelectModal
+                          value={value}
+                          placeholder="Pilih Supplier"
+                          searchPlaceholder="Cari Supplier"
+                          options={suppliers.map((sup) => ({
+                            label: sup.name,
+                            value: sup.id,
+                          }))}
                           className="flex-1"
-                        >
-                          <SelectTrigger>
-                            <SelectInput
-                              value={
-                                suppliers.find(
-                                  (supplier) => supplier.id === value,
-                                )?.name
-                              }
-                              placeholder="Supplier"
-                              className="flex-1 capitalize"
-                            />
-                            <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                          </SelectTrigger>
-                          <SelectPortal>
-                            <SelectBackdrop />
-                            <SelectContent>
-                              <SelectDragIndicatorWrapper>
-                                <SelectDragIndicator />
-                              </SelectDragIndicatorWrapper>
-                              <VStack className="pt-5 pb-8">
-                                {suppliers.map((supplier) => (
-                                  <SelectItem
-                                    key={supplier.id}
-                                    label={supplier.name}
-                                    value={supplier.id}
-                                    textStyle={{
-                                      className: "capitalize flex-1",
-                                    }}
-                                    className="px-4 py-4"
-                                  />
-                                ))}
-                              </VStack>
-                            </SelectContent>
-                          </SelectPortal>
-                        </Select>
+                          onChange={onChange}
+                        />
                         <Pressable
                           className="size-10 rounded-full bg-primary-500 items-center justify-center"
                           onPress={() =>

@@ -21,6 +21,9 @@ import {
   Text,
   Textarea,
   TextareaInput,
+  Toast,
+  ToastTitle,
+  useToast,
   VStack,
 } from "@/components/ui";
 import { Input, InputField } from "@/components/ui/input";
@@ -31,6 +34,7 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
 export default function PopupAddProduct() {
+  const toast = useToast();
   const { addProduct, cart, setAddProduct, addCartItem } =
     useReturnPurchasingStore();
 
@@ -55,6 +59,23 @@ export default function PopupAddProduct() {
 
   const quantity = form.watch("quantity");
   const isAddNoteChecked = form.watch("addNote");
+
+  useEffect(() => {
+    if (form.formState.errors.quantity) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => {
+          const toastId = "toast-" + id;
+          return (
+            <Toast nativeID={toastId} action="error" variant="solid">
+              <ToastTitle>{form.formState.errors.quantity?.message}</ToastTitle>
+            </Toast>
+          );
+        },
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.formState.errors.quantity]);
 
   useEffect(() => {
     if (addProduct) {
@@ -168,13 +189,6 @@ export default function PopupAddProduct() {
                           className="text-4xl text-center font-bold border-none"
                         />
                       </Input>
-                      {error && (
-                        <FormControlError>
-                          <FormControlErrorText className="text-red-500">
-                            {error.message}
-                          </FormControlErrorText>
-                        </FormControlError>
-                      )}
                     </FormControl>
                   )}
                 />
