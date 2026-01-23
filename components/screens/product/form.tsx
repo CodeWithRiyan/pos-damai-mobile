@@ -30,6 +30,8 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
+import SelectModal from "@/components/ui/select/select-modal";
+import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { useBrands } from "@/lib/api/brands";
 import { useCategories } from "@/lib/api/categories";
 import { getErrorMessage } from "@/lib/api/client";
@@ -38,18 +40,17 @@ import {
   CreateProductDTO,
   UpdateProductDTO,
   useCreateProduct,
-  useUpdateProduct,
   useProduct,
   useProducts,
+  useUpdateProduct,
 } from "@/lib/api/products";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { useBrandStore } from "@/stores/brand";
 import { useCategoryStore } from "@/stores/category";
 import { useDiscountStore } from "@/stores/discount";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { PlusIcon } from "lucide-react-native";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Controller,
   SubmitHandler,
@@ -60,50 +61,78 @@ import { ScrollView } from "react-native";
 import { z } from "zod";
 
 export default function ProductForm() {
-  const { setOpen: setOpenCategory, setData: setDataCategory } = useCategoryStore();
+  const { setOpen: setOpenCategory, setData: setDataCategory } =
+    useCategoryStore();
   const { setOpen: setOpenBrand, setData: setDataBrand } = useBrandStore();
-  const { setOpen: setOpenDiscount, setData: setDataDiscount } = useDiscountStore();
+  const { setOpen: setOpenDiscount, setData: setDataDiscount } =
+    useDiscountStore();
+  const [searchCategory, setSearchCategory] = useState<string>("");
+  const [searchBrand, setSearchBrand] = useState<string>("");
+  const [searchDiscount, setSearchDiscount] = useState<string>("");
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const isAdd = !id;
   const productId = id as string;
 
-  const productSchema = z.object({
-    name: z.string().min(1, "Nama wajib diisi."),
-    code: z.string().min(1, "Kode wajib diisi."),
-    type: z.string().min(1, "Type wajib diisi."),
-    unit: z.string().nullable(),
-    categoryId: z.string(),
-    brandId: z.string(),
-    purchasePrice: z.number().min(1, "Harga Beli wajib diisi."),
-    stock: z.number(),
-    minimumStock: z.number(),
-    variants: z
-      .array(
-        z.object({
-          name: z.string().min(1, "Nama wajib diisi."),
-          code: z.string().min(1, "Kode wajib diisi."),
-        })
-      )
-      .nullable(),
-    retailPrice: z
-      .array(
+  const productSchema = z
+    .object({
+      name: z.string().min(1, "Nama wajib diisi."),
+      code: z.string().min(1, "Kode wajib diisi."),
+      type: z.string().min(1, "Type wajib diisi."),
+      unit: z.string().nullable(),
+      categoryId: z.string(),
+      brandId: z.string(),
+      purchasePrice: z.number().min(1, "Harga Beli wajib diisi."),
+      stock: z.number(),
+      minimumStock: z.number(),
+      variants: z
+        .array(
+          z.object({
+            name: z.string().min(1, "Nama wajib diisi."),
+            code: z.string().min(1, "Kode wajib diisi."),
+          }),
+        )
+        .nullable(),
+      retailPrice: z
+        .array(
+          z.object({
+            minimumPurchase: z.number().min(1, "Minimum purchase wajib diisi."),
+            price: z.number().min(1, "Harga wajib diisi."),
+          }),
+        )
+        .min(1, "Harga Retail wajib diisi."),
+      wholesalePrice: z.array(
         z.object({
           minimumPurchase: z.number().min(1, "Minimum purchase wajib diisi."),
           price: z.number().min(1, "Harga wajib diisi."),
-        })
-      )
-      .min(1, "Harga Retail wajib diisi."),
-    wholesalePrice: z.array(
-      z.object({
-        minimumPurchase: z.number().min(1, "Minimum purchase wajib diisi."),
-        price: z.number().min(1, "Harga wajib diisi."),
-      })
-    ),
-    discountId: z.string().optional().nullable(),
-    isActive: z.boolean(),
-    description: z.string(),
-  });
+        }),
+      ),
+      discountId: z.string().optional().nullable(),
+      isActive: z.boolean(),
+      description: z.string(),
+    })
+    .superRefine((data, ctx) => {
+      data.retailPrice.map((dataRetail) => {
+        if (dataRetail.price < data.purchasePrice) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Harga Retail tidak boleh kurang dari harga beli",
+            path: [`retailPrice.${data.retailPrice.indexOf(dataRetail)}.price`],
+          });
+        }
+      });
+      data.wholesalePrice.map((dataWholesale) => {
+        if (dataWholesale.price < data.purchasePrice) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Harga Grosir tidak boleh kurang dari harga beli",
+            path: [
+              `wholesalePrice.${data.wholesalePrice.indexOf(dataWholesale)}.price`,
+            ],
+          });
+        }
+      });
+    });
 
   type ProductFormValues = z.infer<typeof productSchema>;
 
@@ -135,6 +164,8 @@ export default function ProductForm() {
     defaultValues: initialValues,
   });
 
+  const purchasePrice = form.watch("purchasePrice");
+
   const {
     fields: variantFields,
     append: variantAppend,
@@ -163,7 +194,9 @@ export default function ProductForm() {
   });
 
   const { refetch: refetchProducts } = useProducts();
-  const { data: product, refetch: refetchProduct } = useProduct(productId || "");
+  const { data: product, refetch: refetchProduct } = useProduct(
+    productId || "",
+  );
   const { data: categories = [], refetch: refetchCategories } = useCategories();
   const { data: brands = [], refetch: refetchBrands } = useBrands();
   const { data: discounts = [], refetch: refetchDiscounts } = useDiscounts();
@@ -212,7 +245,7 @@ export default function ProductForm() {
         variants: product.variants,
         retailPrice: product.sellPrices.filter((r: any) => r.type === "RETAIL"),
         wholesalePrice: product.sellPrices.filter(
-          (r: any) => r.type === "WHOLESALE"
+          (r: any) => r.type === "WHOLESALE",
         ),
         discountId: product.discountId || "",
         isActive: product.isActive,
@@ -239,11 +272,19 @@ export default function ProductForm() {
   };
 
   const onSubmit: SubmitHandler<ProductFormValues> = (
-    data: ProductFormValues
+    data: ProductFormValues,
   ) => {
     const prices = [
-      ...data.retailPrice.map((p) => ({ ...p, type: "RETAIL" as const, label: "Retail" })),
-      ...data.wholesalePrice.map((p) => ({ ...p, type: "WHOLESALE" as const, label: "Grosir" })),
+      ...data.retailPrice.map((p) => ({
+        ...p,
+        type: "RETAIL" as const,
+        label: "Retail",
+      })),
+      ...data.wholesalePrice.map((p) => ({
+        ...p,
+        type: "WHOLESALE" as const,
+        label: "Grosir",
+      })),
     ];
 
     if (productId && product) {
@@ -429,7 +470,12 @@ export default function ProductForm() {
               field: { onChange, onBlur, value },
               fieldState: { error },
             }) => (
-              <FormControl isRequired={isAdd} isInvalid={!!error} isReadOnly={!isAdd} isDisabled={!isAdd}>
+              <FormControl
+                isRequired={isAdd}
+                isInvalid={!!error}
+                isReadOnly={!isAdd}
+                isDisabled={!isAdd}
+              >
                 <FormControlLabel>
                   <FormControlLabelText>
                     {isAdd ? "Stok Awal" : "Stok Terkini"}
@@ -448,7 +494,8 @@ export default function ProductForm() {
                 </Input>
                 {!isAdd && (
                   <Text size="xs" className="text-gray-500 mt-1">
-                    Stok hanya bisa diubah melalui Pembelian, Penjualan, Retur, atau Stock Opname
+                    Stok hanya bisa diubah melalui Pembelian, Penjualan, Retur,
+                    atau Stock Opname
                   </Text>
                 )}
                 {error && (
@@ -464,46 +511,23 @@ export default function ProductForm() {
           <Controller
             control={form.control}
             name="categoryId"
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Kategori</FormControlLabelText>
                 </FormControlLabel>
                 <HStack space="md">
-                  <Select
-                    onValueChange={onChange}
-                    onBlur={onBlur}
+                  <SelectModal
+                    value={value}
+                    placeholder="Pilih Kategori"
+                    searchPlaceholder="Cari Kategori"
+                    options={categories.map((cat) => ({
+                      label: cat.name,
+                      value: cat.id,
+                    }))}
                     className="flex-1"
-                  >
-                    <SelectTrigger>
-                      <SelectInput
-                        value={categories.find((cat) => cat.id === value)?.name}
-                        placeholder="Pilih Kategori"
-                        className="flex-1 capitalize"
-                      />
-                      <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                    </SelectTrigger>
-                    <SelectPortal>
-                      <SelectBackdrop />
-                      <SelectContent className="px-0">
-                        <SelectDragIndicatorWrapper>
-                          <SelectDragIndicator />
-                        </SelectDragIndicatorWrapper>
-                        {categories.map((cat) => (
-                          <SelectItem
-                            key={cat.id}
-                            label={cat.name}
-                            value={cat.id}
-                            textStyle={{ className: "capitalize flex-1" }}
-                            className="px-4 py-4"
-                          />
-                        ))}
-                      </SelectContent>
-                    </SelectPortal>
-                  </Select>
+                    onChange={onChange}
+                  />
                   <Pressable
                     className="size-10 rounded-full bg-primary-500 items-center justify-center"
                     onPress={() => {
@@ -594,7 +618,7 @@ export default function ProductForm() {
                       <SelectInput
                         value={
                           productUnitOptions.find(
-                            (unit) => unit.value === value
+                            (unit) => unit.value === value,
                           )?.label
                         }
                         placeholder="Pilih Satuan"
@@ -746,7 +770,7 @@ export default function ProductForm() {
             </VStack>
           )}
 
-            {/* RETAIL PRICE SECTION */}
+          {/* RETAIL PRICE SECTION */}
           <VStack space="sm">
             <Text className="font-bold text-typography-700">Harga Retail</Text>
             <VStack
@@ -813,7 +837,9 @@ export default function ProductForm() {
                         <Input>
                           <InputField
                             value={value?.toString() || ""}
-                            onChangeText={(text) => onChange(Number(text) || 0)}
+                            onChangeText={(text) => {
+                              onChange(Number(text) || 0);
+                            }}
                             onBlur={onBlur}
                             placeholder="0"
                             keyboardType="numeric"
@@ -1002,46 +1028,23 @@ export default function ProductForm() {
           <Controller
             control={form.control}
             name="brandId"
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Brand</FormControlLabelText>
                 </FormControlLabel>
                 <HStack space="md">
-                  <Select
-                    onValueChange={onChange}
-                    onBlur={onBlur}
+                  <SelectModal
+                    value={value}
+                    placeholder="Pilih Brand"
+                    searchPlaceholder="Cari Brand"
+                    options={brands.map((brand) => ({
+                      label: brand.name,
+                      value: brand.id,
+                    }))}
                     className="flex-1"
-                  >
-                    <SelectTrigger>
-                      <SelectInput
-                        value={brands.find((brand) => brand.id === value)?.name}
-                        placeholder="Pilih Brand"
-                        className="flex-1 capitalize"
-                      />
-                      <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                    </SelectTrigger>
-                    <SelectPortal>
-                      <SelectBackdrop />
-                      <SelectContent className="px-0">
-                        <SelectDragIndicatorWrapper>
-                          <SelectDragIndicator />
-                        </SelectDragIndicatorWrapper>
-                        {brands.map((brand) => (
-                          <SelectItem
-                            key={brand.id}
-                            label={brand.name}
-                            value={brand.id}
-                            textStyle={{ className: "capitalize flex-1" }}
-                            className="px-4 py-4"
-                          />
-                        ))}
-                      </SelectContent>
-                    </SelectPortal>
-                  </Select>
+                    onChange={onChange}
+                  />
                   <Pressable
                     className="size-10 rounded-full bg-primary-500 items-center justify-center"
                     onPress={() => {
@@ -1066,56 +1069,35 @@ export default function ProductForm() {
           <Controller
             control={form.control}
             name="discountId"
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Diskon</FormControlLabelText>
                 </FormControlLabel>
                 <HStack space="md">
-                <Select onValueChange={onChange} onBlur={onBlur} className="flex-1">
-                  <SelectTrigger>
-                    <SelectInput
-                      value={
-                        (discounts || []).find((disc) => disc.id === value)?.name
-                      }
-                      placeholder="Pilih Diskon"
-                      className="flex-1 capitalize"
-                    />
-                    <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                  </SelectTrigger>
-                  <SelectPortal>
-                    <SelectBackdrop />
-                    <SelectContent className="px-0">
-                      <SelectDragIndicatorWrapper>
-                        <SelectDragIndicator />
-                      </SelectDragIndicatorWrapper>
-                      {(discounts || []).map((disc) => (
-                        <SelectItem
-                          key={disc.id}
-                          label={disc.name}
-                          value={disc.id}
-                          textStyle={{ className: "capitalize flex-1" }}
-                          className="px-4 py-4"
-                        />
-                      ))}
-                    </SelectContent>
-                  </SelectPortal>
-                </Select>
-                <Pressable
-                  className="size-10 rounded-full bg-primary-500 items-center justify-center"
-                  onPress={() => {
-                    setDataDiscount(null);
-                    setOpenDiscount(true, (newDisc) => {
-                      form.setValue("discountId", newDisc.id);
-                      refetchDiscounts();
-                    });
-                  }}
-                >
-                  <Icon as={PlusIcon} color="white" />
-                </Pressable>
+                  <SelectModal
+                    value={value || ""}
+                    placeholder="Pilih Diskon"
+                    searchPlaceholder="Cari Diskon"
+                    options={discounts.map((disc) => ({
+                      label: disc.name,
+                      value: disc.id,
+                    }))}
+                    className="flex-1"
+                    onChange={onChange}
+                  />
+                  <Pressable
+                    className="size-10 rounded-full bg-primary-500 items-center justify-center"
+                    onPress={() => {
+                      setDataDiscount(null);
+                      setOpenDiscount(true, (newDisc) => {
+                        form.setValue("discountId", newDisc.id);
+                        refetchDiscounts();
+                      });
+                    }}
+                  >
+                    <Icon as={PlusIcon} color="white" />
+                  </Pressable>
                 </HStack>
                 {error && (
                   <FormControlError>

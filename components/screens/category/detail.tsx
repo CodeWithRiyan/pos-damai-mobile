@@ -276,21 +276,25 @@ export default function CategoryDetail() {
                         {`${
                           product.sellPrices?.filter(
                             (r) => r.type === "RETAIL",
-                          )?.[0].minimumPurchase
+                          )?.[0]?.minimumPurchase
                         }@ Rp ${product.sellPrices
                           ?.filter((r) => r.type === "RETAIL")?.[0]
                           .price.toLocaleString("id-ID")}`}
                       </Text>
-                      <Text className="text-xs">
-                        Grosir:{" "}
-                        {`${
-                          product.sellPrices?.filter(
-                            (r) => r.type === "WHOLESALE",
-                          )?.[0].minimumPurchase
-                        }@ Rp ${product.sellPrices
-                          ?.filter((r) => r.type === "WHOLESALE")?.[0]
-                          .price.toLocaleString("id-ID")}`}
-                      </Text>
+                      {!!product.sellPrices?.filter(
+                        (r) => r.type === "WHOLESALE",
+                      ).length && (
+                        <Text className="text-xs">
+                          Grosir:{" "}
+                          {`${
+                            product.sellPrices?.filter(
+                              (r) => r.type === "WHOLESALE",
+                            )?.[0]?.minimumPurchase
+                          }@ Rp ${product.sellPrices
+                            ?.filter((r) => r.type === "WHOLESALE")?.[0]
+                            .price.toLocaleString("id-ID")}`}
+                        </Text>
+                      )}
                     </VStack>
                   </HStack>
                 </Pressable>

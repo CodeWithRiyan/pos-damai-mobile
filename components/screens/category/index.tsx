@@ -1,12 +1,16 @@
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
+import { Input, InputField, InputIcon, InputSlot } from "@/components/ui";
 import { Badge, BadgeText } from "@/components/ui/badge";
 import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
+import {
+  SolarIconBold,
+  SolarIconLinear,
+} from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
@@ -20,6 +24,7 @@ import {
 import { getErrorMessage } from "@/lib/api/client";
 import { useCategoryStore } from "@/stores/category";
 import { useRouter } from "expo-router";
+import { SearchIcon } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
@@ -28,7 +33,8 @@ export default function CategoryList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data, isLoading, refetch } = useCategories();
-  const { data: productCounts, refetch: refetchCounts } = useProductCountsByCategory();
+  const { data: productCounts, refetch: refetchCounts } =
+    useProductCountsByCategory();
   const [selectedItems, setSelectedItems] = useState<Category[] | null>(null);
 
   const categories = data || [];
@@ -114,7 +120,7 @@ export default function CategoryList() {
           showErrorToast(error);
           hidePopUpConfirm();
         },
-      }
+      },
     );
   };
 
@@ -160,7 +166,30 @@ export default function CategoryList() {
         }
       />
       <Box className="flex-1 bg-white">
-        <VStack space="lg" className="flex-1">
+        <VStack className="flex-1">
+          <HStack
+            space="sm"
+            className="p-4 shadow-lg bg-background-0 items-center"
+          >
+            <Pressable
+              className="size-10 items-center justify-center"
+              onPress={() => {}}
+            >
+              <SolarIconLinear name="Bell" size={20} color="#3d2117" />
+            </Pressable>
+            <Pressable
+              className="size-10 items-center justify-center"
+              onPress={() => {}}
+            >
+              <SolarIconLinear name="Filter" size={20} color="#3d2117" />
+            </Pressable>
+            <Input className="flex-1 border border-background-300 rounded-lg h-10">
+              <InputSlot className="pl-3">
+                <InputIcon as={SearchIcon} />
+              </InputSlot>
+              <InputField placeholder="Cari nama kategori" />
+            </Input>
+          </HStack>
           <ScrollView className="flex-1">
             <VStack>
               {categories.map((item) => (
@@ -176,7 +205,7 @@ export default function CategoryList() {
                       handleItemPress(item);
                     } else {
                       router.navigate(
-                        `/(main)/management/product-category-brand/category/detail/${item.id}`
+                        `/(main)/management/product-category-brand/category/detail/${item.id}`,
                       );
                       setSelectedItems(null);
                     }
@@ -194,7 +223,8 @@ export default function CategoryList() {
                         </Badge>
                       </HStack>
                       <Text size="xs" className="text-slate-500">
-                        Poin Retail: {item.retailPoint ?? 0} | Poin Grosir: {item.wholesalePoint ?? 0}
+                        Poin Retail: {item.retailPoint ?? 0} | Poin Grosir:{" "}
+                        {item.wholesalePoint ?? 0}
                       </Text>
                     </VStack>
                     <VStack className="items-end">

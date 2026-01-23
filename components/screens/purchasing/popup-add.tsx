@@ -23,6 +23,9 @@ import {
   Text,
   Textarea,
   TextareaInput,
+  Toast,
+  ToastTitle,
+  useToast,
   VStack,
 } from "@/components/ui";
 import { usePurchasingStore } from "@/stores/purchasing";
@@ -32,6 +35,7 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
 export default function PopupAddProduct() {
+  const toast = useToast();
   const { addProduct, cart, setAddProduct, addCartItem } = usePurchasingStore();
 
   const addProductSchema = z.object({
@@ -61,6 +65,23 @@ export default function PopupAddProduct() {
   const currentProductInCart = cart.find(
     (item) => item.product.id === addProduct?.id,
   );
+
+  useEffect(() => {
+    if (form.formState.errors.quantity) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => {
+          const toastId = "toast-" + id;
+          return (
+            <Toast nativeID={toastId} action="error" variant="solid">
+              <ToastTitle>{form.formState.errors.quantity?.message}</ToastTitle>
+            </Toast>
+          );
+        },
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.formState.errors.quantity]);
 
   useEffect(() => {
     if (addProduct) {
@@ -163,13 +184,6 @@ export default function PopupAddProduct() {
                           className="text-4xl text-center font-bold border-none"
                         />
                       </Input>
-                      {error && (
-                        <FormControlError>
-                          <FormControlErrorText className="text-red-500">
-                            {error.message}
-                          </FormControlErrorText>
-                        </FormControlError>
-                      )}
                     </FormControl>
                   )}
                 />

@@ -279,18 +279,22 @@ export default function BrandDetail() {
                             ?.price.toLocaleString("id-ID") ?? 0
                         }`}
                       </Text>
-                      <Text className="text-xs">
-                        Grosir:{" "}
-                        {`${
-                          product.sellPrices?.filter(
-                            (r) => r.type === "WHOLESALE",
-                          )?.[0]?.minimumPurchase ?? 0
-                        }@ Rp ${
-                          product.sellPrices
-                            ?.filter((r) => r.type === "WHOLESALE")?.[0]
-                            ?.price.toLocaleString("id-ID") ?? 0
-                        }`}
-                      </Text>
+                      {!!product.sellPrices?.filter(
+                        (r) => r.type === "WHOLESALE",
+                      ).length && (
+                        <Text className="text-xs">
+                          Grosir:{" "}
+                          {`${
+                            product.sellPrices?.filter(
+                              (r) => r.type === "WHOLESALE",
+                            )?.[0]?.minimumPurchase ?? 0
+                          }@ Rp ${
+                            product.sellPrices
+                              ?.filter((r) => r.type === "WHOLESALE")?.[0]
+                              ?.price.toLocaleString("id-ID") ?? 0
+                          }`}
+                        </Text>
+                      )}
                     </VStack>
                   </HStack>
                 </Pressable>

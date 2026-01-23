@@ -1,17 +1,22 @@
-import { useBrand } from '@/lib/api/brands';
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { ProductListItem, useAssignProductsToBrand } from "@/lib/api/products";
-import SelectingProductList from "../product/selecting-product";
-import { useToast, Toast, ToastTitle } from "@/components/ui/toast";
+import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
+import { useBrand } from "@/lib/api/brands";
 import { getErrorMessage } from "@/lib/api/client";
+import {
+  ProductListItem,
+  useAssignProductsToBrand,
+  useProducts,
+} from "@/lib/api/products";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import SelectingProductList from "../product/selecting-product";
 
 export default function SelectProductInBrand() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const brandId = id as string;
   const { data } = useBrand(brandId);
+  const { data: products } = useProducts();
   const toast = useToast();
-  
+
   const assignMutation = useAssignProductsToBrand();
 
   const handleSubmit = (selectedProducts: ProductListItem[]) => {
@@ -27,8 +32,8 @@ export default function SelectProductInBrand() {
       return;
     }
 
-    const productIds = selectedProducts.map(p => p.id);
-    
+    const productIds = selectedProducts.map((p) => p.id);
+
     assignMutation.mutate(
       { productIds, brandId },
       {
@@ -37,7 +42,7 @@ export default function SelectProductInBrand() {
             placement: "top",
             render: ({ id }) => (
               <Toast nativeID={"toast-" + id} action="success" variant="solid">
-                <ToastTitle>Produk berhasil ditambahkan ke brand</ToastTitle>
+                <ToastTitle>{`Produk berhasil ditambahkan ke ${data?.name}`}</ToastTitle>
               </Toast>
             ),
           });
@@ -52,15 +57,16 @@ export default function SelectProductInBrand() {
               </Toast>
             ),
           });
-        }
-      }
+        },
+      },
     );
   };
 
   return (
     <SelectingProductList
-      header={`TAMBAH PRODUK KE ${data?.name?.toUpperCase() ?? 'BRAND'}`}
-      selectedItems={[]}
+      usedFor="brand"
+      header={`TAMBAH PRODUK KE ${data?.name?.toUpperCase() ?? "BRAND"}`}
+      selectedItems={products?.filter((p) => p.brandId?.includes(brandId))}
       onSubmit={handleSubmit}
     />
   );
