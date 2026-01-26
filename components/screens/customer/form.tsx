@@ -10,18 +10,7 @@ import {
 } from "@/components/ui/form-control";
 import { HStack } from "@/components/ui/hstack";
 import { Input, InputField } from "@/components/ui/input";
-import {
-  Select,
-  SelectBackdrop,
-  SelectContent,
-  SelectDragIndicator,
-  SelectDragIndicatorWrapper,
-  SelectIcon,
-  SelectInput,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
-} from "@/components/ui/select";
+import SelectModal from "@/components/ui/select/select-modal";
 import { Spinner } from "@/components/ui/spinner";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
@@ -33,7 +22,6 @@ import {
 } from "@/lib/api/customers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ChevronDownIcon } from "lucide-react-native";
 import React, { useEffect } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
@@ -116,7 +104,7 @@ export default function CustomerForm() {
   };
 
   const onSubmit: SubmitHandler<CustomerFormValues> = (
-    data: CustomerFormValues
+    data: CustomerFormValues,
   ) => {
     if (customerId && customer) {
       updateMutation.mutate(
@@ -127,7 +115,7 @@ export default function CustomerForm() {
             router.back();
           },
           onError: showErrorToast,
-        }
+        },
       );
     } else {
       createMutation.mutate(data, {
@@ -217,43 +205,19 @@ export default function CustomerForm() {
           <Controller
             control={form.control}
             name="category"
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Kategori</FormControlLabelText>
                 </FormControlLabel>
-                <Select onValueChange={onChange} onBlur={onBlur}>
-                  <SelectTrigger>
-                    <SelectInput
-                      value={
-                        categories.find((cat) => cat.value === value)?.label
-                      }
-                      placeholder="Pilih Kategori"
-                      className="flex-1 capitalize"
-                    />
-                    <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                  </SelectTrigger>
-                  <SelectPortal>
-                    <SelectBackdrop />
-                    <SelectContent className="px-0">
-                      <SelectDragIndicatorWrapper>
-                        <SelectDragIndicator />
-                      </SelectDragIndicatorWrapper>
-                      {categories.map((cat) => (
-                        <SelectItem
-                          key={cat.value}
-                          label={cat.label}
-                          value={cat.value}
-                          textStyle={{ className: "capitalize flex-1" }}
-                          className="px-4 py-4"
-                        />
-                      ))}
-                    </SelectContent>
-                  </SelectPortal>
-                </Select>
+                <SelectModal
+                  value={value || ""}
+                  placeholder="Pilih Kategori"
+                  options={categories}
+                  className="flex-1"
+                  showSearch={false}
+                  onChange={onChange}
+                />
                 {error && (
                   <FormControlError>
                     <FormControlErrorText>{error.message}</FormControlErrorText>

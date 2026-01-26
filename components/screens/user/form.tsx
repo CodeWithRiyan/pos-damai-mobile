@@ -1,6 +1,5 @@
 import Header from "@/components/header";
 import {
-  ChevronDownIcon,
   FormControl,
   FormControlError,
   FormControlErrorText,
@@ -10,16 +9,6 @@ import {
   Input,
   InputField,
   Pressable,
-  Select,
-  SelectBackdrop,
-  SelectContent,
-  SelectDragIndicator,
-  SelectDragIndicatorWrapper,
-  SelectIcon,
-  SelectInput,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
   Switch,
   Text,
   Toast,
@@ -27,6 +16,7 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
+import SelectModal from "@/components/ui/select/select-modal";
 import { getErrorMessage } from "@/lib/api/client";
 import { useRoles } from "@/lib/api/roles";
 import {
@@ -271,41 +261,22 @@ export default function UserForm() {
           <Controller
             control={form.control}
             name="roleId"
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Role</FormControlLabelText>
                 </FormControlLabel>
-                <Select onValueChange={onChange} onBlur={onBlur}>
-                  <SelectTrigger>
-                    <SelectInput
-                      value={roles.find((role) => role.id === value)?.name}
-                      placeholder="Pilih Role"
-                      className="flex-1 capitalize"
-                    />
-                    <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                  </SelectTrigger>
-                  <SelectPortal>
-                    <SelectBackdrop />
-                    <SelectContent className="px-0">
-                      <SelectDragIndicatorWrapper>
-                        <SelectDragIndicator />
-                      </SelectDragIndicatorWrapper>
-                      {roles.map((role) => (
-                        <SelectItem
-                          key={role.id}
-                          label={role.name}
-                          value={role.id}
-                          textStyle={{ className: "capitalize flex-1" }}
-                          className="px-4 py-4"
-                        />
-                      ))}
-                    </SelectContent>
-                  </SelectPortal>
-                </Select>
+                <SelectModal
+                  value={value}
+                  placeholder="Pilih Role"
+                  searchPlaceholder="Cari nama role"
+                  options={roles.map((role) => ({
+                    label: role.name,
+                    value: role.id,
+                  }))}
+                  className="flex-1"
+                  onChange={onChange}
+                />
                 {error && (
                   <FormControlError>
                     <FormControlErrorText>{error.message}</FormControlErrorText>
