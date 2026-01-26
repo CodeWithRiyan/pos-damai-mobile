@@ -2,7 +2,7 @@
   "expo": {
     "name": "POS Damai",
     "slug": "pos-damai",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "orientation": "landscape",
     "icon": "./assets/images/adaptive-icon.png",
     "scheme": "posdamai",
@@ -15,7 +15,7 @@
     },
     "android": {
       "package": "com.codewithriyan.posdamai",
-      "versionCode": 200,
+      "versionCode": 300,
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/adaptive-icon.png",
