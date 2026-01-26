@@ -1,0 +1,186 @@
+import { useActionDrawer } from "@/components/action-drawer";
+import Header from "@/components/header";
+import { usePopUpConfirm } from "@/components/pop-up-confirm";
+import {
+  Box,
+  Spinner,
+  Text,
+  Toast,
+  ToastTitle,
+  useToast,
+  VStack,
+} from "@/components/ui";
+import { Pressable } from "@/components/ui/pressable";
+import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
+// import {
+//   usePaymentTypes,
+//   usePaymentType,
+//   useDeletePaymentType,
+// } from "@/lib/api/payment-types";
+import { getErrorMessage } from "@/lib/api/client";
+import { PaymentType, usePaymentTypeStore } from "@/stores/payment-type";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { ScrollView } from "react-native";
+
+const data: PaymentType = {
+  id: "1",
+  name: "Cash",
+  commission: 0,
+  minimalAmount: 0,
+};
+
+export default function PaymentTypeDetail() {
+  const { setOpen, setData } = usePaymentTypeStore();
+  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
+  const router = useRouter();
+  const { id } = useLocalSearchParams();
+  const paymentTypeId = id as string;
+
+  // const { refetch: refetchPaymentTypes } = usePaymentTypes();
+  // const { data: paymentType, refetch: refetchPaymentType } = usePaymentType(
+  //   paymentTypeId || "",
+  // );
+  // const deleteMutation = useDeletePaymentType();
+
+  const isLoading = false; // deleteMutation.isLoading;
+  const paymentType = data;
+  const toast = useToast();
+
+  const onRefetch = () => {
+    // refetchPaymentTypes();
+    // refetchPaymentType();
+  };
+
+  const showErrorToast = (error: unknown) => {
+    toast.show({
+      placement: "top",
+      render: ({ id }) => {
+        const toastId = "toast-" + id;
+        return (
+          <Toast nativeID={toastId} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
+          </Toast>
+        );
+      },
+    });
+  };
+
+  const handleDeletePress = () => {
+    showPopUpConfirm({
+      title: "HAPUS JENIS PEMBAYARAN",
+      icon: "warning",
+      description: (
+        <Text className="text-slate-500">
+          {`Apakah Anda yakin ingin menghapus jenis pembayaran `}
+          <Text className="font-bold text-slate-900">{paymentType?.name}</Text>
+          {` ? Tindakan ini tidak dapat dibatalkan.`}
+        </Text>
+      ),
+      showClose: true,
+      okText: "HAPUS",
+      closeText: "BATAL",
+      okVariant: "destructive",
+      onOk: () => confirmDelete(),
+      loading: isLoading,
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!paymentType) return;
+
+    // deleteMutation.mutate(paymentType.id, {
+    //   onSuccess: () => {
+    //     hidePopUpConfirm();
+    //     onRefetch();
+    //     router.back();
+
+    //     toast.show({
+    //       placement: "top",
+    //       render: ({ id }) => (
+    //         <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+    //           <ToastTitle>Jenis pembayaran berhasil dihapus</ToastTitle>
+    //         </Toast>
+    //       ),
+    //     });
+    //   },
+    //   onError: (error) => {
+    //     showErrorToast(error);
+    //     hidePopUpConfirm();
+    //   },
+    // });
+  };
+
+  const handleAction = () => {
+    showActionDrawer({
+      actions: [
+        {
+          label: "Edit",
+          icon: "Pen",
+          onPress: () => {
+            setOpen(true);
+            setData(paymentType);
+            hideActionDrawer();
+          },
+        },
+        {
+          label: "Delete",
+          icon: "TrashBin2",
+          theme: "red",
+          onPress: () => {
+            handleDeletePress();
+            hideActionDrawer();
+          },
+        },
+      ],
+    });
+  };
+
+  return (
+    <VStack className="flex-1 bg-white">
+      <Header
+        header="DETAIL JENIS PEMBAYARAN"
+        action={
+          isLoading ? (
+            <Box className="p-6">
+              <Spinner size="small" color="#FFFFFF" />
+            </Box>
+          ) : (
+            <Pressable className="p-6" onPress={handleAction}>
+              <SolarIconBold
+                name="MenuDots"
+                size={20}
+                color="#FDFBF9"
+                style={{ transform: [{ rotate: "90deg" }] }}
+              />
+            </Pressable>
+          )
+        }
+        isGoBack
+      />
+
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <VStack>
+          <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
+            <VStack className="w-1/2 pr-4">
+              <Text className="text-gray-500">Jenis Pembayaran</Text>
+              <Text className="font-bold">{paymentType?.name}</Text>
+            </VStack>
+            <VStack className="w-1/2 pr-4">
+              <Text className="text-gray-500">Komisi</Text>
+              <Text className="font-bold">
+                {paymentType?.commission || "-"}
+              </Text>
+            </VStack>
+            <VStack className="w-1/2 pr-4">
+              <Text className="text-gray-500">Jumlah Minimal</Text>
+              <Text className="font-bold">
+                {paymentType?.minimalAmount || "-"}
+              </Text>
+            </VStack>
+          </Box>
+        </VStack>
+      </ScrollView>
+    </VStack>
+  );
+}
