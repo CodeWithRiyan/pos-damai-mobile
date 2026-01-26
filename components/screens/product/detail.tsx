@@ -10,6 +10,7 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
+import { Grid, GridItem } from "@/components/ui/grid";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { getErrorMessage } from "@/lib/api/client";
@@ -229,34 +230,51 @@ export default function ProductDetail() {
               </Box>
             </VStack>
           )}
-          <VStack space="md" className="p-10 pt-4">
-            <Text className="font-bold text-center">List Harga</Text>
-            <HStack
-              space="md"
-              className="border border-background-200 rounded-md shadow bg-info-50 p-4"
-            >
-              <VStack className="w-1/2 items-center">
-                <Text className="font-bold pb-2">Harga Retail</Text>
-                {product?.sellPrices
-                  .filter((f) => f.type === "RETAIL")
-                  ?.map((price, index) => (
-                    <Text key={index}>{`${
-                      price.minimumPurchase
-                    }@ Rp ${price.price.toLocaleString("id-ID")}`}</Text>
-                  ))}
-              </VStack>
-              <VStack className="w-1/2 items-center">
-                <Text className="font-bold pb-2">Harga Grosir</Text>
-                {product?.sellPrices
-                  .filter((f) => f.type === "WHOLESALE")
-                  ?.map((price, index) => (
-                    <Text key={index}>{`${
-                      price.minimumPurchase
-                    }@ Rp ${price.price.toLocaleString("id-ID")}`}</Text>
-                  ))}
-              </VStack>
-            </HStack>
-          </VStack>
+          {!!product?.sellPrices.length && (
+            <VStack space="md" className="p-10 pt-4">
+              <Text className="font-bold text-center">List Harga</Text>
+              <Grid
+                _extra={{ className: "grid-cols-2" }}
+                className="border border-background-200 rounded-md shadow bg-info-50 p-4 gap-4"
+              >
+                <GridItem
+                  _extra={{
+                    className: !!product?.sellPrices.filter(
+                      (f) => f.type === "WHOLESALE",
+                    ).length
+                      ? "col-span-1"
+                      : "col-span-2",
+                  }}
+                  className="items-center"
+                >
+                  <Text className="font-bold pb-2">Harga Retail</Text>
+                  {product?.sellPrices
+                    .filter((f) => f.type === "RETAIL")
+                    ?.map((price, index) => (
+                      <Text key={index}>{`${
+                        price.minimumPurchase
+                      }@ Rp ${price.price.toLocaleString("id-ID")}`}</Text>
+                    ))}
+                </GridItem>
+                {!!product?.sellPrices.filter((f) => f.type === "WHOLESALE")
+                  .length && (
+                  <GridItem
+                    _extra={{ className: "col-span-1" }}
+                    className="items-center"
+                  >
+                    <Text className="font-bold pb-2">Harga Grosir</Text>
+                    {product?.sellPrices
+                      .filter((f) => f.type === "WHOLESALE")
+                      ?.map((price, index) => (
+                        <Text key={index}>{`${
+                          price.minimumPurchase
+                        }@ Rp ${price.price.toLocaleString("id-ID")}`}</Text>
+                      ))}
+                  </GridItem>
+                )}
+              </Grid>
+            </VStack>
+          )}
         </VStack>
       </ScrollView>
 

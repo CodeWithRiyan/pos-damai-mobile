@@ -1,20 +1,30 @@
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
+import { Input, InputField, InputIcon, InputSlot } from "@/components/ui";
 import { Badge, BadgeText } from "@/components/ui/badge";
 import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
+import {
+  SolarIconBold,
+  SolarIconLinear,
+} from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-import { Brand, useBrands, useBulkDeleteBrand, useProductCountsByBrand } from "@/lib/api/brands";
+import {
+  Brand,
+  useBrands,
+  useBulkDeleteBrand,
+  useProductCountsByBrand,
+} from "@/lib/api/brands";
 import { getErrorMessage } from "@/lib/api/client";
 import { useBrandStore } from "@/stores/brand";
 import { useRouter } from "expo-router";
+import { SearchIcon } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
@@ -23,7 +33,8 @@ export default function BrandList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data, isLoading, refetch } = useBrands();
-  const { data: productCounts, refetch: refetchCounts } = useProductCountsByBrand();
+  const { data: productCounts, refetch: refetchCounts } =
+    useProductCountsByBrand();
   const [selectedItems, setSelectedItems] = useState<Brand[] | null>(null);
 
   const brands = data || [];
@@ -109,7 +120,7 @@ export default function BrandList() {
           showErrorToast(error);
           hidePopUpConfirm();
         },
-      }
+      },
     );
   };
 
@@ -155,7 +166,30 @@ export default function BrandList() {
         }
       />
       <Box className="flex-1 bg-white">
-        <VStack space="lg" className="flex-1">
+        <VStack className="flex-1">
+          <HStack
+            space="sm"
+            className="p-4 shadow-lg bg-background-0 items-center"
+          >
+            <Pressable
+              className="size-10 items-center justify-center"
+              onPress={() => {}}
+            >
+              <SolarIconLinear name="Bell" size={20} color="#3d2117" />
+            </Pressable>
+            <Pressable
+              className="size-10 items-center justify-center"
+              onPress={() => {}}
+            >
+              <SolarIconLinear name="Filter" size={20} color="#3d2117" />
+            </Pressable>
+            <Input className="flex-1 border border-background-300 rounded-lg h-10">
+              <InputSlot className="pl-3">
+                <InputIcon as={SearchIcon} />
+              </InputSlot>
+              <InputField placeholder="Cari nama brand" />
+            </Input>
+          </HStack>
           <ScrollView className="flex-1">
             <VStack>
               {brands.map((item) => (
@@ -171,7 +205,7 @@ export default function BrandList() {
                       handleItemPress(item);
                     } else {
                       router.navigate(
-                        `/(main)/management/product-category-brand/brand/detail/${item.id}` as any
+                        `/(main)/management/product-category-brand/brand/detail/${item.id}` as any,
                       );
                       setSelectedItems(null);
                     }

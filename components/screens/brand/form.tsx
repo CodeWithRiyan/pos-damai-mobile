@@ -1,12 +1,9 @@
 import {
-  CloseIcon,
   Heading,
   HStack,
-  Icon,
   Modal,
   ModalBackdrop,
   ModalBody,
-  ModalCloseButton,
   ModalContent,
   ModalFooter,
   ModalHeader,
@@ -110,7 +107,7 @@ export default function BrandForm() {
             setOpen(false);
           },
           onError: showErrorToast,
-        }
+        },
       );
     } else {
       createMutation.mutate(data, {
@@ -140,17 +137,14 @@ export default function BrandForm() {
       size="md"
     >
       <ModalBackdrop />
-      <ModalContent>
-        <ModalHeader className="mb-4">
+      <ModalContent className="p-0 max-h-[90%]">
+        <ModalHeader className="p-4 border-b border-background-300">
           <Heading size="md" className="text-center flex-1">
             {dataBrand ? "EDIT BRAND" : "TAMBAH BRAND"}
           </Heading>
-          <ModalCloseButton>
-            <Icon as={CloseIcon} />
-          </ModalCloseButton>
         </ModalHeader>
-        <ModalBody>
-          <VStack space="lg">
+        <ModalBody className="m-0" showsVerticalScrollIndicator={false}>
+          <VStack space="lg" className="p-4">
             <Controller
               name="name"
               control={form.control}
@@ -183,7 +177,7 @@ export default function BrandForm() {
             />
           </VStack>
         </ModalBody>
-        <ModalFooter>
+        <ModalFooter className="p-4 pt-0">
           <HStack space="md">
             <Pressable
               className="w-full flex px-4 h-9 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
