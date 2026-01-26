@@ -2,7 +2,6 @@ import Header from "@/components/header";
 import {
   Button,
   ButtonText,
-  ChevronDownIcon,
   FormControl,
   FormControlError,
   FormControlErrorText,
@@ -13,16 +12,6 @@ import {
   Input,
   InputField,
   Pressable,
-  Select,
-  SelectBackdrop,
-  SelectContent,
-  SelectDragIndicator,
-  SelectDragIndicatorWrapper,
-  SelectIcon,
-  SelectInput,
-  SelectItem,
-  SelectPortal,
-  SelectTrigger,
   Switch,
   Text,
   Toast,
@@ -552,47 +541,24 @@ export default function ProductForm() {
           <Controller
             control={form.control}
             name="type"
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Jenis Produk</FormControlLabelText>
                 </FormControlLabel>
-                <Select onValueChange={onChange} onBlur={onBlur}>
-                  <SelectTrigger>
-                    <SelectInput
-                      value={
-                        productTypeOptions.find((type) => type.value === value)
-                          ?.label
-                      }
-                      placeholder="Pilih Jenis Produk"
-                      className="flex-1 capitalize"
-                    />
-                    <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                  </SelectTrigger>
-                  <SelectPortal>
-                    <SelectBackdrop />
-                    <SelectContent className="px-0">
-                      <SelectDragIndicatorWrapper>
-                        <SelectDragIndicator />
-                      </SelectDragIndicatorWrapper>
-                      {productTypeOptions.map((type) => (
-                        <SelectItem
-                          key={type.value}
-                          label={type.label}
-                          value={type.value}
-                          textStyle={{ className: "capitalize flex-1" }}
-                          className="px-4 py-4"
-                        />
-                      ))}
-                    </SelectContent>
-                  </SelectPortal>
-                </Select>
+                <SelectModal
+                  value={value}
+                  placeholder="Pilih Jenis Produk"
+                  options={productTypeOptions}
+                  className="flex-1"
+                  showSearch={false}
+                  onChange={onChange}
+                />
                 {error && (
                   <FormControlError>
-                    <FormControlErrorText>{error.message}</FormControlErrorText>
+                    <FormControlErrorText className="text-red-500">
+                      {error.message}
+                    </FormControlErrorText>
                   </FormControlError>
                 )}
               </FormControl>
@@ -603,7 +569,7 @@ export default function ProductForm() {
               control={form.control}
               name="unit"
               render={({
-                field: { onChange, onBlur, value },
+                field: { onChange, value },
                 fieldState: { error },
               }) => (
                 <FormControl
@@ -613,37 +579,14 @@ export default function ProductForm() {
                   <FormControlLabel>
                     <FormControlLabelText>Satuan</FormControlLabelText>
                   </FormControlLabel>
-                  <Select onValueChange={onChange} onBlur={onBlur}>
-                    <SelectTrigger>
-                      <SelectInput
-                        value={
-                          productUnitOptions.find(
-                            (unit) => unit.value === value,
-                          )?.label
-                        }
-                        placeholder="Pilih Satuan"
-                        className="flex-1 capitalize"
-                      />
-                      <SelectIcon className="mr-3" as={ChevronDownIcon} />
-                    </SelectTrigger>
-                    <SelectPortal>
-                      <SelectBackdrop />
-                      <SelectContent className="px-0">
-                        <SelectDragIndicatorWrapper>
-                          <SelectDragIndicator />
-                        </SelectDragIndicatorWrapper>
-                        {productUnitOptions.map((unit) => (
-                          <SelectItem
-                            key={unit.value}
-                            label={unit.label}
-                            value={unit.value}
-                            textStyle={{ className: "capitalize flex-1" }}
-                            className="px-4 py-4"
-                          />
-                        ))}
-                      </SelectContent>
-                    </SelectPortal>
-                  </Select>
+                  <SelectModal
+                    value={value || ""}
+                    placeholder="Pilih Satuan"
+                    options={productUnitOptions}
+                    className="flex-1"
+                    showSearch={false}
+                    onChange={onChange}
+                  />
                   {error && (
                     <FormControlError>
                       <FormControlErrorText>

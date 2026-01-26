@@ -44,6 +44,7 @@ export default function SelectModal({
   className,
   size = "md",
   variant = "outline",
+  showSearch = true,
   onChange,
 }: {
   header?: string;
@@ -51,6 +52,7 @@ export default function SelectModal({
   options: { value: string; label: string }[];
   placeholder?: string;
   searchPlaceholder?: string;
+  showSearch?: boolean;
   onChange: (v: string) => void;
 } & VariantProps<typeof selectTriggerStyle>) {
   const [open, setOpen] = useState<boolean>(false);
@@ -88,7 +90,9 @@ export default function SelectModal({
       >
         <ModalBackdrop />
         <ModalContent className="p-0 max-h-[90%]">
-          <ModalHeader className="p-4 border-b border-background-300">
+          <ModalHeader
+            className={`p-4 border-b border-background-300${!showSearch ? " hidden" : ""}`}
+          >
             <HStack space="sm" className="flex-1 items-center">
               <Input className="flex-1 border border-background-300 rounded-lg h-10">
                 <InputSlot className="pl-3">
