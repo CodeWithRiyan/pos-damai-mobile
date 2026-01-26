@@ -28,7 +28,8 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
-import { usePurchasingStore } from "@/stores/purchasing";
+import { findSellPrice } from "@/lib/price";
+import { useTransactionStore } from "@/stores/transaction";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
@@ -36,21 +37,41 @@ import z from "zod";
 
 export default function PopupAddProduct() {
   const toast = useToast();
-  const { addProduct, cart, setAddProduct, addCartItem } = usePurchasingStore();
+  const { customer, addProduct, cart, setAddProduct, addCartItem } =
+    useTransactionStore();
 
-  const addProductSchema = z.object({
-    purchasePrice: z.number().min(1, "Harga beli harus diisi"),
-    quantity: z.number().min(1, "Jumlah harus minimal 1"),
-    addNote: z.boolean(),
-    note: z.string(),
-  });
+  const currentProductInCart = cart.find(
+    (item) => item.product.id === addProduct?.id,
+  );
+
+  const addProductSchema = z
+    .object({
+      quantity: z.number().min(1, "Jumlah harus minimal 1"),
+      addNote: z.boolean(),
+      isTempSellPrice: z.boolean(),
+      tempSellPrice: z.number(),
+      note: z.string(),
+    })
+    .superRefine((data, ctx) => {
+      if (
+        data.isTempSellPrice &&
+        data.tempSellPrice < (currentProductInCart?.product.purchasePrice || 0)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Harga sementara tidak boleh kurang dari harga beli",
+          path: ["tempSellPrice"],
+        });
+      }
+    });
 
   type AddProductFormValues = z.infer<typeof addProductSchema>;
 
   const initialValues: AddProductFormValues = {
-    purchasePrice: addProduct?.purchasePrice || 0,
     quantity: 1,
     addNote: false,
+    isTempSellPrice: false,
+    tempSellPrice: 0,
     note: "",
   };
 
@@ -60,11 +81,9 @@ export default function PopupAddProduct() {
   });
 
   const quantity = form.watch("quantity");
+  const isTempSellPriceChecked = form.watch("isTempSellPrice");
+  const tempSellPrice = form.watch("tempSellPrice");
   const isAddNoteChecked = form.watch("addNote");
-
-  const currentProductInCart = cart.find(
-    (item) => item.product.id === addProduct?.id,
-  );
 
   useEffect(() => {
     if (form.formState.errors.quantity) {
@@ -86,8 +105,9 @@ export default function PopupAddProduct() {
   useEffect(() => {
     if (addProduct) {
       form.reset({
-        purchasePrice: addProduct.purchasePrice || 0,
         quantity: currentProductInCart?.quantity || 0,
+        isTempSellPrice: currentProductInCart?.tempSellPrice ? true : false,
+        tempSellPrice: currentProductInCart?.tempSellPrice || 0,
         addNote: currentProductInCart?.note ? true : false,
         note: currentProductInCart?.note || "",
       });
@@ -103,8 +123,8 @@ export default function PopupAddProduct() {
     if (addProduct) {
       addCartItem({
         product: addProduct,
-        newPurchasePrice: data.purchasePrice,
         quantity: data.quantity,
+        tempSellPrice: data.isTempSellPrice ? data.tempSellPrice : undefined,
         note: data.addNote ? data.note : undefined,
       });
     }
@@ -137,7 +157,12 @@ export default function PopupAddProduct() {
                 </VStack>
                 <HStack space="sm">
                   <Heading size="md">
-                    Rp {addProduct?.purchasePrice.toLocaleString("id-ID")}
+                    {tempSellPrice ||
+                      `Rp ${findSellPrice({
+                        sellPrices: addProduct?.sellPrices || [],
+                        type: customer?.category,
+                        quantity: quantity || 0,
+                      }).toLocaleString("id-ID")}`}
                   </Heading>
                 </HStack>
               </HStack>
@@ -154,6 +179,11 @@ export default function PopupAddProduct() {
                     const currentQuantity = quantity;
 
                     if (currentQuantity && currentQuantity > 0) {
+                      findSellPrice({
+                        sellPrices: addProduct?.sellPrices || [],
+                        type: customer?.category,
+                        quantity: quantity || 0,
+                      });
                       form.setValue("quantity", currentQuantity - 1);
                     }
                   }}
@@ -178,7 +208,14 @@ export default function PopupAddProduct() {
                         <InputField
                           value={value.toString()}
                           autoComplete="off"
-                          onChangeText={(text) => onChange(Number(text) || 0)}
+                          onChangeText={(text) => {
+                            findSellPrice({
+                              sellPrices: addProduct?.sellPrices || [],
+                              type: customer?.category,
+                              quantity: quantity || 0,
+                            });
+                            onChange(Number(text) || 0);
+                          }}
                           onBlur={onBlur}
                           keyboardType="numeric"
                           className="text-4xl text-center font-bold border-none"
@@ -192,6 +229,11 @@ export default function PopupAddProduct() {
                   onPress={() => {
                     const currentQuantity = quantity;
 
+                    findSellPrice({
+                      sellPrices: addProduct?.sellPrices || [],
+                      type: customer?.category,
+                      quantity: quantity || 0,
+                    });
                     form.setValue("quantity", currentQuantity + 1);
                   }}
                 >
@@ -202,27 +244,28 @@ export default function PopupAddProduct() {
               </HStack>
               <VStack space="lg">
                 <Controller
-                  name="purchasePrice"
+                  name="isTempSellPrice"
                   control={form.control}
                   render={({
                     field: { onChange, onBlur, value },
                     fieldState: { error },
                   }) => (
-                    <FormControl isRequired isInvalid={!!error}>
-                      <FormControlLabel>
-                        <FormControlLabelText>Harga Beli</FormControlLabelText>
-                      </FormControlLabel>
-                      <Input className="h-12 rounded-lg">
-                        <InputField
-                          value={value.toString()}
-                          autoComplete="off"
-                          placeholder="Masukkan harga beli"
-                          className="text-center font-bold text-xl"
-                          keyboardType="numeric"
-                          onChangeText={(text) => onChange(Number(text) || 0)}
-                          onBlur={onBlur}
-                        />
-                      </Input>
+                    <FormControl isInvalid={!!error}>
+                      <Checkbox
+                        value={value.toString()}
+                        isChecked={value}
+                        size="md"
+                        onChange={(v) => {
+                          onChange(v);
+                          if (!v) form.setValue("tempSellPrice", 0);
+                        }}
+                        onBlur={onBlur}
+                      >
+                        <CheckboxIndicator>
+                          <CheckboxIcon as={CheckIcon} />
+                        </CheckboxIndicator>
+                        <CheckboxLabel>Gunakan Harga Sementara</CheckboxLabel>
+                      </Checkbox>
                       {error && (
                         <FormControlError>
                           <FormControlErrorText>
@@ -233,6 +276,41 @@ export default function PopupAddProduct() {
                     </FormControl>
                   )}
                 />
+                {isTempSellPriceChecked && (
+                  <Controller
+                    name="tempSellPrice"
+                    control={form.control}
+                    render={({
+                      field: { onChange, onBlur, value },
+                      fieldState: { error },
+                    }) => (
+                      <FormControl isInvalid={!!error}>
+                        <FormControlLabel>
+                          <FormControlLabelText>
+                            Harga Sementara
+                          </FormControlLabelText>
+                        </FormControlLabel>
+                        <Input>
+                          <InputField
+                            value={value.toString()}
+                            autoComplete="off"
+                            onChangeText={(text) => onChange(Number(text) || 0)}
+                            onBlur={onBlur}
+                            placeholder="Masukkan harga sementara"
+                            keyboardType="numeric"
+                          />
+                        </Input>
+                        {error && (
+                          <FormControlError>
+                            <FormControlErrorText className="text-red-500">
+                              {error.message}
+                            </FormControlErrorText>
+                          </FormControlError>
+                        )}
+                      </FormControl>
+                    )}
+                  />
+                )}
                 <Controller
                   name="addNote"
                   control={form.control}

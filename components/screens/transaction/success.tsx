@@ -1,16 +1,17 @@
 import { Box, Heading, HStack, Icon, Text, VStack } from "@/components/ui";
 import { Image } from "@/components/ui/image";
 import { Pressable } from "@/components/ui/pressable";
-import { useSupplier } from "@/lib/api/suppliers";
-import { usePurchasingStore } from "@/stores/purchasing";
+import { useCustomer } from "@/lib/api/customers";
+import { useTransactionStore } from "@/stores/transaction";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Printer } from "lucide-react-native";
 import { ScrollView } from "react-native";
 
-export default function PurchasingSuccess() {
+export default function TransactionSuccess() {
   const router = useRouter();
-  const { checkoutData, setCheckoutData, resetCart } = usePurchasingStore();
-  const { data: supplier } = useSupplier(checkoutData?.supplierId || "");
+  const { checkoutData, setCheckoutData, setCustomer, resetCart } =
+    useTransactionStore();
+  const { data: customer } = useCustomer(checkoutData?.customerId || "");
 
   return (
     <VStack className="flex-1 bg-white">
@@ -32,7 +33,7 @@ export default function PurchasingSuccess() {
                 Total Transaksi
               </Text>
               <Text className="font-bold text-lg">
-                Rp {checkoutData?.totalPurchase?.toLocaleString()}
+                Rp {checkoutData?.totalItems?.toLocaleString()}
               </Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
@@ -50,10 +51,10 @@ export default function PurchasingSuccess() {
               <Text className="text-typography-500 text-lg">Kembalian</Text>
               <Text className="font-bold text-lg">
                 Rp{" "}
-                {checkoutData?.totalPaid && checkoutData?.totalPurchase
+                {checkoutData?.totalPaid && checkoutData?.totalItems
                   ? (
                       parseFloat(checkoutData.totalPaid) -
-                      checkoutData?.totalPurchase
+                      checkoutData.totalItems
                     ).toLocaleString()
                   : "0"}
               </Text>
@@ -64,10 +65,10 @@ export default function PurchasingSuccess() {
                 {checkoutData?.createdByName}
               </Text>
             </HStack>
-            {supplier && (
+            {customer && (
               <HStack className="w-full flex-row justify-between">
-                <Text className="text-typography-500 text-lg">Supplier</Text>
-                <Text className="font-bold text-lg">{supplier.name}</Text>
+                <Text className="text-typography-500 text-lg">Pelanggan</Text>
+                <Text className="font-bold text-lg">{customer.name}</Text>
               </HStack>
             )}
           </Box>
@@ -78,13 +79,14 @@ export default function PurchasingSuccess() {
                 resetCart();
                 const id = checkoutData?.id;
                 setCheckoutData(null);
+                setCustomer(null);
                 if (id) {
                   router.replace({
-                    pathname: "/(main)/purchasing/receipt/[id]",
+                    pathname: "/(main)/transaction/receipt/[id]",
                     params: { id },
                   });
                 } else {
-                  router.replace("/(main)/purchasing");
+                  router.replace("/(main)/transaction");
                 }
               }}
             >
@@ -98,6 +100,7 @@ export default function PurchasingSuccess() {
               onPress={() => {
                 resetCart();
                 setCheckoutData(null);
+                setCustomer(null);
                 router.back();
               }}
             >

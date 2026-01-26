@@ -17,7 +17,7 @@ import {
   useCustomers,
 } from "@/lib/api/customers";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useState, useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function CustomerList() {
@@ -29,7 +29,7 @@ export default function CustomerList() {
   useFocusEffect(
     useCallback(() => {
       refetch();
-    }, [refetch])
+    }, [refetch]),
   );
 
   const customers = data || [];
@@ -62,7 +62,7 @@ export default function CustomerList() {
 
   const handleAdd = () => {
     setSelectedItems(null);
-    router.push("/(main)/management/customer-supplier/customer/add" as any);
+    router.push("/(main)/management/customer-supplier/customer/add");
   };
 
   const handleDeletePress = () => {
@@ -111,7 +111,7 @@ export default function CustomerList() {
           showErrorToast(error);
           hidePopUpConfirm();
         },
-      }
+      },
     );
   };
 
@@ -173,7 +173,7 @@ export default function CustomerList() {
                       handleItemPress(item);
                     } else {
                       router.navigate(
-                        `/(main)/management/customer-supplier/customer/detail/${item.id}` as any
+                        `/(main)/management/customer-supplier/customer/detail/${item.id}` as any,
                       );
                       setSelectedItems(null);
                     }
@@ -198,15 +198,9 @@ export default function CustomerList() {
                       <Text className="text-brand-primary text-sm font-bold">
                         0 Poin
                       </Text>
-                      <Text className="text-xs">
-                        Total Transaksi: Rp 0
-                      </Text>
-                      <Text className="text-xs">
-                        Total Omset: Rp 0
-                      </Text>
-                      <Text className="text-xs">
-                        Total Keuntungan: Rp 0
-                      </Text>
+                      <Text className="text-xs">Total Transaksi: Rp 0</Text>
+                      <Text className="text-xs">Total Omset: Rp 0</Text>
+                      <Text className="text-xs">Total Keuntungan: Rp 0</Text>
                     </VStack>
                   </HStack>
                 </Pressable>

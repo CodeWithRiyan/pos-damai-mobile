@@ -1,3 +1,5 @@
+import Transaction from "@/components/screens/transaction";
+
 export default function TransactionScreen() {
-  return null;
+  return <Transaction />;
 }
