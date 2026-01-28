@@ -31,14 +31,22 @@ import {
 import { findSellPrice } from "@/lib/price";
 import { useTransactionStore } from "@/stores/transaction";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
 export default function PopupAddProduct() {
   const toast = useToast();
-  const { customer, addProduct, cart, setAddProduct, addCartItem } =
-    useTransactionStore();
+  const {
+    customer,
+    addProduct,
+    cart,
+    setAddProduct,
+    addCartItem,
+    removeCartItem,
+  } = useTransactionStore();
+
+  const [unitWeightInput, setUnitWeightInput] = useState("1");
 
   const currentProductInCart = cart.find(
     (item) => item.product.id === addProduct?.id,
@@ -47,15 +55,18 @@ export default function PopupAddProduct() {
   const addProductSchema = z
     .object({
       quantity: z.number().min(1, "Jumlah harus minimal 1"),
-      addNote: z.boolean(),
+      unitWeight: z.number(),
       isTempSellPrice: z.boolean(),
       tempSellPrice: z.number(),
+      addNote: z.boolean(),
       note: z.string(),
     })
     .superRefine((data, ctx) => {
       if (
         data.isTempSellPrice &&
-        data.tempSellPrice < (currentProductInCart?.product.purchasePrice || 0)
+        data.tempSellPrice <
+          (currentProductInCart?.product.purchasePrice || 0) &&
+        currentProductInCart?.product.type !== "MULTIUNIT"
       ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -69,6 +80,7 @@ export default function PopupAddProduct() {
 
   const initialValues: AddProductFormValues = {
     quantity: 1,
+    unitWeight: 1,
     addNote: false,
     isTempSellPrice: false,
     tempSellPrice: 0,
@@ -81,6 +93,7 @@ export default function PopupAddProduct() {
   });
 
   const quantity = form.watch("quantity");
+  const unitWeight = form.watch("unitWeight");
   const isTempSellPriceChecked = form.watch("isTempSellPrice");
   const tempSellPrice = form.watch("tempSellPrice");
   const isAddNoteChecked = form.watch("addNote");
@@ -104,14 +117,29 @@ export default function PopupAddProduct() {
 
   useEffect(() => {
     if (addProduct) {
+      const unitWeight = currentProductInCart?.unitWeight || 1;
+      setUnitWeightInput(unitWeight.toString());
+
       form.reset({
         quantity: currentProductInCart?.quantity || 0,
-        isTempSellPrice: currentProductInCart?.tempSellPrice ? true : false,
-        tempSellPrice: currentProductInCart?.tempSellPrice || 0,
+        unitWeight: unitWeight,
+        isTempSellPrice:
+          currentProductInCart?.tempSellPrice || addProduct.type === "MULTIUNIT"
+            ? true
+            : false,
+        tempSellPrice:
+          addProduct.type === "MULTIUNIT"
+            ? findSellPrice({
+                sellPrices: addProduct.sellPrices,
+                type: customer?.category,
+                quantity: currentProductInCart?.quantity,
+              }) * (currentProductInCart?.unitWeight || 1)
+            : currentProductInCart?.tempSellPrice || 0,
         addNote: currentProductInCart?.note ? true : false,
         note: currentProductInCart?.note || "",
       });
     } else {
+      setUnitWeightInput("1");
       form.reset(initialValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -124,6 +152,7 @@ export default function PopupAddProduct() {
       addCartItem({
         product: addProduct,
         quantity: data.quantity,
+        unitWeight: data.unitWeight,
         tempSellPrice: data.isTempSellPrice ? data.tempSellPrice : undefined,
         note: data.addNote ? data.note : undefined,
       });
@@ -141,7 +170,7 @@ export default function PopupAddProduct() {
           </Heading>
         </ModalHeader>
         <ModalBody className="m-0" showsVerticalScrollIndicator={false}>
-          <VStack space="md">
+          <VStack space="md" className="py-4">
             <HStack className="justify-between items-center px-4 py-2 rounded-sm border-b border-gray-300">
               <HStack space="md" className="items-center">
                 <Box className="size-16 rounded-lg bg-primary-200 items-center justify-center">
@@ -157,12 +186,14 @@ export default function PopupAddProduct() {
                 </VStack>
                 <HStack space="sm">
                   <Heading size="md">
-                    {tempSellPrice ||
-                      `Rp ${findSellPrice({
+                    {`Rp ${(
+                      tempSellPrice ||
+                      findSellPrice({
                         sellPrices: addProduct?.sellPrices || [],
                         type: customer?.category,
                         quantity: quantity || 0,
-                      }).toLocaleString("id-ID")}`}
+                      })
+                    ).toLocaleString("id-ID")}`}
                   </Heading>
                 </HStack>
               </HStack>
@@ -179,12 +210,18 @@ export default function PopupAddProduct() {
                     const currentQuantity = quantity;
 
                     if (currentQuantity && currentQuantity > 0) {
-                      findSellPrice({
-                        sellPrices: addProduct?.sellPrices || [],
-                        type: customer?.category,
-                        quantity: quantity || 0,
-                      });
                       form.setValue("quantity", currentQuantity - 1);
+
+                      if (addProduct?.type === "MULTIUNIT") {
+                        form.setValue(
+                          "tempSellPrice",
+                          findSellPrice({
+                            sellPrices: addProduct?.sellPrices || [],
+                            type: customer?.category,
+                            quantity: currentQuantity - 1,
+                          }),
+                        );
+                      }
                     }
                   }}
                 >
@@ -209,12 +246,18 @@ export default function PopupAddProduct() {
                           value={value.toString()}
                           autoComplete="off"
                           onChangeText={(text) => {
-                            findSellPrice({
-                              sellPrices: addProduct?.sellPrices || [],
-                              type: customer?.category,
-                              quantity: quantity || 0,
-                            });
                             onChange(Number(text) || 0);
+
+                            if (addProduct?.type === "MULTIUNIT") {
+                              form.setValue(
+                                "tempSellPrice",
+                                findSellPrice({
+                                  sellPrices: addProduct?.sellPrices || [],
+                                  type: customer?.category,
+                                  quantity: Number(text) || 0,
+                                }),
+                              );
+                            }
                           }}
                           onBlur={onBlur}
                           keyboardType="numeric"
@@ -228,13 +271,18 @@ export default function PopupAddProduct() {
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                   onPress={() => {
                     const currentQuantity = quantity;
-
-                    findSellPrice({
-                      sellPrices: addProduct?.sellPrices || [],
-                      type: customer?.category,
-                      quantity: quantity || 0,
-                    });
                     form.setValue("quantity", currentQuantity + 1);
+
+                    if (addProduct?.type === "MULTIUNIT") {
+                      form.setValue(
+                        "tempSellPrice",
+                        findSellPrice({
+                          sellPrices: addProduct?.sellPrices || [],
+                          type: customer?.category,
+                          quantity: currentQuantity + 1,
+                        }),
+                      );
+                    }
                   }}
                 >
                   <Heading size="2xl" className="text-primary-500">
@@ -242,6 +290,61 @@ export default function PopupAddProduct() {
                   </Heading>
                 </Pressable>
               </HStack>
+              {addProduct?.type === "MULTIUNIT" && (
+                <Controller
+                  name="unitWeight"
+                  control={form.control}
+                  render={({
+                    field: { onChange, onBlur, value },
+                    fieldState: { error },
+                  }) => (
+                    <FormControl isInvalid={!!error}>
+                      <FormControlLabel>
+                        <FormControlLabelText>
+                          {`Berat Satuan (${addProduct?.unit})`}
+                        </FormControlLabelText>
+                      </FormControlLabel>
+                      <Input>
+                        <InputField
+                          value={unitWeightInput}
+                          autoComplete="off"
+                          onChangeText={(text) => {
+                            if (/^\d*\.?\d*$/.test(text)) {
+                              setUnitWeightInput(text);
+                            }
+                          }}
+                          onBlur={() => {
+                            const numValue = parseFloat(unitWeightInput) || 0;
+                            onChange(numValue);
+                            setUnitWeightInput(numValue.toString());
+
+                            form.setValue("isTempSellPrice", true);
+                            form.setValue(
+                              "tempSellPrice",
+                              findSellPrice({
+                                sellPrices: addProduct?.sellPrices || [],
+                                type: customer?.category,
+                                quantity: quantity || 0,
+                              }) * numValue,
+                            );
+
+                            onBlur();
+                          }}
+                          placeholder={`Berat Satuan (${addProduct?.unit})`}
+                          keyboardType="numbers-and-punctuation"
+                        />
+                      </Input>
+                      {error && (
+                        <FormControlError>
+                          <FormControlErrorText className="text-red-500">
+                            {error.message}
+                          </FormControlErrorText>
+                        </FormControlError>
+                      )}
+                    </FormControl>
+                  )}
+                />
+              )}
               <VStack space="lg">
                 <Controller
                   name="isTempSellPrice"
@@ -250,14 +353,18 @@ export default function PopupAddProduct() {
                     field: { onChange, onBlur, value },
                     fieldState: { error },
                   }) => (
-                    <FormControl isInvalid={!!error}>
+                    <FormControl
+                      isInvalid={!!error}
+                      isDisabled={addProduct?.type === "MULTIUNIT" && value}
+                    >
                       <Checkbox
                         value={value.toString()}
                         isChecked={value}
                         size="md"
                         onChange={(v) => {
                           onChange(v);
-                          if (!v) form.setValue("tempSellPrice", 0);
+                          form.setValue("tempSellPrice", 0);
+                          form.setValue("unitWeight", 1);
                         }}
                         onBlur={onBlur}
                       >
@@ -284,7 +391,12 @@ export default function PopupAddProduct() {
                       field: { onChange, onBlur, value },
                       fieldState: { error },
                     }) => (
-                      <FormControl isInvalid={!!error}>
+                      <FormControl
+                        isInvalid={!!error}
+                        isDisabled={
+                          addProduct?.type === "MULTIUNIT" && unitWeight === 1
+                        }
+                      >
                         <FormControlLabel>
                           <FormControlLabelText>
                             Harga Sementara
@@ -378,7 +490,7 @@ export default function PopupAddProduct() {
                 )}
               </VStack>
             </VStack>
-            <HStack space="md" className="w-full p-4">
+            <HStack space="md" className="w-full pt-2 px-4">
               <Pressable
                 className="flex-1 items-center justify-center h-12 px-4 rounded-lg border border-error-500 bg-error-100 active:bg-error-200"
                 onPress={() => setAddProduct(null)}
@@ -396,6 +508,21 @@ export default function PopupAddProduct() {
                 </Text>
               </Pressable>
             </HStack>
+            {cart.some((s) => s.product.id === addProduct?.id) && (
+              <HStack space="md" className="w-full p-4 pt-0">
+                <Pressable
+                  className="flex-1 items-center justify-center h-12 px-4 rounded-lg border border-error-500 bg-error-500 active:bg-error-400"
+                  onPress={() => {
+                    setAddProduct(null);
+                    removeCartItem(addProduct?.id || "");
+                  }}
+                >
+                  <Text size="lg" className="text-typography-0 font-bold">
+                    HAPUS
+                  </Text>
+                </Pressable>
+              </HStack>
+            )}
           </VStack>
         </ModalBody>
       </ModalContent>

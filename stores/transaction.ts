@@ -6,6 +6,7 @@ import { create } from "zustand";
 interface CartItem {
   product: Product;
   quantity: number;
+  unitWeight?: number;
   tempSellPrice?: number;
   note?: string;
 }

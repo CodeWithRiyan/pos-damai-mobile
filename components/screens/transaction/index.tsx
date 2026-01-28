@@ -129,52 +129,50 @@ export default function TransactionList() {
                   </Text>
                 </Pressable>
               </VStack>
-              {products?.map((product, index) => (
-                <Pressable
-                  key={index}
-                  className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                  onPress={() => setAddProduct(product)}
-                >
-                  <HStack className="justify-between items-center">
-                    <HStack space="md" className="items-center">
-                      <Box className="size-16 rounded-lg bg-primary-200 items-center justify-center">
-                        <Heading className="text-primary-500 font-bold">
-                          {product.name.charAt(0).toUpperCase()}
-                        </Heading>
-                      </Box>
-                      <VStack className="flex-1">
-                        <Heading size="md" className="line-clamp-2">
-                          {product.name}
-                        </Heading>
-                        <Text size="sm" className="text-slate-500">
-                          {cart?.find((f) => f.product.id === product.id)
-                            ?.tempSellPrice ||
-                            `Rp ${findSellPrice({
-                              sellPrices: product.sellPrices,
-                              type: customer?.category,
-                              quantity:
-                                cart?.find((f) => f.product.id === product.id)
-                                  ?.quantity || 0,
-                            }).toLocaleString("id-ID")}`}
-                        </Text>
-                      </VStack>
-                      <HStack space="sm">
-                        <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
-                          <Text className="font-bold">
-                            {cart?.find((f) => f.product.id === product.id)
-                              ?.quantity || 0}
-                          </Text>
+              {products?.map((product, index) => {
+                const productInChart = cart?.find(
+                  (f) => f.product.id === product.id,
+                );
+                return (
+                  <Pressable
+                    key={index}
+                    className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
+                    onPress={() => setAddProduct(product)}
+                  >
+                    <HStack className="justify-between items-center">
+                      <HStack space="md" className="items-center">
+                        <Box className="size-16 rounded-lg bg-primary-200 items-center justify-center">
+                          <Heading className="text-primary-500 font-bold">
+                            {product.name.charAt(0).toUpperCase()}
+                          </Heading>
                         </Box>
-                        <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
-                          <Text className="text-typography-0 font-bold">
-                            {product.stock}
+                        <VStack className="flex-1">
+                          <Heading size="md" className="line-clamp-2">
+                            {product.name}
+                          </Heading>
+                          <Text size="sm" className="text-slate-500">
+                            {`Rp ${product.sellPrices[0].price.toLocaleString(
+                              "id-ID",
+                            )}`}
                           </Text>
-                        </Box>
+                        </VStack>
+                        <HStack space="sm">
+                          <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
+                            <Text className="font-bold">
+                              {productInChart?.quantity || 0}
+                            </Text>
+                          </Box>
+                          <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
+                            <Text className="text-typography-0 font-bold">
+                              {product.stock}
+                            </Text>
+                          </Box>
+                        </HStack>
                       </HStack>
                     </HStack>
-                  </HStack>
-                </Pressable>
-              ))}
+                  </Pressable>
+                );
+              })}
             </VStack>
           </ScrollView>
         </VStack>
@@ -194,7 +192,7 @@ export default function TransactionList() {
                       </Box>
                       <VStack className="flex-1">
                         <Heading size="md" className="line-clamp-2">
-                          {item.product.name}
+                          {`${item.product.name}${item.unitWeight ? ` (${item.unitWeight} ${item.product.unit})` : ""}`}
                         </Heading>
                         <Text size="sm" className="text-slate-500">
                           {`${item.quantity} x Rp ${

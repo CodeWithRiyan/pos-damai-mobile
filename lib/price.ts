@@ -2,11 +2,11 @@ import { ProductPrice } from "./api/products";
 
 export const findSellPrice = ({
   sellPrices,
-  quantity,
+  quantity = 0,
   type = "RETAIL",
 }: {
   sellPrices: ProductPrice[];
-  quantity: number;
+  quantity?: number;
   type?: ProductPrice["type"];
 }) => {
   const sellPrice = sellPrices
