@@ -1,6 +1,7 @@
 // import { PaymentType } from "@/lib/api/categories";
 import { create } from "zustand";
 
+// TODO: pindahkan interface ke service
 export interface PaymentType {
   id: string;
   name: string;

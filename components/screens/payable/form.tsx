@@ -72,10 +72,12 @@ export default function PayableForm() {
 
   const [showDueDatePicker, setShowDueDatePicker] = useState<boolean>(false);
 
+  // TODO: Panggil usePayableList dan usePayable
   // const { refetch: refetchPayableList } = usePayableList();
   // const { data: payable, refetch: refetchPayable } = usePayable(payableId || "");
   const payable = dataPayable.find((item) => item.supplierId === supplierId);
   const { data: suppliers = [] } = useSuppliers();
+  // TODO: Panggil useCreatePayable dan useUpdatePayable
   // const createMutation = useCreatePayable();
   // const updateMutation = useUpdatePayable();
 
@@ -109,6 +111,7 @@ export default function PayableForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, payable, payableId]);
 
+  // Gunakan refetch setelah submit success
   const onRefetch = () => {
     // refetchPayableList();
     // if (payableId) {
@@ -120,6 +123,7 @@ export default function PayableForm() {
     router.back();
   };
 
+  // TODO: Eksekusi createMutation.mutate dan updateMutation.mutate di onSubmit
   const onSubmit: SubmitHandler<PayableFormValues> = (
     data: PayableFormValues,
   ) => {};

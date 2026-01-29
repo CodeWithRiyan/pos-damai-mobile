@@ -44,6 +44,7 @@ export default function PaymentTypeDetail() {
   // const deleteMutation = useDeletePaymentType();
 
   const isLoading = false; // deleteMutation.isLoading;
+  // TODO: Ubah data dummy dengan usePaymentType
   const paymentType = data;
   const toast = useToast();
 
@@ -86,6 +87,7 @@ export default function PaymentTypeDetail() {
     });
   };
 
+  // TODO: Konfirmasi hapus jenis pembayaran
   const confirmDelete = async () => {
     if (!paymentType) return;
 

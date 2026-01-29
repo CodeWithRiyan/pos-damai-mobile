@@ -39,6 +39,7 @@ import { CalendarIcon } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
+// TODO: Pindahkan interface ke dalam service, hapus dummy data
 export interface ReceivableRealization {
   id: string;
   ref: string;
@@ -229,6 +230,7 @@ export const receivableByUser: ReceivableByUser[] = [
 export default function ReceivableList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
+  // TODO: Panggil useReceivableList
   // const { data, isLoadingFetch, refetch } = useReceivableList();
   // const deleteMutation = useBulkDeleteReceivable();
 
@@ -298,8 +300,11 @@ export default function ReceivableList() {
     });
   };
 
+  // TODO: Konfirmasi hapus bulk hutang
   const confirmDelete = async (userIds: string[]) => {
     if (!userIds.length) return;
+
+    // TODO: Buatkan delete mutation by userIds
   };
 
   if (isLoading) {

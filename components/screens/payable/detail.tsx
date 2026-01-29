@@ -46,9 +46,10 @@ export default function PayableDetail() {
   const [transactionDate, setDueDate] = useState<Date | null>(null);
   const [statuses, setStatuses] = useState<string[]>(["Lunas", "Belum Lunas"]);
 
-  const payable: Payable = dataPayable[0];
+  // TODO: Panggil usePayableList
   const payableList: Payable[] =
     dataPayable.filter((r) => r.supplierId === supplierId) || [];
+  const payable: Payable = payableList[0];
 
   const toast = useToast();
 
@@ -67,7 +68,6 @@ export default function PayableDetail() {
 
   const onRefetch = () => {
     // refetchPayableList();
-    // refetchPayable();
   };
 
   const showErrorToast = (error: unknown) => {
@@ -90,7 +90,7 @@ export default function PayableDetail() {
       icon: "warning",
       description: (
         <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus hutang untuk karyawan `}
+          {`Apakah Anda yakin ingin menghapus hutang untuk supplier `}
           <Text className="font-bold text-slate-900">
             {payable?.supplier.name}
           </Text>
@@ -106,6 +106,7 @@ export default function PayableDetail() {
     });
   };
 
+  // TODO: Konfirmasi hapus hutang supplier
   const confirmDelete = async () => {
     if (!payable) return;
 

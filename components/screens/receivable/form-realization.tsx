@@ -86,6 +86,7 @@ export default function ReceivableRealizationForm() {
   const [showRealizationDatePicker, setShowRealizationDatePicker] =
     useState<boolean>(false);
 
+  // TODO: Panggil useReceivableList dan useReceivableRealization
   // const { refetch: refetchReceivableRealizationList } = useReceivableRealizationList();
   // const { data: receivableRealization, refetch: refetchReceivableRealization } = useReceivableRealization(receivableRealizationId || "");
   const receivableList = dataReceivable.filter((f) =>
@@ -103,6 +104,7 @@ export default function ReceivableRealizationForm() {
     0,
   );
 
+  // TODO: Panggil useCreateReceivableRealization dan useUpdateReceivableRealization
   // const createMutation = useCreateReceivableRealization();
   // const updateMutation = useUpdateReceivableRealization();
 
@@ -144,6 +146,7 @@ export default function ReceivableRealizationForm() {
     router.back();
   };
 
+  // TODO: Eksekusi createMutation.mutate dan updateMutation.mutate di onSubmit
   const onSubmit: SubmitHandler<ReceivableRealizationFormValues> = (
     data: ReceivableRealizationFormValues,
   ) => {};

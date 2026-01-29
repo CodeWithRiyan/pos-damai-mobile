@@ -84,8 +84,9 @@ export default function PayableRealizationForm() {
   const [showRealizationDatePicker, setShowRealizationDatePicker] =
     useState<boolean>(false);
 
+  // TODO: Panggil usePayableList dan usePayableRealization
   // const { refetch: refetchPayableRealizationList } = usePayableRealizationList();
-  // const { data: payableRealization, refetch: refetchPayableRealization } = usePayableRealization(payableRealizationId || "");
+  // const { data: payableRealization, refetch: refetchPayableRealization } = usePayableRealization(realizationId || "");
   const payableList = dataPayable.filter((f) => payableIds.includes(f.id));
   const payableRealization = !isAdd
     ? payableList?.[0]?.realizations?.find((f) => f.id === realizationId)
@@ -99,6 +100,7 @@ export default function PayableRealizationForm() {
     0,
   );
 
+  // TODO: Panggil useCreatePayableRealization dan useUpdatePayableRealization
   // const createMutation = useCreatePayableRealization();
   // const updateMutation = useUpdatePayableRealization();
 
@@ -140,6 +142,7 @@ export default function PayableRealizationForm() {
     router.back();
   };
 
+  // TODO: Eksekusi createMutation.mutate dan updateMutation.mutate di onSubmit
   const onSubmit: SubmitHandler<PayableRealizationFormValues> = (
     data: PayableRealizationFormValues,
   ) => {};

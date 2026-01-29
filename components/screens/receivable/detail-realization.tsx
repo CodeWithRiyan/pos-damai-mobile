@@ -34,9 +34,7 @@ export default function ReceivableRealizationDetail() {
   const userId = params.userId as string;
   const receivableId = receivableIds?.split("-")[0] || "";
 
-  // const { refetch: refetchReceivableRealizationList } = useReceivableRealizationList();
-  // const { data: receivableRealization, refetch: refetchReceivableRealization } = useReceivableRealization(receivableRealizationId || "");
-  // const deleteMutation = useDeleteReceivableRealization();
+  // TODO: Get useReceivable by receivableId
   const receivable: Receivable | null =
     dataReceivable.find((r) => r.id === receivableId) || null;
 
@@ -88,6 +86,7 @@ export default function ReceivableRealizationDetail() {
     });
   };
 
+  // TODO: Konfirmasi hapus piutang
   const confirmDelete = async () => {
     if (!receivable) return;
 
