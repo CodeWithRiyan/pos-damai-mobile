@@ -1,43 +1,83 @@
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
+import { Input, InputField, InputIcon, InputSlot } from "@/components/ui";
+import { Badge, BadgeText } from "@/components/ui/badge";
 import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
+import {
+  SolarIconBold,
+  SolarIconLinear,
+} from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
+// import {
+//   PaymentType,
+//   useBulkDeletePaymentType,
+//   usePaymentTypes,
+//   useProductCountsByPaymentType,
+// } from "@/lib/api/payment-types";
 import { getErrorMessage } from "@/lib/api/client";
-import {
-  Customer,
-  useBulkDeleteCustomer,
-  useCustomers,
-} from "@/lib/api/customers";
-import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import { PaymentType, usePaymentTypeStore } from "@/stores/payment-type";
+import { useRouter } from "expo-router";
+import { SearchIcon } from "lucide-react-native";
+import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
-export default function CustomerList() {
+const data: PaymentType[] = [
+  {
+    id: "1",
+    name: "Cash",
+    commission: 0,
+    minimalAmount: 0,
+  },
+  {
+    id: "2",
+    name: "Transfer",
+    commission: 0,
+    minimalAmount: 0,
+  },
+  {
+    id: "3",
+    name: "Qris",
+    commission: 0,
+    minimalAmount: 0,
+  },
+  {
+    id: "4",
+    name: "EDC",
+    commission: 0,
+    minimalAmount: 0,
+  },
+  {
+    id: "5",
+    name: "E-Wallet",
+    commission: 0,
+    minimalAmount: 0,
+  },
+];
+export default function PaymentTypeList() {
+  const { setOpen, setData } = usePaymentTypeStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
-  const { data, isLoading, refetch } = useCustomers();
-  const [selectedItems, setSelectedItems] = useState<Customer[] | null>(null);
-
-  useFocusEffect(
-    useCallback(() => {
-      refetch();
-    }, [refetch]),
+  // const { data, isLoading: isLoadingPaymentTypes, refetch } = usePaymentTypes();
+  // const { data: productCounts, refetch: refetchCounts } =
+  //   useProductCountsByPaymentType();
+  // const deleteMutation = useBulkDeletePaymentType();
+  const [selectedItems, setSelectedItems] = useState<PaymentType[] | null>(
+    null,
   );
 
-  const customers = data || [];
+  const isLoading = false; // isLoadingPaymentTypes || deleteMutation.isLoading;
+  const paymentTypes = data || [];
 
-  const deleteMutation = useBulkDeleteCustomer();
   const toast = useToast();
 
-  const handleItemPress = (item: Customer) => {
+  const handleItemPress = (item: PaymentType) => {
     if (selectedItems?.some((r) => r.id === item.id)) {
       setSelectedItems(selectedItems.filter((r) => r.id !== item.id));
       return;
@@ -62,20 +102,24 @@ export default function CustomerList() {
 
   const handleAdd = () => {
     setSelectedItems(null);
-    router.push("/(main)/management/customer-supplier/customer/add");
+    setData(null);
+    setOpen(true, () => {
+      // refetch();
+      // refetchCounts();
+    });
   };
 
   const handleDeletePress = () => {
     const ids = selectedItems?.map((m) => m.id) || [];
 
     showPopUpConfirm({
-      title: "HAPUS PELANGGAN",
+      title: "HAPUS JENIS PEMBAYARAN",
       icon: "warning",
       description: (
         <Text className="text-slate-500">
           {`Apakah Anda yakin ingin menghapus `}
           <Text className="font-bold text-slate-900">{ids?.length}</Text>
-          {` pelanggan? Tindakan ini tidak dapat dibatalkan.`}
+          {` jenis pembayaran? Tindakan ini tidak dapat dibatalkan.`}
         </Text>
       ),
       showClose: true,
@@ -83,36 +127,36 @@ export default function CustomerList() {
       closeText: "BATAL",
       okVariant: "destructive",
       onOk: () => confirmDelete(ids),
-      loading: deleteMutation.isPending,
+      // loading: deleteMutation.isPending,
     });
   };
 
   const confirmDelete = async (ids: string[]) => {
     if (!ids.length) return;
 
-    deleteMutation.mutate(
-      { ids },
-      {
-        onSuccess: () => {
-          setSelectedItems(null);
-          hidePopUpConfirm();
-          refetch();
+    // deleteMutation.mutate(
+    //   { ids },
+    //   {
+    //     onSuccess: () => {
+    //       setSelectedItems(null);
+    //       hidePopUpConfirm();
+    //       refetch();
 
-          toast.show({
-            placement: "top",
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Pelanggan berhasil dihapus</ToastTitle>
-              </Toast>
-            ),
-          });
-        },
-        onError: (error) => {
-          showErrorToast(error);
-          hidePopUpConfirm();
-        },
-      },
-    );
+    //       toast.show({
+    //         placement: "top",
+    //         render: ({ id }) => (
+    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+    //             <ToastTitle>Jenis pembayaran berhasil dihapus</ToastTitle>
+    //           </Toast>
+    //         ),
+    //       });
+    //     },
+    //     onError: (error) => {
+    //       showErrorToast(error);
+    //       hidePopUpConfirm();
+    //     },
+    //   },
+    // );
   };
 
   if (isLoading) {
@@ -126,15 +170,15 @@ export default function CustomerList() {
   return (
     <Box className="flex-1 bg-white">
       <Header
-        header="PELANGGAN"
+        header="JENIS PEMBAYARAN"
         isGoBack
         selectedItemsLength={selectedItems?.length}
-        selectedItemsSuffixLabel="Produk terpilih"
+        selectedItemsSuffixLabel="Jenis pembayaran terpilih"
         onCancelSelectedItems={() => setSelectedItems(null)}
         action={
           <HStack space="sm" className="w-[72px]">
             {!!selectedItems?.length ? (
-              deleteMutation.isPending ? (
+              isLoading ? (
                 <Box className="p-6">
                   <Spinner size="small" color="#FFFFFF" />
                 </Box>
@@ -157,10 +201,33 @@ export default function CustomerList() {
         }
       />
       <Box className="flex-1 bg-white">
-        <VStack space="lg" className="flex-1">
+        <VStack className="flex-1">
+          <HStack
+            space="sm"
+            className="p-4 shadow-lg bg-background-0 items-center"
+          >
+            <Pressable
+              className="size-10 items-center justify-center"
+              onPress={() => {}}
+            >
+              <SolarIconLinear name="Bell" size={20} color="#3d2117" />
+            </Pressable>
+            <Pressable
+              className="size-10 items-center justify-center"
+              onPress={() => {}}
+            >
+              <SolarIconLinear name="Filter" size={20} color="#3d2117" />
+            </Pressable>
+            <Input className="flex-1 border border-background-300 rounded-lg h-10">
+              <InputSlot className="pl-3">
+                <InputIcon as={SearchIcon} />
+              </InputSlot>
+              <InputField placeholder="Cari nama pembayaran" />
+            </Input>
+          </HStack>
           <ScrollView className="flex-1">
             <VStack>
-              {customers.map((item) => (
+              {paymentTypes.map((item) => (
                 <Pressable
                   key={item.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
@@ -173,7 +240,7 @@ export default function CustomerList() {
                       handleItemPress(item);
                     } else {
                       router.navigate(
-                        `/(main)/management/customer-supplier/customer/detail/${item.id}` as any,
+                        `/(main)/management/payment-type/detail/${item.id}`,
                       );
                       setSelectedItems(null);
                     }
@@ -181,34 +248,32 @@ export default function CustomerList() {
                   onLongPress={() => handleItemPress(item)}
                 >
                   <HStack className="justify-between items-center">
-                    <HStack space="md" className="items-center">
-                      <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
-                        <Text className="text-brand-primary font-bold">
-                          {item.name.substring(0, 1).toUpperCase()}
-                        </Text>
-                      </Box>
-                      <VStack>
-                        <Heading size="sm">{item.name}</Heading>
-                        <Text size="xs" className="text-slate-500">
-                          {item.code}
-                        </Text>
-                      </VStack>
-                    </HStack>
+                    <VStack>
+                      <Heading size="sm">{item.name}</Heading>
+                    </VStack>
                     <VStack className="items-end">
                       <Text className="text-brand-primary text-sm font-bold">
-                        0 Poin
+                        Komisi
                       </Text>
-                      <Text className="text-xs">Total Transaksi: Rp 0</Text>
-                      <Text className="text-xs">Total Omset: Rp 0</Text>
-                      <Text className="text-xs">Total Keuntungan: Rp 0</Text>
+                      <VStack className="items-end">
+                        <Text size="xs">
+                          Rp {item.commission.toLocaleString("id-ID")}
+                        </Text>
+                        <Badge size="sm" variant="solid" action="muted">
+                          <BadgeText className="text-xs">
+                            Minimal: Rp{" "}
+                            {item.minimalAmount.toLocaleString("id-ID")}
+                          </BadgeText>
+                        </Badge>
+                      </VStack>
                     </VStack>
                   </HStack>
                 </Pressable>
               ))}
-              {customers?.length === 0 && (
+              {paymentTypes?.length === 0 && (
                 <Box className="p-8 items-center">
                   <Text className="text-slate-400 italic">
-                    Tidak ada pelanggan
+                    Tidak ada paymentType
                   </Text>
                 </Box>
               )}
@@ -220,7 +285,9 @@ export default function CustomerList() {
               className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
               onPress={handleAdd}
             >
-              <ButtonText className="text-white">TAMBAH PELANGGAN</ButtonText>
+              <ButtonText className="text-white">
+                TAMBAH JENIS PEMBAYARAN
+              </ButtonText>
             </Button>
           </HStack>
         </VStack>
