@@ -28,6 +28,7 @@ import { SearchIcon } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
+// TODO: Hapus dummy
 const data: PaymentType[] = [
   {
     id: "1",
@@ -73,6 +74,7 @@ export default function PaymentTypeList() {
   );
 
   const isLoading = false; // isLoadingPaymentTypes || deleteMutation.isLoading;
+  // TODO: Ubah dummy dengan usePaymentTypes
   const paymentTypes = data || [];
 
   const toast = useToast();
@@ -131,6 +133,7 @@ export default function PaymentTypeList() {
     });
   };
 
+  // TODO: Konfirmasi hapus bulk jenis pembayaran
   const confirmDelete = async (ids: string[]) => {
     if (!ids.length) return;
 

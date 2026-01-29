@@ -67,8 +67,6 @@ export default function PaymentTypeForm() {
     defaultValues: initialValues,
   });
 
-  const commission = form.watch("commission");
-
   // const { refetch: refetchPaymentTypes } = usePaymentTypes();
   // const { refetch: refetchPaymentType } = usePaymentType(dataPaymentType?.id || "");
 
@@ -77,6 +75,7 @@ export default function PaymentTypeForm() {
 
   const isLoading = false; //createMutation.isPending || updateMutation.isPending;
 
+  // TODO: refetch setelah onSubmit
   const onRefetch = () => {
     // refetchCategorie();
     // if (dataPaymentType) refetchPaymentType();
@@ -117,37 +116,10 @@ export default function PaymentTypeForm() {
     });
   };
 
+  // TODO: Eksekusi createMutation.mutate dan updateMutation.mutate di onSubmit
   const onSubmit: SubmitHandler<PaymentTypeFormValues> = (
     data: PaymentTypeFormValues,
-  ) => {
-    if (dataPaymentType) {
-      // updateMutation.mutate(
-      //   { id: dataPaymentType.id, ...data },
-      //   {
-      //     onSuccess: () => {
-      //       showSuccessToast("Jenis Pembayaran berhasil diperbarui");
-      //       onRefetch();
-      //       form.reset(initialValues);
-      //       setOpen(false);
-      //     },
-      //     onError: showErrorToast,
-      //   },
-      // );
-    } else {
-      // createMutation.mutate(data, {
-      //   onSuccess: (newCat) => {
-      //     showSuccessToast("Jenis Pembayaran berhasil ditambahkan");
-      //     onRefetch();
-      //     if (usePaymentTypeStore.getState().onSuccess) {
-      //       usePaymentTypeStore.getState().onSuccess?.(newCat);
-      //     }
-      //     form.reset(initialValues);
-      //     setOpen(false);
-      //   },
-      //   onError: showErrorToast,
-      // });
-    }
-  };
+  ) => {};
 
   return (
     <Modal

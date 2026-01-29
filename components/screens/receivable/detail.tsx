@@ -46,9 +46,10 @@ export default function ReceivableDetail() {
   const [transactionDate, setDueDate] = useState<Date | null>(null);
   const [statuses, setStatuses] = useState<string[]>(["Lunas", "Belum Lunas"]);
 
-  const receivable: Receivable = dataReceivable[0];
+  // TODO: Panggil useReceivableList
   const receivableList: Receivable[] =
     dataReceivable.filter((r) => r.userId === userId) || [];
+  const receivable: Receivable = receivableList[0];
 
   const toast = useToast();
 
@@ -106,6 +107,7 @@ export default function ReceivableDetail() {
     });
   };
 
+  // TODO: Konfirmasi hapus piutang karyawan
   const confirmDelete = async () => {
     if (!receivable) return;
 

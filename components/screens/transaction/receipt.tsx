@@ -7,8 +7,10 @@ import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
 
+// TODO: Ubah Purchasing menjadi Transaction
 export default function PurchasingReceipt() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  // TODO: Ganti dengan get useTransaction by id
   const { data: purchase, isLoading } = usePurchase(id || "");
   const profile = useAuthStore((state) => state.profile);
 

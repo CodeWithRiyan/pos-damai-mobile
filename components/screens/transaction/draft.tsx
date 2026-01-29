@@ -1,30 +1,33 @@
 import Header from "@/components/header";
 import {
+  Box,
   Heading,
   HStack,
+  Icon,
   Pressable,
+  Spinner,
   Text,
   VStack,
-  Box,
-  Spinner,
-  Icon,
 } from "@/components/ui";
+import type { Purchase } from "@/lib/api/purchasing";
+import { usePurchases } from "@/lib/api/purchasing";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
-import { usePurchases } from "@/lib/api/purchasing";
-import type { Purchase } from "@/lib/api/purchasing";
 import { usePurchasingStore } from "@/stores/purchasing";
-import { useRouter } from "expo-router";
-import dayjs from "dayjs";
-import { ScrollView } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
+import dayjs from "dayjs";
+import { eq } from "drizzle-orm";
+import { useRouter } from "expo-router";
 import { Trash2 } from "lucide-react-native";
+import { ScrollView } from "react-native";
 
+// TODO: Ubah Purchasing menjadi Transaction
 export default function PurchasingDraft() {
   const router = useRouter();
+  // TODO: Ganti dengan get useTransactions
   const { data: purchases, isLoading } = usePurchases();
-  const { addCartItem, resetCart, setStatus, setPurchaseId } = usePurchasingStore();
+  const { addCartItem, resetCart, setStatus, setPurchaseId } =
+    usePurchasingStore();
   const queryClient = useQueryClient();
 
   // Filter only DRAFT status
@@ -36,9 +39,9 @@ export default function PurchasingDraft() {
       queryKey: ["purchases", purchaseId],
       queryFn: async () => {
         return queryClient.ensureQueryData<Purchase | undefined>({
-            queryKey: ['purchases', purchaseId],
+          queryKey: ["purchases", purchaseId],
         });
-      }
+      },
     });
 
     if (detail && detail.items) {
@@ -54,7 +57,8 @@ export default function PurchasingDraft() {
         if (productResult.length > 0) {
           addCartItem({
             product: productResult[0] as any,
-            newPurchasePrice: item.purchasePrice || productResult[0].purchasePrice || 0,
+            newPurchasePrice:
+              item.purchasePrice || productResult[0].purchasePrice || 0,
             quantity: item.quantity,
           });
         }
@@ -81,10 +85,15 @@ export default function PurchasingDraft() {
           const transactions = await tx
             .select()
             .from(schema.inventoryTransactions)
-            .where(eq(schema.inventoryTransactions.organizationId, existing[0].organizationId));
-            
+            .where(
+              eq(
+                schema.inventoryTransactions.organizationId,
+                existing[0].organizationId,
+              ),
+            );
+
           const filtered = transactions.filter((t) =>
-            t.local_ref_id?.startsWith(refId)
+            t.local_ref_id?.startsWith(refId),
           );
           for (const t of filtered) {
             await tx
@@ -162,8 +171,12 @@ export default function PurchasingDraft() {
                           </Text>
                         </VStack>
                         <VStack>
-                          <Text className="text-typography-400 text-xs">Supplier</Text>
-                          <Text className="font-bold">{draft.supplierName}</Text>
+                          <Text className="text-typography-400 text-xs">
+                            Supplier
+                          </Text>
+                          <Text className="font-bold">
+                            {draft.supplierName}
+                          </Text>
                         </VStack>
                       </HStack>
                       <HStack className="justify-between">

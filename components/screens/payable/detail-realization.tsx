@@ -10,6 +10,7 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
+import { Grid, GridItem } from "@/components/ui/grid";
 import { Pressable } from "@/components/ui/pressable";
 import {
   SolarIconBold,
@@ -17,8 +18,6 @@ import {
   SolarIconLinear,
 } from "@/components/ui/solar-icon-wrapper";
 import { getErrorMessage } from "@/lib/api/client";
-// import { useDeletePayableRealization, usePayableRealization, usePayableRealizationList } from "@/lib/api/payableRealization";
-import { Grid, GridItem } from "@/components/ui/grid";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
@@ -34,9 +33,7 @@ export default function PayableRealizationDetail() {
   const supplierId = params.supplierId as string;
   const payableId = payableIds?.split("-")[0] || "";
 
-  // const { refetch: refetchPayableRealizationList } = usePayableRealizationList();
-  // const { data: payableRealization, refetch: refetchPayableRealization } = usePayableRealization(payableRealizationId || "");
-  // const deleteMutation = useDeletePayableRealization();
+  // TODO: Get usePayable by payableId
   const payable: Payable | null =
     dataPayable.find((r) => r.id === payableId) || null;
 
@@ -47,10 +44,7 @@ export default function PayableRealizationDetail() {
 
   const toast = useToast();
 
-  const onRefetch = () => {
-    // refetchPayableRealizationList();
-    // refetchPayableRealization();
-  };
+  const onRefetch = () => {};
 
   const showErrorToast = (error: unknown) => {
     toast.show({
@@ -88,6 +82,7 @@ export default function PayableRealizationDetail() {
     });
   };
 
+  // TODO: Konfirmasi hapus hutang
   const confirmDelete = async () => {
     if (!payable) return;
 

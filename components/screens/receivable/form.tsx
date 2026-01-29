@@ -71,10 +71,12 @@ export default function ReceivableForm() {
 
   const [showDueDatePicker, setShowDueDatePicker] = useState<boolean>(false);
 
+  // TODO: Panggil useReceivableList dan useReceivable
   // const { refetch: refetchReceivableList } = useReceivableList();
   // const { data: receivable, refetch: refetchReceivable } = useReceivable(receivableId || "");
   const receivable = dataReceivable.find((item) => item.userId === userId);
   const { data: users = [] } = useUsers();
+  // TODO: Panggil useCreateReceivable dan useUpdateReceivable
   // const createMutation = useCreateReceivable();
   // const updateMutation = useUpdateReceivable();
 
@@ -108,6 +110,7 @@ export default function ReceivableForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, receivable, receivableId]);
 
+  // Gunakan refetch setelah submit success
   const onRefetch = () => {
     // refetchReceivableList();
     // if (receivableId) {
@@ -119,6 +122,7 @@ export default function ReceivableForm() {
     router.back();
   };
 
+  // TODO: Eksekusi createMutation.mutate dan updateMutation.mutate di onSubmit
   const onSubmit: SubmitHandler<ReceivableFormValues> = (
     data: ReceivableFormValues,
   ) => {};

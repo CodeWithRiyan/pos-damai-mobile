@@ -56,6 +56,7 @@ const transactionSchema = z
 
 export type TransactionFormValues = z.infer<typeof transactionSchema>;
 
+// TODO: Replace with real data
 export const paymentTypes = [
   { label: "Cash", value: "1" },
   { label: "Transfer", value: "2" },
@@ -129,6 +130,7 @@ export default function TransactionCheckoutForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.formState.errors.totalPaid]);
 
+  // TODO: mutation checkout transaction
   const onSubmit: SubmitHandler<TransactionFormValues> = (
     data: TransactionFormValues,
   ) => {

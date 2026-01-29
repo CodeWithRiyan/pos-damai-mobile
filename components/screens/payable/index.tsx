@@ -37,6 +37,7 @@ import { CalendarIcon } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
+// TODO: Pindahkan interface ke dalam service, hapus dummy data
 export interface PayableRealization {
   id: string;
   ref: string;
@@ -191,6 +192,7 @@ export const payableBySupplier: PayableBySupplier[] = [
 export default function PayableList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
+  // TODO: Panggil usePayableList
   // const { data, isLoadingFetch, refetch } = usePayableList();
   // const deleteMutation = useBulkDeletePayable();
 
@@ -257,9 +259,11 @@ export default function PayableList() {
     });
   };
 
+  // TODO: Konfirmasi hapus bulk hutang
   const confirmDelete = async (supplierIds: string[]) => {
     if (!supplierIds.length) return;
 
+    // TODO: Buatkan delete mutation by supplierIds
     // deleteMutation.mutate(
     //   { supplierIds: supplierIds },
     //   {
