@@ -159,7 +159,8 @@ export default function TransactionList() {
                         <HStack space="sm">
                           <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
                             <Text className="font-bold">
-                              {productInChart?.quantity || 0}
+                              {(productInChart?.quantity || 0) *
+                                (productInChart?.unitWeight || 0)}
                             </Text>
                           </Box>
                           <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
@@ -192,7 +193,7 @@ export default function TransactionList() {
                       </Box>
                       <VStack className="flex-1">
                         <Heading size="md" className="line-clamp-2">
-                          {`${item.product.name}${item.unitWeight ? ` (${item.unitWeight} ${item.product.unit})` : ""}`}
+                          {`${item.product.name}${item.product.type === "MULTIUNIT" ? ` (${item.unitWeight} ${item.product.unit})` : ""}`}
                         </Heading>
                         <Text size="sm" className="text-slate-500">
                           {`${item.quantity} x Rp ${
@@ -204,7 +205,7 @@ export default function TransactionList() {
                                   quantity: item.quantity,
                                 }).toLocaleString("id-ID")
                           } = Rp ${(item.tempSellPrice
-                            ? item.tempSellPrice
+                            ? item.tempSellPrice * item.quantity
                             : findSellPrice({
                                 sellPrices: item.product.sellPrices,
                                 type: customer?.category,
@@ -220,7 +221,9 @@ export default function TransactionList() {
                       </VStack>
                       <HStack space="sm">
                         <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
-                          <Text className="font-bold">{item.quantity}</Text>
+                          <Text className="font-bold">
+                            {item.quantity * (item.unitWeight || 1)}
+                          </Text>
                         </Box>
                       </HStack>
                     </HStack>

@@ -56,6 +56,14 @@ const transactionSchema = z
 
 export type TransactionFormValues = z.infer<typeof transactionSchema>;
 
+export const paymentTypes = [
+  { label: "Cash", value: "1" },
+  { label: "Transfer", value: "2" },
+  { label: "Qris", value: "3" },
+  { label: "EDC", value: "4" },
+  { label: "E-Wallet", value: "5" },
+];
+
 export default function TransactionCheckoutForm() {
   const router = useRouter();
 
@@ -64,14 +72,6 @@ export default function TransactionCheckoutForm() {
     useTransactionStore();
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
   // const createMutation = useCreateTransaction();
-
-  const paymentTypes = [
-    { label: "Cash", value: "1" },
-    { label: "Transfer", value: "2" },
-    { label: "Qris", value: "3" },
-    { label: "EDC", value: "4" },
-    { label: "E-Wallet", value: "5" },
-  ];
 
   const initialValues: TransactionFormValues = {
     totalPurchase: 0,

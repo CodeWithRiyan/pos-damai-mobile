@@ -1,0 +1,437 @@
+import { useActionDrawer } from "@/components/action-drawer";
+import Header from "@/components/header";
+import { usePopUpConfirm } from "@/components/pop-up-confirm";
+import {
+  Box,
+  Checkbox,
+  CheckboxIcon,
+  CheckboxIndicator,
+  CheckboxLabel,
+  CheckIcon,
+  Heading,
+  HStack,
+  Icon,
+  Text,
+  Toast,
+  ToastTitle,
+  useToast,
+  VStack,
+} from "@/components/ui";
+import { Pressable } from "@/components/ui/pressable";
+import {
+  SolarIconBold,
+  SolarIconBoldDuotone,
+  SolarIconLinear,
+} from "@/components/ui/solar-icon-wrapper";
+import { getErrorMessage } from "@/lib/api/client";
+// import { useDeleteReceivable, useReceivable, useReceivableList } from "@/lib/api/receivable";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import dayjs from "dayjs";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { CalendarIcon } from "lucide-react-native";
+import { useState } from "react";
+import { ScrollView } from "react-native";
+import { dataReceivable, Receivable } from ".";
+
+export default function ReceivableDetail() {
+  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const userId = params.userId as string;
+
+  const [selectedItems, setSelectedItems] = useState<Receivable[] | null>(null);
+  const [showTransactionDatePicker, setShowTransactionDatePicker] =
+    useState<boolean>(false);
+  const [transactionDate, setDueDate] = useState<Date | null>(null);
+  const [statuses, setStatuses] = useState<string[]>(["Lunas", "Belum Lunas"]);
+
+  const receivable: Receivable = dataReceivable[0];
+  const receivableList: Receivable[] =
+    dataReceivable.filter((r) => r.userId === userId) || [];
+
+  const toast = useToast();
+
+  const handleReceivablePress = (receivable: Receivable) => {
+    if (selectedItems?.some((r) => r.id === receivable.id)) {
+      setSelectedItems(selectedItems.filter((r) => r.id !== receivable.id));
+      return;
+    }
+    if (!selectedItems) {
+      setSelectedItems([receivable]);
+      return;
+    }
+
+    setSelectedItems([...selectedItems, receivable]);
+  };
+
+  const onRefetch = () => {
+    // refetchReceivableList();
+    // refetchReceivable();
+  };
+
+  const showErrorToast = (error: unknown) => {
+    toast.show({
+      placement: "top",
+      render: ({ id }) => {
+        const toastId = "toast-" + id;
+        return (
+          <Toast nativeID={toastId} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
+          </Toast>
+        );
+      },
+    });
+  };
+
+  const handleDeletePress = () => {
+    showPopUpConfirm({
+      title: "HAPUS PIUTANG",
+      icon: "warning",
+      description: (
+        <Text className="text-slate-500">
+          {`Apakah Anda yakin ingin menghapus piutang untuk karyawan `}
+          <Text className="font-bold text-slate-900">
+            {receivable?.user.firstName}
+          </Text>
+          {` ? Tindakan ini tidak dapat dibatalkan.`}
+        </Text>
+      ),
+      showClose: true,
+      okText: "HAPUS",
+      closeText: "BATAL",
+      okVariant: "destructive",
+      onOk: () => confirmDelete(),
+      // loading: deleteMutation.isPending,
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!receivable) return;
+
+    // deleteMutation.mutate(receivable.id, {
+    //   onSuccess: () => {
+    //     hidePopUpConfirm();
+    //     onRefetch();
+    //     router.back();
+
+    //     toast.show({
+    //       placement: "top",
+    //       render: ({ id }) => (
+    //         <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+    //           <ToastTitle>Piutang berhasil dihapus</ToastTitle>
+    //         </Toast>
+    //       ),
+    //     });
+    //   },
+    //   onError: (error) => {
+    //     showErrorToast(error);
+    //     hidePopUpConfirm();
+    //   },
+    // });
+  };
+
+  const handleAction = () => {
+    showActionDrawer({
+      actions: [
+        {
+          label: "Edit",
+          icon: "Pen",
+          onPress: () => {
+            router.navigate(
+              `/(main)/management/payable-receivable/receivable/edit/${receivable?.id}`,
+            );
+            hideActionDrawer();
+          },
+        },
+        {
+          label: "Delete",
+          icon: "TrashBin2",
+          theme: "red",
+          onPress: () => {
+            handleDeletePress();
+            hideActionDrawer();
+          },
+        },
+      ],
+    });
+  };
+
+  return (
+    <VStack className="flex-1 bg-white">
+      <Header
+        header="DETAIL PIUTANG"
+        selectedItemsLength={selectedItems?.length}
+        selectedItemsSuffixLabel="Piutang terpilih"
+        selectedItemsPosition="right"
+        onCancelSelectedItems={() => setSelectedItems([])}
+        action={
+          <HStack space="sm">
+            <Pressable className="p-6" onPress={handleAction}>
+              <SolarIconBold
+                name="MenuDots"
+                size={20}
+                color="#FDFBF9"
+                style={{ transform: [{ rotate: "90deg" }] }}
+              />
+            </Pressable>
+          </HStack>
+        }
+        isGoBack
+      />
+
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <VStack space="md" className="flex-1">
+          <VStack className="p-4">
+            <HStack
+              space="lg"
+              className="relative rounded-lg bg-error-100 px-4 pt-4 pb-6 mb-4"
+            >
+              <VStack className="flex-1">
+                <HStack space="md">
+                  <SolarIconBoldDuotone
+                    name="UserCircle"
+                    size={20}
+                    color="#3b82f6"
+                  />
+                  <Text className="text-typography-500 text-sm">
+                    {receivable?.user.firstName}
+                  </Text>
+                </HStack>
+                <Text className="text-typography-500 text-sm">
+                  Total Belum Lunas
+                </Text>
+                <Text className="text-error-500 font-bold">{`Rp ${receivableList?.reduce((acc, curr) => acc + curr.totalRealization, 0).toLocaleString("id-ID")}`}</Text>
+              </VStack>
+              <VStack className="flex-1 items-end">
+                <Text className="text-typography-500 text-sm">
+                  Jumlah Transaksi Belum Lunas
+                </Text>
+                <Text className="text-error-500 font-bold">
+                  {
+                    receivableList?.filter(
+                      (f) => f.totalRealization !== f.nominal,
+                    ).length
+                  }
+                </Text>
+              </VStack>
+              <HStack className="absolute -bottom-4 right-0 left-0 justify-center">
+                <Pressable
+                  className="items-center justify-center h-9 px-10 rounded-lg bg-primary-500 active:bg-primary-500/90"
+                  disabled={
+                    (receivable?.nominal || 0) ===
+                    (receivable?.totalRealization || 0)
+                  }
+                  onPress={() => {
+                    router.navigate(
+                      `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${receivableList?.map((m) => m.id).join("-")}`,
+                    );
+                  }}
+                >
+                  <Text size="lg" className="text-sm text-white font-bold">
+                    {(receivable?.nominal || 0) ===
+                    (receivable?.totalRealization || 0)
+                      ? "LUNAS"
+                      : "LUNASI SEKARANG"}
+                  </Text>
+                </Pressable>
+              </HStack>
+            </HStack>
+          </VStack>
+        </VStack>
+        <VStack space="md" className="px-4 mb-4">
+          <HStack space="sm" className="items-center">
+            <Pressable
+              className="size-10 items-center justify-center"
+              onPress={() => {}}
+            >
+              <SolarIconLinear name="Sort" size={20} color="#3d2117" />
+            </Pressable>
+            <>
+              <Pressable
+                onPress={() => setShowTransactionDatePicker(true)}
+                className={`flex-1 border border-background-300 rounded px-3 py-2`}
+              >
+                <HStack className="items-center justify-between">
+                  <Text>
+                    {transactionDate instanceof Date
+                      ? dayjs(transactionDate).format("DD/MM/YYYY")
+                      : "Pilih Tanggal"}
+                  </Text>
+                  <Icon as={CalendarIcon} size="md" className="mr-2" />
+                </HStack>
+              </Pressable>
+              {showTransactionDatePicker && (
+                <DateTimePicker
+                  mode="date"
+                  value={
+                    transactionDate instanceof Date
+                      ? transactionDate
+                      : new Date()
+                  }
+                  maximumDate={new Date()}
+                  onChange={(event, selectedDate) => {
+                    setShowTransactionDatePicker(false);
+                    if (event.type === "set" && selectedDate) {
+                      setDueDate(selectedDate);
+                    }
+                  }}
+                />
+              )}
+            </>
+          </HStack>
+          <HStack space="sm">
+            <Checkbox
+              value={statuses.some((s) => s === "Belum Lunas").toString()}
+              isChecked={statuses.some((s) => s === "Belum Lunas")}
+              size="md"
+              onChange={(v) => {
+                setStatuses(
+                  v
+                    ? [...statuses, "Belum Lunas"]
+                    : statuses.filter((s) => s !== "Belum Lunas"),
+                );
+              }}
+            >
+              <CheckboxIndicator className="w-[16px] h-[16px] border-[1px] rounded-md">
+                <CheckboxIcon as={CheckIcon} />
+              </CheckboxIndicator>
+              <CheckboxLabel className="text-sm">Belum Lunas</CheckboxLabel>
+            </Checkbox>
+            <Checkbox
+              value={statuses.some((s) => s === "Lunas").toString()}
+              isChecked={statuses.some((s) => s === "Lunas")}
+              size="md"
+              onChange={(v) => {
+                setStatuses(
+                  v
+                    ? [...statuses, "Lunas"]
+                    : statuses.filter((s) => s !== "Lunas"),
+                );
+              }}
+            >
+              <CheckboxIndicator className="w-[16px] h-[16px] border-[1px] rounded-md">
+                <CheckboxIcon as={CheckIcon} />
+              </CheckboxIndicator>
+              <CheckboxLabel className="text-sm">Lunas</CheckboxLabel>
+            </Checkbox>
+          </HStack>
+        </VStack>
+        <VStack>
+          {receivableList
+            ?.filter((r) =>
+              statuses.includes(
+                r.nominal - r.totalRealization > 0 ? "Belum Lunas" : "Lunas",
+              ),
+            )
+            ?.map((receivable) => (
+              <Pressable
+                key={receivable.id}
+                className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                  selectedItems?.some((r) => r.id === receivable.id)
+                    ? "bg-gray-100"
+                    : ""
+                }`}
+                onPress={() => {
+                  if (!!selectedItems?.length) {
+                    handleReceivablePress(receivable);
+                  } else {
+                    router.navigate(
+                      `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/detail?receivableIds=${receivable?.id}`,
+                    );
+                    setSelectedItems(null);
+                  }
+                }}
+                onLongPress={() => handleReceivablePress(receivable)}
+              >
+                <HStack className="justify-between items-center">
+                  <HStack space="md" className="items-center">
+                    {!!selectedItems?.length && (
+                      <Checkbox
+                        value={selectedItems
+                          ?.some((r) => r.id === receivable.id)
+                          .toString()}
+                        isChecked={selectedItems?.some(
+                          (r) => r.id === receivable.id,
+                        )}
+                        size="md"
+                      >
+                        <CheckboxIndicator>
+                          <CheckboxIcon as={CheckIcon} />
+                        </CheckboxIndicator>
+                      </Checkbox>
+                    )}
+                    <VStack>
+                      <Heading size="sm">
+                        {dayjs(receivable.createdAt).format("DD/MM/YYYY")}
+                      </Heading>
+                      <Text size="xs" className="text-blue-500 font-bold">
+                        {`Rp ${receivable.nominal.toLocaleString("id-ID")}`}
+                      </Text>
+                      <Text size="xs" className="text-slate-500">
+                        {`JT: ${dayjs(receivable.dueDate).format("DD/MM/YYYY")}`}
+                      </Text>
+                    </VStack>
+                  </HStack>
+                  <VStack className="items-end">
+                    <HStack space="xs" className="items-center">
+                      <Box
+                        className={`w-2 h-2 rounded-full${receivable.totalRealization < receivable.nominal ? " bg-red-500" : " bg-green-500"}`}
+                      />
+                      <Text
+                        size="xs"
+                        className="text-primary-500 text-sm font-bold"
+                      >
+                        {receivable.totalRealization < receivable.nominal
+                          ? "Belum Lunas"
+                          : "Lunas"}
+                      </Text>
+                    </HStack>
+                    {receivable.totalRealization < receivable.nominal && (
+                      <Text size="xs" className="font-bold text-error-500">
+                        {`Rp ${(receivable.nominal - receivable.totalRealization).toLocaleString("id-ID")}`}
+                      </Text>
+                    )}
+                  </VStack>
+                </HStack>
+              </Pressable>
+            ))}
+          {receivableList?.filter((r) =>
+            statuses.includes(
+              r.nominal - r.totalRealization > 0 ? "Belum Lunas" : "Lunas",
+            ),
+          )?.length === 0 && (
+            <Box className="p-8 items-center">
+              <Text className="text-slate-400 italic">No receivable found</Text>
+            </Box>
+          )}
+        </VStack>
+      </ScrollView>
+
+      <VStack space="md" className="w-full p-4">
+        {!!selectedItems?.length ? (
+          <Pressable
+            className="w-full rounded-md h-9 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
+            onPress={() => {
+              router.navigate(
+                `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${selectedItems?.map((m) => m.id).join("-")}`,
+              );
+            }}
+          >
+            <Text size="sm" className="text-typography-0 font-bold">
+              {selectedItems?.length === 1
+                ? "BAYAR PIUTANG"
+                : `BAYAR ${selectedItems?.length} PIUTANG`}
+            </Text>
+          </Pressable>
+        ) : (
+          <Pressable className="w-full rounded-sm h-9 flex justify-center items-center bg-error-50 border border-error-500">
+            <Text size="sm" className="text-error-500 font-bold">
+              TAMBAH PIUTANG
+            </Text>
+          </Pressable>
+        )}
+      </VStack>
+    </VStack>
+  );
+}

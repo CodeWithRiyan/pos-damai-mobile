@@ -219,7 +219,7 @@ export default function PopupAddProduct() {
                             sellPrices: addProduct?.sellPrices || [],
                             type: customer?.category,
                             quantity: currentQuantity - 1,
-                          }),
+                          }) * unitWeight,
                         );
                       }
                     }
@@ -280,7 +280,7 @@ export default function PopupAddProduct() {
                           sellPrices: addProduct?.sellPrices || [],
                           type: customer?.category,
                           quantity: currentQuantity + 1,
-                        }),
+                        }) * unitWeight,
                       );
                     }
                   }}
@@ -391,12 +391,7 @@ export default function PopupAddProduct() {
                       field: { onChange, onBlur, value },
                       fieldState: { error },
                     }) => (
-                      <FormControl
-                        isInvalid={!!error}
-                        isDisabled={
-                          addProduct?.type === "MULTIUNIT" && unitWeight === 1
-                        }
-                      >
+                      <FormControl isInvalid={!!error}>
                         <FormControlLabel>
                           <FormControlLabelText>
                             Harga Sementara

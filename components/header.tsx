@@ -36,7 +36,9 @@ export default function Header({
 
   const CancelSelectedItems = () => {
     return (
-      <HStack className={`items-center p-3${selectedItemsPosition === "right" ? " flex-row-reverse" : ""}`}>
+      <HStack
+        className={`items-center p-3${selectedItemsPosition === "right" ? " flex-row-reverse" : ""}`}
+      >
         <Pressable onPress={() => onCancelSelectedItems?.()} className="p-3">
           <Icon as={CloseIcon} size="xl" className="text-typography-0" />
         </Pressable>
