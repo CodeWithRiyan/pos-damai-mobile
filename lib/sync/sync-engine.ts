@@ -76,6 +76,7 @@ export class SyncEngine {
         purchaseReturnItems: schema.purchaseReturnItems,
         stockOpnames: schema.stockOpnames,
         stockOpnameItems: schema.stockOpnameItems,
+        paymentMethods: schema.paymentTypes,
       };
 
       await db.transaction(async (tx) => {
@@ -157,6 +158,7 @@ export class SyncEngine {
     const dirtyBrands = await db.select().from(schema.brands).where(eq(schema.brands._dirty, true));
     const dirtyProducts = await db.select().from(schema.products).where(eq(schema.products._dirty, true));
     const dirtyCustomers = await db.select().from(schema.customers).where(eq(schema.customers._dirty, true));
+    const dirtyPaymentTypes = await db.select().from(schema.paymentTypes).where(eq(schema.paymentTypes._dirty, true));
     
     // Also consider products whose prices or variants are dirty
     const dirtyPrices = await db.select().from(schema.productPrices).where(eq(schema.productPrices._dirty, true));
@@ -185,7 +187,7 @@ export class SyncEngine {
     const dirtyStockOpnames = await db.select().from(schema.stockOpnames).where(eq(schema.stockOpnames._dirty, true));
 
     const totalDirty = dirtyCategories.length + dirtyBrands.length + allProductsToPush.length + 
-                       dirtyCustomers.length + dirtyPurchases.length + dirtyTransactions.length +
+                       dirtyCustomers.length + dirtyPaymentTypes.length + dirtyPurchases.length + dirtyTransactions.length +
                        dirtyReturns.length + dirtyStockOpnames.length;
 
     if (totalDirty === 0) {
@@ -193,7 +195,7 @@ export class SyncEngine {
       return;
     }
 
-    console.log(`[Sync] Pushing ${dirtyCategories.length} categories, ${dirtyBrands.length} brands, ${allProductsToPush.length} products, ${dirtyCustomers.length} customers, ${dirtyPurchases.length} purchases, ${dirtyTransactions.length} transactions, ${dirtyReturns.length} returns, ${dirtyStockOpnames.length} stock opnames`);
+    console.log(`[Sync] Pushing ${dirtyCategories.length} categories, ${dirtyBrands.length} brands, ${allProductsToPush.length} products, ${dirtyCustomers.length} customers, ${dirtyPaymentTypes.length} payment types, ${dirtyPurchases.length} purchases, ${dirtyTransactions.length} transactions, ${dirtyReturns.length} returns, ${dirtyStockOpnames.length} stock opnames`);
 
     // Fetch ALL items for returns we are pushing
     const returnIds = dirtyReturns.map(r => r.id);
@@ -234,6 +236,10 @@ export class SyncEngine {
         })),
       })),
       customers: dirtyCustomers.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
+        ...rest,
+        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+      })),
+      paymentMethods: dirtyPaymentTypes.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
         ...rest,
         deletedAt: deletedAt ? deletedAt.toISOString() : null,
       })),
@@ -315,6 +321,12 @@ export class SyncEngine {
           await tx.update(schema.customers)
             .set({ _dirty: false, _syncedAt: new Date() })
             .where(eq(schema.customers.id, res.id));
+        }
+
+        for (const res of (results.paymentMethods || [])) {
+          await tx.update(schema.paymentTypes)
+            .set({ _dirty: false, _syncedAt: new Date() })
+            .where(eq(schema.paymentTypes.id, res.id));
         }
         
         // Mark transactional data as synced and update server IDs

@@ -1,13 +1,5 @@
-// import { PaymentType } from "@/lib/api/categories";
+import { PaymentType } from "@/lib/api/payment-types";
 import { create } from "zustand";
-
-// TODO: pindahkan interface ke service
-export interface PaymentType {
-  id: string;
-  name: string;
-  commission: number;
-  minimalAmount: number;
-}
 
 interface PaymentTypeState {
   open: boolean;

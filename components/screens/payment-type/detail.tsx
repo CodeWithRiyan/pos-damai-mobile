@@ -12,22 +12,16 @@ import {
 } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-// import {
-//   usePaymentTypes,
-//   usePaymentType,
-//   useDeletePaymentType,
-// } from "@/lib/api/payment-types";
+import {
+  usePaymentTypes,
+  usePaymentType,
+  useDeletePaymentType,
+  PaymentType,
+} from "@/lib/api/payment-types";
 import { getErrorMessage } from "@/lib/api/client";
-import { PaymentType, usePaymentTypeStore } from "@/stores/payment-type";
+import { usePaymentTypeStore } from "@/stores/payment-type";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
-
-const data: PaymentType = {
-  id: "1",
-  name: "Cash",
-  commission: 0,
-  minimalAmount: 0,
-};
 
 export default function PaymentTypeDetail() {
   const { setOpen, setData } = usePaymentTypeStore();
@@ -37,20 +31,18 @@ export default function PaymentTypeDetail() {
   const { id } = useLocalSearchParams();
   const paymentTypeId = id as string;
 
-  // const { refetch: refetchPaymentTypes } = usePaymentTypes();
-  // const { data: paymentType, refetch: refetchPaymentType } = usePaymentType(
-  //   paymentTypeId || "",
-  // );
-  // const deleteMutation = useDeletePaymentType();
+  const { refetch: refetchPaymentTypes } = usePaymentTypes();
+  const { data: paymentType, refetch: refetchPaymentType } = usePaymentType(
+    paymentTypeId || "",
+  );
+  const deleteMutation = useDeletePaymentType();
 
-  const isLoading = false; // deleteMutation.isLoading;
-  // TODO: Ubah data dummy dengan usePaymentType
-  const paymentType = data;
+  const isLoading = deleteMutation.isPending;
   const toast = useToast();
 
   const onRefetch = () => {
-    // refetchPaymentTypes();
-    // refetchPaymentType();
+    refetchPaymentTypes();
+    refetchPaymentType();
   };
 
   const showErrorToast = (error: unknown) => {
@@ -87,30 +79,29 @@ export default function PaymentTypeDetail() {
     });
   };
 
-  // TODO: Konfirmasi hapus jenis pembayaran
   const confirmDelete = async () => {
     if (!paymentType) return;
 
-    // deleteMutation.mutate(paymentType.id, {
-    //   onSuccess: () => {
-    //     hidePopUpConfirm();
-    //     onRefetch();
-    //     router.back();
+    deleteMutation.mutate(paymentType.id, {
+      onSuccess: () => {
+        hidePopUpConfirm();
+        onRefetch();
+        router.back();
 
-    //     toast.show({
-    //       placement: "top",
-    //       render: ({ id }) => (
-    //         <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //           <ToastTitle>Jenis pembayaran berhasil dihapus</ToastTitle>
-    //         </Toast>
-    //       ),
-    //     });
-    //   },
-    //   onError: (error) => {
-    //     showErrorToast(error);
-    //     hidePopUpConfirm();
-    //   },
-    // });
+        toast.show({
+          placement: "top",
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+              <ToastTitle>Jenis pembayaran berhasil dihapus</ToastTitle>
+            </Toast>
+          ),
+        });
+      },
+      onError: (error) => {
+        showErrorToast(error);
+        hidePopUpConfirm();
+      },
+    });
   };
 
   const handleAction = () => {

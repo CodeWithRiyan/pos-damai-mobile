@@ -21,12 +21,13 @@ import { Input, InputField } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-// import {
-//   usePaymentTypes,
-//   usePaymentType,
-//   useCreatePaymentType,
-//   useUpdatePaymentType,
-// } from "@/lib/api/payment-types";
+import {
+  usePaymentTypes,
+  usePaymentType,
+  useCreatePaymentType,
+  useUpdatePaymentType,
+  PaymentType,
+} from "@/lib/api/payment-types";
 import { getErrorMessage } from "@/lib/api/client";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -67,18 +68,17 @@ export default function PaymentTypeForm() {
     defaultValues: initialValues,
   });
 
-  // const { refetch: refetchPaymentTypes } = usePaymentTypes();
-  // const { refetch: refetchPaymentType } = usePaymentType(dataPaymentType?.id || "");
+  const { refetch: refetchPaymentTypes } = usePaymentTypes();
+  const { refetch: refetchPaymentType } = usePaymentType(dataPaymentType?.id || "");
 
-  // const createMutation = useCreatePaymentType();
-  // const updateMutation = useUpdatePaymentType();
+  const createMutation = useCreatePaymentType();
+  const updateMutation = useUpdatePaymentType();
 
-  const isLoading = false; //createMutation.isPending || updateMutation.isPending;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  // TODO: refetch setelah onSubmit
   const onRefetch = () => {
-    // refetchCategorie();
-    // if (dataPaymentType) refetchPaymentType();
+    refetchPaymentTypes();
+    if (dataPaymentType) refetchPaymentType();
   };
 
   useEffect(() => {
@@ -116,10 +116,41 @@ export default function PaymentTypeForm() {
     });
   };
 
-  // TODO: Eksekusi createMutation.mutate dan updateMutation.mutate di onSubmit
   const onSubmit: SubmitHandler<PaymentTypeFormValues> = (
     data: PaymentTypeFormValues,
-  ) => {};
+  ) => {
+    if (dataPaymentType) {
+      updateMutation.mutate(
+        {
+          id: dataPaymentType.id,
+          ...data,
+        },
+        {
+          onSuccess: (updatedData) => {
+            showSuccessToast("Jenis pembayaran berhasil diperbarui");
+            if (usePaymentTypeStore.getState().onSuccess) {
+              usePaymentTypeStore.getState().onSuccess!(updatedData as any);
+            }
+            onRefetch();
+            setOpen(false);
+          },
+          onError: showErrorToast,
+        },
+      );
+    } else {
+      createMutation.mutate(data, {
+        onSuccess: (newData) => {
+          showSuccessToast("Jenis pembayaran berhasil ditambahkan");
+          if (usePaymentTypeStore.getState().onSuccess) {
+            usePaymentTypeStore.getState().onSuccess!(newData);
+          }
+          onRefetch();
+          setOpen(false);
+        },
+        onError: showErrorToast,
+      });
+    }
+  };
 
   return (
     <Modal

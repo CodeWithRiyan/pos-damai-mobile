@@ -67,6 +67,15 @@ export const discounts = sqliteTable('discounts', {
   ...syncColumns,
 });
 
+export const paymentTypes = sqliteTable('payment_methods', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  commission: real('commission').default(0),
+  minimalAmount: real('minimalAmount').default(0),
+  organizationId: text('organizationId').notNull(),
+  ...syncColumns,
+});
+
 export const productVariants = sqliteTable('product_variants', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
