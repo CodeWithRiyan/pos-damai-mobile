@@ -1,4 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, isAxiosError } from 'axios';
+import { router } from 'expo-router';
 import { authStorageAdapter } from '../storage';
 
 // API base URL
@@ -60,7 +61,7 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed - clear auth and redirect to login
         authStorageAdapter.clearAll();
-        // TODO: Navigate to login screen
+        router.replace('/login');
         return Promise.reject(refreshError);
       }
     }
