@@ -352,7 +352,7 @@ export default function PayableList() {
               <>
                 <Pressable
                   onPress={() => setShowDueDatePicker(true)}
-                  className={`flex-1 border border-background-300 rounded px-3 py-2`}
+                  className={`flex-1 border border-background-300 px-3 h-10 rounded-lg justify-center`}
                 >
                   <HStack className="items-center justify-between">
                     <Text>
