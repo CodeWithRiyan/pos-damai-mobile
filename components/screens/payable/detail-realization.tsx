@@ -18,7 +18,7 @@ import {
   SolarIconLinear,
 } from "@/components/ui/solar-icon-wrapper";
 import { getErrorMessage } from "@/lib/api/client";
-import { usePayableDetail, useDeletePayable, Payable } from "@/lib/api/payable";
+import { usePayableDetail, useDeletePayable } from "@/lib/api/payable";
 import { Spinner } from "@/components/ui/spinner";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -34,7 +34,7 @@ export default function PayableRealizationDetail() {
   const supplierId = params.supplierId as string;
   const payableId = payableIds?.split("-")[0] || "";
 
-  const { data: payable, isLoading, refetch } = usePayableDetail(payableId);
+  const { data: payable, isLoading } = usePayableDetail(payableId);
   const deleteMutation = useDeletePayable();
 
   const payableRealizationList = payable?.realizations || [];

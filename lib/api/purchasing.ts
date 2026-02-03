@@ -270,6 +270,24 @@ export function useCreatePurchasing() {
               .where(eq(schema.products.id, item.product.id));
           }
         }
+
+        // 4. Create Payable record if isPayable is true
+        if (data.isPayable) {
+          const payableId = `payable_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          await tx.insert(schema.payables).values({
+            id: payableId,
+            supplierId: data.supplierId,
+            nominal: data.totalPurchase,
+            dueDate: data.dueDate,
+            note: data.note || '',
+            organizationId: orgId,
+            createdAt: data.transactionDate || now,
+            updatedAt: now,
+            _dirty: true,
+            _syncedAt: null,
+          });
+          console.log(`[useCreatePurchasing] Created payable ${payableId} for purchase ${purchaseId}, amount: ${data.totalPurchase}`);
+        }
       });
 
       const finalRef = (await db.select({r: schema.purchases.local_ref_id}).from(schema.purchases).where(eq(schema.purchases.id, purchaseId)).limit(1))[0]?.r;
@@ -279,6 +297,7 @@ export function useCreatePurchasing() {
       const orgId = useAuthStore.getState().getOrganizationId();
       queryClient.invalidateQueries({ queryKey: ['products', orgId] });
       queryClient.invalidateQueries({ queryKey: ['purchases', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['payables'] }); // Invalidate payables list
     },
   });
 }

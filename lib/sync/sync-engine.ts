@@ -126,12 +126,15 @@ export class SyncEngine {
                 _syncedAt: new Date(),
               };
 
-              // Determine conflict target (id or local_ref_id)
-              const target = table.id || table.local_ref_id;
+              // Determine conflict target (prefer local_ref_id if available as it is the stable reference)
+              const target = table.local_ref_id || table.id;
               
-              await tx.insert(table).values(values).onConflictDoUpdate({
+              // Strip nested relationships from server data to prevent Drizzle/SQLite errors
+              const { items, realizations, ...valuesToInsert } = values as any;
+
+              await tx.insert(table).values(valuesToInsert).onConflictDoUpdate({
                 target: target,
-                set: values
+                set: valuesToInsert
               });
             }
           }
@@ -389,12 +392,14 @@ export class SyncEngine {
             })
             .where(eq(schema.purchaseReturns.local_ref_id, res.local_ref_id));
             
-          // Also mark items for this return as synced
+          // Also mark items for this return as synced and update FK
           await tx.update(schema.purchaseReturnItems)
-            .set({ _dirty: false, _syncedAt: new Date() })
-            .where(eq(schema.purchaseReturnItems.purchaseReturnId, res.server_id)); 
-            // Wait, local ID was used in returnItems.filter. 
-            // If ID was updated to server_id, we need to be careful.
+            .set({ 
+              purchaseReturnId: res.server_id,
+              _dirty: false, 
+              _syncedAt: new Date() 
+            })
+            .where(eq(schema.purchaseReturnItems.purchaseReturnId, res.local_ref_id)); 
         }
 
         for (const res of (results.stockOpnames || [])) {
@@ -404,7 +409,7 @@ export class SyncEngine {
               _syncedAt: new Date(), 
               id: res.server_id 
             })
-            .where(eq(schema.stockOpnames.id, res.local_ref_id)); // Assuming id is used as local ref since there is no local_ref_id in stockOpname schema usually, or I should check schema.
+            .where(eq(schema.stockOpnames.local_ref_id, res.local_ref_id));
 
           // Also mark items for this opname as synced
           // Note: If ID changed, we might need to update items foreign key if not handled by cascade or if items are not re-synced by ID.

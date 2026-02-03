@@ -1,6 +1,5 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
   Box,
   Checkbox,
@@ -12,9 +11,6 @@ import {
   HStack,
   Icon,
   Text,
-  Toast,
-  ToastTitle,
-  useToast,
   VStack,
 } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
@@ -23,8 +19,7 @@ import {
   SolarIconBoldDuotone,
   SolarIconLinear,
 } from "@/components/ui/solar-icon-wrapper";
-import { getErrorMessage } from "@/lib/api/client";
-import { useDeleteReceivable, useReceivableByUser, Receivable } from "@/lib/api/receivable";
+import { useReceivableByUser, Receivable } from "@/lib/api/receivable";
 import { Spinner } from "@/components/ui/spinner";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
@@ -34,14 +29,12 @@ import { useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function ReceivableDetail() {
-  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const params = useLocalSearchParams();
   const userId = params.userId as string;
 
-  const { data: receivableList = [], isLoading, refetch } = useReceivableByUser(userId);
-  const deleteMutation = useDeleteReceivable();
+  const { data: receivableList = [], isLoading } = useReceivableByUser(userId);
 
   const [selectedItems, setSelectedItems] = useState<Receivable[] | null>(null);
   const [showTransactionDatePicker, setShowTransactionDatePicker] =
@@ -50,8 +43,6 @@ export default function ReceivableDetail() {
   const [statuses, setStatuses] = useState<string[]>(["Lunas", "Belum Lunas"]);
 
   const receivable = receivableList[0];
-
-  const toast = useToast();
 
   const handleReceivablePress = (receivable: Receivable) => {
     if (selectedItems?.some((r) => r.id === receivable.id)) {
@@ -64,65 +55,6 @@ export default function ReceivableDetail() {
     }
 
     setSelectedItems([...selectedItems, receivable]);
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
-  const handleDeletePress = (receivableToDelete?: Receivable) => {
-    const targetReceivable = receivableToDelete || receivable;
-    if (!targetReceivable) return;
-
-    showPopUpConfirm({
-      title: "HAPUS PIUTANG",
-      icon: "warning",
-      description: (
-        <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus piutang ini? Tindakan ini tidak dapat dibatalkan.`}
-        </Text>
-      ),
-      showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
-      onOk: () => confirmDelete(targetReceivable.id),
-    });
-  };
-
-  const confirmDelete = async (id: string) => {
-    deleteMutation.mutate(id, {
-      onSuccess: () => {
-        hidePopUpConfirm();
-        refetch();
-        if (receivableList.length <= 1) {
-            router.back();
-        }
-
-        toast.show({
-          placement: "top",
-          render: ({ id: toastId }) => (
-            <Toast nativeID={`toast-${toastId}`} action="success" variant="solid">
-              <ToastTitle>Piutang berhasil dihapus</ToastTitle>
-            </Toast>
-          ),
-        });
-      },
-      onError: (error) => {
-        showErrorToast(error);
-        hidePopUpConfirm();
-      },
-    });
   };
 
   const handleAction = () => {
@@ -186,7 +118,7 @@ export default function ReceivableDetail() {
                     color="#3b82f6"
                   />
                   <Text className="text-typography-500 text-sm">
-                    {receivable?.user?.name || 'Unknown User'}
+                    {receivable?.user?.firstName || receivable?.user?.username || 'Unknown User'}
                   </Text>
                 </HStack>
                 <VStack className="mt-2">

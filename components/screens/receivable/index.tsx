@@ -54,6 +54,7 @@ export default function ReceivableList() {
   const [showDueDatePicker, setShowDueDatePicker] = useState<boolean>(false);
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [statuses, setStatuses] = useState<string[]>(["Lunas", "Belum Lunas"]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const toast = useToast();
 
@@ -195,7 +196,11 @@ export default function ReceivableList() {
                 <InputSlot className="pl-3">
                   <InputIcon as={SearchIcon} />
                 </InputSlot>
-                <InputField placeholder="Cari nama user" />
+                <InputField 
+                  placeholder="Cari nama user" 
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
               </Input>
               <>
                 <Pressable
@@ -295,6 +300,9 @@ export default function ReceivableList() {
                       ? "Belum Lunas"
                       : "Lunas",
                   ),
+                )
+                ?.filter((r) => 
+                  r.userName.toLowerCase().includes(searchQuery.toLowerCase())
                 )
                 ?.map((receivable) => (
                   <Pressable

@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as schema from '../db/schema';
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
 import { Supplier } from './suppliers';
@@ -54,6 +54,14 @@ export interface CreatePayableRealizationDTO {
   nominal: number;
   realizationDate: string;
   paymentMethodId: string;
+  note?: string;
+}
+
+export interface UpdatePayableDTO {
+  id: string;
+  nominal?: number;
+  supplierId?: string;
+  dueDate?: string;
   note?: string;
 }
 
@@ -171,7 +179,6 @@ export function usePayableBySupplier(supplierId: string) {
 }
 
 export function usePayableDetail(id: string) {
-  const orgId = useAuthStore(state => state.getOrganizationId());
   return useQuery({
     queryKey: ['payables', 'detail', id],
     queryFn: async () => {
@@ -213,10 +220,10 @@ export function usePayableDetail(id: string) {
 
 export function useCreatePayable() {
   const queryClient = useQueryClient();
-  const orgId = useAuthStore.getState().getOrganizationId();
 
   return useMutation({
     mutationFn: async (data: CreatePayableDTO) => {
+      const orgId = useAuthStore.getState().getOrganizationId();
       const id = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
 
@@ -242,10 +249,10 @@ export function useCreatePayable() {
 
 export function useCreatePayableRealization() {
   const queryClient = useQueryClient();
-  const orgId = useAuthStore.getState().getOrganizationId();
 
   return useMutation({
     mutationFn: async (data: CreatePayableRealizationDTO) => {
+      const orgId = useAuthStore.getState().getOrganizationId();
       const id = `payrel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
 
@@ -285,25 +292,57 @@ export function useDeletePayable() {
 }
 
 export function useBulkDeletePayableBySupplier() {
-    const queryClient = useQueryClient();
-    const orgId = useAuthStore.getState().getOrganizationId();
-    return useMutation({
-      mutationFn: async (supplierIds: string[]) => {
-        const now = new Date();
-        for (const supplierId of supplierIds) {
-            await db
-            .update(schema.payables)
-            .set({ deletedAt: now, _dirty: true })
-            .where(
-              and(
-                eq(schema.payables.supplierId, supplierId),
-                eq(schema.payables.organizationId, orgId)
-              )
-            );
-        }
-      },
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['payables'] });
-      },
-    });
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (supplierIds: string[]) => {
+      const orgId = useAuthStore.getState().getOrganizationId();
+      const now = new Date();
+      for (const supplierId of supplierIds) {
+        await db
+          .update(schema.payables)
+          .set({ deletedAt: now, _dirty: true })
+          .where(
+            and(
+              eq(schema.payables.supplierId, supplierId),
+              eq(schema.payables.organizationId, orgId)
+            )
+          );
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payables"] });
+    },
+  });
+}
+
+export function useUpdatePayable() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: UpdatePayableDTO) => {
+      const orgId = useAuthStore.getState().getOrganizationId();
+      const { id, ...updateData } = data;
+      const now = new Date();
+
+      await db
+        .update(schema.payables)
+        .set({
+          ...updateData,
+          dueDate: updateData.dueDate ? new Date(updateData.dueDate) : undefined,
+          updatedAt: now,
+          _dirty: true,
+        })
+        .where(
+          and(
+            eq(schema.payables.id, id),
+            eq(schema.payables.organizationId, orgId)
+          )
+        );
+
+      return { id, ...updateData };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payables"] });
+    },
+  });
 }

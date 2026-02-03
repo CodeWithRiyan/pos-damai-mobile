@@ -26,18 +26,16 @@ import {
 import { getErrorMessage } from "@/lib/api/client";
 import {
   useCreateReceivableRealization,
-  useReceivableList,
-  Receivable,
+  useReceivableDetail,
 } from "@/lib/api/receivable";
 import SelectModal from "@/components/ui/select/select-modal";
-import { SolarIconBoldDuotone } from "@/components/ui/solar-icon-wrapper";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { CalendarIcon, CheckIcon, PlusIcon } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
@@ -52,9 +50,19 @@ export default function ReceivableRealizationForm() {
   const action = params.actionRealization as string;
   const isAdd = action === "add";
   const receivableIds = (params.receivableIds as string)?.split("-") || [];
+  const receivableId = receivableIds[0] || "";
+
+  // Fetch receivable details to get remaining balance
+  const { data: receivableDetail } = useReceivableDetail(receivableId);
+  
+  const totalReceivable = receivableDetail?.nominal || 0;
+  const totalRealization = receivableDetail?.totalRealization || 0;
+  const remainingBalance = totalReceivable - totalRealization;
 
   const receivableRealizationSchema = z.object({
-    nominal: z.number().min(1, "Nominal wajib diisi."),
+    nominal: z.number()
+      .min(1, "Nominal wajib diisi.")
+      .max(remainingBalance, `Nominal tidak boleh melebihi sisa piutang (Rp ${remainingBalance.toLocaleString('id-ID')})`),
     payOff: z.boolean(),
     realizationDate: z.date(),
     paymentTypeId: z.string().min(1, "Metode pembayaran harus dipilih"),
@@ -81,7 +89,6 @@ export default function ReceivableRealizationForm() {
   const [showRealizationDatePicker, setShowRealizationDatePicker] =
     useState<boolean>(false);
 
-  const { data: allReceivables = [] } = useReceivableList();
   const { data: paymentMethods = [] } = usePaymentTypes();
   const createMutation = useCreateReceivableRealization();
 

@@ -25,6 +25,7 @@ import { useUsers } from "@/lib/api/users";
 import {
   useCreateReceivable,
   useReceivableDetail,
+  useUpdateReceivable,
 } from "@/lib/api/receivable";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -45,7 +46,7 @@ export default function ReceivableForm() {
 
   const receivableSchema = z.object({
     nominal: z.number().min(1, "Nominal wajib diisi."),
-    userId: z.string().min(1, "Pelanggan wajib diisi."),
+    userId: z.string().min(1, "Karyawan wajib diisi."),
     dueDate: z.date().nullable(),
     note: z.string(),
   });
@@ -69,8 +70,9 @@ export default function ReceivableForm() {
   const { data: receivable } = useReceivableDetail(receivableId || "");
   const { data: users = [] } = useUsers();
   const createMutation = useCreateReceivable();
+  const updateMutation = useUpdateReceivable();
 
-  const isLoading = createMutation.isPending;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   const toast = useToast();
 
@@ -126,15 +128,29 @@ export default function ReceivableForm() {
             }
         });
     } else {
-        // Update mutation not yet implemented in lib/api/receivable.ts but could be added
-        toast.show({
-            placement: "top",
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="info" variant="solid">
-                <ToastTitle>Update logic coming soon</ToastTitle>
-              </Toast>
-            ),
-          });
+      updateMutation.mutate(
+        {
+          id: receivableId,
+          ...data,
+          dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
+        },
+        {
+          onSuccess: () => {
+            toast.show({
+              placement: "top",
+              render: ({ id }) => (
+                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                  <ToastTitle>Piutang berhasil diupdate</ToastTitle>
+                </Toast>
+              ),
+            });
+            router.back();
+          },
+          onError: (error) => {
+            showErrorToast(error);
+          },
+        },
+      );
     }
   };
 
@@ -186,12 +202,12 @@ export default function ReceivableForm() {
             render={({ field: { onChange, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
-                  <FormControlLabelText>Pelanggan</FormControlLabelText>
+                  <FormControlLabelText>Karyawan</FormControlLabelText>
                 </FormControlLabel>
                 <SelectModal
                   value={value}
-                  placeholder="Pelanggan"
-                  searchPlaceholder="Cari nama pelanggan"
+                  placeholder="Karyawan"
+                  searchPlaceholder="Cari nama karyawan"
                   options={users.map((user) => ({
                     label: user.firstName || user.username,
                     value: user.id,

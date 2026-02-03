@@ -419,7 +419,7 @@ export default function PurchasingCheckoutForm() {
                           <DateTimePicker
                             mode="date"
                             value={value instanceof Date ? value : new Date()}
-                            minimumDate={new Date()}
+                            maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() + 5))}
                             onChange={(event, selectedDate) => {
                               setShowDueDatePicker(false);
                               if (event.type === "set" && selectedDate) {

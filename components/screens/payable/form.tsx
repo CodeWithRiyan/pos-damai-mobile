@@ -25,6 +25,7 @@ import { useSuppliers } from "@/lib/api/suppliers";
 import {
   useCreatePayable,
   usePayableDetail,
+  useUpdatePayable,
 } from "@/lib/api/payable";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -69,8 +70,9 @@ export default function PayableForm() {
   const { data: payable } = usePayableDetail(payableId || "");
   const { data: suppliers = [] } = useSuppliers();
   const createMutation = useCreatePayable();
+  const updateMutation = useUpdatePayable();
 
-  const isLoading = createMutation.isPending;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   const toast = useToast();
 
@@ -126,15 +128,29 @@ export default function PayableForm() {
             }
         });
     } else {
-        // Update mutation not yet implemented in lib/api/payable.ts but could be added
-        toast.show({
-            placement: "top",
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="info" variant="solid">
-                <ToastTitle>Update logic coming soon</ToastTitle>
-              </Toast>
-            ),
-          });
+      updateMutation.mutate(
+        {
+          id: payableId,
+          ...data,
+          dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
+        },
+        {
+          onSuccess: () => {
+            toast.show({
+              placement: "top",
+              render: ({ id }) => (
+                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                  <ToastTitle>Hutang berhasil diupdate</ToastTitle>
+                </Toast>
+              ),
+            });
+            router.back();
+          },
+          onError: (error) => {
+            showErrorToast(error);
+          },
+        },
+      );
     }
   };
 

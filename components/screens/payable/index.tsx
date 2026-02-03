@@ -27,10 +27,8 @@ import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
-import { Supplier } from "@/lib/api/suppliers";
 import {
   useBulkDeletePayableBySupplier,
-  Payable,
   usePayableList,
   PayableBySupplier,
 } from "@/lib/api/payable";
@@ -54,6 +52,7 @@ export default function PayableList() {
   const [showDueDatePicker, setShowDueDatePicker] = useState<boolean>(false);
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [statuses, setStatuses] = useState<string[]>(["Lunas", "Belum Lunas"]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const toast = useToast();
 
@@ -98,7 +97,7 @@ export default function PayableList() {
           <Text className="font-bold text-slate-900">
             {supplierIds?.length}
           </Text>
-          {` piutang? Tindakan ini tidak dapat dibatalkan.`}
+          {` hutang? Tindakan ini tidak dapat dibatalkan.`}
         </Text>
       ),
       showClose: true,
@@ -193,7 +192,11 @@ export default function PayableList() {
                 <InputSlot className="pl-3">
                   <InputIcon as={SearchIcon} />
                 </InputSlot>
-                <InputField placeholder="Cari nama supplier" />
+                <InputField 
+                  placeholder="Cari nama supplier" 
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
               </Input>
               <>
                 <Pressable
@@ -299,6 +302,9 @@ export default function PayableList() {
                       ? "Belum Lunas"
                       : "Lunas",
                   ),
+                )
+                ?.filter((r) => 
+                  r.supplierName.toLowerCase().includes(searchQuery.toLowerCase())
                 )
                 ?.map((payable) => (
                   <Pressable
