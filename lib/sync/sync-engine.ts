@@ -81,6 +81,9 @@ export class SyncEngine {
         payableRealizations: schema.payableRealizations,
         receivables: schema.receivables,
         receivableRealizations: schema.receivableRealizations,
+        finances: schema.finances,
+        shifts: schema.shifts,
+        cashDrawers: schema.cashDrawers,
       };
 
       await db.transaction(async (tx) => {
@@ -198,18 +201,24 @@ export class SyncEngine {
     const dirtyReceivables = await db.select().from(schema.receivables).where(eq(schema.receivables._dirty, true));
     const dirtyReceivableRealizations = await db.select().from(schema.receivableRealizations).where(eq(schema.receivableRealizations._dirty, true));
 
+    const dirtyFinances = await db.select().from(schema.finances).where(eq(schema.finances._dirty, true));
+    const dirtyShifts = await db.select().from(schema.shifts).where(eq(schema.shifts._dirty, true));
+    const dirtyCashDrawers = await db.select().from(schema.cashDrawers).where(eq(schema.cashDrawers._dirty, true));
+    const dirtySalesTransactions = await db.select().from(schema.transactions).where(eq(schema.transactions._dirty, true));
+
     const totalDirty = dirtyCategories.length + dirtyBrands.length + allProductsToPush.length + 
                        dirtyCustomers.length + dirtyPaymentTypes.length + dirtyPurchases.length + dirtyTransactions.length +
                        dirtyReturns.length + dirtyStockOpnames.length + 
                        dirtyPayables.length + dirtyPayableRealizations.length + 
-                       dirtyReceivables.length + dirtyReceivableRealizations.length;
+                       dirtyReceivables.length + dirtyReceivableRealizations.length +
+                       dirtyFinances.length + dirtyShifts.length + dirtyCashDrawers.length + dirtySalesTransactions.length;
 
     if (totalDirty === 0) {
       console.log('[Sync] No dirty records to push');
       return;
     }
 
-    console.log(`[Sync] Pushing ${dirtyCategories.length} categories, ${dirtyBrands.length} brands, ${allProductsToPush.length} products, ${dirtyCustomers.length} customers, ${dirtyPaymentTypes.length} payment types, ${dirtyPurchases.length} purchases, ${dirtyTransactions.length} transactions, ${dirtyReturns.length} returns, ${dirtyStockOpnames.length} stock opnames, ${dirtyPayables.length} payables, ${dirtyPayableRealizations.length} payable realizations, ${dirtyReceivables.length} receivables, ${dirtyReceivableRealizations.length} receivable realizations`);
+    console.log(`[Sync] Pushing ${dirtyCategories.length} categories, ${dirtyBrands.length} brands, ${allProductsToPush.length} products, ${dirtyCustomers.length} customers, ${dirtyPaymentTypes.length} payment types, ${dirtyPurchases.length} purchases, ${dirtyTransactions.length} transactions, ${dirtyReturns.length} returns, ${dirtyStockOpnames.length} stock opnames, ${dirtyPayables.length} payables, ${dirtyPayableRealizations.length} payable realizations, ${dirtyReceivables.length} receivables, ${dirtyReceivableRealizations.length} receivable realizations, ${dirtyFinances.length} finances, ${dirtyShifts.length} shifts, ${dirtyCashDrawers.length} cashDrawers, ${dirtySalesTransactions.length} salesTransactions`);
 
     // Fetch ALL items for returns we are pushing
     const returnIds = dirtyReturns.map(r => r.id);
@@ -312,6 +321,34 @@ export class SyncEngine {
       receivableRealizations: dirtyReceivableRealizations.map(({ _dirty, _syncedAt, realizationDate, createdAt, updatedAt, deletedAt, ...rest }) => ({
         ...rest,
         realizationDate: realizationDate ? realizationDate.toISOString() : null,
+        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+      })),
+      finances: dirtyFinances.map(({ _dirty, _syncedAt, transactionDate, createdAt, updatedAt, deletedAt, ...rest }) => ({
+        ...rest,
+        transactionDate: transactionDate ? transactionDate.toISOString() : undefined,
+        createdAt: createdAt ? createdAt.toISOString() : undefined,
+        updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+      })),
+      shifts: dirtyShifts.map(({ _dirty, _syncedAt, startTime, endTime, createdAt, updatedAt, deletedAt, ...rest }) => ({
+        ...rest,
+        startTime: startTime ? startTime.toISOString() : undefined,
+        endTime: endTime ? endTime.toISOString() : undefined,
+        createdAt: createdAt ? createdAt.toISOString() : undefined,
+        updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+      })),
+      cashDrawers: dirtyCashDrawers.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
+        ...rest,
+        createdAt: createdAt ? createdAt.toISOString() : undefined,
+        updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+      })),
+      salesTransactions: dirtySalesTransactions.map(({ _dirty, _syncedAt, transactionDate, createdAt, updatedAt, deletedAt, ...rest }) => ({
+        ...rest,
+        transactionDate: transactionDate ? transactionDate.toISOString() : undefined,
+        createdAt: createdAt ? createdAt.toISOString() : undefined,
+        updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
         deletedAt: deletedAt ? deletedAt.toISOString() : null,
       })),
     };
@@ -434,25 +471,49 @@ export class SyncEngine {
         for (const res of (results.payables || [])) {
           await tx.update(schema.payables)
             .set({ _dirty: false, _syncedAt: new Date(), id: res.server_id })
-            .where(eq(schema.payables.id, res.id));
+            .where(eq(schema.payables.local_ref_id, res.local_ref_id));
         }
 
         for (const res of (results.payableRealizations || [])) {
           await tx.update(schema.payableRealizations)
             .set({ _dirty: false, _syncedAt: new Date(), id: res.server_id })
-            .where(eq(schema.payableRealizations.id, res.id));
+            .where(eq(schema.payableRealizations.local_ref_id, res.local_ref_id));
         }
 
         for (const res of (results.receivables || [])) {
           await tx.update(schema.receivables)
             .set({ _dirty: false, _syncedAt: new Date(), id: res.server_id })
-            .where(eq(schema.receivables.id, res.id));
+            .where(eq(schema.receivables.local_ref_id, res.local_ref_id));
         }
 
         for (const res of (results.receivableRealizations || [])) {
           await tx.update(schema.receivableRealizations)
             .set({ _dirty: false, _syncedAt: new Date(), id: res.server_id })
-            .where(eq(schema.receivableRealizations.id, res.id));
+            .where(eq(schema.receivableRealizations.local_ref_id, res.local_ref_id));
+        }
+
+        for (const res of (results.finances || [])) {
+          await tx.update(schema.finances)
+            .set({ _dirty: false, _syncedAt: new Date(), id: res.server_id })
+            .where(eq(schema.finances.local_ref_id, res.local_ref_id));
+        }
+
+        for (const res of (results.shifts || [])) {
+          await tx.update(schema.shifts)
+            .set({ _dirty: false, _syncedAt: new Date(), id: res.server_id })
+            .where(eq(schema.shifts.local_ref_id, res.local_ref_id));
+        }
+
+        for (const res of (results.cashDrawers || [])) {
+          await tx.update(schema.cashDrawers)
+            .set({ _dirty: false, _syncedAt: new Date(), id: res.server_id })
+            .where(eq((schema.cashDrawers as any).local_ref_id, res.local_ref_id));
+        }
+
+        for (const res of (results.salesTransactions || [])) {
+          await tx.update(schema.transactions)
+            .set({ _dirty: false, _syncedAt: new Date(), id: res.server_id })
+            .where(eq(schema.transactions.local_ref_id, res.local_ref_id));
         }
       });
       

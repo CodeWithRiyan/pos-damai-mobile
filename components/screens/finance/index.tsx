@@ -22,7 +22,8 @@ import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { VStack } from "@/components/ui/vstack";
-// import { useBulkDeleteFinance, Finance, useFinance } from "@/lib/api/finance";
+import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
+import { useCreateFinance } from "@/lib/api/finances";
 import { Radio, RadioGroup, RadioLabel } from "@/components/ui/radio";
 import SelectModal from "@/components/ui/select/select-modal";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,83 +36,14 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import z from "zod";
 
-export type Finance = {
-  id: string;
-  local_ref_id: string;
-  nominal: number;
-  type: "INCOME" | "EXPENSES";
-  expensesType?: "STORE_EXPENSES" | "SUPPLIES" | "EQUIPMENT";
-  transactionDate: Date;
-  status: "DRAFT" | "COMPLETED";
-  createdByName: string;
-  createdById: string;
-  createdAt: Date;
-  updatedAt: Date;
-  note: string;
-};
-
-export const dummyData: Finance[] = [
-  {
-    id: "1",
-    local_ref_id: "ref_1",
-    nominal: 50000,
-    type: "INCOME",
-    transactionDate: new Date(),
-    status: "COMPLETED",
-    createdByName: "John Doe",
-    createdById: "1",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    note: "Bagi Hasil Parkir",
-  },
-  {
-    id: "2",
-    local_ref_id: "ref_2",
-    nominal: 50000,
-    type: "INCOME",
-    transactionDate: new Date(),
-    status: "DRAFT",
-    createdByName: "John Doe",
-    createdById: "1",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    note: "Bagi Hasil Parkir",
-  },
-  {
-    id: "3",
-    local_ref_id: "ref_3",
-    nominal: 50000,
-    type: "EXPENSES",
-    transactionDate: new Date(),
-    status: "COMPLETED",
-    createdByName: "John Doe",
-    createdById: "1",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    note: "BAYAR WIFI",
-  },
-  {
-    id: "4",
-    local_ref_id: "ref_4",
-    nominal: 900000,
-    type: "EXPENSES",
-    expensesType: "EQUIPMENT",
-    transactionDate: new Date(),
-    status: "COMPLETED",
-    createdByName: "Jane Doe",
-    createdById: "2",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    note: "Beli Rak Baru",
-  },
-];
+// Dummy data removed
 
 const financeSchema = z.object({
-  type: z.string(), // "INCOME" || "EXPENSES"
+  type: z.enum(["INCOME", "EXPENSES"]),
   expensesType: z.string(), // "STORE_EXPENSES" || "SUPPLIES" || "EQUIPMENT"
   nominal: z.number().min(1, "Nominal wajib diisi."),
   transactionDate: z.date(),
-  note: z.string().min(1, "Catatan wajib diisi."),
+  note: z.string(),
   inputToCashdrawer: z.boolean(),
 });
 
@@ -134,8 +66,11 @@ export const expensesTypeOptions = [
 
 export default function FinanceTransaction() {
   const router = useRouter();
+  const toast = useToast();
   const [showTransactionDatePicker, setShowTransactionDatePicker] =
     useState(false);
+
+  const { mutate: createFinance, isPending } = useCreateFinance();
 
   const initialValues: FinanceFormValues = {
     type: "INCOME",
@@ -151,12 +86,60 @@ export default function FinanceTransaction() {
     defaultValues: initialValues,
   });
 
-  // TODO: Simpan transaksi dan pindah ke screen success
   const onSubmit: SubmitHandler<FinanceFormValues> = (
     data: FinanceFormValues,
   ) => {
-    console.log(data);
-    router.navigate("/(main)/finance/success");
+    handleSave(data, "COMPLETED");
+  };
+
+  const onSaveDraft = () => {
+    const data = form.getValues();
+    handleSave(data, "DRAFT");
+  };
+
+  const handleSave = (data: FinanceFormValues, status: "DRAFT" | "COMPLETED") => {
+    createFinance(
+      {
+        ...data,
+        nominal: data.nominal,
+        status,
+      },
+      {
+        onSuccess: (responseData) => {
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={id} action="success" variant="solid">
+                <ToastTitle>
+                  {status === "COMPLETED"
+                    ? "Transaksi berhasil disimpan"
+                    : "Draft berhasil disimpan"}
+                </ToastTitle>
+              </Toast>
+            ),
+          });
+
+          if (status === "COMPLETED") {
+            router.replace({
+              pathname: "/(main)/finance/success",
+              params: { id: responseData.id },
+            });
+          } else {
+            router.navigate("/(main)/finance/draft");
+          }
+        },
+        onError: (error) => {
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={id} action="error" variant="solid">
+                <ToastTitle>{`Gagal menyimpan: ${error.message}`}</ToastTitle>
+              </Toast>
+            ),
+          });
+        },
+      }
+    );
   };
 
   return (
@@ -241,40 +224,41 @@ export default function FinanceTransaction() {
                   </FormControl>
                 )}
               />
-              {/* TODO: Pilih jenis pengeluaran hanya muncul pada role admin */}
-              <Controller
-                control={form.control}
-                name="expensesType"
-                render={({
-                  field: { onChange, value },
-                  fieldState: { error },
-                }) => (
-                  <FormControl isRequired isInvalid={!!error}>
-                    <FormControlLabel>
-                      <FormControlLabelText>
-                        Jenis Pengeluaran
-                      </FormControlLabelText>
-                    </FormControlLabel>
-                    <HStack space="md">
-                      <SelectModal
-                        value={value}
-                        placeholder="Pilih Jenis Pengeluaran"
-                        showSearch={false}
-                        options={expensesTypeOptions}
-                        className="flex-1"
-                        onChange={onChange}
-                      />
-                    </HStack>
-                    {error && (
-                      <FormControlError>
-                        <FormControlErrorText>
-                          {error.message}
-                        </FormControlErrorText>
-                      </FormControlError>
-                    )}
-                  </FormControl>
-                )}
-              />
+              {form.watch("type") === "EXPENSES" && (
+                <Controller
+                  control={form.control}
+                  name="expensesType"
+                  render={({
+                    field: { onChange, value },
+                    fieldState: { error },
+                  }) => (
+                    <FormControl isRequired isInvalid={!!error}>
+                      <FormControlLabel>
+                        <FormControlLabelText>
+                          Jenis Pengeluaran
+                        </FormControlLabelText>
+                      </FormControlLabel>
+                      <HStack space="md">
+                        <SelectModal
+                          value={value}
+                          placeholder="Pilih Jenis Pengeluaran"
+                          showSearch={false}
+                          options={expensesTypeOptions}
+                          className="flex-1"
+                          onChange={onChange}
+                        />
+                      </HStack>
+                      {error && (
+                        <FormControlError>
+                          <FormControlErrorText>
+                            {error.message}
+                          </FormControlErrorText>
+                        </FormControlError>
+                      )}
+                    </FormControl>
+                  )}
+                />
+              )}
               <Controller
                 name="nominal"
                 control={form.control}
@@ -429,16 +413,18 @@ export default function FinanceTransaction() {
               />
               <HStack space="md" className="w-full py-4">
                 <Pressable
-                  className="flex-1 flex-row items-center justify-center h-12 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
+                  className="flex-1 flex-row items-center justify-center h-12 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90 disabled:opacity-50"
                   onPress={form.handleSubmit(onSubmit)}
+                  disabled={isPending}
                 >
                   <Text size="lg" className="text-white font-bold">
-                    SIMPAN
+                    {isPending ? "MEMPROSES..." : "SIMPAN"}
                   </Text>
                 </Pressable>
                 <Pressable
-                  className="items-center justify-center size-12 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
-                  onPress={() => {}} // TODO: simpan transaksi keuangan kedalam draft
+                  className="items-center justify-center size-12 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300 disabled:opacity-50"
+                  onPress={onSaveDraft}
+                  disabled={isPending}
                 >
                   <SolarIconBold
                     name="ClipboardAdd"

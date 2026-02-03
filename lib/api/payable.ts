@@ -226,9 +226,11 @@ export function useCreatePayable() {
       const orgId = useAuthStore.getState().getOrganizationId();
       const id = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
+      const local_ref_id = `L-PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       await db.insert(schema.payables).values({
         id,
+        local_ref_id,
         ...data,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         organizationId: orgId,
@@ -239,7 +241,7 @@ export function useCreatePayable() {
         _syncedAt: null,
       });
 
-      return { id, ...data };
+      return { id, local_ref_id, ...data };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payables'] });
@@ -255,9 +257,11 @@ export function useCreatePayableRealization() {
       const orgId = useAuthStore.getState().getOrganizationId();
       const id = `payrel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
+      const local_ref_id = `L-PAY-REL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       await db.insert(schema.payableRealizations).values({
         id,
+        local_ref_id,
         ...data,
         realizationDate: new Date(data.realizationDate),
         organizationId: orgId,
@@ -268,7 +272,7 @@ export function useCreatePayableRealization() {
         _syncedAt: null,
       });
 
-      return { id, ...data };
+      return { id, local_ref_id, ...data };
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['payables'] });

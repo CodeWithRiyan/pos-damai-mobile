@@ -197,6 +197,7 @@ export const syncState = sqliteTable('sync_state', {
 
 export const payables = sqliteTable('payables', {
   id: text('id').primaryKey(),
+  local_ref_id: text('local_ref_id').unique(),
   nominal: real('nominal').notNull(),
   dueDate: integer('dueDate', { mode: 'timestamp' }),
   note: text('note'),
@@ -207,6 +208,7 @@ export const payables = sqliteTable('payables', {
 
 export const payableRealizations = sqliteTable('payable_realizations', {
   id: text('id').primaryKey(),
+  local_ref_id: text('local_ref_id').unique(),
   payableId: text('payableId').notNull(),
   nominal: real('nominal').notNull(),
   realizationDate: integer('realizationDate', { mode: 'timestamp' }).notNull(),
@@ -218,6 +220,7 @@ export const payableRealizations = sqliteTable('payable_realizations', {
 
 export const receivables = sqliteTable('receivables', {
   id: text('id').primaryKey(),
+  local_ref_id: text('local_ref_id').unique(),
   nominal: real('nominal').notNull(),
   dueDate: integer('dueDate', { mode: 'timestamp' }),
   note: text('note'),
@@ -228,6 +231,7 @@ export const receivables = sqliteTable('receivables', {
 
 export const receivableRealizations = sqliteTable('receivable_realizations', {
   id: text('id').primaryKey(),
+  local_ref_id: text('local_ref_id').unique(),
   receivableId: text('receivableId').notNull(),
   nominal: real('nominal').notNull(),
   realizationDate: integer('realizationDate', { mode: 'timestamp' }).notNull(),
@@ -266,9 +270,26 @@ export const transactionItems = sqliteTable('transaction_items', {
 // Cash Drawers & Shifts
 export const cashDrawers = sqliteTable('cash_drawers', {
   id: text('id').primaryKey(),
+  local_ref_id: text('local_ref_id').unique(),
   name: text('name').notNull(),
   description: text('description'),
   isActive: integer('isActive', { mode: 'boolean' }).default(true),
+  organizationId: text('organizationId').notNull(),
+  ...syncColumns,
+});
+
+// Finance (Income & Expenses)
+export const finances = sqliteTable('finances', {
+  id: text('id').primaryKey(),
+  local_ref_id: text('local_ref_id').unique(),
+  nominal: real('nominal').notNull(),
+  type: text('type').notNull(), // 'INCOME' | 'EXPENSES'
+  expensesType: text('expensesType'), // 'STORE_EXPENSES' | 'SUPPLIES' | 'EQUIPMENT'
+  transactionDate: integer('transactionDate', { mode: 'timestamp' }).notNull(),
+  status: text('status').default('COMPLETED'), // 'DRAFT' | 'COMPLETED'
+  note: text('note'),
+  inputToCashdrawer: integer('inputToCashdrawer', { mode: 'boolean' }).default(false),
+  userId: text('userId'),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
 });

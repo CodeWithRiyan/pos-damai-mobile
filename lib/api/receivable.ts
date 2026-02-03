@@ -267,9 +267,11 @@ export function useCreateReceivable() {
       const orgId = useAuthStore.getState().getOrganizationId();
       const id = `rec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
+      const local_ref_id = `L-REC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       await db.insert(schema.receivables).values({
         id,
+        local_ref_id,
         ...data,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         organizationId: orgId,
@@ -280,7 +282,7 @@ export function useCreateReceivable() {
         _syncedAt: null,
       });
 
-      return { id, ...data };
+      return { id, local_ref_id, ...data };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['receivables'] });
@@ -296,9 +298,11 @@ export function useCreateReceivableRealization() {
       const orgId = useAuthStore.getState().getOrganizationId();
       const id = `recrel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
+      const local_ref_id = `L-REC-REL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       await db.insert(schema.receivableRealizations).values({
         id,
+        local_ref_id,
         ...data,
         realizationDate: new Date(data.realizationDate),
         organizationId: orgId,
@@ -309,7 +313,7 @@ export function useCreateReceivableRealization() {
         _syncedAt: null,
       });
 
-      return { id, ...data };
+      return { id, local_ref_id, ...data };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['receivables'] });

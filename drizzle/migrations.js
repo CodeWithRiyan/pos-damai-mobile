@@ -11,6 +11,8 @@ import m0006 from './0006_add_purchase_returns.sql';
 import m0007 from './0007_add_stock_opnames.sql';
 import m0008 from './0008_ordinary_jazinda.sql';
 import m0009 from './0009_legal_shockwave.sql';
+import m0010 from './0010_finance_local_ref_id.sql';
+import m0011 from './0011_add_userid_to_finances.sql';
 
   export default {
     journal,
@@ -24,7 +26,9 @@ m0005,
 m0006,
 m0007,
 m0008,
-m0009
+m0009,
+m0010,
+m0011
     }
   }
   

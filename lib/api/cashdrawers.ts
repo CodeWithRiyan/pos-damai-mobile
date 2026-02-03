@@ -74,9 +74,11 @@ export function useCreateCashDrawer() {
 
       const id = `cd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
+      const local_ref_id = `L-CD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       const newCashDrawer = {
         id,
+        local_ref_id,
         name: data.name,
         description: data.description || null,
         isActive: data.isActive ?? true,

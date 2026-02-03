@@ -16,6 +16,7 @@ export async function initializeDb() {
   } catch (error) {
     console.error('Failed to apply migrations:', error);
     // In some cases, we might need a fallback if the migrator fails
+    throw error; // Rethrow to let RootLayout handle it if needed
   }
 }
 

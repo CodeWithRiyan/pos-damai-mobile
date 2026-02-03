@@ -5,14 +5,11 @@ import { useAuthStore } from "@/stores/auth";
 import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
-import { dummyData } from ".";
+import { useFinance } from "@/lib/api/finances";
 
 export default function FinanceTransactionReceipt() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  // TODO: get useFinance by id
-  // const { data: finance, isLoading } = useFinance(id || "");
-  const finance = dummyData.find((item) => item.id === id);
-  const isLoading = false;
+  const { data: finance, isLoading } = useFinance(id || "");
 
   const profile = useAuthStore((state) => state.profile);
 
@@ -76,7 +73,7 @@ export default function FinanceTransactionReceipt() {
                     : "Transaksi Keluar"}
                 </Text>
                 <Text className="text-typography-500">
-                  {`Oleh: ${finance.createdByName}`}
+                  {`Oleh: ${profile?.name || ""}`}
                 </Text>
               </HStack>
               {finance.expensesType && (
