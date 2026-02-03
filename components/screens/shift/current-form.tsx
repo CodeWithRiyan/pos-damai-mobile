@@ -1,5 +1,4 @@
 import {
-  Button,
   Checkbox,
   CheckboxIcon,
   CheckboxIndicator,
@@ -18,43 +17,32 @@ import {
   VStack,
 } from "@/components/ui";
 import SelectModal from "@/components/ui/select/select-modal";
-import { useCashDrawers } from "@/lib/api/cashdrawers";
-import { useStartShift, useLastShift, useCurrentShift } from "@/lib/api/shifts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckIcon, PlusIcon } from "lucide-react-native";
-import { Controller, useForm, SubmitHandler } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import z from "zod";
-import { useEffect, useState } from "react";
-import { useRouter } from "expo-router";
-import ActiveShiftDisplay from "./active-shift-display";
-import { useCashDrawerStore } from "@/stores/cashdrawer";
 
 const shiftSchema = z.object({
-  cashdrawerId: z.string().min(1, "Cashdrawer harus dipilih"),
+  cashdrawerId: z.string().min(1, "Supplier harus dipilih"),
   isUseLastBalance: z.boolean(),
   initialBalance: z
     .number()
-    .min(0, "Saldo awal harus lebih besar atau sama dengan 0"),
-  note: z.string().optional(),
+    .min(0, "Total pembelian harus lebih besar atau sama dengan 0"),
 });
 
 export type ShiftFormValues = z.infer<typeof shiftSchema>;
 
-export default function CurrentShift() {
-  const router = useRouter();
-  const [selectedCashDrawerId, setSelectedCashDrawerId] = useState<string>();
-  const { data: cashDrawers, refetch: refetchCashDrawers } = useCashDrawers();
-  const startShiftMutation = useStartShift();
-  const { data: lastShift } = useLastShift(selectedCashDrawerId);
-  const { data: currentShift, isLoading } = useCurrentShift();
-  const { setOpen: setOpenCashDrawer, setData: setDataCashDrawer } = useCashDrawerStore();
-
+export default function CurrentFormShift({
+  setActive,
+}: {
+  setActive: (active: boolean) => void;
+}) {
+  const isLoading = false;
   const initialValues: ShiftFormValues = {
     cashdrawerId: "",
     isUseLastBalance: false,
     initialBalance: 0,
-    note: "",
   };
 
   const form = useForm<ShiftFormValues>({
@@ -64,48 +52,10 @@ export default function CurrentShift() {
 
   const isUseLastBalance = form.watch("isUseLastBalance");
 
-  useEffect(() => {
-    if (isUseLastBalance && lastShift?.finalBalance) {
-      form.setValue("initialBalance", lastShift.finalBalance);
-    } else if (!isUseLastBalance) {
-      form.setValue("initialBalance", 0);
-    }
-  }, [isUseLastBalance, lastShift, form]);
-
-  const onSubmit: SubmitHandler<ShiftFormValues> = async (data) => {
-    try {
-      if (!data.cashdrawerId) {
-        console.error("No cash drawer selected");
-        return;
-      }
-
-      await startShiftMutation.mutateAsync({
-        cashDrawerId: data.cashdrawerId,
-        initialBalance: data.initialBalance,
-        note: data.note,
-      });
-
-      router.push("/(main)");
-    } catch (error) {
-      console.error("Error starting shift:", error);
-    }
+  const onSubmit = (values: ShiftFormValues) => {
+    setActive(true);
+    console.log(values);
   };
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <VStack className="flex-1 bg-white items-center justify-center">
-        <Text>Loading...</Text>
-      </VStack>
-    );
-  }
-
-  // If there's an active shift, show the active shift display
-  if (currentShift) {
-    return <ActiveShiftDisplay shift={currentShift} />;
-  }
-
-  // Otherwise, show the start shift form
   return (
     <VStack className="flex-1 bg-white">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -123,27 +73,22 @@ export default function CurrentShift() {
                     value={value}
                     placeholder="Pilih Cashdrawer"
                     showSearch={false}
-                    options={
-                      cashDrawers?.map((cd) => ({
-                        label: cd.name,
-                        value: cd.id,
-                      })) || []
-                    }
+                    options={[
+                      {
+                        label: "Cashdrawer 1",
+                        value: "1",
+                      },
+                      {
+                        label: "Cashdrawer 2",
+                        value: "2",
+                      },
+                    ]}
                     className="flex-1"
-                    onChange={(val) => {
-                      onChange(val);
-                      setSelectedCashDrawerId(val || undefined);
-                    }}
+                    onChange={onChange}
                   />
                   <Pressable
                     className="size-10 rounded-full bg-primary-500 items-center justify-center"
-                    onPress={() => {
-                      setDataCashDrawer(null);
-                      setOpenCashDrawer(true, (newCashDrawer) => {
-                        form.setValue("cashdrawerId", newCashDrawer.id);
-                        refetchCashDrawers();
-                      });
-                    }}
+                    onPress={() => {}}
                   >
                     <Icon as={PlusIcon} color="white" />
                   </Pressable>
@@ -170,9 +115,9 @@ export default function CurrentShift() {
                   size="md"
                   onChange={(v) => {
                     onChange(v);
+                    if (!v) form.setValue("initialBalance", 0); //TODO: set initialBalance to last cashdrawer balance
                   }}
                   onBlur={onBlur}
-                  isDisabled={!selectedCashDrawerId}
                 >
                   <CheckboxIndicator>
                     <CheckboxIcon as={CheckIcon} />
@@ -225,23 +170,15 @@ export default function CurrentShift() {
         </VStack>
       </ScrollView>
       <HStack className="w-full p-4">
-        <Button
-          size="sm"
-          className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+        <Pressable
+          className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
+          disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
         >
           <Text size="sm" className="text-typography-0 font-bold">
-            MASUK KE MENU TRANSAKSI
+            {isLoading ? "MENYIMPAN..." : "SIMPAN"}
           </Text>
-        </Button>
-        <Button
-          className="w-full rounded-sm h-9 flex justify-center items-center bg-error-100 border border-error-500"
-          onPress={() => router.push("/shift/finish")}
-        >
-          <Text size="sm" className="text-error-500 font-bold">
-            AKHIRI SHIFT
-          </Text>
-        </Button>
+        </Pressable>
       </HStack>
     </VStack>
   );

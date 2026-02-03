@@ -1,10 +1,5 @@
-import CurrentShift from "@/components/screens/shift/current";
-import HistoryShift from "@/components/screens/shift/history";
-import { useLocalSearchParams } from "expo-router";
+import TabShift from "@/components/screens/shift/tab";
 
-export default function HistoryShiftScreen() {
-    const { tab } = useLocalSearchParams()
-    if (tab === "current") return <CurrentShift />
-    
-    return <HistoryShift />
+export default function TabShiftScreen() {
+  return <TabShift />;
 }
