@@ -1,7 +1,7 @@
 import { db } from '../db';
 import * as schema from '../db/schema';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq, isNull, like } from 'drizzle-orm';
 import { useAuthStore } from '@/stores/auth';
 
 export interface Transaction {
@@ -109,7 +109,7 @@ export function useTransaction(id: string) {
         .where(eq(schema.transactions.id, id))
         .limit(1);
 
-      if (transactionResult.length === 0) return undefined;
+      if (transactionResult.length === 0) return null;
 
       const transaction = transactionResult[0];
 
@@ -211,12 +211,14 @@ export function useCreateTransaction() {
           await tx.delete(schema.transactionItems)
             .where(eq(schema.transactionItems.transactionId, data.id));
 
-          // Delete old inventory transactions
-          const toDelete = await tx.select().from(schema.inventoryTransactions).where(eq(schema.inventoryTransactions.organizationId, orgId));
-          const filtered = toDelete.filter(t => t.local_ref_id?.startsWith(finalRefId));
-          for (const t of filtered) {
-            await tx.delete(schema.inventoryTransactions).where(eq(schema.inventoryTransactions.id, t.id));
-          }
+          // Efficiently delete old inventory transactions
+          await tx.delete(schema.inventoryTransactions)
+            .where(
+              and(
+                eq(schema.inventoryTransactions.organizationId, orgId),
+                like(schema.inventoryTransactions.local_ref_id, `${finalRefId}_%`)
+              )
+            );
         } else {
           await tx.insert(schema.transactions).values(transactionValues);
         }
@@ -263,10 +265,11 @@ export function useCreateTransaction() {
 
       return { id: transactionId, localRefId, ...data };
     },
-    onSuccess: () => {
+    onSuccess: (responseData) => {
       const orgId = useAuthStore.getState().getOrganizationId();
       queryClient.invalidateQueries({ queryKey: ['products', orgId] });
       queryClient.invalidateQueries({ queryKey: ['transactions', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', responseData.id] });
     },
   });
 }

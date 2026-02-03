@@ -16,18 +16,24 @@ import { Spinner } from "@/components/ui/spinner";
 import { useTransactions } from "@/lib/api/transactions";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function TransactionHistory() {
   const router = useRouter();
 
   const { data: allTransactions, isLoading } = useTransactions();
-  const transactions = allTransactions?.filter((t) => t.status === "COMPLETED") || [];
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const transactions = allTransactions?.filter((t) => t.status === "COMPLETED" && (
+    (t.local_ref_id || t.id).toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.customerName?.toLowerCase().includes(searchQuery.toLowerCase())
+  )) || [];
 
   if (isLoading) {
     return (
       <VStack className="flex-1 bg-white">
-        <Header header="HISTORI PEMBELIAN" isGoBack />
+        <Header header="HISTORI PENJUALAN" isGoBack />
         <Box className="flex-1 justify-center items-center">
           <Spinner size="large" />
         </Box>
@@ -37,13 +43,17 @@ export default function TransactionHistory() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header="HISTORI PEMBELIAN" isGoBack />
+      <Header header="HISTORI PENJUALAN" isGoBack />
       <HStack space="sm" className="p-4 shadow-lg bg-background-0 items-center">
         <Input className="flex-1 border border-background-300 rounded-lg h-10">
           <InputSlot className="pl-3">
             <InputIcon as={SearchIcon} />
           </InputSlot>
-          <InputField placeholder="Cari no transaksi atau nama supplier" />
+          <InputField 
+            placeholder="Cari no transaksi atau nama pelanggan" 
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
         </Input>
       </HStack>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -62,7 +72,7 @@ export default function TransactionHistory() {
                 className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
                 onPress={() =>
                   router.navigate({
-                    pathname: "/(main)/purchasing/receipt/[id]",
+                    pathname: "/(main)/transaction/receipt/[id]",
                     params: { id: transaction.id },
                   })
                 }

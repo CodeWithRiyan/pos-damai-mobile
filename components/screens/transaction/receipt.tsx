@@ -12,10 +12,10 @@ export default function TransactionReceipt() {
   const { data: transaction, isLoading } = useTransaction(id || "");
   const profile = useAuthStore((state) => state.profile);
 
-  if (isLoading) {
+  if (isLoading || !id) {
     return (
       <VStack className="flex-1 bg-primary-200">
-        <Header header="STRUK PEMBELIAN BARANG" isGoBack />
+        <Header header="STRUK PENJUALAN BARANG" isGoBack />
         <Box className="flex-1 justify-center items-center">
           <Spinner size="large" />
         </Box>
@@ -26,7 +26,7 @@ export default function TransactionReceipt() {
   if (!transaction) {
     return (
       <VStack className="flex-1 bg-primary-200">
-        <Header header="STRUK PEMBELIAN BARANG" isGoBack />
+        <Header header="STRUK PENJUALAN BARANG" isGoBack />
         <Box className="flex-1 justify-center items-center">
           <Text>Data transaksi tidak ditemukan</Text>
         </Box>
@@ -38,7 +38,7 @@ export default function TransactionReceipt() {
 
   return (
     <VStack className="flex-1 bg-primary-200">
-      <Header header="STRUK PEMBELIAN BARANG" isGoBack />
+      <Header header="STRUK PENJUALAN BARANG" isGoBack />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <Box className="p-4 flex-1">
           <VStack className="flex-1 bg-background-0 p-6 shadow">

@@ -126,6 +126,51 @@ export function useActiveShift(cashDrawerId?: string) {
   });
 }
 
+// Get current active shift (any cashdrawer) for the logged-in user's organization
+export function useCurrentShift() {
+  const orgId = useAuthStore(state => state.getOrganizationId());
+  return useQuery({
+    queryKey: ['shifts', 'current', orgId],
+    queryFn: async () => {
+      if (!orgId) return null;
+
+      const result = await db
+        .select()
+        .from(schema.shifts)
+        .where(and(
+          eq(schema.shifts.status, 'ACTIVE'),
+          eq(schema.shifts.organizationId, orgId),
+          isNull(schema.shifts.deletedAt)
+        ))
+        .limit(1);
+
+      if (result.length === 0) return null;
+
+      const shift = result[0];
+
+      // Get cashdrawer and user names
+      const cashDrawer = await db
+        .select({ name: schema.cashDrawers.name })
+        .from(schema.cashDrawers)
+        .where(eq(schema.cashDrawers.id, shift.cashDrawerId))
+        .limit(1);
+
+      const user = await db
+        .select({ name: schema.users.name })
+        .from(schema.users)
+        .where(eq(schema.users.id, shift.userId))
+        .limit(1);
+
+      return {
+        ...shift,
+        cashDrawerName: cashDrawer[0]?.name || 'Unknown',
+        userName: user[0]?.name || 'Unknown',
+      } as Shift;
+    },
+    enabled: !!orgId,
+  });
+}
+
 // Get last closed shift for a cashdrawer
 export function useLastShift(cashDrawerId?: string) {
   const orgId = useAuthStore(state => state.getOrganizationId());
@@ -264,6 +309,7 @@ export function useEndShift() {
       const orgId = useAuthStore.getState().getOrganizationId();
       queryClient.invalidateQueries({ queryKey: ['shifts', orgId] });
       queryClient.invalidateQueries({ queryKey: ['shifts', 'active'] });
+      queryClient.invalidateQueries({ queryKey: ['shifts', 'current', orgId] });
       queryClient.invalidateQueries({ queryKey: ['shifts', 'last'] });
     },
   });

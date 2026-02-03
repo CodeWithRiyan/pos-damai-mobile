@@ -24,10 +24,13 @@ import { z } from "zod";
 import InputVirtualKeyboard from "@/components/ui/input-virtual-keyboard";
 import SelectModal from "@/components/ui/select/select-modal";
 import { usePaymentTypes } from "@/lib/api/payment-types";
+import { useCustomers } from "@/lib/api/customers";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { useTransactionStore } from "@/stores/transaction";
 import { useRouter } from "expo-router";
-import { useCreateTransaction } from"@/lib/api/transactions";
+import { useCreateTransaction } from "@/lib/api/transactions";
+import { useCurrentUser } from "@/lib/api/auth";
+import { findSellPrice } from "@/lib/price";
 import { Check, PlusIcon } from "lucide-react-native";
 
 const transactionSchema = z
@@ -39,6 +42,7 @@ const transactionSchema = z
     isCashdrawer: z.boolean(),
     status: z.string(),
     paymentTypeId: z.string().min(1, "Metode pembayaran harus dipilih"),
+    customerId: z.string().min(1, "Pelanggan harus dipilih"),
     note: z.string(),
   })
   .superRefine((data, ctx) => {
@@ -62,8 +66,10 @@ export default function TransactionCheckoutForm() {
   const router = useRouter();
 
 
+  const { data: user } = useCurrentUser();
   const { data: paymentTypesData } = usePaymentTypes();
-  const { customer, cart, cartTotal, status } =
+  const { data: customersData } = useCustomers();
+  const { customer, cart, cartTotal, status, setCheckoutData, setCustomer } =
     useTransactionStore();
   const { resetCart } = useTransactionStore();
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
@@ -81,6 +87,7 @@ export default function TransactionCheckoutForm() {
     isCashdrawer: false,
     status: "DRAFT",
     paymentTypeId: "",
+    customerId: customer?.id || "",
     note: "",
   };
 
@@ -96,8 +103,11 @@ export default function TransactionCheckoutForm() {
       form.setValue("totalPurchase", cartTotal);
       form.setValue("status", status);
     }
+    if (customer) {
+      form.setValue("customerId", customer.id);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, cartTotal]);
+  }, [form, cartTotal, customer]);
 
   const toast = useToast();
   const createTransactionMutation = useCreateTransaction();
@@ -119,8 +129,9 @@ export default function TransactionCheckoutForm() {
     data: TransactionFormValues,
   ) => {
     try {
+      const selectedCustomer = customersData?.find(c => c.id === data.customerId);
       const submissionData = {
-        customerId: customer?.id,
+        customerId: data.customerId,
         totalAmount: cartTotal,
         totalPaid: parseFloat(data.totalPaid),
         paymentTypeId: data.paymentTypeId,
@@ -134,7 +145,11 @@ export default function TransactionCheckoutForm() {
           quantity: item.quantity,
           tempSellPrice:
             item.tempSellPrice ||
-            (item.product.sellPrices?.[0]?.price || 0),
+            findSellPrice({
+              sellPrices: item.product.sellPrices,
+              type: selectedCustomer?.category,
+              quantity: item.quantity,
+            }),
           note: item.note,
         })),
       };
@@ -144,10 +159,30 @@ export default function TransactionCheckoutForm() {
       );
 
       if (result.id) {
-        router.replace({
-          pathname: "/(main)/purchasing/receipt/[id]",
-          params: { id: result.id },
+        setCheckoutData({
+          id: result.id,
+          referenceNumber: result.localRefId || "",
+          createdById: user?.id || "",
+          createdByName: user?.name || "",
+          createdAt: new Date().toISOString(),
+          updatedById: user?.id || "",
+          updatedByName: user?.name || "",
+          updatedAt: new Date().toISOString(),
+          items: cart,
+          totalItems: cartTotal,
+          totalPaid: data.totalPaid,
+          customerId: data.customerId,
+          transactionDate: new Date(),
+          isCashdrawer: false,
+          status: status,
+          note: data.note || "",
         });
+
+        if (status === "DRAFT") {
+          router.replace("/(main)/transaction");
+        } else {
+          router.replace("/(main)/transaction/success");
+        }
         resetCart();
       }
     } catch (error) {
@@ -181,6 +216,48 @@ export default function TransactionCheckoutForm() {
                 </Heading>
               </HStack>
               <VStack space="lg" className="p-4">
+                <Controller
+                  control={form.control}
+                  name="customerId"
+                  render={({
+                    field: { onChange, value },
+                    fieldState: { error },
+                  }) => (
+                    <FormControl isRequired isInvalid={!!error}>
+                      <HStack space="md">
+                        <SelectModal
+                          value={value}
+                          placeholder="Pilih Pelanggan"
+                          options={customersData?.map((c) => ({
+                            label: c.name,
+                            value: c.id,
+                          })) || []}
+                          className="flex-1"
+                          onChange={(val) => {
+                            onChange(val);
+                            const selected = customersData?.find(c => c.id === val);
+                            if (selected) setCustomer(selected);
+                          }}
+                        />
+                        <Pressable
+                          className="size-10 rounded-full bg-primary-500 items-center justify-center"
+                          onPress={() =>
+                            router.push("/(main)/management/customer-supplier/customer/add")
+                          }
+                        >
+                          <Icon as={PlusIcon} color="white" />
+                        </Pressable>
+                      </HStack>
+                      {error && (
+                        <FormControlError>
+                          <FormControlErrorText>
+                            {error.message}
+                          </FormControlErrorText>
+                        </FormControlError>
+                      )}
+                    </FormControl>
+                  )}
+                />
                 <Controller
                   control={form.control}
                   name="paymentTypeId"

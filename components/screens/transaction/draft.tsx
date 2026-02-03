@@ -16,7 +16,7 @@ import * as schema from "@/lib/db/schema";
 import { useTransactionStore } from "@/stores/transaction";
 import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { eq } from "drizzle-orm";
+import { eq, like, and } from "drizzle-orm";
 import { useRouter } from "expo-router";
 import { Trash2 } from "lucide-react-native";
 import { ScrollView } from "react-native";
@@ -90,26 +90,16 @@ export default function TransactionDraft() {
 
       if (existing.length > 0) {
         const refId = existing[0].local_ref_id;
-        // 2. Delete transactions
+        // 2. Delete transactions efficiently
         if (refId) {
-          const transactions = await tx
-            .select()
-            .from(schema.inventoryTransactions)
+          await tx
+            .delete(schema.inventoryTransactions)
             .where(
-              eq(
-                schema.inventoryTransactions.organizationId,
-                existing[0].organizationId,
-              ),
+              and(
+                eq(schema.inventoryTransactions.organizationId, existing[0].organizationId),
+                like(schema.inventoryTransactions.local_ref_id, `${refId}_%`)
+              )
             );
-
-          const filtered = transactions.filter((t) =>
-            t.local_ref_id?.startsWith(refId),
-          );
-          for (const t of filtered) {
-            await tx
-              .delete(schema.inventoryTransactions)
-              .where(eq(schema.inventoryTransactions.id, t.id));
-          }
         }
       }
 
@@ -135,7 +125,7 @@ export default function TransactionDraft() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header="DRAFT PEMBELIAN" isGoBack />
+      <Header header="DRAFT TRANSAKSI" isGoBack />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {drafts.length === 0 ? (
           <Box className="flex-1 justify-center items-center py-10">

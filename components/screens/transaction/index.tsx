@@ -8,6 +8,9 @@ import {
   InputSlot,
   SearchIcon,
   Text,
+  useToast,
+  Toast,
+  ToastTitle,
 } from "@/components/ui";
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
@@ -28,13 +31,55 @@ import { Plus, PlusIcon } from "lucide-react-native";
 import React from "react";
 import { ScrollView } from "react-native";
 import PopupAddProduct from "./popup-add";
+import { useCurrentShift } from "@/lib/api/shifts";
+import { Spinner } from "@/components/ui/spinner";
+import { AlertCircle } from "lucide-react-native";
+import { Button, ButtonText } from "@/components/ui/button";
 
 export default function TransactionList() {
   const { cart, customer, setCustomer, setAddProduct, setStatus } =
     useTransactionStore();
   const { data: customers } = useCustomers();
   const { data: products } = useProducts();
+  const { data: currentShift, isLoading: isLoadingShift } = useCurrentShift();
   const router = useRouter();
+  const toast = useToast();
+
+  const [searchQuery, setSearchQuery] = React.useState("");
+
+  const filteredProducts = products?.filter((p) =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.barcode?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (isLoadingShift) {
+    return (
+      <Box className="flex-1 bg-white justify-center items-center">
+        <Spinner size="large" />
+      </Box>
+    );
+  }
+
+  if (!currentShift) {
+    return (
+      <Box className="flex-1 bg-white">
+        <Header header="TRANSAKSI PENJUALAN" />
+        <VStack className="flex-1 justify-center items-center p-8" space="lg">
+          <Icon as={AlertCircle} size="xl" color="#f59e0b" />
+          <Heading size="lg" className="text-center">Shift Belum Dibuka</Heading>
+          <Text className="text-center text-typography-500">
+            Anda harus membuka shift sebelum dapat melakukan transaksi penjualan.
+          </Text>
+          <Button
+            className="mt-4 bg-primary-500 rounded-lg"
+            onPress={() => router.push("/(main)/shift/current")}
+          >
+            <ButtonText>BUKA SHIFT SEKARANG</ButtonText>
+          </Button>
+        </VStack>
+      </Box>
+    );
+  }
 
   return (
     <Box className="flex-1 bg-white">
@@ -109,7 +154,11 @@ export default function TransactionList() {
               <InputSlot className="pl-3">
                 <InputIcon as={SearchIcon} />
               </InputSlot>
-              <InputField placeholder="Cari nama atau kode" />
+              <InputField 
+                placeholder="Cari nama atau kode" 
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
             </Input>
           </HStack>
           <ScrollView className="flex-1">
@@ -129,7 +178,7 @@ export default function TransactionList() {
                   </Text>
                 </Pressable>
               </VStack>
-              {products?.map((product, index) => {
+              {filteredProducts?.map((product, index) => {
                 const productInChart = cart?.find(
                   (f) => f.product.id === product.id,
                 );
@@ -237,6 +286,17 @@ export default function TransactionList() {
               <Pressable
                 className="flex-1 flex-row items-center justify-between h-16 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
                 onPress={() => {
+                  if (!customer) {
+                    toast.show({
+                      placement: "top",
+                      render: ({ id }) => (
+                        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+                          <ToastTitle>Silakan pilih pelanggan terlebih dahulu</ToastTitle>
+                        </Toast>
+                      ),
+                    });
+                    return;
+                  }
                   router.navigate("/(main)/transaction/checkout");
                   setStatus("COMPLETED");
                 }}
@@ -258,6 +318,17 @@ export default function TransactionList() {
               <Pressable
                 className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                 onPress={() => {
+                  if (!customer) {
+                    toast.show({
+                      placement: "top",
+                      render: ({ id }) => (
+                        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+                          <ToastTitle>Silakan pilih pelanggan terlebih dahulu</ToastTitle>
+                        </Toast>
+                      ),
+                    });
+                    return;
+                  }
                   router.navigate("/(main)/transaction/checkout");
                   setStatus("DRAFT");
                 }}
