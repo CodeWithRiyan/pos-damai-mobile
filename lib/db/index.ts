@@ -1,3 +1,5 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Application from 'expo-application';
 import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
 import * as SQLite from 'expo-sqlite';
@@ -14,5 +16,52 @@ export async function initializeDb() {
   } catch (error) {
     console.error('Failed to apply migrations:', error);
     // In some cases, we might need a fallback if the migrator fails
+    throw error; // Rethrow to let RootLayout handle it if needed
+  }
+}
+
+export async function resetDb() {
+  try {
+    const tableNames = await expoDb.getAllAsync<{ name: string }>(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+    );
+
+    for (const { name } of tableNames) {
+      await expoDb.execAsync(`DROP TABLE IF EXISTS ${name}`);
+      console.log(`Dropped table: ${name}`);
+    }
+    
+    // Also clear Async Storage to remove stale auth/sync data
+    await AsyncStorage.clear();
+    
+    console.log('Database and storage reset successfully');
+  } catch (error) {
+    console.error('Error resetting database:', error);
+    throw error;
+  }
+}
+
+export async function checkAndResetDbOnUpdate() {
+  try {
+    const lastRunVersion = await AsyncStorage.getItem('last_run_version');
+    const currentVersion = Application.nativeApplicationVersion || '1.0.0';
+    const buildVersion = Application.nativeBuildVersion || '1';
+    // Combine version and build number to be sure
+    const fullCurrentVersion = `${currentVersion}-${buildVersion}`;
+
+    console.log(`[DB Check] Last: ${lastRunVersion}, Current: ${fullCurrentVersion}`);
+
+    if (lastRunVersion !== fullCurrentVersion) {
+      console.log('App updated! Resetting database...');
+      await resetDb();
+      await AsyncStorage.setItem('last_run_version', fullCurrentVersion);
+      // Re-initialize DB after reset to ensure tables exist
+      await initializeDb();
+      return true; // Indicates a reset happened
+    }
+    return false;
+  } catch (error) {
+    console.error('Error checking for update reset:', error);
+    return false;
   }
 }

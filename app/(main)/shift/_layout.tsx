@@ -3,7 +3,7 @@ import { VStack } from "@/components/ui";
 import { Stack } from "expo-router";
 import { View } from "react-native";
 
-export default function MainLayout() {
+export default function ShiftLayout() {
   return (
     <VStack className="flex-1">
       <ShiftTabs />

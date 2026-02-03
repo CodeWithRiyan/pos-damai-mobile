@@ -100,6 +100,15 @@ export const useCreatePurchaseReturn = () => {
       const localRefId = `ref_ret_${Date.now()}`;
       const now = new Date();
 
+      console.log('🔍 [RETURN API] Starting return creation:', {
+        returnId,
+        localRefId,
+        supplierId: data.supplierId,
+        totalAmount: data.totalAmount,
+        returnType: data.returnType,
+        itemCount: data.items?.length || 0,
+      });
+
       await db.transaction(async (tx) => {
         // 1. Create Return Header
         await tx.insert(purchaseReturns).values({
@@ -113,11 +122,20 @@ export const useCreatePurchaseReturn = () => {
           createdAt: now,
           updatedAt: now,
         });
+        console.log('✅ [RETURN API] Return header created');
 
         // 2. Create Items and Transactions
         if (data.items) {
           for (const item of data.items) {
             const itemId = `reti_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            
+            console.log('➕ [RETURN API] Creating item:', {
+              itemId,
+              productId: item.productId,
+              productName: item.productName,
+              quantity: item.quantity,
+              purchasePrice: item.purchasePrice,
+            });
             
             // 2a. Save item
             await tx.insert(purchaseReturnItems).values({
@@ -131,12 +149,33 @@ export const useCreatePurchaseReturn = () => {
               createdAt: now,
               updatedAt: now,
             });
+            console.log('✅ [RETURN API] Item saved');
 
-            // 2b. Reduce stock via transaction (matching backend logic)
+            // 2b. Reduce stock via transaction only if returnType is CASH
+            // Per business process: 
+            // - CASH return: stock decreases (-quantity)
+            // - ITEM return: stock change is +0 (assuming swap/replenishment)
             if (data.returnType === 'CASH') {
+              const txId = `itrt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+              const txRefId = `${localRefId}-${item.productId}`;
+              
+              console.log('📉 [RETURN API] Creating inventory transaction for stock reduction (CASH return):', {
+                id: txId,
+                local_ref_id: txRefId,
+                productId: item.productId,
+                type: 'RETURN_PURCHASE',
+                quantity: -item.quantity,
+                status: 'COMPLETED',
+              });
+              
+              if (!item.productId) {
+                console.error('❌ [RETURN API] Product ID is missing for item!', item);
+                continue;
+              }
+
               await tx.insert(inventoryTransactions).values({
-                id: `itrt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                local_ref_id: `${localRefId}-${item.productId}`,
+                id: txId,
+                local_ref_id: txRefId,
                 productId: item.productId,
                 type: 'RETURN_PURCHASE',
                 quantity: -item.quantity,
@@ -146,11 +185,15 @@ export const useCreatePurchaseReturn = () => {
                 createdAt: now,
                 updatedAt: now,
               });
+              console.log(`✅ [RETURN API] Inventory transaction created for product ${item.productId} - stock reduced by ${item.quantity}`);
+            } else {
+              console.log(`ℹ️ [RETURN API] Skipping inventory transaction for product ${item.productId} (returnType is ITEM, net stock change +0)`);
             }
           }
         }
       });
 
+      console.log('🎉 [RETURN API] Return creation completed successfully');
       return { id: returnId, local_ref_id: localRefId };
     },
     onSuccess: () => {

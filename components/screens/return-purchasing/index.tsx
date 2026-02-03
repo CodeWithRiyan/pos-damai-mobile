@@ -11,33 +11,27 @@ import {
   Text,
   VStack,
 } from "@/components/ui";
+import { Spinner } from "@/components/ui/spinner";
 import { usePurchaseReturns } from "@/lib/api/return-purchasing";
+import dayjs from "dayjs";
 import { useRouter } from "expo-router";
 import { ScrollView } from "react-native";
-import { Spinner } from "@/components/ui/spinner";
-import dayjs from "dayjs";
 
-export default function ReturPurchasing() {
+export default function ReturnPurchasing() {
   const router = useRouter();
   const { data: returns, isLoading } = usePurchaseReturns();
 
   return (
     <VStack className="flex-1 bg-white">
       <Header header="RETUR PEMBELIAN BARANG" isGoBack />
-      <HStack space="sm" className="p-4 shadow-lg bg-background-0 items-center">
-        <Input className="flex-1 border border-background-300 rounded-lg h-10">
+      <VStack space="sm" className="p-4 shadow-lg bg-background-0">
+        <Input className="border border-background-300 rounded-lg h-10">
           <InputSlot className="pl-3">
             <InputIcon as={SearchIcon} />
           </InputSlot>
           <InputField placeholder="Cari no transaksi atau nama supplier" />
         </Input>
-        <Pressable
-          className="bg-primary-500 px-4 h-10 rounded-lg items-center justify-center"
-          onPress={() => router.navigate("/(main)/management/return/purchasing/input")}
-        >
-          <Text className="text-white font-bold">+ Tambah</Text>
-        </Pressable>
-      </HStack>
+      </VStack>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {isLoading ? (
           <VStack className="items-center py-10">
@@ -57,18 +51,24 @@ export default function ReturPurchasing() {
                 onPress={() =>
                   router.navigate({
                     pathname: "/(main)/management/return/purchasing/detail",
-                    params: { id: ret.id }
+                    params: { id: ret.id },
                   })
                 }
               >
                 <HStack space="xl" className="items-center">
                   <VStack>
-                    <Text className="text-typography-500 font-bold">{date.format("HH:mm:ss")}</Text>
+                    <Text className="text-typography-500 font-bold">
+                      {date.format("HH:mm:ss")}
+                    </Text>
                     <HStack space="sm" className="items-center">
                       <Heading size="4xl">{date.date()}</Heading>
                       <VStack>
-                        <Text className="text-typography-500 font-bold">{date.format("MMM")}</Text>
-                        <Text className="text-typography-500 font-bold">{date.year()}</Text>
+                        <Text className="text-typography-500 font-bold">
+                          {date.format("MMM")}
+                        </Text>
+                        <Text className="text-typography-500 font-bold">
+                          {date.year()}
+                        </Text>
                       </VStack>
                     </HStack>
                   </VStack>
@@ -78,10 +78,14 @@ export default function ReturPurchasing() {
                         <Text className="text-typography-400 text-xs">
                           Jumlah Retur
                         </Text>
-                        <Text className="font-bold">Rp {ret.totalAmount.toLocaleString("id-ID")}</Text>
+                        <Text className="font-bold">
+                          Rp {ret.totalAmount.toLocaleString("id-ID")}
+                        </Text>
                       </VStack>
                       <VStack>
-                        <Text className="text-typography-400 text-xs">Supplier</Text>
+                        <Text className="text-typography-400 text-xs">
+                          Supplier
+                        </Text>
                         <Text className="font-bold">{ret.supplierName}</Text>
                       </VStack>
                       <VStack />

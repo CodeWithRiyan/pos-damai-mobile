@@ -20,6 +20,7 @@ import {
   useBulkDeleteCategory,
   useCategories,
   useProductCountsByCategory,
+  useCapitalValueByCategory,
 } from "@/lib/api/categories";
 import { getErrorMessage } from "@/lib/api/client";
 import { useCategoryStore } from "@/stores/category";
@@ -35,6 +36,7 @@ export default function CategoryList() {
   const { data, isLoading, refetch } = useCategories();
   const { data: productCounts, refetch: refetchCounts } =
     useProductCountsByCategory();
+  const { data: capitalValues } = useCapitalValueByCategory();
   const [selectedItems, setSelectedItems] = useState<Category[] | null>(null);
 
   const categories = data || [];
@@ -231,7 +233,9 @@ export default function CategoryList() {
                       <Text className="text-brand-primary text-sm font-bold">
                         Nilai Modal
                       </Text>
-                      <Text size="xs">Rp 0</Text>
+                      <Text size="xs">
+                        Rp {(capitalValues?.[item.id] ?? 0).toLocaleString('id-ID')}
+                      </Text>
                     </VStack>
                   </HStack>
                 </Pressable>

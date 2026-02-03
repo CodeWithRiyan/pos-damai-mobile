@@ -1,8 +1,9 @@
 import axios, { AxiosError, InternalAxiosRequestConfig, isAxiosError } from 'axios';
+import { router } from 'expo-router';
 import { authStorageAdapter } from '../storage';
 
 // API base URL
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://dev.api.pos.damai.sakaloka.id';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api-dev-pos-damai.riyansolusi.com';
 
 // Create axios instance
 export const apiClient = axios.create({
@@ -60,7 +61,7 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed - clear auth and redirect to login
         authStorageAdapter.clearAll();
-        // TODO: Navigate to login screen
+        router.replace('/login');
         return Promise.reject(refreshError);
       }
     }

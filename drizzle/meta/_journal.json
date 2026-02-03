@@ -57,6 +57,34 @@
       "when": 1769016000000,
       "tag": "0007_add_stock_opnames",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1769744503292,
+      "tag": "0008_ordinary_jazinda",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1770128137684,
+      "tag": "0009_legal_shockwave",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1770137143301,
+      "tag": "0010_finance_local_ref_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1770137510813,
+      "tag": "0011_add_userid_to_finances",
+      "breakpoints": true
     }
   ]
 }

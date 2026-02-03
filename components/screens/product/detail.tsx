@@ -282,28 +282,13 @@ export default function ProductDetail() {
         <Pressable
           className="w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-brand-primary"
           onPress={() => {
-            if (product?.supplierId) {
-              router.push(
-                `/(main)/management/customer-supplier/supplier/detail/${product.supplierId}`,
-              );
-            } else {
-              toast.show({
-                placement: "top",
-                render: ({ id }) => (
-                  <Toast
-                    nativeID={`toast-${id}`}
-                    action="warning"
-                    variant="solid"
-                  >
-                    <ToastTitle>Produk tidak memiliki supplier</ToastTitle>
-                  </Toast>
-                ),
-              });
-            }
+            router.push(
+              `/(main)/management/product-category-brand/product/suppliers/${productId}` as any
+            );
           }}
         >
           <Text size="sm" className="text-brand-primary font-bold">
-            LIHAT SUPPLIER
+            LIHAT DAFTAR SUPPLIER
           </Text>
         </Pressable>
       </VStack>

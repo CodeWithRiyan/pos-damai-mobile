@@ -95,18 +95,28 @@ export default function ReturnPurchasingConfirmForm() {
       0,
     );
 
+    const returnData = {
+      supplierId: selectedPurchase.supplierId,
+      totalAmount,
+      returnType: data.returnType as "CASH" | "ITEM",
+      items: cart.map((item) => ({
+        productId: item.product.productId,
+        productName: item.product.productName || "",
+        quantity: item.quantity,
+        purchasePrice: item.product.purchasePrice || 0,
+      })),
+    };
+
+    console.log('📦 [RETURN FORM] Submitting return:', {
+      supplierId: returnData.supplierId,
+      totalAmount: returnData.totalAmount,
+      returnType: returnData.returnType,
+      itemCount: returnData.items.length,
+      items: returnData.items,
+    });
+
     createMutation.mutate(
-      {
-        supplierId: selectedPurchase.supplierId,
-        totalAmount,
-        returnType: data.returnType as "CASH" | "ITEM",
-        items: cart.map((item) => ({
-          productId: item.product.productId,
-          productName: item.product.productName || "",
-          quantity: item.quantity,
-          purchasePrice: item.product.purchasePrice || 0,
-        })),
-      },
+      returnData,
       {
         onSuccess: () => {
           showSuccessToast("Retur berhasil disimpan");

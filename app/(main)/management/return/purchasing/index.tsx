@@ -1,5 +1,5 @@
-import ReturnPurchasing from "@/components/screens/return-purchasing";
+import ReturnPurchasingInput from "@/components/screens/return-purchasing/input";
 
 export default function ReturnPurchasingScreen() {
-  return <ReturnPurchasing />;
+  return <ReturnPurchasingInput />;
 }

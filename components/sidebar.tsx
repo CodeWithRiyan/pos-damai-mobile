@@ -142,10 +142,10 @@ export function Sidebar() {
               })}
             </VStack>
           </DrawerBody>
-          <DrawerFooter>
+          <DrawerFooter className="gap-2">
             {/* Logout */}
             <Pressable
-              className="flex-row flex-1 items-center p-3 rounded-xl gap-3 bg-gray-50"
+              className="flex-row items-center p-3 rounded-xl gap-3 bg-gray-50 flex-1"
               onPress={handleLogout}
             >
               <IconSymbol

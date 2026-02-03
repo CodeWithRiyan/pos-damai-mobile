@@ -174,7 +174,7 @@ export default function PopupAddProduct() {
                       isInvalid={!!error}
                       className="w-44 h-full"
                     >
-                      <Input className="flex-1 border-white data-[focus=true]:border-white">
+                      <Input className="flex-1 border-transparent data-[focus=true]:border-transparent bg-transparent">
                         <InputField
                           value={value.toString()}
                           autoComplete="off"

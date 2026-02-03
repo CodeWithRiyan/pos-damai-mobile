@@ -1,5 +1,10 @@
 import { tva, VariantProps } from "@gluestack-ui/utils/nativewind-utils";
-import { CheckIcon, ChevronDown, SearchIcon } from "lucide-react-native";
+import {
+  CheckIcon,
+  ChevronDown,
+  RefreshCcw,
+  SearchIcon,
+} from "lucide-react-native";
 import { useState } from "react";
 import { HStack } from "../hstack";
 import { Icon } from "../icon";
@@ -45,6 +50,7 @@ export default function SelectModal({
   size = "md",
   variant = "outline",
   showSearch = true,
+  disabled = false,
   onChange,
 }: {
   header?: string;
@@ -53,7 +59,8 @@ export default function SelectModal({
   placeholder?: string;
   searchPlaceholder?: string;
   showSearch?: boolean;
-  onChange: (v: string) => void;
+  disabled?: boolean;
+  onChange: (v: string | null) => void;
 } & VariantProps<typeof selectTriggerStyle>) {
   const [open, setOpen] = useState<boolean>(false);
   const [search, setSearch] = useState<string>("");
@@ -65,7 +72,8 @@ export default function SelectModal({
   return (
     <>
       <Pressable
-        onPress={() => setOpen(true)}
+        onPress={() => !disabled && setOpen(true)}
+        disabled={disabled}
         className={selectTriggerStyle({
           class: className,
           size,
@@ -103,6 +111,16 @@ export default function SelectModal({
                   onChangeText={(v) => setSearch(v)}
                 />
               </Input>
+              <Pressable
+                onPress={() => {
+                  setOpen(false);
+                  setSearch("");
+                  onChange(null);
+                }}
+                className="size-10 items-center justify-center"
+              >
+                <Icon as={RefreshCcw} />
+              </Pressable>
             </HStack>
           </ModalHeader>
           <ModalBody className="m-0" showsVerticalScrollIndicator={false}>

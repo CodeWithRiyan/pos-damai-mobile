@@ -1,4 +1,4 @@
-CREATE TABLE `brands` (
+CREATE TABLE IF NOT EXISTS `brands` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`description` text,
@@ -10,7 +10,7 @@ CREATE TABLE `brands` (
 	`deletedAt` integer
 );
 --> statement-breakpoint
-CREATE TABLE `categories` (
+CREATE TABLE IF NOT EXISTS `categories` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`point` real DEFAULT 0,
@@ -23,7 +23,7 @@ CREATE TABLE `categories` (
 	`deletedAt` integer
 );
 --> statement-breakpoint
-CREATE TABLE `customers` (
+CREATE TABLE IF NOT EXISTS `customers` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`category` text DEFAULT 'RETAIL',
@@ -38,8 +38,8 @@ CREATE TABLE `customers` (
 	`deletedAt` integer
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `customers_code_unique` ON `customers` (`code`);--> statement-breakpoint
-CREATE TABLE `inventory_transactions` (
+CREATE UNIQUE INDEX IF NOT EXISTS `customers_code_unique` ON `customers` (`code`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `inventory_transactions` (
 	`id` text PRIMARY KEY NOT NULL,
 	`local_ref_id` text,
 	`productId` text NOT NULL,
@@ -54,8 +54,8 @@ CREATE TABLE `inventory_transactions` (
 	`deletedAt` integer
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `inventory_transactions_local_ref_id_unique` ON `inventory_transactions` (`local_ref_id`);--> statement-breakpoint
-CREATE TABLE `product_prices` (
+CREATE UNIQUE INDEX IF NOT EXISTS `inventory_transactions_local_ref_id_unique` ON `inventory_transactions` (`local_ref_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `product_prices` (
 	`id` text PRIMARY KEY NOT NULL,
 	`label` text NOT NULL,
 	`price` real NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE `product_prices` (
 	`deletedAt` integer
 );
 --> statement-breakpoint
-CREATE TABLE `products` (
+CREATE TABLE IF NOT EXISTS `products` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`barcode` text,
@@ -85,7 +85,7 @@ CREATE TABLE `products` (
 	`deletedAt` integer
 );
 --> statement-breakpoint
-CREATE TABLE `purchases` (
+CREATE TABLE IF NOT EXISTS `purchases` (
 	`id` text PRIMARY KEY NOT NULL,
 	`local_ref_id` text,
 	`supplierId` text NOT NULL,
@@ -100,8 +100,8 @@ CREATE TABLE `purchases` (
 	`deletedAt` integer
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `purchases_local_ref_id_unique` ON `purchases` (`local_ref_id`);--> statement-breakpoint
-CREATE TABLE `sync_state` (
+CREATE UNIQUE INDEX IF NOT EXISTS `purchases_local_ref_id_unique` ON `purchases` (`local_ref_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `sync_state` (
 	`key` text PRIMARY KEY NOT NULL,
 	`value` text NOT NULL
 );

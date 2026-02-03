@@ -1,4 +1,4 @@
-CREATE TABLE `stock_opnames` (
+CREATE TABLE IF NOT EXISTS `stock_opnames` (
 	`id` text PRIMARY KEY NOT NULL,
 	`local_ref_id` text,
 	`date` integer NOT NULL,
@@ -15,9 +15,9 @@ CREATE TABLE `stock_opnames` (
 	`deletedAt` integer
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `stock_opnames_local_ref_id_unique` ON `stock_opnames` (`local_ref_id`);
+CREATE UNIQUE INDEX IF NOT EXISTS `stock_opnames_local_ref_id_unique` ON `stock_opnames` (`local_ref_id`);
 --> statement-breakpoint
-CREATE TABLE `stock_opname_items` (
+CREATE TABLE IF NOT EXISTS `stock_opname_items` (
 	`id` text PRIMARY KEY NOT NULL,
 	`stockOpnameId` text NOT NULL,
 	`productId` text NOT NULL,
