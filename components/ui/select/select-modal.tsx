@@ -50,6 +50,7 @@ export default function SelectModal({
   size = "md",
   variant = "outline",
   showSearch = true,
+  disabled = false,
   onChange,
 }: {
   header?: string;
@@ -58,6 +59,7 @@ export default function SelectModal({
   placeholder?: string;
   searchPlaceholder?: string;
   showSearch?: boolean;
+  disabled?: boolean;
   onChange: (v: string | null) => void;
 } & VariantProps<typeof selectTriggerStyle>) {
   const [open, setOpen] = useState<boolean>(false);
@@ -70,7 +72,8 @@ export default function SelectModal({
   return (
     <>
       <Pressable
-        onPress={() => setOpen(true)}
+        onPress={() => !disabled && setOpen(true)}
+        disabled={disabled}
         className={selectTriggerStyle({
           class: className,
           size,

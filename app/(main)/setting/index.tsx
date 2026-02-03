@@ -46,7 +46,13 @@ export default function SettingScreen() {
   return (
     <Box className="flex-1 bg-gray-50 p-4">
       <VStack space="md" className="flex-1 max-w-2xl mx-auto w-full">
-        <HStack className="items-center justify-between mb-4">
+        <HStack className="items-center mb-4" space="md">
+          <Pressable
+            onPress={() => router.back()}
+            className="w-10 h-10 items-center justify-center rounded-full active:bg-gray-200"
+          >
+            <IconSymbol name="chevron.left" size={24} className="text-gray-700" />
+          </Pressable>
           <Heading size="xl">Settings</Heading>
         </HStack>
 

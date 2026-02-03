@@ -24,14 +24,14 @@ import {
   SolarIconLinear,
 } from "@/components/ui/solar-icon-wrapper";
 import { getErrorMessage } from "@/lib/api/client";
-// import { useDeletePayable, usePayable, usePayableList } from "@/lib/api/payable";
+import { useDeletePayable, usePayableBySupplier, Payable } from "@/lib/api/payable";
+import { Spinner } from "@/components/ui/spinner";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { CalendarIcon } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView } from "react-native";
-import { dataPayable, Payable } from ".";
 
 export default function PayableDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -40,16 +40,16 @@ export default function PayableDetail() {
   const params = useLocalSearchParams();
   const supplierId = params.supplierId as string;
 
+  const { data: payableList = [], isLoading, refetch } = usePayableBySupplier(supplierId);
+  const deleteMutation = useDeletePayable();
+
   const [selectedItems, setSelectedItems] = useState<Payable[] | null>(null);
   const [showTransactionDatePicker, setShowTransactionDatePicker] =
     useState<boolean>(false);
   const [transactionDate, setDueDate] = useState<Date | null>(null);
   const [statuses, setStatuses] = useState<string[]>(["Lunas", "Belum Lunas"]);
 
-  // TODO: Panggil usePayableList
-  const payableList: Payable[] =
-    dataPayable.filter((r) => r.supplierId === supplierId) || [];
-  const payable: Payable = payableList[0];
+  const payable = payableList[0];
 
   const toast = useToast();
 
@@ -66,10 +66,6 @@ export default function PayableDetail() {
     setSelectedItems([...selectedItems, payable]);
   };
 
-  const onRefetch = () => {
-    // refetchPayableList();
-  };
-
   const showErrorToast = (error: unknown) => {
     toast.show({
       placement: "top",
@@ -84,79 +80,74 @@ export default function PayableDetail() {
     });
   };
 
-  const handleDeletePress = () => {
+  const handleDeletePress = (payableToDelete?: Payable) => {
+    const targetPayable = payableToDelete || payable;
+    if (!targetPayable) return;
+
     showPopUpConfirm({
       title: "HAPUS HUTANG",
       icon: "warning",
       description: (
         <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus hutang untuk supplier `}
-          <Text className="font-bold text-slate-900">
-            {payable?.supplier.name}
-          </Text>
-          {` ? Tindakan ini tidak dapat dibatalkan.`}
+          {`Apakah Anda yakin ingin menghapus hutang ini? Tindakan ini tidak dapat dibatalkan.`}
         </Text>
       ),
       showClose: true,
       okText: "HAPUS",
       closeText: "BATAL",
       okVariant: "destructive",
-      onOk: () => confirmDelete(),
-      // loading: deleteMutation.isPending,
+      onOk: () => confirmDelete(targetPayable.id),
     });
   };
 
-  // TODO: Konfirmasi hapus hutang supplier
-  const confirmDelete = async () => {
-    if (!payable) return;
+  const confirmDelete = async (id: string) => {
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        hidePopUpConfirm();
+        refetch();
+        if (payableList.length <= 1) {
+            router.back();
+        }
 
-    // deleteMutation.mutate(payable.id, {
-    //   onSuccess: () => {
-    //     hidePopUpConfirm();
-    //     onRefetch();
-    //     router.back();
-
-    //     toast.show({
-    //       placement: "top",
-    //       render: ({ id }) => (
-    //         <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //           <ToastTitle>Hutang berhasil dihapus</ToastTitle>
-    //         </Toast>
-    //       ),
-    //     });
-    //   },
-    //   onError: (error) => {
-    //     showErrorToast(error);
-    //     hidePopUpConfirm();
-    //   },
-    // });
+        toast.show({
+          placement: "top",
+          render: ({ id: toastId }) => (
+            <Toast nativeID={`toast-${toastId}`} action="success" variant="solid">
+              <ToastTitle>Hutang berhasil dihapus</ToastTitle>
+            </Toast>
+          ),
+        });
+      },
+      onError: (error) => {
+        showErrorToast(error);
+        hidePopUpConfirm();
+      },
+    });
   };
 
   const handleAction = () => {
     showActionDrawer({
       actions: [
         {
-          label: "Edit",
-          icon: "Pen",
-          onPress: () => {
-            router.navigate(
-              `/(main)/management/payable-receivable/payable/edit/${payable?.id}`,
-            );
-            hideActionDrawer();
-          },
-        },
-        {
-          label: "Delete",
+          label: "Delete All",
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
-            handleDeletePress();
+            // Bulk delete logic could go here if needed
             hideActionDrawer();
           },
         },
       ],
     });
   };
+
+  if (isLoading) {
+    return (
+      <Box className="flex-1 justify-center items-center">
+        <Spinner size="large" />
+      </Box>
+    );
+  }
 
   return (
     <VStack className="flex-1 bg-white">
@@ -196,13 +187,15 @@ export default function PayableDetail() {
                     color="#3b82f6"
                   />
                   <Text className="text-typography-500 text-sm">
-                    {payable?.supplier.name}
+                    {payable?.supplier?.name || 'Unknown Supplier'}
                   </Text>
                 </HStack>
-                <Text className="text-typography-500 text-sm">
-                  Total Belum Lunas
-                </Text>
-                <Text className="text-error-500 font-bold">{`Rp ${payableList?.reduce((acc, curr) => acc + curr.totalRealization, 0).toLocaleString("id-ID")}`}</Text>
+                <VStack className="mt-2">
+                    <Text className="text-typography-500 text-sm">
+                    Total Belum Lunas
+                    </Text>
+                    <Text className="text-error-500 font-bold">{`Rp ${payableList?.reduce((acc, curr) => acc + (curr.nominal - curr.totalRealization), 0).toLocaleString("id-ID")}`}</Text>
+                </VStack>
               </VStack>
               <VStack className="flex-1 items-end">
                 <Text className="text-typography-500 text-sm">
@@ -218,27 +211,21 @@ export default function PayableDetail() {
               <HStack className="absolute -bottom-4 right-0 left-0 justify-center">
                 <Pressable
                   className="items-center justify-center h-9 px-10 rounded-lg bg-primary-500 active:bg-primary-500/90"
-                  disabled={
-                    (payable?.nominal || 0) === (payable?.totalRealization || 0)
-                  }
                   onPress={() => {
                     router.navigate(
-                      `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${payableList?.map((m) => m.id).join("-")}`,
+                      `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${payableList?.map((m) => m.id).join("-")}` as any,
                     );
                   }}
                 >
                   <Text size="lg" className="text-sm text-white font-bold">
-                    {(payable?.nominal || 0) ===
-                    (payable?.totalRealization || 0)
-                      ? "LUNAS"
-                      : "LUNASI SEKARANG"}
+                    LUNASI SEKARANG
                   </Text>
                 </Pressable>
               </HStack>
             </HStack>
           </VStack>
         </VStack>
-        <VStack space="md" className="px-4 mb-4">
+        <VStack space="md" className="px-4 mb-4 mt-4">
           <HStack space="sm" className="items-center">
             <Pressable
               className="size-10 items-center justify-center"
@@ -336,7 +323,7 @@ export default function PayableDetail() {
                     handlePayablePress(payable);
                   } else {
                     router.navigate(
-                      `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/detail?payableIds=${payable?.id}`,
+                      `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/detail?payableIds=${payable?.id}` as any,
                     );
                     setSelectedItems(null);
                   }
@@ -354,6 +341,7 @@ export default function PayableDetail() {
                           (r) => r.id === payable.id,
                         )}
                         size="md"
+                        onChange={() => handlePayablePress(payable)}
                       >
                         <CheckboxIndicator>
                           <CheckboxIcon as={CheckIcon} />
@@ -395,11 +383,7 @@ export default function PayableDetail() {
                 </HStack>
               </Pressable>
             ))}
-          {payableList?.filter((r) =>
-            statuses.includes(
-              r.nominal - r.totalRealization > 0 ? "Belum Lunas" : "Lunas",
-            ),
-          )?.length === 0 && (
+          {payableList?.length === 0 && (
             <Box className="p-8 items-center">
               <Text className="text-slate-400 italic">No payable found</Text>
             </Box>
@@ -413,7 +397,7 @@ export default function PayableDetail() {
             className="w-full rounded-md h-9 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
             onPress={() => {
               router.navigate(
-                `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${selectedItems?.map((m) => m.id).join("-")}`,
+                `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${selectedItems?.map((m) => m.id).join("-")}` as any,
               );
             }}
           >
@@ -424,7 +408,12 @@ export default function PayableDetail() {
             </Text>
           </Pressable>
         ) : (
-          <Pressable className="w-full rounded-sm h-9 flex justify-center items-center bg-error-50 border border-error-500">
+          <Pressable 
+            className="w-full rounded-sm h-9 flex justify-center items-center bg-error-50 border border-error-500"
+            onPress={() => {
+                router.navigate(`/(main)/management/payable-receivable/payable/add` as any);
+            }}
+          >
             <Text size="sm" className="text-error-500 font-bold">
               TAMBAH HUTANG
             </Text>

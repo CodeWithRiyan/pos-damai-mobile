@@ -29,9 +29,11 @@ import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
-import { User } from "@/lib/api/users";
-import { PaymentType } from "@/stores/payment-type";
-// import { useBulkDeleteReceivable, Receivable, useReceivableList } from "@/lib/api/receivable";
+import {
+  useBulkDeleteReceivableByUser,
+  useReceivableList,
+  ReceivableByUser,
+} from "@/lib/api/receivable";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
@@ -39,202 +41,13 @@ import { CalendarIcon } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
-// TODO: Pindahkan interface ke dalam service, hapus dummy data
-export interface ReceivableRealization {
-  id: string;
-  ref: string;
-  nominal: number;
-  realizationDate: string;
-  paymentTypeId: string;
-  paymentType: PaymentType;
-  note: string;
-  createdAt: string;
-  createdById: string;
-  createdByName: string;
-}
-
-export interface Receivable {
-  id: string;
-  userId: string;
-  user: User;
-  dueDate: string;
-  nominal: number;
-  totalRealization: number;
-  realizations: ReceivableRealization[];
-  createdAt: string;
-}
-
-export interface ReceivableByUser {
-  userId: string;
-  userName: string;
-  totalReceivable: number;
-  totalRealization: number;
-  nearestDueDate: string;
-  organizationId: string;
-  address: string;
-  phone: string;
-}
-
-export const dataReceivable: Receivable[] = [
-  {
-    id: "1",
-    userId: "1",
-    user: {
-      id: "1",
-      firstName: "John",
-      lastName: "Doe",
-      email: "DjC3Y@example.com",
-      phone: "08123456789",
-      password: "",
-      avatar: "",
-      provider: "",
-      isActive: true,
-      isLocked: false,
-      lockReason: "",
-      selectedOrganizationId: "1",
-      createdById: "1",
-      lastLoginAt: "2023-01-01",
-      passwordChangedAt: "2023-01-01",
-      createdAt: "2023-01-01",
-      updatedAt: "2023-01-01",
-      username: "johndoe",
-      roles: [] as any,
-    },
-    dueDate: "2023-01-01",
-    nominal: 10000,
-    totalRealization: 5000,
-    realizations: [
-      {
-        id: "1",
-        ref: "123JB1JK3JK12",
-        nominal: 5000,
-        realizationDate: "2023-01-01",
-        paymentTypeId: "1",
-        paymentType: {
-          id: "1",
-          name: "Cash",
-          commission: 0,
-          minimalAmount: 0,
-        },
-        note: "Realisasi 1",
-        createdAt: "2023-01-01",
-        createdById: "1",
-        createdByName: "John Doe",
-      },
-    ],
-    createdAt: "2023-01-01",
-  },
-  {
-    id: "2",
-    userId: "2",
-    user: {
-      id: "2",
-      firstName: "Jane",
-      lastName: "Doe",
-      email: "DjC3Y@ex.com",
-      phone: "08123456788",
-      password: "",
-      avatar: "",
-      provider: "",
-      isActive: true,
-      isLocked: false,
-      lockReason: "",
-      selectedOrganizationId: "1",
-      createdById: "1",
-      lastLoginAt: "2023-01-01",
-      passwordChangedAt: "2023-01-01",
-      createdAt: "2023-01-01",
-      updatedAt: "2023-01-01",
-      username: "janedoe",
-      roles: [] as any,
-    },
-    dueDate: "2023-01-01",
-    nominal: 20000,
-    totalRealization: 0,
-    realizations: [],
-    createdAt: "2023-01-01",
-  },
-  {
-    id: "3",
-    userId: "1",
-    user: {
-      id: "1",
-      firstName: "John",
-      lastName: "Doe",
-      email: "DjC3Y@example.com",
-      phone: "08123456789",
-      password: "",
-      avatar: "",
-      provider: "",
-      isActive: true,
-      isLocked: false,
-      lockReason: "",
-      selectedOrganizationId: "1",
-      createdById: "1",
-      lastLoginAt: "2023-01-01",
-      passwordChangedAt: "2023-01-01",
-      createdAt: "2023-01-01",
-      updatedAt: "2023-01-01",
-      username: "johndoe",
-      roles: [] as any,
-    },
-    dueDate: "2023-01-01",
-    nominal: 10000,
-    totalRealization: 5000,
-    realizations: [
-      {
-        id: "1",
-        ref: "123JB1JK3JK12",
-        nominal: 5000,
-        realizationDate: "2023-01-01",
-        paymentTypeId: "1",
-        paymentType: {
-          id: "1",
-          name: "Cash",
-          commission: 0,
-          minimalAmount: 0,
-        },
-        note: "Realisasi 1",
-        createdAt: "2023-01-01",
-        createdById: "1",
-        createdByName: "John Doe",
-      },
-    ],
-    createdAt: "2023-01-01",
-  },
-];
-
-export const receivableByUser: ReceivableByUser[] = [
-  {
-    userId: "1",
-    userName: "John Doe",
-    totalReceivable: 20000,
-    totalRealization: 10000,
-    nearestDueDate: "2023-01-01",
-    organizationId: "1",
-    address: "Jalan 1",
-    phone: "08123456789",
-  },
-  {
-    userId: "2",
-    userName: "Jane Doe",
-    totalReceivable: 20000,
-    totalRealization: 0,
-    nearestDueDate: "2023-01-01",
-    organizationId: "1",
-    address: "Jalan 1",
-    phone: "08123456789",
-  },
-];
-
 export default function ReceivableList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
-  // TODO: Panggil useReceivableList
-  // const { data, isLoadingFetch, refetch } = useReceivableList();
-  // const deleteMutation = useBulkDeleteReceivable();
+  const { data: receivableByUser = [], isLoading: isLoadingFetch } = useReceivableList();
+  const deleteMutation = useBulkDeleteReceivableByUser();
 
-  const isLoading = false; // isLoadingFetch || deleteMutation.isLoading;
+  const isLoading = isLoadingFetch || deleteMutation.isPending;
   const [selectedItems, setSelectedItems] = useState<ReceivableByUser[] | null>(
     null,
   );
@@ -243,6 +56,20 @@ export default function ReceivableList() {
   const [statuses, setStatuses] = useState<string[]>(["Lunas", "Belum Lunas"]);
 
   const toast = useToast();
+
+  const showErrorToast = (error: unknown) => {
+    toast.show({
+      placement: "top",
+      render: ({ id }) => {
+        const toastId = "toast-" + id;
+        return (
+          <Toast nativeID={toastId} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
+          </Toast>
+        );
+      },
+    });
+  };
 
   const handleReceivablePress = (receivable: ReceivableByUser) => {
     if (selectedItems?.some((r) => r.userId === receivable.userId)) {
@@ -259,23 +86,9 @@ export default function ReceivableList() {
     setSelectedItems([...selectedItems, receivable]);
   };
 
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
   const handleAdd = () => {
     setSelectedItems(null);
-    router.push("/(main)/management/payable-receivable/receivable/add");
+    router.push("/(main)/management/payable-receivable/receivable/add" as any);
   };
 
   const handleDeletePress = () => {
@@ -296,15 +109,32 @@ export default function ReceivableList() {
       closeText: "BATAL",
       okVariant: "destructive",
       onOk: () => confirmDelete(userIds),
-      // loading: deleteMutation.isPending,
     });
   };
 
-  // TODO: Konfirmasi hapus bulk hutang
   const confirmDelete = async (userIds: string[]) => {
     if (!userIds.length) return;
-
-    // TODO: Buatkan delete mutation by userIds
+    deleteMutation.mutate(userIds, {
+      onSuccess: () => {
+        setSelectedItems(null);
+        hidePopUpConfirm();
+        // Since useReceivableList is a hook that likely uses queryKey ['receivables'],
+        // the mutation should invalidate it. But adding refetch explicitly is safer if defined.
+        
+        toast.show({
+          placement: "top",
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+              <ToastTitle>Piutang berhasil dihapus</ToastTitle>
+            </Toast>
+          ),
+        });
+      },
+      onError: (error) => {
+        showErrorToast(error);
+        hidePopUpConfirm();
+      },
+    });
   };
 
   if (isLoading) {
@@ -403,7 +233,7 @@ export default function ReceivableList() {
                   Total Belum Lunas
                 </Text>
                 <Heading size="xl" className="text-error-500">
-                  Rp 1.000.000
+                  Rp {receivableByUser.reduce((sum, r) => sum + (r.totalReceivable - r.totalRealization), 0).toLocaleString("id-ID")}
                 </Heading>
               </VStack>
               <VStack className="flex-1 items-end">
@@ -479,12 +309,9 @@ export default function ReceivableList() {
                         handleReceivablePress(receivable);
                       } else {
                         router.navigate(
-                          `/(main)/management/payable-receivable/receivable/detail/${receivable.userId}`,
+                          `/(main)/management/payable-receivable/receivable/detail/${receivable.userId}` as any,
                         );
                         setSelectedItems(null);
-                        console.log(
-                          `/(main)/management/payable-receivable/receivable/detail/${receivable.userId}`,
-                        );
                       }
                     }}
                     onLongPress={() => handleReceivablePress(receivable)}
@@ -493,15 +320,15 @@ export default function ReceivableList() {
                       <HStack space="md" className="items-center">
                         <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
                           <Text className="text-brand-primary font-bold">
-                            {receivable.userName.substring(0, 1).toUpperCase()}
+                            {receivable.userName?.substring(0, 1).toUpperCase() || '?'}
                           </Text>
                         </Box>
                         <VStack>
                           <Heading size="sm">{receivable.userName}</Heading>
                           <Text size="xs" className="text-slate-500">
-                            {dayjs(receivable.nearestDueDate).format(
+                            {receivable.nearestDueDate ? dayjs(receivable.nearestDueDate).format(
                               "DD/MM/YYYY",
-                            )}
+                            ) : '-'}
                           </Text>
                           <Text size="xs" className="text-blue-500">
                             {`Rp ${receivable.totalReceivable.toLocaleString("id-ID")}`}

@@ -89,6 +89,52 @@ export function useProductCountsByBrand() {
   });
 }
 
+// Get capital value (stock × purchase price) by brand
+export function useCapitalValueByBrand() {
+  const orgId = useAuthStore(state => state.getOrganizationId());
+  return useQuery({
+    queryKey: ['capitalValueByBrand', orgId],
+    queryFn: async () => {
+      // Get all products with their brand
+      const products = await db
+        .select({
+          id: schema.products.id,
+          brandId: schema.products.brandId,
+          purchasePrice: schema.products.purchasePrice,
+        })
+        .from(schema.products)
+        .where(
+          and(
+            eq(schema.products.organizationId, orgId),
+            isNull(schema.products.deletedAt)
+          )
+        );
+
+      const values: Record<string, number> = {};
+      
+      for (const product of products) {
+        if (!product.brandId) continue;
+        
+        // Get stock from inventory transactions
+        const transactions = await db
+          .select({ quantity: schema.inventoryTransactions.quantity })
+          .from(schema.inventoryTransactions)
+          .where(and(
+            eq(schema.inventoryTransactions.productId, product.id),
+            eq(schema.inventoryTransactions.status, 'COMPLETED')
+          ));
+        
+        const stock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
+        const value = stock * (product.purchasePrice ?? 0);
+        values[product.brandId] = (values[product.brandId] || 0) + value;
+      }
+
+      return values;
+    },
+    enabled: !!orgId,
+  });
+}
+
 // Create brand (saved to local SQLite, synced via SyncEngine)
 export function useCreateBrand() {
   const queryClient = useQueryClient();

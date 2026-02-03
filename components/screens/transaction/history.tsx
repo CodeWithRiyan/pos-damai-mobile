@@ -13,18 +13,16 @@ import {
 } from "@/components/ui";
 import { Box } from "@/components/ui/box";
 import { Spinner } from "@/components/ui/spinner";
-import { usePurchases } from "@/lib/api/purchasing";
+import { useTransactions } from "@/lib/api/transactions";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
 import { ScrollView } from "react-native";
 
-// TODO: Ubah Purchasing menjadi Transaction
-export default function PurchasingHistory() {
+export default function TransactionHistory() {
   const router = useRouter();
 
-  // TODO: Ganti dengan get useTransactions
-  const { data: allPurchases, isLoading } = usePurchases();
-  const purchases = allPurchases?.filter((p) => p.status === "COMPLETED") || [];
+  const { data: allTransactions, isLoading } = useTransactions();
+  const transactions = allTransactions?.filter((t) => t.status === "COMPLETED") || [];
 
   if (isLoading) {
     return (
@@ -49,23 +47,23 @@ export default function PurchasingHistory() {
         </Input>
       </HStack>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {!purchases || purchases.length === 0 ? (
+        {!transactions || transactions.length === 0 ? (
           <Box className="flex-1 justify-center items-center py-10">
-            <Text className="text-gray-500">Belum ada histori pembelian</Text>
+            <Text className="text-gray-500">Belum ada histori transaksi</Text>
           </Box>
         ) : (
-          purchases.map((purchase) => {
-            const date = purchase.createdAt
-              ? dayjs(purchase.createdAt)
+          transactions.map((transaction) => {
+            const date = transaction.createdAt
+              ? dayjs(transaction.createdAt)
               : dayjs();
             return (
               <Pressable
-                key={purchase.id}
+                key={transaction.id}
                 className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
                 onPress={() =>
                   router.navigate({
                     pathname: "/(main)/purchasing/receipt/[id]",
-                    params: { id: purchase.id },
+                    params: { id: transaction.id },
                   })
                 }
               >
@@ -90,32 +88,32 @@ export default function PurchasingHistory() {
                     <HStack className="justify-between">
                       <VStack>
                         <Text className="text-typography-400 text-xs">
-                          Pengeluaran
+                          Total
                         </Text>
                         <Text className="font-bold">
-                          Rp {purchase.totalAmount.toLocaleString("id-ID")}
+                          Rp {transaction.totalAmount.toLocaleString("id-ID")}
                         </Text>
                       </VStack>
                       <VStack>
                         <Text className="text-typography-400 text-xs">
-                          Supplier
+                          Pelanggan
                         </Text>
                         <Text className="font-bold">
-                          {purchase.supplierName}
+                          {transaction.customerName}
                         </Text>
                       </VStack>
                       <VStack>
                         <Text className="text-typography-400 text-xs">
-                          Tipe
+                          Pembayaran
                         </Text>
                         <Text className="font-bold">
-                          {purchase.paymentType === "CASH" ? "Tunai" : "Hutang"}
+                          {transaction.paymentTypeName}
                         </Text>
                       </VStack>
                     </HStack>
                     <HStack className="justify-between">
                       <Text className="text-typography-400 font-bold">
-                        No: {purchase.local_ref_id || purchase.id}
+                        No: {transaction.local_ref_id || transaction.id}
                       </Text>
                     </HStack>
                   </VStack>

@@ -8,10 +8,7 @@ import useBreakpoint from "@/hooks/use-breakpoint";
 import { useCurrentUser, useLogout } from "@/lib/api/auth";
 import { useSidebarStore } from "@/stores/sidebar";
 import { Link, LinkProps, usePathname, useRouter } from "expo-router";
-import * as Updates from "expo-updates";
 import React from "react";
-import { Alert } from "react-native";
-import { resetDb, initializeDb } from "@/lib/db";
 import { CloseIcon, Icon } from "./ui";
 import {
   Drawer,
@@ -146,42 +143,6 @@ export function Sidebar() {
             </VStack>
           </DrawerBody>
           <DrawerFooter className="gap-2">
-            {/* Reset Data (Redundant/Development) */}
-            <Pressable
-              className="flex-row items-center p-3 rounded-xl gap-3 bg-red-50 mb-2"
-              onPress={() => {
-                Alert.alert(
-                  "Reset Data",
-                  "Are you sure you want to clear all local data? This action cannot be undone.",
-                  [
-                    { text: "Cancel", style: "cancel" },
-                    {
-                      text: "Reset",
-                      style: "destructive",
-                      onPress: async () => {
-                        try {
-                          await resetDb();
-                          await initializeDb();
-                          await Updates.reloadAsync();
-                        } catch (e) {
-                          console.error("Failed to reset:", e);
-                          router.replace("/login");
-                          setShowDrawer(false);
-                        }
-                      },
-                    },
-                  ]
-                );
-              }}
-            >
-              <IconSymbol
-                name="trash"
-                size={18}
-                className="text-red-600"
-              />
-              <Text className="text-red-600">Reset Data</Text>
-            </Pressable>
-
             {/* Logout */}
             <Pressable
               className="flex-row items-center p-3 rounded-xl gap-3 bg-gray-50 flex-1"

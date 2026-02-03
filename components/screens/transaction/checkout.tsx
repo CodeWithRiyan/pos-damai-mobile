@@ -14,7 +14,6 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
-import { getErrorMessage } from "@/lib/api/client";
 // import { CreateTransactionDTO, useCreateTransaction } from "@/lib/api/transaction";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
@@ -24,10 +23,11 @@ import { z } from "zod";
 // import { useTransaction } from "@/lib/api/transaction";
 import InputVirtualKeyboard from "@/components/ui/input-virtual-keyboard";
 import SelectModal from "@/components/ui/select/select-modal";
-import { useCurrentUser } from "@/lib/api/auth";
+import { usePaymentTypes } from "@/lib/api/payment-types";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { useTransactionStore } from "@/stores/transaction";
 import { useRouter } from "expo-router";
+import { useCreateTransaction } from"@/lib/api/transactions";
 import { Check, PlusIcon } from "lucide-react-native";
 
 const transactionSchema = z
@@ -56,22 +56,23 @@ const transactionSchema = z
 
 export type TransactionFormValues = z.infer<typeof transactionSchema>;
 
-// TODO: Replace with real data
-export const paymentTypes = [
-  { label: "Cash", value: "1" },
-  { label: "Transfer", value: "2" },
-  { label: "Qris", value: "3" },
-  { label: "EDC", value: "4" },
-  { label: "E-Wallet", value: "5" },
-];
+// Payment types are now loaded from the database via usePaymentTypes hook
 
 export default function TransactionCheckoutForm() {
   const router = useRouter();
 
-  const { data: user } = useCurrentUser();
-  const { customer, cart, cartTotal, status, setCheckoutData } =
+
+  const { data: paymentTypesData } = usePaymentTypes();
+  const { customer, cart, cartTotal, status } =
     useTransactionStore();
+  const { resetCart } = useTransactionStore();
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
+
+  // Map payment types to select options
+  const paymentTypes = paymentTypesData?.map((pt) => ({
+    label: pt.name,
+    value: pt.id,
+  })) || [];
   // const createMutation = useCreateTransaction();
 
   const initialValues: TransactionFormValues = {
@@ -90,31 +91,16 @@ export default function TransactionCheckoutForm() {
 
   const totalPaid = form.watch("totalPaid");
 
-  const toast = useToast();
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
   useEffect(() => {
     if (cartTotal) {
       form.setValue("totalPurchase", cartTotal);
       form.setValue("status", status);
-    } else {
-      form.reset(initialValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, cartTotal]);
+
+  const toast = useToast();
+  const createTransactionMutation = useCreateTransaction();
 
   useEffect(() => {
     if (form.formState.errors.totalPaid) {
@@ -127,96 +113,46 @@ export default function TransactionCheckoutForm() {
         ),
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.formState.errors.totalPaid]);
+  }, [form.formState.errors.totalPaid, toast]);
 
-  // TODO: mutation checkout transaction
-  const onSubmit: SubmitHandler<TransactionFormValues> = (
+  const onSubmit: SubmitHandler<TransactionFormValues> = async (
     data: TransactionFormValues,
   ) => {
-    // const submissionData: CreateTransactionDTO = {
-    //   ...data,
-    //   items: cart.map((item) => ({
-    //     product: {
-    //       id: item.product.id,
-    //       purchasePrice: item.product.purchasePrice,
-    //     },
-    //     tempSellPrice: item.tempSellPrice,
-    //     quantity: item.quantity,
-    //     note: item.note,
-    //   })),
-    // };
-    // createMutation.mutate(submissionData, {
-    //   onSuccess: (responseData) => {
-    setCheckoutData({
-      ...data,
-      id: "1", //responseData.id,
-      referenceNumber: "", //responseData.localRefId || "",
-      transactionDate: new Date(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdById: user?.id || "",
-      createdByName: user?.name || "",
-      updatedById: user?.id || "",
-      updatedByName: user?.name || "",
-      customerId: customer?.id || "",
-      items: cart,
-      totalItems: cartTotal,
-    });
-    if (data.status === "DRAFT") {
-      router.replace("/(main)/transaction");
-    } else {
-      router.replace("/(main)/transaction/success");
+    try {
+      const submissionData = {
+        customerId: customer?.id,
+        totalAmount: cartTotal,
+        totalPaid: parseFloat(data.totalPaid),
+        paymentTypeId: data.paymentTypeId,
+        transactionDate: new Date(),
+        status: status,
+        note: data.note || "",
+        items: cart.map((item) => ({
+          product: {
+            id: item.product.id,
+          },
+          quantity: item.quantity,
+          tempSellPrice:
+            item.tempSellPrice ||
+            (item.product.sellPrices?.[0]?.price || 0),
+          note: item.note,
+        })),
+      };
+
+      const result = await createTransactionMutation.mutateAsync(
+        submissionData,
+      );
+
+      if (result.id) {
+        router.replace({
+          pathname: "/(main)/purchasing/receipt/[id]",
+          params: { id: result.id },
+        });
+        resetCart();
+      }
+    } catch (error) {
+      console.error("[onSubmit] Error creating transaction:", error);
     }
-    //   },
-    //   onError: (error) => {
-    //     showErrorToast(error);
-    //   },
-    // });
-    // if (transactionId && transaction) {
-    //   const updateData: UpdateTransactionDTO = {
-    //     ...data,
-    //     id: transaction.id,
-    //     password: transaction.password || undefined,
-    //   };
-    //   updateMutation.mutate(updateData, {
-    //     onSuccess: () => {
-    //       onRefetch();
-    //       handleCancel();
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //             <ToastTitle>Transaksi pembelian barang berhasil</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //     onError: (error) => {
-    //       showErrorToast(error);
-    //     },
-    //   });
-    // } else {
-    //   const { isActive, ...restData } = data;
-    //   const createData: CreateTransactionDTO = restData;
-    //   createMutation.mutate(createData, {
-    //     onSuccess: () => {
-    //       onRefetch();
-    //       handleCancel();
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //             <ToastTitle>Transaksi pembelian barang berhasil</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //     onError: (error) => {
-    //       showErrorToast(error);
-    //     },
-    //   });
-    // }
   };
 
   return (

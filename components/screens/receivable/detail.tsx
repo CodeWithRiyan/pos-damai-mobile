@@ -24,14 +24,14 @@ import {
   SolarIconLinear,
 } from "@/components/ui/solar-icon-wrapper";
 import { getErrorMessage } from "@/lib/api/client";
-// import { useDeleteReceivable, useReceivable, useReceivableList } from "@/lib/api/receivable";
+import { useDeleteReceivable, useReceivableByUser, Receivable } from "@/lib/api/receivable";
+import { Spinner } from "@/components/ui/spinner";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { CalendarIcon } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView } from "react-native";
-import { dataReceivable, Receivable } from ".";
 
 export default function ReceivableDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -40,16 +40,16 @@ export default function ReceivableDetail() {
   const params = useLocalSearchParams();
   const userId = params.userId as string;
 
+  const { data: receivableList = [], isLoading, refetch } = useReceivableByUser(userId);
+  const deleteMutation = useDeleteReceivable();
+
   const [selectedItems, setSelectedItems] = useState<Receivable[] | null>(null);
   const [showTransactionDatePicker, setShowTransactionDatePicker] =
     useState<boolean>(false);
   const [transactionDate, setDueDate] = useState<Date | null>(null);
   const [statuses, setStatuses] = useState<string[]>(["Lunas", "Belum Lunas"]);
 
-  // TODO: Panggil useReceivableList
-  const receivableList: Receivable[] =
-    dataReceivable.filter((r) => r.userId === userId) || [];
-  const receivable: Receivable = receivableList[0];
+  const receivable = receivableList[0];
 
   const toast = useToast();
 
@@ -66,11 +66,6 @@ export default function ReceivableDetail() {
     setSelectedItems([...selectedItems, receivable]);
   };
 
-  const onRefetch = () => {
-    // refetchReceivableList();
-    // refetchReceivable();
-  };
-
   const showErrorToast = (error: unknown) => {
     toast.show({
       placement: "top",
@@ -85,79 +80,73 @@ export default function ReceivableDetail() {
     });
   };
 
-  const handleDeletePress = () => {
+  const handleDeletePress = (receivableToDelete?: Receivable) => {
+    const targetReceivable = receivableToDelete || receivable;
+    if (!targetReceivable) return;
+
     showPopUpConfirm({
       title: "HAPUS PIUTANG",
       icon: "warning",
       description: (
         <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus piutang untuk karyawan `}
-          <Text className="font-bold text-slate-900">
-            {receivable?.user.firstName}
-          </Text>
-          {` ? Tindakan ini tidak dapat dibatalkan.`}
+          {`Apakah Anda yakin ingin menghapus piutang ini? Tindakan ini tidak dapat dibatalkan.`}
         </Text>
       ),
       showClose: true,
       okText: "HAPUS",
       closeText: "BATAL",
       okVariant: "destructive",
-      onOk: () => confirmDelete(),
-      // loading: deleteMutation.isPending,
+      onOk: () => confirmDelete(targetReceivable.id),
     });
   };
 
-  // TODO: Konfirmasi hapus piutang karyawan
-  const confirmDelete = async () => {
-    if (!receivable) return;
+  const confirmDelete = async (id: string) => {
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        hidePopUpConfirm();
+        refetch();
+        if (receivableList.length <= 1) {
+            router.back();
+        }
 
-    // deleteMutation.mutate(receivable.id, {
-    //   onSuccess: () => {
-    //     hidePopUpConfirm();
-    //     onRefetch();
-    //     router.back();
-
-    //     toast.show({
-    //       placement: "top",
-    //       render: ({ id }) => (
-    //         <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //           <ToastTitle>Piutang berhasil dihapus</ToastTitle>
-    //         </Toast>
-    //       ),
-    //     });
-    //   },
-    //   onError: (error) => {
-    //     showErrorToast(error);
-    //     hidePopUpConfirm();
-    //   },
-    // });
+        toast.show({
+          placement: "top",
+          render: ({ id: toastId }) => (
+            <Toast nativeID={`toast-${toastId}`} action="success" variant="solid">
+              <ToastTitle>Piutang berhasil dihapus</ToastTitle>
+            </Toast>
+          ),
+        });
+      },
+      onError: (error) => {
+        showErrorToast(error);
+        hidePopUpConfirm();
+      },
+    });
   };
 
   const handleAction = () => {
     showActionDrawer({
       actions: [
         {
-          label: "Edit",
-          icon: "Pen",
-          onPress: () => {
-            router.navigate(
-              `/(main)/management/payable-receivable/receivable/edit/${receivable?.id}`,
-            );
-            hideActionDrawer();
-          },
-        },
-        {
-          label: "Delete",
+          label: "Delete All",
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
-            handleDeletePress();
             hideActionDrawer();
           },
         },
       ],
     });
   };
+
+  if (isLoading) {
+    return (
+      <Box className="flex-1 justify-center items-center">
+        <Spinner size="large" />
+      </Box>
+    );
+  }
 
   return (
     <VStack className="flex-1 bg-white">
@@ -197,13 +186,15 @@ export default function ReceivableDetail() {
                     color="#3b82f6"
                   />
                   <Text className="text-typography-500 text-sm">
-                    {receivable?.user.firstName}
+                    {receivable?.user?.name || 'Unknown User'}
                   </Text>
                 </HStack>
-                <Text className="text-typography-500 text-sm">
-                  Total Belum Lunas
-                </Text>
-                <Text className="text-error-500 font-bold">{`Rp ${receivableList?.reduce((acc, curr) => acc + curr.totalRealization, 0).toLocaleString("id-ID")}`}</Text>
+                <VStack className="mt-2">
+                    <Text className="text-typography-500 text-sm">
+                    Total Belum Lunas
+                    </Text>
+                    <Text className="text-error-500 font-bold">{`Rp ${receivableList?.reduce((acc, curr) => acc + (curr.nominal - curr.totalRealization), 0).toLocaleString("id-ID")}`}</Text>
+                </VStack>
               </VStack>
               <VStack className="flex-1 items-end">
                 <Text className="text-typography-500 text-sm">
@@ -211,37 +202,29 @@ export default function ReceivableDetail() {
                 </Text>
                 <Text className="text-error-500 font-bold">
                   {
-                    receivableList?.filter(
-                      (f) => f.totalRealization !== f.nominal,
-                    ).length
+                    receivableList?.filter((f) => f.totalRealization !== f.nominal)
+                      .length
                   }
                 </Text>
               </VStack>
               <HStack className="absolute -bottom-4 right-0 left-0 justify-center">
                 <Pressable
                   className="items-center justify-center h-9 px-10 rounded-lg bg-primary-500 active:bg-primary-500/90"
-                  disabled={
-                    (receivable?.nominal || 0) ===
-                    (receivable?.totalRealization || 0)
-                  }
                   onPress={() => {
                     router.navigate(
-                      `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${receivableList?.map((m) => m.id).join("-")}`,
+                      `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${receivableList?.map((m) => m.id).join("-")}` as any,
                     );
                   }}
                 >
                   <Text size="lg" className="text-sm text-white font-bold">
-                    {(receivable?.nominal || 0) ===
-                    (receivable?.totalRealization || 0)
-                      ? "LUNAS"
-                      : "LUNASI SEKARANG"}
+                    LUNASI SEKARANG
                   </Text>
                 </Pressable>
               </HStack>
             </HStack>
           </VStack>
         </VStack>
-        <VStack space="md" className="px-4 mb-4">
+        <VStack space="md" className="px-4 mb-4 mt-4">
           <HStack space="sm" className="items-center">
             <Pressable
               className="size-10 items-center justify-center"
@@ -339,7 +322,7 @@ export default function ReceivableDetail() {
                     handleReceivablePress(receivable);
                   } else {
                     router.navigate(
-                      `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/detail?receivableIds=${receivable?.id}`,
+                      `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/detail?receivableIds=${receivable?.id}` as any,
                     );
                     setSelectedItems(null);
                   }
@@ -357,6 +340,7 @@ export default function ReceivableDetail() {
                           (r) => r.id === receivable.id,
                         )}
                         size="md"
+                        onChange={() => handleReceivablePress(receivable)}
                       >
                         <CheckboxIndicator>
                           <CheckboxIcon as={CheckIcon} />
@@ -398,11 +382,7 @@ export default function ReceivableDetail() {
                 </HStack>
               </Pressable>
             ))}
-          {receivableList?.filter((r) =>
-            statuses.includes(
-              r.nominal - r.totalRealization > 0 ? "Belum Lunas" : "Lunas",
-            ),
-          )?.length === 0 && (
+          {receivableList?.length === 0 && (
             <Box className="p-8 items-center">
               <Text className="text-slate-400 italic">No receivable found</Text>
             </Box>
@@ -416,18 +396,23 @@ export default function ReceivableDetail() {
             className="w-full rounded-md h-9 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
             onPress={() => {
               router.navigate(
-                `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${selectedItems?.map((m) => m.id).join("-")}`,
+                `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${selectedItems?.map((m) => m.id).join("-")}` as any,
               );
             }}
           >
             <Text size="sm" className="text-typography-0 font-bold">
               {selectedItems?.length === 1
-                ? "BAYAR PIUTANG"
-                : `BAYAR ${selectedItems?.length} PIUTANG`}
+                ? "TERIMA PIUTANG"
+                : `TERIMA ${selectedItems?.length} PIUTANG`}
             </Text>
           </Pressable>
         ) : (
-          <Pressable className="w-full rounded-sm h-9 flex justify-center items-center bg-error-50 border border-error-500">
+          <Pressable 
+            className="w-full rounded-sm h-9 flex justify-center items-center bg-error-50 border border-error-500"
+            onPress={() => {
+                router.navigate(`/(main)/management/payable-receivable/receivable/add` as any);
+            }}
+          >
             <Text size="sm" className="text-error-500 font-bold">
               TAMBAH PIUTANG
             </Text>

@@ -20,6 +20,7 @@ import {
   useBrands,
   useBulkDeleteBrand,
   useProductCountsByBrand,
+  useCapitalValueByBrand,
 } from "@/lib/api/brands";
 import { getErrorMessage } from "@/lib/api/client";
 import { useBrandStore } from "@/stores/brand";
@@ -35,6 +36,7 @@ export default function BrandList() {
   const { data, isLoading, refetch } = useBrands();
   const { data: productCounts, refetch: refetchCounts } =
     useProductCountsByBrand();
+  const { data: capitalValues } = useCapitalValueByBrand();
   const [selectedItems, setSelectedItems] = useState<Brand[] | null>(null);
 
   const brands = data || [];
@@ -227,7 +229,9 @@ export default function BrandList() {
                       <Text className="text-brand-primary text-sm font-bold">
                         Nilai Modal
                       </Text>
-                      <Text size="xs">Rp 0</Text>
+                      <Text size="xs">
+                        Rp {(capitalValues?.[item.id] ?? 0).toLocaleString('id-ID')}
+                      </Text>
                     </VStack>
                   </HStack>
                 </Pressable>

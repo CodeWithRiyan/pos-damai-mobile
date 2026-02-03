@@ -54,6 +54,49 @@ export function useProductCountsByCategory() {
   });
 }
 
+// Get capital value (stock × purchase price) by category
+export function useCapitalValueByCategory() {
+  const orgId = useAuthStore(state => state.getOrganizationId());
+  return useQuery({
+    queryKey: ['capitalValueByCategory', orgId],
+    queryFn: async () => {
+      // Get all products with their category
+      const products = await db
+        .select({
+          id: schema.products.id,
+          categoryId: schema.products.categoryId,
+          purchasePrice: schema.products.purchasePrice,
+        })
+        .from(schema.products)
+        .where(and(
+          eq(schema.products.organizationId, orgId),
+          isNull(schema.products.deletedAt)
+        ));
+      
+      // Calculate capital value per category
+      const values: Record<string, number> = {};
+      
+      for (const product of products) {
+        // Get stock from inventory transactions
+        const transactions = await db
+          .select({ quantity: schema.inventoryTransactions.quantity })
+          .from(schema.inventoryTransactions)
+          .where(and(
+            eq(schema.inventoryTransactions.productId, product.id),
+            eq(schema.inventoryTransactions.status, 'COMPLETED')
+          ));
+        
+        const stock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
+        const value = stock * (product.purchasePrice ?? 0);
+        values[product.categoryId] = (values[product.categoryId] || 0) + value;
+      }
+      
+      return values;
+    },
+    enabled: !!orgId,
+  });
+}
+
 // Get all categories from local SQLite (excluding soft-deleted)
 export function useCategories() {
   const orgId = useAuthStore(state => state.getOrganizationId());

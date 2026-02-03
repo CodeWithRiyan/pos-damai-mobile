@@ -9,11 +9,11 @@ import {
   Text,
   VStack,
 } from "@/components/ui";
-import type { Purchase } from "@/lib/api/purchasing";
-import { usePurchases } from "@/lib/api/purchasing";
+import type { Transaction } from "@/lib/api/transactions";
+import { useTransactions } from "@/lib/api/transactions";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { usePurchasingStore } from "@/stores/purchasing";
+import { useTransactionStore } from "@/stores/transaction";
 import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { eq } from "drizzle-orm";
@@ -21,25 +21,23 @@ import { useRouter } from "expo-router";
 import { Trash2 } from "lucide-react-native";
 import { ScrollView } from "react-native";
 
-// TODO: Ubah Purchasing menjadi Transaction
-export default function PurchasingDraft() {
+export default function TransactionDraft() {
   const router = useRouter();
-  // TODO: Ganti dengan get useTransactions
-  const { data: purchases, isLoading } = usePurchases();
+  const { data: transactions, isLoading } = useTransactions();
   const { addCartItem, resetCart, setStatus, setPurchaseId } =
-    usePurchasingStore();
+    useTransactionStore();
   const queryClient = useQueryClient();
 
   // Filter only DRAFT status
-  const drafts = purchases?.filter((p) => p.status === "DRAFT") || [];
+  const drafts = transactions?.filter((t) => t.status === "DRAFT") || [];
 
-  const handleContinueDraft = async (purchaseId: string) => {
-    // We need to fetch the full detail of the purchase to get items
-    const detail = await queryClient.fetchQuery<Purchase | undefined>({
-      queryKey: ["purchases", purchaseId],
+  const handleContinueDraft = async (transactionId: string) => {
+    // We need to fetch the full detail of the transaction to get items
+    const detail = await queryClient.fetchQuery<Transaction | undefined>({
+      queryKey: ["transactions", transactionId],
       queryFn: async () => {
-        return queryClient.ensureQueryData<Purchase | undefined>({
-          queryKey: ["purchases", purchaseId],
+        return queryClient.ensureQueryData<Transaction | undefined>({
+          queryKey: ["transactions", transactionId],
         });
       },
     });
@@ -55,27 +53,39 @@ export default function PurchasingDraft() {
           .limit(1);
 
         if (productResult.length > 0) {
+          const fullProduct = productResult[0];
+          // Get prices for this product
+          const prices = await db
+            .select()
+            .from(schema.productPrices)
+            .where(eq(schema.productPrices.productId, fullProduct.id));
+          
           addCartItem({
-            product: productResult[0] as any,
-            newPurchasePrice:
-              item.purchasePrice || productResult[0].purchasePrice || 0,
+            product: {
+              ...fullProduct,
+              sellPrices: prices,
+              variants: [],
+              code: fullProduct.barcode,
+            } as any,
+            tempSellPrice:
+              item.sellPrice || prices?.[0]?.price || 0,
             quantity: item.quantity,
           });
         }
       }
       setStatus("DRAFT");
       setPurchaseId(detail.id);
-      router.replace("/(main)/purchasing");
+      router.replace("/(main)/transaction");
     }
   };
 
-  const handleDeleteDraft = async (purchaseId: string) => {
+  const handleDeleteDraft = async (transactionId: string) => {
     await db.transaction(async (tx) => {
       // 1. Get local_ref_id to cleanup transactions
       const existing = await tx
         .select()
-        .from(schema.purchases)
-        .where(eq(schema.purchases.id, purchaseId))
+        .from(schema.transactions)
+        .where(eq(schema.transactions.id, transactionId))
         .limit(1);
 
       if (existing.length > 0) {
@@ -103,19 +113,19 @@ export default function PurchasingDraft() {
         }
       }
 
-      // 3. Delete purchase
+      // 3. Delete transaction
       await tx
-        .delete(schema.purchases)
-        .where(eq(schema.purchases.id, purchaseId));
+        .delete(schema.transactions)
+        .where(eq(schema.transactions.id, transactionId));
     });
 
-    queryClient.invalidateQueries({ queryKey: ["purchases"] });
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
   };
 
   if (isLoading) {
     return (
       <VStack className="flex-1 bg-white">
-        <Header header="DRAFT PEMBELIAN" isGoBack />
+        <Header header="DRAFT TRANSAKSI" isGoBack />
         <Box className="flex-1 justify-center items-center">
           <Spinner size="large" />
         </Box>
@@ -129,7 +139,7 @@ export default function PurchasingDraft() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {drafts.length === 0 ? (
           <Box className="flex-1 justify-center items-center py-10">
-            <Text className="text-gray-500">Tidak ada draft pembelian</Text>
+            <Text className="text-gray-500">Tidak ada draft transaksi</Text>
           </Box>
         ) : (
           drafts.map((draft) => {
@@ -172,10 +182,10 @@ export default function PurchasingDraft() {
                         </VStack>
                         <VStack>
                           <Text className="text-typography-400 text-xs">
-                            Supplier
+                            Pelanggan
                           </Text>
                           <Text className="font-bold">
-                            {draft.supplierName}
+                            {draft.customerName}
                           </Text>
                         </VStack>
                       </HStack>

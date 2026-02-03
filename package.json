@@ -5,6 +5,10 @@
   "scripts": {
     "start": "expo start",
     "start:local": "EXPO_PUBLIC_API_URL=http://localhost:7071 npx expo start -c",
+    "start:dev": "EXPO_PUBLIC_API_URL=https://api-dev-pos-damai.riyansolusi.com npx expo start -c",
+    "start:sit": "EXPO_PUBLIC_API_URL=https://api-sit-pos-damai.riyansolusi.com npx expo start -c",
+    "start:demo": "EXPO_PUBLIC_API_URL=https://api-demo-pos-damai.riyansolusi.com npx expo start -c",
+    "start:prod": "EXPO_PUBLIC_API_URL=https://api-pos-damai.riyansolusi.com npx expo start -c",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",

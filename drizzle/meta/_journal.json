@@ -57,6 +57,13 @@
       "when": 1769016000000,
       "tag": "0007_add_stock_opnames",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1769744503292,
+      "tag": "0008_ordinary_jazinda",
+      "breakpoints": true
     }
   ]
 }

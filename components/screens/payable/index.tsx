@@ -28,8 +28,12 @@ import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
 import { Supplier } from "@/lib/api/suppliers";
-import { PaymentType } from "@/stores/payment-type";
-// import { useBulkDeletePayable, Payable, usePayableList } from "@/lib/api/payable";
+import {
+  useBulkDeletePayableBySupplier,
+  Payable,
+  usePayableList,
+  PayableBySupplier,
+} from "@/lib/api/payable";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
@@ -37,166 +41,13 @@ import { CalendarIcon } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
-// TODO: Pindahkan interface ke dalam service, hapus dummy data
-export interface PayableRealization {
-  id: string;
-  ref: string;
-  nominal: number;
-  realizationDate: string;
-  paymentTypeId: string;
-  paymentType: PaymentType;
-  note: string;
-  createdAt: string;
-  createdById: string;
-  createdByName: string;
-}
-
-export interface Payable {
-  id: string;
-  supplierId: string;
-  supplier: Supplier;
-  dueDate: string;
-  nominal: number;
-  totalRealization: number;
-  realizations: PayableRealization[];
-  createdAt: string;
-}
-
-export interface PayableBySupplier {
-  supplierId: string;
-  supplierName: string;
-  totalPayable: number;
-  totalRealization: number;
-  nearestDueDate: string;
-  organizationId: string;
-  address: string;
-  phone: string;
-}
-
-export const dataPayable: Payable[] = [
-  {
-    id: "1",
-    supplierId: "1",
-    supplier: {
-      id: "1",
-      name: "John Doe",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      organizationId: "1",
-      address: "Jalan 1",
-      phone: "08123456789",
-    },
-    dueDate: "2023-01-01",
-    nominal: 10000,
-    totalRealization: 5000,
-    realizations: [
-      {
-        id: "1",
-        ref: "123JB1JK3JK12",
-        nominal: 5000,
-        realizationDate: "2023-01-01",
-        paymentTypeId: "1",
-        paymentType: {
-          id: "1",
-          name: "Cash",
-          commission: 0,
-          minimalAmount: 0,
-        },
-        note: "Realisasi 1",
-        createdAt: "2023-01-01",
-        createdById: "1",
-        createdByName: "John Doe",
-      },
-    ],
-    createdAt: "2023-01-01",
-  },
-  {
-    id: "2",
-    supplierId: "2",
-    supplier: {
-      id: "2",
-      name: "Jane Doe",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      organizationId: "1",
-      address: "Jalan 1",
-      phone: "08123456789",
-    },
-    dueDate: "2023-01-01",
-    nominal: 20000,
-    totalRealization: 0,
-    realizations: [],
-    createdAt: "2023-01-01",
-  },
-  {
-    id: "3",
-    supplierId: "1",
-    supplier: {
-      id: "1",
-      name: "John Doe",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      organizationId: "1",
-      address: "Jalan 1",
-      phone: "08123456789",
-    },
-    dueDate: "2023-01-01",
-    nominal: 10000,
-    totalRealization: 5000,
-    realizations: [
-      {
-        id: "1",
-        ref: "123JB1JK3JK12",
-        nominal: 5000,
-        realizationDate: "2023-01-01",
-        paymentTypeId: "1",
-        paymentType: {
-          id: "1",
-          name: "Cash",
-          commission: 0,
-          minimalAmount: 0,
-        },
-        note: "Realisasi 1",
-        createdAt: "2023-01-01",
-        createdById: "1",
-        createdByName: "John Doe",
-      },
-    ],
-    createdAt: "2023-01-01",
-  },
-];
-
-export const payableBySupplier: PayableBySupplier[] = [
-  {
-    supplierId: "1",
-    supplierName: "John Doe",
-    totalPayable: 20000, // 10000 + 10000
-    totalRealization: 10000, // 5000 + 5000
-    nearestDueDate: "2023-01-01",
-    organizationId: "1",
-    address: "Jalan 1",
-    phone: "08123456789",
-  },
-  {
-    supplierId: "2",
-    supplierName: "Jane Doe",
-    totalPayable: 20000,
-    totalRealization: 0,
-    nearestDueDate: "2023-01-01",
-    organizationId: "1",
-    address: "Jalan 1",
-    phone: "08123456789",
-  },
-];
-
 export default function PayableList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
-  // TODO: Panggil usePayableList
-  // const { data, isLoadingFetch, refetch } = usePayableList();
-  // const deleteMutation = useBulkDeletePayable();
+  const { data: payableBySupplier = [], isLoading: isLoadingFetch, refetch } = usePayableList();
+  const deleteMutation = useBulkDeletePayableBySupplier();
 
-  const isLoading = false; // isLoadingFetch || deleteMutation.isLoading;
+  const isLoading = isLoadingFetch || deleteMutation.isPending;
   const [selectedItems, setSelectedItems] = useState<
     PayableBySupplier[] | null
   >(null);
@@ -259,34 +110,29 @@ export default function PayableList() {
     });
   };
 
-  // TODO: Konfirmasi hapus bulk hutang
   const confirmDelete = async (supplierIds: string[]) => {
     if (!supplierIds.length) return;
 
-    // TODO: Buatkan delete mutation by supplierIds
-    // deleteMutation.mutate(
-    //   { supplierIds: supplierIds },
-    //   {
-    //     onSuccess: () => {
-    //       setSelectedItems(null);
-    //       hidePopUpConfirm();
-    //       refetch();
+    deleteMutation.mutate(supplierIds, {
+      onSuccess: () => {
+        setSelectedItems(null);
+        hidePopUpConfirm();
+        refetch();
 
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //             <ToastTitle>Hutang berhasil dihapus</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //     onError: (error) => {
-    //       showErrorToast(error);
-    //       hidePopUpConfirm();
-    //     },
-    //   }
-    // );
+        toast.show({
+          placement: "top",
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+              <ToastTitle>Hutang berhasil dihapus</ToastTitle>
+            </Toast>
+          ),
+        });
+      },
+      onError: (error) => {
+        showErrorToast(error);
+        hidePopUpConfirm();
+      },
+    });
   };
 
   if (isLoading) {
@@ -469,7 +315,7 @@ export default function PayableList() {
                         handlePayablePress(payable);
                       } else {
                         router.navigate(
-                          `/(main)/management/payable-receivable/payable/detail/${payable.supplierId}`,
+                          `/(main)/management/payable-receivable/payable/detail/${payable.supplierId}` as any,
                         );
                         setSelectedItems(null);
                         console.log(

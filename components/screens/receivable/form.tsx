@@ -22,14 +22,10 @@ import {
 import SelectModal from "@/components/ui/select/select-modal";
 import { getErrorMessage } from "@/lib/api/client";
 import { useUsers } from "@/lib/api/users";
-// import {
-//   CreateReceivableDTO,
-//   UpdateReceivableDTO,
-//   useCreateReceivable,
-//   useUpdateReceivable,
-//   useReceivable,
-//   useReceivableList,
-// } from "@/lib/api/payment";
+import {
+  useCreateReceivable,
+  useReceivableDetail,
+} from "@/lib/api/receivable";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
@@ -39,18 +35,17 @@ import { useEffect, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
-import { dataReceivable } from ".";
 
 export default function ReceivableForm() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const userId = params.userId as string;
-  const isAdd = !userId;
-  const receivableId = userId;
+  const action = params.action as string;
+  const isAdd = action === "add";
+  const receivableId = params.receivableId as string;
 
   const receivableSchema = z.object({
     nominal: z.number().min(1, "Nominal wajib diisi."),
-    userId: z.string().min(1, "Karyawan wajib diisi."),
+    userId: z.string().min(1, "Pelanggan wajib diisi."),
     dueDate: z.date().nullable(),
     note: z.string(),
   });
@@ -71,16 +66,11 @@ export default function ReceivableForm() {
 
   const [showDueDatePicker, setShowDueDatePicker] = useState<boolean>(false);
 
-  // TODO: Panggil useReceivableList dan useReceivable
-  // const { refetch: refetchReceivableList } = useReceivableList();
-  // const { data: receivable, refetch: refetchReceivable } = useReceivable(receivableId || "");
-  const receivable = dataReceivable.find((item) => item.userId === userId);
+  const { data: receivable } = useReceivableDetail(receivableId || "");
   const { data: users = [] } = useUsers();
-  // TODO: Panggil useCreateReceivable dan useUpdateReceivable
-  // const createMutation = useCreateReceivable();
-  // const updateMutation = useUpdateReceivable();
+  const createMutation = useCreateReceivable();
 
-  const isLoading = false; //createMutation.isPending || updateMutation.isPending;
+  const isLoading = createMutation.isPending;
 
   const toast = useToast();
 
@@ -101,8 +91,10 @@ export default function ReceivableForm() {
   useEffect(() => {
     if (receivableId && receivable) {
       form.reset({
-        ...receivable,
-        dueDate: new Date(receivable.dueDate),
+        nominal: receivable.nominal,
+        userId: receivable.userId,
+        dueDate: receivable.dueDate ? new Date(receivable.dueDate) : null,
+        note: receivable.note || "",
       });
     } else {
       form.reset(initialValues);
@@ -110,22 +102,41 @@ export default function ReceivableForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, receivable, receivableId]);
 
-  // Gunakan refetch setelah submit success
-  const onRefetch = () => {
-    // refetchReceivableList();
-    // if (receivableId) {
-    //   refetchReceivable();
-    // }
-  };
-
-  const handleCancel = () => {
-    router.back();
-  };
-
-  // TODO: Eksekusi createMutation.mutate dan updateMutation.mutate di onSubmit
   const onSubmit: SubmitHandler<ReceivableFormValues> = (
     data: ReceivableFormValues,
-  ) => {};
+  ) => {
+    if (isAdd) {
+        createMutation.mutate({
+            ...data,
+            dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
+        }, {
+            onSuccess: () => {
+                toast.show({
+                    placement: "top",
+                    render: ({ id }) => (
+                      <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                        <ToastTitle>Piutang berhasil disimpan</ToastTitle>
+                      </Toast>
+                    ),
+                  });
+                router.back();
+            },
+            onError: (error) => {
+                showErrorToast(error);
+            }
+        });
+    } else {
+        // Update mutation not yet implemented in lib/api/receivable.ts but could be added
+        toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="info" variant="solid">
+                <ToastTitle>Update logic coming soon</ToastTitle>
+              </Toast>
+            ),
+          });
+    }
+  };
 
   return (
     <VStack className="flex-1 bg-white">
@@ -175,18 +186,19 @@ export default function ReceivableForm() {
             render={({ field: { onChange, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
-                  <FormControlLabelText>Karyawan</FormControlLabelText>
+                  <FormControlLabelText>Pelanggan</FormControlLabelText>
                 </FormControlLabel>
                 <SelectModal
                   value={value}
-                  placeholder="Karyawan"
-                  searchPlaceholder="Cari nama Karyawan"
+                  placeholder="Pelanggan"
+                  searchPlaceholder="Cari nama pelanggan"
                   options={users.map((user) => ({
-                    label: user.firstName,
+                    label: user.firstName || user.username,
                     value: user.id,
                   }))}
                   className="flex-1"
                   onChange={onChange}
+                  disabled={!isAdd}
                 />
                 {error && (
                   <FormControlError>
@@ -221,7 +233,6 @@ export default function ReceivableForm() {
                   <DateTimePicker
                     mode="date"
                     value={value instanceof Date ? value : new Date()}
-                    maximumDate={new Date()}
                     onChange={(event, selectedDate) => {
                       setShowDueDatePicker(false);
                       if (event.type === "set" && selectedDate) {

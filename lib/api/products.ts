@@ -107,6 +107,10 @@ export function useProducts() {
           
           const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
           
+          if (transactions.length > 0 && product.name === 'DEBUG_PRODUCT_NAME') { // Optional filter
+             console.log(`📊 [STOCK DEBUG] ${product.name} transactions:`, transactions.map(t => ({ type: t.type, qty: t.quantity })));
+          }
+          
           return {
             ...product,
             code: product.barcode,
@@ -261,6 +265,13 @@ export function useProduct(id: string) {
         ));
       
       const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
+
+      console.log(`📊 [STOCK DEBUG] Product ${id} details:`, {
+        transactionCount: transactions.length,
+        types: transactions.map(t => t.type),
+        totalStock: totalStock,
+        transactions: transactions.map(t => ({ type: t.type, quantity: t.quantity, id: t.id }))
+      });
       
       return {
         ...product,

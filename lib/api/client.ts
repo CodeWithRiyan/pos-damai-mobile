@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { authStorageAdapter } from '../storage';
 
 // API base URL
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://dev.api.pos.damai.sakaloka.id';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api-dev-pos-damai.riyansolusi.com';
 
 // Create axios instance
 export const apiClient = axios.create({

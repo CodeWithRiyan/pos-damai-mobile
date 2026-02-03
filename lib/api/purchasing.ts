@@ -258,6 +258,7 @@ export function useCreatePurchasing() {
             _syncedAt: null,
           });
 
+
           // 3. Update Product purchasePrice if it changed AND status is COMPLETED
           if (data.status === 'COMPLETED' && item.newPurchasePrice !== item.product.purchasePrice) {
             await tx.update(schema.products)

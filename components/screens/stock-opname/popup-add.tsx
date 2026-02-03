@@ -1,7 +1,10 @@
 import {
   Box,
+  FormControl,
   Heading,
   HStack,
+  Input,
+  InputField,
   Modal,
   ModalBackdrop,
   ModalBody,
@@ -14,7 +17,7 @@ import {
 import { useStockOpnameStore } from "@/stores/stock-opname";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
 export default function PopupAddStockOpname() {
@@ -98,9 +101,13 @@ export default function PopupAddStockOpname() {
               </HStack>
             </HStack>
             <VStack space="lg" className="px-4">
-              <HStack className="w-full justify-between items-center">
+              <HStack
+                space="md"
+                className="w-full justify-between items-center"
+              >
                 <Pressable
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
+                  disabled={physicalStock <= 0}
                   onPress={() => {
                     const currentPhysicalStock = physicalStock;
 
@@ -113,9 +120,31 @@ export default function PopupAddStockOpname() {
                     -
                   </Heading>
                 </Pressable>
-                <Heading size="3xl" className="font-bold">
-                  {physicalStock}
-                </Heading>
+                <Controller
+                  name="physicalStock"
+                  control={form.control}
+                  render={({
+                    field: { onChange, onBlur, value },
+                    fieldState: { error },
+                  }) => (
+                    <FormControl
+                      isRequired
+                      isInvalid={!!error}
+                      className="w-44 h-full"
+                    >
+                      <Input className="flex-1 border-transparent data-[focus=true]:border-transparent bg-transparent">
+                        <InputField
+                          value={value.toString()}
+                          autoComplete="off"
+                          onChangeText={(text) => onChange(Number(text) || 0)}
+                          onBlur={onBlur}
+                          keyboardType="numeric"
+                          className="text-4xl text-center font-bold border-none"
+                        />
+                      </Input>
+                    </FormControl>
+                  )}
+                />
                 <Pressable
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                   onPress={() => {

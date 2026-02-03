@@ -24,14 +24,11 @@ import {
   VStack,
 } from "@/components/ui";
 import { getErrorMessage } from "@/lib/api/client";
-// import {
-//   CreateReceivableRealizationDTO,
-//   UpdateReceivableRealizationDTO,
-//   useCreateReceivableRealization,
-//   useUpdateReceivableRealization,
-//   useReceivableRealization,
-//   useReceivableRealizationList,
-// } from "@/lib/api/receivable";
+import {
+  useCreateReceivableRealization,
+  useReceivableList,
+  Receivable,
+} from "@/lib/api/receivable";
 import SelectModal from "@/components/ui/select/select-modal";
 import { SolarIconBoldDuotone } from "@/components/ui/solar-icon-wrapper";
 import { usePaymentTypeStore } from "@/stores/payment-type";
@@ -44,8 +41,7 @@ import { useEffect, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
-import { dataReceivable } from ".";
-import { paymentTypes } from "../transaction/checkout";
+import { usePaymentTypes } from "@/lib/api/payment-types";
 
 export default function ReceivableRealizationForm() {
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
@@ -53,15 +49,14 @@ export default function ReceivableRealizationForm() {
   const router = useRouter();
   const params = useLocalSearchParams();
 
-  const realizationId = params.realizationId as string;
   const action = params.actionRealization as string;
   const isAdd = action === "add";
-  const receivableIds = (params.receivableIds as string).split("-") || [];
+  const receivableIds = (params.receivableIds as string)?.split("-") || [];
 
   const receivableRealizationSchema = z.object({
     nominal: z.number().min(1, "Nominal wajib diisi."),
     payOff: z.boolean(),
-    realizationDate: z.date().nullable(),
+    realizationDate: z.date(),
     paymentTypeId: z.string().min(1, "Metode pembayaran harus dipilih"),
     note: z.string(),
   });
@@ -86,29 +81,11 @@ export default function ReceivableRealizationForm() {
   const [showRealizationDatePicker, setShowRealizationDatePicker] =
     useState<boolean>(false);
 
-  // TODO: Panggil useReceivableList dan useReceivableRealization
-  // const { refetch: refetchReceivableRealizationList } = useReceivableRealizationList();
-  // const { data: receivableRealization, refetch: refetchReceivableRealization } = useReceivableRealization(receivableRealizationId || "");
-  const receivableList = dataReceivable.filter((f) =>
-    receivableIds.includes(f.id),
-  );
-  const receivableRealization = !isAdd
-    ? receivableList?.[0]?.realizations?.find((f) => f.id === realizationId)
-    : null;
-  const totalReceivable = receivableList.reduce(
-    (total, receivable) => total + receivable.nominal,
-    0,
-  );
-  const totalRealization = receivableList.reduce(
-    (total, receivable) => total + receivable.totalRealization,
-    0,
-  );
+  const { data: allReceivables = [] } = useReceivableList();
+  const { data: paymentMethods = [] } = usePaymentTypes();
+  const createMutation = useCreateReceivableRealization();
 
-  // TODO: Panggil useCreateReceivableRealization dan useUpdateReceivableRealization
-  // const createMutation = useCreateReceivableRealization();
-  // const updateMutation = useUpdateReceivableRealization();
-
-  const isLoading = false; //createMutation.isPending || updateMutation.isPending;
+  const isLoading = createMutation.isPending;
 
   const toast = useToast();
 
@@ -126,30 +103,41 @@ export default function ReceivableRealizationForm() {
     });
   };
 
-  useEffect(() => {
-    if (receivableRealization) {
-      form.reset({
-        nominal: receivableRealization.nominal,
-        realizationDate: dayjs(receivableRealization.realizationDate).toDate(),
-        paymentTypeId: receivableRealization.paymentTypeId,
-        note: receivableRealization.note,
-      });
-    } else {
-      form.reset(initialValues);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, receivableRealization]);
-
-  const onRefetch = () => {};
-
-  const handleCancel = () => {
-    router.back();
-  };
-
-  // TODO: Eksekusi createMutation.mutate dan updateMutation.mutate di onSubmit
-  const onSubmit: SubmitHandler<ReceivableRealizationFormValues> = (
+  const onSubmit: SubmitHandler<ReceivableRealizationFormValues> = async (
     data: ReceivableRealizationFormValues,
-  ) => {};
+  ) => {
+      if (receivableIds.length === 1) {
+          createMutation.mutate({
+              receivableId: receivableIds[0],
+              nominal: data.nominal,
+              paymentMethodId: data.paymentTypeId,
+              realizationDate: data.realizationDate.toISOString(),
+              note: data.note,
+          }, {
+              onSuccess: () => {
+                toast.show({
+                    placement: "top",
+                    render: ({ id }) => (
+                      <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                        <ToastTitle>Penerimaan berhasil disimpan</ToastTitle>
+                      </Toast>
+                    ),
+                  });
+                router.back();
+              },
+              onError: (error) => showErrorToast(error)
+          });
+      } else {
+          toast.show({
+              placement: "top",
+              render: ({ id }) => (
+                <Toast nativeID={`toast-${id}`} action="info" variant="solid">
+                  <ToastTitle>Bulk receipt logic coming soon</ToastTitle>
+                </Toast>
+              ),
+            });
+      }
+  };
 
   return (
     <VStack className="flex-1 bg-white">
@@ -160,59 +148,11 @@ export default function ReceivableRealizationForm() {
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="lg" className="p-4">
-          {receivableIds?.length <= 1 ? (
-            <HStack space="sm">
-              <HStack space="sm" className="items-center">
-                <SolarIconBoldDuotone
-                  name="UserCircle"
-                  size={24}
-                  color="#3b82f6"
-                />
-                <Text className="text-primary-500 font-bold">
-                  {receivableList?.[0]?.user.firstName}
-                </Text>
-              </HStack>
-              <VStack className="flex-1 items-end">
-                <Text className="text-gray-500 text-sm">Belum Dibayar</Text>
-                <Text className="text-sm font-bold text-error-500">
-                  {`Rp ${(totalReceivable - totalRealization).toLocaleString("id-ID")}`}
-                </Text>
-              </VStack>
-            </HStack>
-          ) : (
-            <HStack space="sm" className="justify-between">
-              <VStack space="sm">
-                <HStack space="sm" className="items-center">
-                  <SolarIconBoldDuotone
-                    name="UserCircle"
-                    size={24}
-                    color="#3b82f6"
-                  />
-                  <Text className="text-primary-500 font-bold">
-                    {receivableList?.[0]?.user.firstName}
-                  </Text>
-                </HStack>
-                <VStack className="flex-1">
-                  <Text className="text-gray-500 text-sm">
-                    Sisa yang harus dibayar
-                  </Text>
-                  <Text className="text-sm font-bold text-error-500">
-                    {`Rp ${(totalReceivable - totalRealization).toLocaleString("id-ID")}`}
-                  </Text>
-                </VStack>
-                <Text className="text-gray-500 text-sm">
-                  Transaksi dengan jatuh tempo paling awal akan dilunasi
-                  terlebih dahulu.
-                </Text>
-              </VStack>
-              <VStack className="flex-1 items-end">
-                <Text className="text-gray-500 text-sm">Total Transaksi</Text>
-                <Text className="text-sm font-bold">
-                  {receivableIds?.length}
-                </Text>
-              </VStack>
-            </HStack>
-          )}
+          <VStack space="sm">
+            <Text className="text-gray-500 text-sm">Total Transaksi</Text>
+            <Text className="text-sm font-bold">{receivableIds?.length}</Text>
+          </VStack>
+
           <Controller
             name="nominal"
             control={form.control}
@@ -236,11 +176,6 @@ export default function ReceivableRealizationForm() {
                     placeholder="Masukkan nominal"
                     keyboardType="numeric"
                     onChangeText={(text) => {
-                      if (Number(text) > totalReceivable - totalRealization) {
-                        onChange(totalReceivable - totalRealization || 0);
-
-                        return;
-                      }
                       onChange(Number(text) || 0);
                     }}
                     onBlur={onBlur}
@@ -270,11 +205,6 @@ export default function ReceivableRealizationForm() {
                   size="md"
                   onChange={(v) => {
                     onChange(v);
-                    if (v)
-                      form.setValue(
-                        "nominal",
-                        totalReceivable - totalRealization,
-                      );
                   }}
                   onBlur={onBlur}
                 >
@@ -347,7 +277,7 @@ export default function ReceivableRealizationForm() {
                   <SelectModal
                     value={value}
                     placeholder="Pilih Metode Pembayaran"
-                    options={paymentTypes}
+                    options={paymentMethods.map(pm => ({ label: pm.name, value: pm.id }))}
                     className="flex-1"
                     onChange={onChange}
                   />
