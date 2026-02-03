@@ -231,15 +231,7 @@ export default function CurrentShift() {
           onPress={form.handleSubmit(onSubmit)}
         >
           <Text size="sm" className="text-typography-0 font-bold">
-            MASUK KE MENU TRANSAKSI
-          </Text>
-        </Button>
-        <Button
-          className="w-full rounded-sm h-9 flex justify-center items-center bg-error-100 border border-error-500"
-          onPress={() => router.push("/shift/finish")}
-        >
-          <Text size="sm" className="text-error-500 font-bold">
-            AKHIRI SHIFT
+            BUKA SHIFT
           </Text>
         </Button>
       </HStack>

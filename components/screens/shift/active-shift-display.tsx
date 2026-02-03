@@ -9,12 +9,14 @@ import {
 import { Shift, useEndShift } from "@/lib/api/shifts";
 import dayjs from "dayjs";
 import { ScrollView } from "react-native";
+import { useRouter } from "expo-router";
 
 interface ActiveShiftDisplayProps {
   shift: Shift;
 }
 
 export default function ActiveShiftDisplay({ shift }: ActiveShiftDisplayProps) {
+  const router = useRouter();
   const endShiftMutation = useEndShift();
 
   const handleEndShift = () => {
@@ -109,10 +111,19 @@ export default function ActiveShiftDisplay({ shift }: ActiveShiftDisplayProps) {
       </ScrollView>
 
       {/* End Shift Button */}
-      <HStack className="w-full p-4">
+      <HStack className="w-full p-4 gap-2">
         <Button
           size="sm"
-          className="w-full rounded-sm bg-error-500 active:bg-error-600"
+          className="flex-1 rounded-sm bg-brand-primary active:bg-brand-primary/90"
+          onPress={() => router.push("/(main)")}
+        >
+          <ButtonText className="text-white font-bold">
+            MASUK KE MENU TRANSAKSI
+          </ButtonText>
+        </Button>
+        <Button
+          size="sm"
+          className="flex-1 rounded-sm bg-error-500 active:bg-error-600"
           onPress={handleEndShift}
           disabled={endShiftMutation.isPending}
         >
