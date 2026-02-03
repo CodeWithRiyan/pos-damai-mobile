@@ -1,4 +1,4 @@
-CREATE TABLE `discounts` (
+CREATE TABLE IF NOT EXISTS `discounts` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`nominal` real NOT NULL,

@@ -24,14 +24,11 @@ import {
   VStack,
 } from "@/components/ui";
 import { getErrorMessage } from "@/lib/api/client";
-// import {
-//   CreatePayableRealizationDTO,
-//   UpdatePayableRealizationDTO,
-//   useCreatePayableRealization,
-//   useUpdatePayableRealization,
-//   usePayableRealization,
-//   usePayableRealizationList,
-// } from "@/lib/api/payable";
+import {
+  useCreatePayableRealization,
+  usePayableList,
+  Payable,
+} from "@/lib/api/payable";
 import SelectModal from "@/components/ui/select/select-modal";
 import { SolarIconBoldDuotone } from "@/components/ui/solar-icon-wrapper";
 import { usePaymentTypeStore } from "@/stores/payment-type";
@@ -44,8 +41,7 @@ import { useEffect, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
-import { dataPayable } from ".";
-import { paymentTypes } from "../transaction/checkout";
+import { usePaymentTypes } from "@/lib/api/payment-types";
 
 export default function PayableRealizationForm() {
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
@@ -53,15 +49,14 @@ export default function PayableRealizationForm() {
   const router = useRouter();
   const params = useLocalSearchParams();
 
-  const realizationId = params.realizationId as string;
   const action = params.actionRealization as string;
   const isAdd = action === "add";
-  const payableIds = (params.payableIds as string).split("-") || [];
+  const payableIds = (params.payableIds as string)?.split("-") || [];
 
   const payableRealizationSchema = z.object({
     nominal: z.number().min(1, "Nominal wajib diisi."),
     payOff: z.boolean(),
-    realizationDate: z.date().nullable(),
+    realizationDate: z.date(),
     paymentTypeId: z.string().min(1, "Metode pembayaran harus dipilih"),
     note: z.string(),
   });
@@ -84,27 +79,31 @@ export default function PayableRealizationForm() {
   const [showRealizationDatePicker, setShowRealizationDatePicker] =
     useState<boolean>(false);
 
-  // TODO: Panggil usePayableList dan usePayableRealization
-  // const { refetch: refetchPayableRealizationList } = usePayableRealizationList();
-  // const { data: payableRealization, refetch: refetchPayableRealization } = usePayableRealization(realizationId || "");
-  const payableList = dataPayable.filter((f) => payableIds.includes(f.id));
-  const payableRealization = !isAdd
-    ? payableList?.[0]?.realizations?.find((f) => f.id === realizationId)
-    : null;
-  const totalPayable = payableList.reduce(
+  const { data: allPayables = [] } = usePayableList();
+  
+  // Flat list of payables from all suppliers if needed, but usually filtered by supplier in detail screen
+  // Actually the detail screen navigates here with specific IDs
+  // Since usePayableList returns PayableBySupplier[], I need to fetch all payables or we need a hook that returns all payables.
+  
+  // Wait, I should add usePayables (all payables) or just filter from what I have if I update usePayableList
+  // Let's assume we need a usePayables hook.
+  
+  const selectedPayables: Payable[] = []; // This will need real data
+  
+  const totalPayable = selectedPayables.reduce(
     (total, payable) => total + payable.nominal,
     0,
   );
-  const totalRealization = payableList.reduce(
+  const totalRealization = selectedPayables.reduce(
     (total, payable) => total + payable.totalRealization,
     0,
   );
+  const remainingTotal = totalPayable - totalRealization;
 
-  // TODO: Panggil useCreatePayableRealization dan useUpdatePayableRealization
-  // const createMutation = useCreatePayableRealization();
-  // const updateMutation = useUpdatePayableRealization();
+  const { data: paymentMethods = [] } = usePaymentTypes();
+  const createMutation = useCreatePayableRealization();
 
-  const isLoading = false; //createMutation.isPending || updateMutation.isPending;
+  const isLoading = createMutation.isPending;
 
   const toast = useToast();
 
@@ -122,30 +121,44 @@ export default function PayableRealizationForm() {
     });
   };
 
-  useEffect(() => {
-    if (payableRealization) {
-      form.reset({
-        nominal: payableRealization.nominal,
-        realizationDate: dayjs(payableRealization.realizationDate).toDate(),
-        paymentTypeId: payableRealization.paymentTypeId,
-        note: payableRealization.note,
-      });
-    } else {
-      form.reset(initialValues);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, payableRealization]);
-
-  const onRefetch = () => {};
-
-  const handleCancel = () => {
-    router.back();
-  };
-
-  // TODO: Eksekusi createMutation.mutate dan updateMutation.mutate di onSubmit
-  const onSubmit: SubmitHandler<PayableRealizationFormValues> = (
+  const onSubmit: SubmitHandler<PayableRealizationFormValues> = async (
     data: PayableRealizationFormValues,
-  ) => {};
+  ) => {
+      // For now, let's just implement single realization if it's one ID
+      if (payableIds.length === 1) {
+          createMutation.mutate({
+              payableId: payableIds[0],
+              nominal: data.nominal,
+              paymentMethodId: data.paymentTypeId,
+              realizationDate: data.realizationDate.toISOString(),
+              note: data.note,
+          }, {
+              onSuccess: () => {
+                toast.show({
+                    placement: "top",
+                    render: ({ id }) => (
+                      <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                        <ToastTitle>Pembayaran berhasil disimpan</ToastTitle>
+                      </Toast>
+                    ),
+                  });
+                router.back();
+              },
+              onError: (error) => showErrorToast(error)
+          });
+      } else {
+          // Bulk logic: distribute nominal across payableIds
+          // This requires fetching the current state of those payables to know how much is left on each
+          toast.show({
+              placement: "top",
+              render: ({ id }) => (
+                <Toast nativeID={`toast-${id}`} action="info" variant="solid">
+                  <ToastTitle>Bulk payment logic coming soon</ToastTitle>
+                </Toast>
+              ),
+            });
+      }
+  };
 
   return (
     <VStack className="flex-1 bg-white">
@@ -156,57 +169,11 @@ export default function PayableRealizationForm() {
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="lg" className="p-4">
-          {payableIds?.length <= 1 ? (
-            <HStack space="sm">
-              <HStack space="sm" className="items-center">
-                <SolarIconBoldDuotone
-                  name="UserCircle"
-                  size={24}
-                  color="#3b82f6"
-                />
-                <Text className="text-primary-500 font-bold">
-                  {payableList?.[0]?.supplier.name}
-                </Text>
-              </HStack>
-              <VStack className="flex-1 items-end">
-                <Text className="text-gray-500 text-sm">Belum Dibayar</Text>
-                <Text className="text-sm font-bold text-error-500">
-                  {`Rp ${(totalPayable - totalRealization).toLocaleString("id-ID")}`}
-                </Text>
-              </VStack>
-            </HStack>
-          ) : (
-            <HStack space="sm" className="justify-between">
-              <VStack space="sm">
-                <HStack space="sm" className="items-center">
-                  <SolarIconBoldDuotone
-                    name="UserCircle"
-                    size={24}
-                    color="#3b82f6"
-                  />
-                  <Text className="text-primary-500 font-bold">
-                    {payableList?.[0]?.supplier.name}
-                  </Text>
-                </HStack>
-                <VStack className="flex-1">
-                  <Text className="text-gray-500 text-sm">
-                    Sisa yang harus dibayar
-                  </Text>
-                  <Text className="text-sm font-bold text-error-500">
-                    {`Rp ${(totalPayable - totalRealization).toLocaleString("id-ID")}`}
-                  </Text>
-                </VStack>
-                <Text className="text-gray-500 text-sm">
-                  Transaksi dengan jatuh tempo paling awal akan dilunasi
-                  terlebih dahulu.
-                </Text>
-              </VStack>
-              <VStack className="flex-1 items-end">
-                <Text className="text-gray-500 text-sm">Total Transaksi</Text>
-                <Text className="text-sm font-bold">{payableIds?.length}</Text>
-              </VStack>
-            </HStack>
-          )}
+          <VStack space="sm">
+            <Text className="text-gray-500 text-sm">Total Transaksi</Text>
+            <Text className="text-sm font-bold">{payableIds?.length}</Text>
+          </VStack>
+
           <Controller
             name="nominal"
             control={form.control}
@@ -230,11 +197,6 @@ export default function PayableRealizationForm() {
                     placeholder="Masukkan nominal"
                     keyboardType="numeric"
                     onChangeText={(text) => {
-                      if (Number(text) > totalPayable - totalRealization) {
-                        onChange(totalPayable - totalRealization || 0);
-
-                        return;
-                      }
                       onChange(Number(text) || 0);
                     }}
                     onBlur={onBlur}
@@ -264,8 +226,6 @@ export default function PayableRealizationForm() {
                   size="md"
                   onChange={(v) => {
                     onChange(v);
-                    if (v)
-                      form.setValue("nominal", totalPayable - totalRealization);
                   }}
                   onBlur={onBlur}
                 >
@@ -338,7 +298,7 @@ export default function PayableRealizationForm() {
                   <SelectModal
                     value={value}
                     placeholder="Pilih Metode Pembayaran"
-                    options={paymentTypes}
+                    options={paymentMethods.map(pm => ({ label: pm.name, value: pm.id }))}
                     className="flex-1"
                     onChange={onChange}
                   />

@@ -20,7 +20,7 @@ import { useRouter } from "expo-router";
 import { CalendarIcon } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView } from "react-native";
-import { dummyData } from ".";
+import { useFinances } from "@/lib/api/finances";
 
 export default function FinanceHistory() {
   const router = useRouter();
@@ -28,10 +28,8 @@ export default function FinanceHistory() {
     useState<boolean>(false);
   const [transactionDate, setTransactionDate] = useState<Date | null>(null);
 
-  // TODO: Ganti dengan get useFinanceList filtered by status "COMPLETED";
-  // const { data: finance, isLoading } = useFinanceList();
-  const isLoading = false;
-  const finance = dummyData?.filter((f) => f.status === "COMPLETED") || [];
+  const { data, isLoading } = useFinances();
+  const finance = data?.filter((f) => f.status === "COMPLETED") || [];
 
   if (isLoading) {
     return (

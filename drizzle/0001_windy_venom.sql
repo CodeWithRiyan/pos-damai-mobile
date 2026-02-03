@@ -1,4 +1,4 @@
-CREATE TABLE `product_variants` (
+CREATE TABLE IF NOT EXISTS `product_variants` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`code` text NOT NULL,

@@ -1,5 +1,5 @@
-import PurchasingReceipt from "@/components/screens/purchasing/receipt";
+import TransactionReceipt from "@/components/screens/transaction/receipt";
 
-export default function PurchasingReceiptScreen() {
-  return <PurchasingReceipt />;
+export default function TransactionReceiptScreen() {
+  return <TransactionReceipt />;
 }

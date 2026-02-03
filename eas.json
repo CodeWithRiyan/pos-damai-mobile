@@ -14,32 +14,41 @@
         "KOTLIN_INCREMENTAL": "true"
       }
     },
-    "development": {
+    "dev": {
       "extends": "base",
       "developmentClient": true,
       "distribution": "internal",
-      "channel": "development",
+      "channel": "dev",
       "env": {
-        "APP_ENV": "development",
-        "EXPO_PUBLIC_API_URL": "https://dev.api.pos.damai.sakaloka.id"
+        "APP_ENV": "dev",
+        "EXPO_PUBLIC_API_URL": "https://api-dev-pos-damai.riyansolusi.com"
       }
     },
-    "preview": {
+    "sit": {
       "extends": "base",
       "distribution": "internal",
-      "channel": "preview",
+      "channel": "sit",
       "env": {
-        "APP_ENV": "preview",
-        "EXPO_PUBLIC_API_URL": "https://sit.api.pos.damai.sakaloka.id"
+        "APP_ENV": "sit",
+        "EXPO_PUBLIC_API_URL": "https://api-sit-pos-damai.riyansolusi.com"
       }
     },
-    "production": {
+    "demo": {
+      "extends": "base",
+      "distribution": "internal",
+      "channel": "demo",
+      "env": {
+        "APP_ENV": "demo",
+        "EXPO_PUBLIC_API_URL": "https://api-demo-pos-damai.riyansolusi.com"
+      }
+    },
+    "prod": {
       "extends": "base",
       "autoIncrement": true,
-      "channel": "production",
+      "channel": "prod",
       "env": {
-        "APP_ENV": "production",
-        "EXPO_PUBLIC_API_URL": "https://api.pos.damai.sakaloka.id"
+        "APP_ENV": "prod",
+        "EXPO_PUBLIC_API_URL": "https://api-pos-damai.riyansolusi.com"
       }
     }
   }

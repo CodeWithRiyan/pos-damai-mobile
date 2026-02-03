@@ -18,10 +18,11 @@ import {
   SolarIconLinear,
 } from "@/components/ui/solar-icon-wrapper";
 import { getErrorMessage } from "@/lib/api/client";
+import { usePayableDetail, useDeletePayable } from "@/lib/api/payable";
+import { Spinner } from "@/components/ui/spinner";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
-import { dataPayable, Payable, PayableRealization } from ".";
 
 export default function PayableRealizationDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -33,18 +34,13 @@ export default function PayableRealizationDetail() {
   const supplierId = params.supplierId as string;
   const payableId = payableIds?.split("-")[0] || "";
 
-  // TODO: Get usePayable by payableId
-  const payable: Payable | null =
-    dataPayable.find((r) => r.id === payableId) || null;
+  const { data: payable, isLoading } = usePayableDetail(payableId);
+  const deleteMutation = useDeletePayable();
 
-  const payableRealizationList: PayableRealization[] =
-    payable?.realizations || [];
-
-  const isPayedOff = payable?.totalRealization === payable?.nominal;
+  const payableRealizationList = payable?.realizations || [];
+  const isPayedOff = (payable?.totalRealization || 0) === (payable?.nominal || 0);
 
   const toast = useToast();
-
-  const onRefetch = () => {};
 
   const showErrorToast = (error: unknown) => {
     toast.show({
@@ -62,15 +58,11 @@ export default function PayableRealizationDetail() {
 
   const handleDeletePress = () => {
     showPopUpConfirm({
-      title: "HAPUS REALISASI HUTANG",
+      title: "HAPUS HUTANG",
       icon: "warning",
       description: (
         <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus hutang ${payable?.supplier.name} tanggal `}
-          <Text className="font-bold text-slate-900">
-            {dayjs(payable?.createdAt).format("DD/MM/YYYY")}
-          </Text>
-          {` ? Tindakan ini tidak dapat dibatalkan.`}
+          {`Apakah Anda yakin ingin menghapus hutang ini? Tindakan ini tidak dapat dibatalkan.`}
         </Text>
       ),
       showClose: true,
@@ -78,34 +70,31 @@ export default function PayableRealizationDetail() {
       closeText: "BATAL",
       okVariant: "destructive",
       onOk: () => confirmDelete(),
-      // loading: deleteMutation.isPending,
     });
   };
 
-  // TODO: Konfirmasi hapus hutang
   const confirmDelete = async () => {
-    if (!payable) return;
+    if (!payableId) return;
 
-    // deleteMutation.mutate(realization.id, {
-    //   onSuccess: () => {
-    //     hidePopUpConfirm();
-    //     onRefetch();
-    //     router.back();
+    deleteMutation.mutate(payableId, {
+      onSuccess: () => {
+        hidePopUpConfirm();
+        router.back();
 
-    //     toast.show({
-    //       placement: "top",
-    //       render: ({ id }) => (
-    //         <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //           <ToastTitle>Hutang berhasil dihapus</ToastTitle>
-    //         </Toast>
-    //       ),
-    //     });
-    //   },
-    //   onError: (error) => {
-    //     showErrorToast(error);
-    //     hidePopUpConfirm();
-    //   },
-    // });
+        toast.show({
+          placement: "top",
+          render: ({ id: toastId }) => (
+            <Toast nativeID={`toast-${toastId}`} action="success" variant="solid">
+              <ToastTitle>Hutang berhasil dihapus</ToastTitle>
+            </Toast>
+          ),
+        });
+      },
+      onError: (error) => {
+        showErrorToast(error);
+        hidePopUpConfirm();
+      },
+    });
   };
 
   const handleAction = () => {
@@ -116,7 +105,7 @@ export default function PayableRealizationDetail() {
           icon: "Pen",
           onPress: () => {
             router.navigate(
-              `/(main)/management/payable-receivable/payable/edit/${payable?.id}`,
+              `/(main)/management/payable-receivable/payable/edit/${payable?.id}` as any,
             );
             hideActionDrawer();
           },
@@ -133,6 +122,14 @@ export default function PayableRealizationDetail() {
       ],
     });
   };
+
+  if (isLoading) {
+    return (
+      <Box className="flex-1 justify-center items-center">
+        <Spinner size="large" />
+      </Box>
+    );
+  }
 
   return (
     <VStack className="flex-1 bg-white">
@@ -163,12 +160,12 @@ export default function PayableRealizationDetail() {
                 color="#3b82f6"
               />
               <Text className="text-primary-500 font-bold">
-                {payable?.supplier.name}
+                {payable?.supplier?.name || 'Unknown Supplier'}
               </Text>
             </HStack>
             <HStack space="xs" className="items-center">
               <Box
-                className={`w-2 h-2 rounded-full${isPayedOff ? " bg-blue-500" : "bg-red-500"}`}
+                className={`w-2 h-2 rounded-full${isPayedOff ? " bg-blue-500" : " bg-red-500"}`}
               />
               <Text size="xs" className="text-primary-500 text-sm font-bold">
                 {isPayedOff ? "Lunas" : "Belum Lunas"}
@@ -204,21 +201,14 @@ export default function PayableRealizationDetail() {
             </HStack>
           </VStack>
         </VStack>
-        <VStack space="md" className="w-full px-4">
-          <Pressable className="flex-row items-center justify-between gap-4 h-9 px-4 rounded-lg bg-background-0 border border-primary-500">
-            <Text size="lg" className="text-sm text-primary-500 font-bold">
-              Lihat detail struk
-            </Text>
-            <SolarIconLinear name="ArrowRight" size={20} color="#3d2117" />
-          </Pressable>
-        </VStack>
+        
         <VStack>
           {payableRealizationList?.map((realization, index) => (
             <HStack key={realization.id} className="p-4">
-              <HStack space="md" className="items-center">
+              <HStack space="md" className="items-center w-full">
                 <Grid
                   _extra={{ className: "grid-cols-2" }}
-                  className="relative border border-background-200 rounded-md bg-background-0 p-4 pt-10 gap-2"
+                  className="relative border border-background-200 rounded-md bg-background-0 p-4 pt-10 gap-2 w-full"
                 >
                   <GridItem
                     _extra={{ className: "col-span-3" }}
@@ -241,7 +231,7 @@ export default function PayableRealizationDetail() {
                       className: "col-span-1",
                     }}
                   >
-                    <Text className="text-gray-500 text-sm">Cicilan</Text>
+                    <Text className="text-gray-500 text-sm">Nominal</Text>
                     <Text className="text-sm font-bold">
                       {`Rp ${realization.nominal.toLocaleString("id-ID")}`}
                     </Text>
@@ -251,17 +241,9 @@ export default function PayableRealizationDetail() {
                       className: "col-span-2",
                     }}
                   >
-                    <HStack space="md">
-                      <Text className="text-gray-500 text-sm">Ref :</Text>
-                      <Text className="text-sm font-bold">
-                        {realization.ref}
-                      </Text>
-                    </HStack>
                     <HStack space="sm">
-                      <Text className="text-gray-500 text-sm">Oleh :</Text>
-                      <Text className="text-sm font-bold">
-                        {realization.createdByName}
-                      </Text>
+                        <Text className="text-gray-500 text-sm">Catatan:</Text>
+                        <Text className="text-sm font-bold">{realization.note || '-'}</Text>
                     </HStack>
                   </GridItem>
                   <GridItem _extra={{ className: "col-span-3" }}>
@@ -269,7 +251,7 @@ export default function PayableRealizationDetail() {
                       className="h-8 w-8 rounded-md items-center justify-center border border-background-200"
                       onPress={() => {
                         router.navigate(
-                          `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/edit/${realization.id}?payableIds=${payableId}`,
+                          `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/edit/${realization.id}?payableIds=${payableId}` as any,
                         );
                       }}
                     >
@@ -283,7 +265,7 @@ export default function PayableRealizationDetail() {
           {payableRealizationList?.length === 0 && (
             <Box className="p-8 items-center">
               <Text className="text-slate-400 italic">
-                No payableRealization found
+                Belum ada realisasi pembayaran
               </Text>
             </Box>
           )}
@@ -291,18 +273,20 @@ export default function PayableRealizationDetail() {
       </ScrollView>
 
       <VStack space="md" className="w-full p-4">
-        <Pressable
-          className="w-full rounded-md h-9 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
-          onPress={() => {
-            router.navigate(
-              `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${payableId}`,
-            );
-          }}
-        >
-          <Text size="sm" className="text-typography-0 font-bold">
-            PEMBAYARAN
-          </Text>
-        </Pressable>
+        {!isPayedOff && (
+            <Pressable
+            className="w-full rounded-md h-9 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
+            onPress={() => {
+                router.navigate(
+                `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${payableId}` as any,
+                );
+            }}
+            >
+            <Text size="sm" className="text-typography-0 font-bold">
+                TAMBAH PEMBAYARAN
+            </Text>
+            </Pressable>
+        )}
       </VStack>
     </VStack>
   );

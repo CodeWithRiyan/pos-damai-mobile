@@ -22,14 +22,11 @@ import {
 import SelectModal from "@/components/ui/select/select-modal";
 import { getErrorMessage } from "@/lib/api/client";
 import { useSuppliers } from "@/lib/api/suppliers";
-// import {
-//   CreatePayableDTO,
-//   UpdatePayableDTO,
-//   useCreatePayable,
-//   useUpdatePayable,
-//   usePayable,
-//   usePayableList,
-// } from "@/lib/api/payment";
+import {
+  useCreatePayable,
+  usePayableDetail,
+  useUpdatePayable,
+} from "@/lib/api/payable";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
@@ -39,15 +36,13 @@ import { useEffect, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
-import { dataPayable } from ".";
 
 export default function PayableForm() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const supplierId = params.supplierId as string;
   const action = params.action as string;
   const isAdd = action === "add";
-  const payableId = supplierId;
+  const payableId = params.payableId as string;
 
   const payableSchema = z.object({
     nominal: z.number().min(1, "Nominal wajib diisi."),
@@ -72,16 +67,12 @@ export default function PayableForm() {
 
   const [showDueDatePicker, setShowDueDatePicker] = useState<boolean>(false);
 
-  // TODO: Panggil usePayableList dan usePayable
-  // const { refetch: refetchPayableList } = usePayableList();
-  // const { data: payable, refetch: refetchPayable } = usePayable(payableId || "");
-  const payable = dataPayable.find((item) => item.supplierId === supplierId);
+  const { data: payable } = usePayableDetail(payableId || "");
   const { data: suppliers = [] } = useSuppliers();
-  // TODO: Panggil useCreatePayable dan useUpdatePayable
-  // const createMutation = useCreatePayable();
-  // const updateMutation = useUpdatePayable();
+  const createMutation = useCreatePayable();
+  const updateMutation = useUpdatePayable();
 
-  const isLoading = false; //createMutation.isPending || updateMutation.isPending;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   const toast = useToast();
 
@@ -102,8 +93,10 @@ export default function PayableForm() {
   useEffect(() => {
     if (payableId && payable) {
       form.reset({
-        ...payable,
-        dueDate: new Date(payable.dueDate),
+        nominal: payable.nominal,
+        supplierId: payable.supplierId,
+        dueDate: payable.dueDate ? new Date(payable.dueDate) : null,
+        note: payable.note || "",
       });
     } else {
       form.reset(initialValues);
@@ -111,22 +104,55 @@ export default function PayableForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, payable, payableId]);
 
-  // Gunakan refetch setelah submit success
-  const onRefetch = () => {
-    // refetchPayableList();
-    // if (payableId) {
-    //   refetchPayable();
-    // }
-  };
-
-  const handleCancel = () => {
-    router.back();
-  };
-
-  // TODO: Eksekusi createMutation.mutate dan updateMutation.mutate di onSubmit
   const onSubmit: SubmitHandler<PayableFormValues> = (
     data: PayableFormValues,
-  ) => {};
+  ) => {
+    if (isAdd) {
+        createMutation.mutate({
+            ...data,
+            dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
+        }, {
+            onSuccess: () => {
+                toast.show({
+                    placement: "top",
+                    render: ({ id }) => (
+                      <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                        <ToastTitle>Hutang berhasil disimpan</ToastTitle>
+                      </Toast>
+                    ),
+                  });
+                router.back();
+            },
+            onError: (error) => {
+                showErrorToast(error);
+            }
+        });
+    } else {
+      updateMutation.mutate(
+        {
+          id: payableId,
+          ...data,
+          dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
+        },
+        {
+          onSuccess: () => {
+            toast.show({
+              placement: "top",
+              render: ({ id }) => (
+                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                  <ToastTitle>Hutang berhasil diupdate</ToastTitle>
+                </Toast>
+              ),
+            });
+            router.back();
+          },
+          onError: (error) => {
+            showErrorToast(error);
+          },
+        },
+      );
+    }
+  };
 
   return (
     <VStack className="flex-1 bg-white">
@@ -188,6 +214,7 @@ export default function PayableForm() {
                   }))}
                   className="flex-1"
                   onChange={onChange}
+                  disabled={!isAdd}
                 />
                 {error && (
                   <FormControlError>
@@ -222,7 +249,6 @@ export default function PayableForm() {
                   <DateTimePicker
                     mode="date"
                     value={value instanceof Date ? value : new Date()}
-                    maximumDate={new Date()}
                     onChange={(event, selectedDate) => {
                       setShowDueDatePicker(false);
                       if (event.type === "set" && selectedDate) {

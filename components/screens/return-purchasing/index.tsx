@@ -17,8 +17,6 @@ import dayjs from "dayjs";
 import { useRouter } from "expo-router";
 import { ScrollView } from "react-native";
 
-// TODO: Tampilkan list supplier yang memiliki riwayat transaksi, jika salah satu supplier dari list dipilih, maka akan diarahkan ke screen riwayat transaksi supplier tersebut. dan pada screen riwayat transaksi supplier tersebut akan ada button history pada <Header /> action, yang menampilkan riwayat retur pembelian barang
-// TODO: Hilangkan button + Tambah
 export default function ReturnPurchasing() {
   const router = useRouter();
   const { data: returns, isLoading } = usePurchaseReturns();
@@ -26,22 +24,14 @@ export default function ReturnPurchasing() {
   return (
     <VStack className="flex-1 bg-white">
       <Header header="RETUR PEMBELIAN BARANG" isGoBack />
-      <HStack space="sm" className="p-4 shadow-lg bg-background-0 items-center">
-        <Input className="flex-1 border border-background-300 rounded-lg h-10">
+      <VStack space="sm" className="p-4 shadow-lg bg-background-0">
+        <Input className="border border-background-300 rounded-lg h-10">
           <InputSlot className="pl-3">
             <InputIcon as={SearchIcon} />
           </InputSlot>
           <InputField placeholder="Cari no transaksi atau nama supplier" />
         </Input>
-        <Pressable
-          className="bg-primary-500 px-4 h-10 rounded-lg items-center justify-center"
-          onPress={() =>
-            router.navigate("/(main)/management/return/purchasing/input")
-          }
-        >
-          <Text className="text-white font-bold">+ Tambah</Text>
-        </Pressable>
-      </HStack>
+      </VStack>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {isLoading ? (
           <VStack className="items-center py-10">

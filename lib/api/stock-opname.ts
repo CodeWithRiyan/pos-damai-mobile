@@ -100,7 +100,7 @@ export function useCreateStockOpname() {
           status: hasDifference ? 'DIFFERENCE' : 'DONE',
           totalGain,
           totalLoss,
-          createdBy: 'Owner', // TODO: Get from auth store user name
+          createdBy: useAuthStore.getState().profile?.name || 'Unknown',
           organizationId: orgId,
           createdAt: now,
           updatedAt: now,

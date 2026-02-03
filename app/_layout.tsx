@@ -10,7 +10,7 @@ import { ActionDrawerProvider } from "@/components/action-drawer";
 import { PopUpConfirmProvider } from "@/components/pop-up-confirm";
 import { SyncConfirmationModal } from "@/components/sync-confirmation-modal";
 import { useSyncManager } from "@/hooks/use-sync-manager";
-import { initializeDb } from "@/lib/db";
+import { checkAndResetDbOnUpdate, initializeDb } from "@/lib/db";
 import { authStorageAdapter, initializeStorage } from "@/lib/storage";
 import { QueryProvider } from "@/providers/query-provider";
 import { useNetworkMonitoring } from "@/stores/network-store";
@@ -42,10 +42,18 @@ export default function RootLayout() {
   useEffect(() => {
     const init = async () => {
       await initializeStorage();
+      
+      // Check for version update and potentially reset DB
+      const wasReset = await checkAndResetDbOnUpdate();
+      if (!wasReset) {
+         // Only initialize if we didn't just reset (resetDb re-initializes internally)
+         await initializeDb(); 
+      }
+
       // Rehydrate auth store after storage is ready
       const { useAuthStore } = await import("@/stores/auth");
       useAuthStore.getState().rehydrate();
-      await initializeDb(); // Initialize SQLite tables
+      
       setIsStorageReady(true);
       setIsMounted(true);
     };

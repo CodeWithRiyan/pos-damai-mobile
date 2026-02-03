@@ -15,66 +15,29 @@ import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-// import {
-//   PaymentType,
-//   useBulkDeletePaymentType,
-//   usePaymentTypes,
-//   useProductCountsByPaymentType,
-// } from "@/lib/api/payment-types";
+import {
+  PaymentType,
+  useBulkDeletePaymentType,
+  usePaymentTypes,
+} from "@/lib/api/payment-types";
 import { getErrorMessage } from "@/lib/api/client";
-import { PaymentType, usePaymentTypeStore } from "@/stores/payment-type";
+import { usePaymentTypeStore } from "@/stores/payment-type";
 import { useRouter } from "expo-router";
 import { SearchIcon } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
-// TODO: Hapus dummy
-const data: PaymentType[] = [
-  {
-    id: "1",
-    name: "Cash",
-    commission: 0,
-    minimalAmount: 0,
-  },
-  {
-    id: "2",
-    name: "Transfer",
-    commission: 0,
-    minimalAmount: 0,
-  },
-  {
-    id: "3",
-    name: "Qris",
-    commission: 0,
-    minimalAmount: 0,
-  },
-  {
-    id: "4",
-    name: "EDC",
-    commission: 0,
-    minimalAmount: 0,
-  },
-  {
-    id: "5",
-    name: "E-Wallet",
-    commission: 0,
-    minimalAmount: 0,
-  },
-];
 export default function PaymentTypeList() {
   const { setOpen, setData } = usePaymentTypeStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
-  // const { data, isLoading: isLoadingPaymentTypes, refetch } = usePaymentTypes();
-  // const { data: productCounts, refetch: refetchCounts } =
-  //   useProductCountsByPaymentType();
-  // const deleteMutation = useBulkDeletePaymentType();
+  const { data, isLoading: isLoadingPaymentTypes, refetch } = usePaymentTypes();
+  const deleteMutation = useBulkDeletePaymentType();
   const [selectedItems, setSelectedItems] = useState<PaymentType[] | null>(
     null,
   );
 
-  const isLoading = false; // isLoadingPaymentTypes || deleteMutation.isLoading;
-  // TODO: Ubah dummy dengan usePaymentTypes
+  const isLoading = isLoadingPaymentTypes || deleteMutation.isPending;
   const paymentTypes = data || [];
 
   const toast = useToast();
@@ -106,8 +69,7 @@ export default function PaymentTypeList() {
     setSelectedItems(null);
     setData(null);
     setOpen(true, () => {
-      // refetch();
-      // refetchCounts();
+      refetch();
     });
   };
 
@@ -129,37 +91,36 @@ export default function PaymentTypeList() {
       closeText: "BATAL",
       okVariant: "destructive",
       onOk: () => confirmDelete(ids),
-      // loading: deleteMutation.isPending,
+      loading: deleteMutation.isPending,
     });
   };
 
-  // TODO: Konfirmasi hapus bulk jenis pembayaran
   const confirmDelete = async (ids: string[]) => {
     if (!ids.length) return;
 
-    // deleteMutation.mutate(
-    //   { ids },
-    //   {
-    //     onSuccess: () => {
-    //       setSelectedItems(null);
-    //       hidePopUpConfirm();
-    //       refetch();
+    deleteMutation.mutate(
+      { ids },
+      {
+        onSuccess: () => {
+          setSelectedItems(null);
+          hidePopUpConfirm();
+          refetch();
 
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //             <ToastTitle>Jenis pembayaran berhasil dihapus</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //     onError: (error) => {
-    //       showErrorToast(error);
-    //       hidePopUpConfirm();
-    //     },
-    //   },
-    // );
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastTitle>Jenis pembayaran berhasil dihapus</ToastTitle>
+              </Toast>
+            ),
+          });
+        },
+        onError: (error) => {
+          showErrorToast(error);
+          hidePopUpConfirm();
+        },
+      },
+    );
   };
 
   if (isLoading) {
@@ -243,7 +204,7 @@ export default function PaymentTypeList() {
                       handleItemPress(item);
                     } else {
                       router.navigate(
-                        `/(main)/management/payment-type/detail/${item.id}`,
+                        `/(main)/management/payment-type/detail/${item.id}` as any,
                       );
                       setSelectedItems(null);
                     }

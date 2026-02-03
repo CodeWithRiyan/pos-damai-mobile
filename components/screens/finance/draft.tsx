@@ -9,113 +9,38 @@ import {
   Text,
   VStack,
 } from "@/components/ui";
-import type { Purchase } from "@/lib/api/purchasing";
-import { usePurchases } from "@/lib/api/purchasing";
-import { db } from "@/lib/db";
-import * as schema from "@/lib/db/schema";
-import { usePurchasingStore } from "@/stores/purchasing";
-import { useQueryClient } from "@tanstack/react-query";
+import { useFinances, useDeleteFinance } from "@/lib/api/finances";
 import dayjs from "dayjs";
-import { eq } from "drizzle-orm";
 import { useRouter } from "expo-router";
 import { Trash2 } from "lucide-react-native";
 import { ScrollView } from "react-native";
 
-// TODO: Ubah Purchasing menjadi Finance
-export default function PurchasingDraft() {
+export default function FinanceDraft() {
   const router = useRouter();
-  // TODO: Ganti dengan get useFinanceList
-  const { data: purchases, isLoading } = usePurchases();
-  const { addCartItem, resetCart, setStatus, setPurchaseId } =
-    usePurchasingStore();
-  const queryClient = useQueryClient();
+  const { data: finances, isLoading } = useFinances();
+  const { mutate: deleteFinance } = useDeleteFinance();
 
   // Filter only DRAFT status
-  const drafts = purchases?.filter((p) => p.status === "DRAFT") || [];
+  const drafts = finances?.filter((f) => f.status === "DRAFT") || [];
 
-  const handleContinueDraft = async (purchaseId: string) => {
-    // We need to fetch the full detail of the purchase to get items
-    const detail = await queryClient.fetchQuery<Purchase | undefined>({
-      queryKey: ["purchases", purchaseId],
-      queryFn: async () => {
-        return queryClient.ensureQueryData<Purchase | undefined>({
-          queryKey: ["purchases", purchaseId],
-        });
-      },
+  const handleContinueDraft = async (financeId: string) => {
+    // For now, we just navigate to Finance screen. 
+    // Usually we would pre-fill a store, but Finance doesn't have a large cart yet.
+    // However, for consistency, we could pass the ID.
+    router.replace({
+      pathname: "/(main)/finance",
+      params: { draftId: financeId }
     });
-
-    if (detail && detail.items) {
-      resetCart();
-      for (const item of detail.items) {
-        // Fetch full product data to ensure all required fields (stock, etc) are present
-        const productResult = await db
-          .select()
-          .from(schema.products)
-          .where(eq(schema.products.id, item.productId))
-          .limit(1);
-
-        if (productResult.length > 0) {
-          addCartItem({
-            product: productResult[0] as any,
-            newPurchasePrice:
-              item.purchasePrice || productResult[0].purchasePrice || 0,
-            quantity: item.quantity,
-          });
-        }
-      }
-      setStatus("DRAFT");
-      setPurchaseId(detail.id);
-      router.replace("/(main)/purchasing");
-    }
   };
 
-  const handleDeleteDraft = async (purchaseId: string) => {
-    await db.transaction(async (tx) => {
-      // 1. Get local_ref_id to cleanup transactions
-      const existing = await tx
-        .select()
-        .from(schema.purchases)
-        .where(eq(schema.purchases.id, purchaseId))
-        .limit(1);
-
-      if (existing.length > 0) {
-        const refId = existing[0].local_ref_id;
-        // 2. Delete transactions
-        if (refId) {
-          const transactions = await tx
-            .select()
-            .from(schema.inventoryTransactions)
-            .where(
-              eq(
-                schema.inventoryTransactions.organizationId,
-                existing[0].organizationId,
-              ),
-            );
-
-          const filtered = transactions.filter((t) =>
-            t.local_ref_id?.startsWith(refId),
-          );
-          for (const t of filtered) {
-            await tx
-              .delete(schema.inventoryTransactions)
-              .where(eq(schema.inventoryTransactions.id, t.id));
-          }
-        }
-      }
-
-      // 3. Delete purchase
-      await tx
-        .delete(schema.purchases)
-        .where(eq(schema.purchases.id, purchaseId));
-    });
-
-    queryClient.invalidateQueries({ queryKey: ["purchases"] });
+  const handleDeleteDraft = async (financeId: string) => {
+    deleteFinance(financeId);
   };
 
   if (isLoading) {
     return (
       <VStack className="flex-1 bg-white">
-        <Header header="DRAFT PEMBELIAN" isGoBack />
+        <Header header="DRAFT KEUANGAN" isGoBack />
         <Box className="flex-1 justify-center items-center">
           <Spinner size="large" />
         </Box>
@@ -125,11 +50,11 @@ export default function PurchasingDraft() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header="DRAFT PEMBELIAN" isGoBack />
+      <Header header="DRAFT KEUANGAN" isGoBack />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {drafts.length === 0 ? (
           <Box className="flex-1 justify-center items-center py-10">
-            <Text className="text-gray-500">Tidak ada draft pembelian</Text>
+            <Text className="text-gray-500">Tidak ada draft keuangan</Text>
           </Box>
         ) : (
           drafts.map((draft) => {
@@ -164,18 +89,18 @@ export default function PurchasingDraft() {
                       <HStack className="justify-between">
                         <VStack>
                           <Text className="text-typography-400 text-xs">
-                            Estimasi Total
+                            Nominal
                           </Text>
                           <Text className="font-bold">
-                            Rp {draft.totalAmount.toLocaleString("id-ID")}
+                            Rp {draft.nominal.toLocaleString("id-ID")}
                           </Text>
                         </VStack>
                         <VStack>
                           <Text className="text-typography-400 text-xs">
-                            Supplier
+                            Tipe
                           </Text>
-                          <Text className="font-bold">
-                            {draft.supplierName}
+                          <Text className={`font-bold ${draft.type === "INCOME" ? "text-success-500" : "text-error-500"}`}>
+                            {draft.type === "INCOME" ? "Pemasukan" : "Pengeluaran"}
                           </Text>
                         </VStack>
                       </HStack>

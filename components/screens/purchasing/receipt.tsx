@@ -12,7 +12,7 @@ export default function PurchasingReceipt() {
   const { data: purchase, isLoading } = usePurchase(id || "");
   const profile = useAuthStore((state) => state.profile);
 
-  if (isLoading) {
+  if (isLoading || !id) {
     return (
       <VStack className="flex-1 bg-primary-200">
         <Header header="STRUK PEMBELIAN BARANG" isGoBack />

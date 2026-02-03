@@ -14,7 +14,6 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
-import { getErrorMessage } from "@/lib/api/client";
 // import { CreateTransactionDTO, useCreateTransaction } from "@/lib/api/transaction";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
@@ -24,10 +23,14 @@ import { z } from "zod";
 // import { useTransaction } from "@/lib/api/transaction";
 import InputVirtualKeyboard from "@/components/ui/input-virtual-keyboard";
 import SelectModal from "@/components/ui/select/select-modal";
-import { useCurrentUser } from "@/lib/api/auth";
+import { usePaymentTypes } from "@/lib/api/payment-types";
+import { useCustomers } from "@/lib/api/customers";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { useTransactionStore } from "@/stores/transaction";
 import { useRouter } from "expo-router";
+import { useCreateTransaction } from "@/lib/api/transactions";
+import { useCurrentUser } from "@/lib/api/auth";
+import { findSellPrice } from "@/lib/price";
 import { Check, PlusIcon } from "lucide-react-native";
 
 const transactionSchema = z
@@ -39,6 +42,7 @@ const transactionSchema = z
     isCashdrawer: z.boolean(),
     status: z.string(),
     paymentTypeId: z.string().min(1, "Metode pembayaran harus dipilih"),
+    customerId: z.string().min(1, "Pelanggan harus dipilih"),
     note: z.string(),
   })
   .superRefine((data, ctx) => {
@@ -56,22 +60,25 @@ const transactionSchema = z
 
 export type TransactionFormValues = z.infer<typeof transactionSchema>;
 
-// TODO: Replace with real data
-export const paymentTypes = [
-  { label: "Cash", value: "1" },
-  { label: "Transfer", value: "2" },
-  { label: "Qris", value: "3" },
-  { label: "EDC", value: "4" },
-  { label: "E-Wallet", value: "5" },
-];
+// Payment types are now loaded from the database via usePaymentTypes hook
 
 export default function TransactionCheckoutForm() {
   const router = useRouter();
 
+
   const { data: user } = useCurrentUser();
-  const { customer, cart, cartTotal, status, setCheckoutData } =
+  const { data: paymentTypesData } = usePaymentTypes();
+  const { data: customersData } = useCustomers();
+  const { customer, cart, cartTotal, status, setCheckoutData, setCustomer } =
     useTransactionStore();
+  const { resetCart } = useTransactionStore();
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
+
+  // Map payment types to select options
+  const paymentTypes = paymentTypesData?.map((pt) => ({
+    label: pt.name,
+    value: pt.id,
+  })) || [];
   // const createMutation = useCreateTransaction();
 
   const initialValues: TransactionFormValues = {
@@ -80,6 +87,7 @@ export default function TransactionCheckoutForm() {
     isCashdrawer: false,
     status: "DRAFT",
     paymentTypeId: "",
+    customerId: customer?.id || "",
     note: "",
   };
 
@@ -90,31 +98,19 @@ export default function TransactionCheckoutForm() {
 
   const totalPaid = form.watch("totalPaid");
 
-  const toast = useToast();
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
   useEffect(() => {
     if (cartTotal) {
       form.setValue("totalPurchase", cartTotal);
       form.setValue("status", status);
-    } else {
-      form.reset(initialValues);
+    }
+    if (customer) {
+      form.setValue("customerId", customer.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, cartTotal]);
+  }, [form, cartTotal, customer]);
+
+  const toast = useToast();
+  const createTransactionMutation = useCreateTransaction();
 
   useEffect(() => {
     if (form.formState.errors.totalPaid) {
@@ -127,96 +123,71 @@ export default function TransactionCheckoutForm() {
         ),
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.formState.errors.totalPaid]);
+  }, [form.formState.errors.totalPaid, toast]);
 
-  // TODO: mutation checkout transaction
-  const onSubmit: SubmitHandler<TransactionFormValues> = (
+  const onSubmit: SubmitHandler<TransactionFormValues> = async (
     data: TransactionFormValues,
   ) => {
-    // const submissionData: CreateTransactionDTO = {
-    //   ...data,
-    //   items: cart.map((item) => ({
-    //     product: {
-    //       id: item.product.id,
-    //       purchasePrice: item.product.purchasePrice,
-    //     },
-    //     tempSellPrice: item.tempSellPrice,
-    //     quantity: item.quantity,
-    //     note: item.note,
-    //   })),
-    // };
-    // createMutation.mutate(submissionData, {
-    //   onSuccess: (responseData) => {
-    setCheckoutData({
-      ...data,
-      id: "1", //responseData.id,
-      referenceNumber: "", //responseData.localRefId || "",
-      transactionDate: new Date(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdById: user?.id || "",
-      createdByName: user?.name || "",
-      updatedById: user?.id || "",
-      updatedByName: user?.name || "",
-      customerId: customer?.id || "",
-      items: cart,
-      totalItems: cartTotal,
-    });
-    if (data.status === "DRAFT") {
-      router.replace("/(main)/transaction");
-    } else {
-      router.replace("/(main)/transaction/success");
+    try {
+      const selectedCustomer = customersData?.find(c => c.id === data.customerId);
+      const submissionData = {
+        customerId: data.customerId,
+        totalAmount: cartTotal,
+        totalPaid: parseFloat(data.totalPaid),
+        paymentTypeId: data.paymentTypeId,
+        transactionDate: new Date(),
+        status: status,
+        note: data.note || "",
+        items: cart.map((item) => ({
+          product: {
+            id: item.product.id,
+          },
+          quantity: item.quantity,
+          tempSellPrice:
+            item.tempSellPrice ||
+            findSellPrice({
+              sellPrices: item.product.sellPrices,
+              type: selectedCustomer?.category,
+              quantity: item.quantity,
+            }),
+          note: item.note,
+        })),
+      };
+
+      const result = await createTransactionMutation.mutateAsync(
+        submissionData,
+      );
+
+      if (result.id) {
+        setCheckoutData({
+          id: result.id,
+          referenceNumber: result.localRefId || "",
+          createdById: user?.id || "",
+          createdByName: user?.name || "",
+          createdAt: new Date().toISOString(),
+          updatedById: user?.id || "",
+          updatedByName: user?.name || "",
+          updatedAt: new Date().toISOString(),
+          items: cart,
+          totalItems: cartTotal,
+          totalPaid: data.totalPaid,
+          customerId: data.customerId,
+          transactionDate: new Date(),
+          isCashdrawer: false,
+          status: status,
+          note: data.note || "",
+        });
+
+        if (status === "DRAFT") {
+          router.replace("/(main)/transaction");
+        } else {
+          router.replace("/(main)/transaction/success");
+        }
+        resetCart();
+      }
+    } catch (error) {
+      console.error("[onSubmit] Error creating transaction:", error);
     }
-    //   },
-    //   onError: (error) => {
-    //     showErrorToast(error);
-    //   },
-    // });
-    // if (transactionId && transaction) {
-    //   const updateData: UpdateTransactionDTO = {
-    //     ...data,
-    //     id: transaction.id,
-    //     password: transaction.password || undefined,
-    //   };
-    //   updateMutation.mutate(updateData, {
-    //     onSuccess: () => {
-    //       onRefetch();
-    //       handleCancel();
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //             <ToastTitle>Transaksi pembelian barang berhasil</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //     onError: (error) => {
-    //       showErrorToast(error);
-    //     },
-    //   });
-    // } else {
-    //   const { isActive, ...restData } = data;
-    //   const createData: CreateTransactionDTO = restData;
-    //   createMutation.mutate(createData, {
-    //     onSuccess: () => {
-    //       onRefetch();
-    //       handleCancel();
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //             <ToastTitle>Transaksi pembelian barang berhasil</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //     onError: (error) => {
-    //       showErrorToast(error);
-    //     },
-    //   });
-    // }
   };
 
   return (
@@ -245,6 +216,48 @@ export default function TransactionCheckoutForm() {
                 </Heading>
               </HStack>
               <VStack space="lg" className="p-4">
+                <Controller
+                  control={form.control}
+                  name="customerId"
+                  render={({
+                    field: { onChange, value },
+                    fieldState: { error },
+                  }) => (
+                    <FormControl isRequired isInvalid={!!error}>
+                      <HStack space="md">
+                        <SelectModal
+                          value={value}
+                          placeholder="Pilih Pelanggan"
+                          options={customersData?.map((c) => ({
+                            label: c.name,
+                            value: c.id,
+                          })) || []}
+                          className="flex-1"
+                          onChange={(val) => {
+                            onChange(val);
+                            const selected = customersData?.find(c => c.id === val);
+                            if (selected) setCustomer(selected);
+                          }}
+                        />
+                        <Pressable
+                          className="size-10 rounded-full bg-primary-500 items-center justify-center"
+                          onPress={() =>
+                            router.push("/(main)/management/customer-supplier/customer/add")
+                          }
+                        >
+                          <Icon as={PlusIcon} color="white" />
+                        </Pressable>
+                      </HStack>
+                      {error && (
+                        <FormControlError>
+                          <FormControlErrorText>
+                            {error.message}
+                          </FormControlErrorText>
+                        </FormControlError>
+                      )}
+                    </FormControl>
+                  )}
+                />
                 <Controller
                   control={form.control}
                   name="paymentTypeId"
