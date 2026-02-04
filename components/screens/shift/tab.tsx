@@ -1,16 +1,56 @@
-import CurrentShift from "@/components/screens/shift/current";
-import CurrentFormShift from "@/components/screens/shift/current-form";
-import HistoryShift from "@/components/screens/shift/history";
-import { useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import Header from "@/components/header";
+import { HStack, Pressable, Text, VStack } from "@/components/ui";
+import { usePathname, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 
-export default function TabShift() {
-  const [shiftActive, setShiftActive] = useState<boolean>(false);
-  const { tab } = useLocalSearchParams();
-  if (tab === "current" && !shiftActive)
-    return <CurrentFormShift setActive={setShiftActive} />;
-  if (tab === "current" && shiftActive)
-    return <CurrentShift setActive={setShiftActive} />;
+export default function ShiftTabs() {
+  const pathname = usePathname();
+  const tab = pathname.split("/")[2];
+  const router = useRouter();
 
-  return <HistoryShift />;
+  const [tabActive, setTabActive] = useState<string>("");
+
+  useEffect(() => {
+    setTabActive(tab as string);
+  }, [tab]);
+
+  return (
+    <VStack className="w-full bg-white">
+      <Header header="SHIFT" />
+      <HStack className="w-full bg-gray-100">
+        <Pressable
+          className={`flex-1 flex-row justify-center py-3`}
+          style={
+            tabActive === "current"
+              ? {
+                  borderBottomColor: "#3D2117",
+                  borderBottomWidth: 2,
+                  backgroundColor: "#00000005",
+                }
+              : undefined
+          }
+          onPress={() => router.replace("/(main)/shift/(tab)/current")}
+        >
+          <Text className="text-sm text-typography-700 font-bold">
+            SAAT INI
+          </Text>
+        </Pressable>
+        <Pressable
+          className="flex-1 flex-row justify-center py-3"
+          style={
+            tabActive === "history"
+              ? {
+                  borderBottomColor: "#3D2117",
+                  borderBottomWidth: 2,
+                  backgroundColor: "#00000005",
+                }
+              : undefined
+          }
+          onPress={() => router.replace("/(main)/shift/(tab)/history")}
+        >
+          <Text className="text-sm text-typography-700 font-bold">RIWAYAT</Text>
+        </Pressable>
+      </HStack>
+    </VStack>
+  );
 }
