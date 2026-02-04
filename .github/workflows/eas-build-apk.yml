@@ -187,11 +187,11 @@ jobs:
           
           # Set API URL based on branch_type
           if [ "${{ github.event.inputs.branch_type }}" = "prod" ]; then
-            export EXPO_PUBLIC_API_URL="https://api.pos.damai.sakaloka.id"
+            export EXPO_PUBLIC_API_URL="https://api-pos-damai.riyansolusi.com"
           elif [ "${{ github.event.inputs.branch_type }}" = "main" ]; then
-            export EXPO_PUBLIC_API_URL="https://sit.api.pos.damai.sakaloka.id"
+            export EXPO_PUBLIC_API_URL="https://api-sit-pos-damai.riyansolusi.com"
           else
-            export EXPO_PUBLIC_API_URL="https://dev.api.pos.damai.sakaloka.id"
+            export EXPO_PUBLIC_API_URL="https://api-dev-pos-damai.riyansolusi.com"
           fi
           echo "Using API_URL: $EXPO_PUBLIC_API_URL"
 
