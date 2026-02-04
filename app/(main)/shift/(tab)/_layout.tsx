@@ -1,4 +1,4 @@
-import ShiftTabs from "@/components/screens/shift";
+import ShiftTabs from "@/components/screens/shift/tab";
 import { VStack } from "@/components/ui";
 import { Stack } from "expo-router";
 import { View } from "react-native";
