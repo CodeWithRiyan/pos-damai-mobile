@@ -39,7 +39,7 @@ const shiftSchema = z.object({
 
 export type ShiftFormValues = z.infer<typeof shiftSchema>;
 
-export default function CurrentShift() {
+export default function CurrentFormShift() {
   const [selectedCashDrawerId, setSelectedCashDrawerId] = useState<string>();
   const { data: cashDrawers, refetch: refetchCashDrawers } = useCashDrawers();
   const startShiftMutation = useStartShift();

@@ -27,6 +27,8 @@ export interface TransactionItem {
   transactionId: string;
   productId: string;
   productName?: string;
+  variantId?: string | null;
+  variantName?: string;
   quantity: number;
   sellPrice: number;
   note?: string | null;
@@ -43,6 +45,7 @@ export interface CreateTransactionDTO {
   note: string;
   items: {
     product: { id: string };
+    variant?: { id: string; name: string };
     quantity: number;
     tempSellPrice: number;
     note?: string;
@@ -146,9 +149,20 @@ export function useTransaction(id: string) {
             .where(eq(schema.products.id, item.productId))
             .limit(1);
 
+          let variantName;
+          if (item.variantId) {
+            const variant = await db
+              .select({ name: schema.productVariants.name })
+              .from(schema.productVariants)
+              .where(eq(schema.productVariants.id, item.variantId))
+              .limit(1);
+            variantName = variant[0]?.name;
+          }
+
           return {
             ...item,
             productName: product[0]?.name || 'Unknown',
+            variantName,
           };
         })
       );
@@ -233,6 +247,7 @@ export function useCreateTransaction() {
             id: itemId,
             transactionId: transactionId,
             productId: item.product.id,
+            variantId: item.variant?.id || null,
             quantity: item.quantity,
             sellPrice: item.tempSellPrice,
             note: item.note || null,

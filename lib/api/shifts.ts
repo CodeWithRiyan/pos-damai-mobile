@@ -262,7 +262,8 @@ export function useStartShift() {
     onSuccess: (data) => {
       const orgId = useAuthStore.getState().getOrganizationId();
       queryClient.invalidateQueries({ queryKey: ['shifts', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['shifts', 'active', data.cashDrawerId] });
+      queryClient.invalidateQueries({ queryKey: ['shifts', 'active'] });
+      queryClient.invalidateQueries({ queryKey: ['shifts', 'current', orgId] });
     },
   });
 }

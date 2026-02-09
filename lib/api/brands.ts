@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as schema from '../db/schema';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, ne } from 'drizzle-orm';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
 
@@ -142,6 +142,26 @@ export function useCreateBrand() {
   return useMutation({
     mutationFn: async (data: CreateBrandDTO) => {
       const orgId = useAuthStore.getState().getOrganizationId();
+      
+      if (!orgId) {
+        throw new Error('Gagal menambahkan brand: ID Organisasi tidak ditemukan. Silakan login kembali.');
+      }
+
+      // Check for duplicate name
+      const existing = await db
+        .select()
+        .from(schema.brands)
+        .where(and(
+          eq(schema.brands.name, data.name),
+          eq(schema.brands.organizationId, orgId),
+          isNull(schema.brands.deletedAt)
+        ))
+        .limit(1);
+      
+      if (existing.length > 0) {
+        throw new Error(`Brand dengan nama "${data.name}" sudah ada.`);
+      }
+
       console.log('[CreateBrand] creating for orgId:', orgId, data);
       const id = `brand_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
@@ -177,7 +197,25 @@ export function useUpdateBrand() {
   return useMutation({
     mutationFn: async (data: UpdateBrandDTO) => {
       const { id, ...rest } = data;
+      const orgId = useAuthStore.getState().getOrganizationId();
       const now = new Date();
+
+      if (rest.name) {
+        const existing = await db
+          .select()
+          .from(schema.brands)
+          .where(and(
+            eq(schema.brands.name, rest.name),
+            eq(schema.brands.organizationId, orgId),
+            ne(schema.brands.id, id),
+            isNull(schema.brands.deletedAt)
+          ))
+          .limit(1);
+
+        if (existing.length > 0) {
+          throw new Error(`Brand dengan nama "${rest.name}" sudah ada.`);
+        }
+      }
 
       await db
         .update(schema.brands)
