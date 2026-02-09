@@ -23,6 +23,7 @@ import { useCurrentShift, useLastShift, useStartShift } from "@/lib/api/shifts";
 import { useCashDrawerStore } from "@/stores/cashdrawer";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckIcon, PlusIcon } from "lucide-react-native";
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
@@ -40,6 +41,7 @@ const shiftSchema = z.object({
 export type ShiftFormValues = z.infer<typeof shiftSchema>;
 
 export default function CurrentFormShift() {
+  const router = useRouter();
   const [selectedCashDrawerId, setSelectedCashDrawerId] = useState<string>();
   const { data: cashDrawers, refetch: refetchCashDrawers } = useCashDrawers();
   const startShiftMutation = useStartShift();
@@ -82,6 +84,8 @@ export default function CurrentFormShift() {
         initialBalance: data.initialBalance,
         note: data.note,
       });
+
+      router.push("/(main)/transaction");
     } catch (error) {
       console.error("Error starting shift:", error);
     }

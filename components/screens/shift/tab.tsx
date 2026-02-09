@@ -1,6 +1,6 @@
 import Header from "@/components/header";
 import { HStack, Pressable, Text, VStack } from "@/components/ui";
-import { usePathname, useRouter, useSegments } from "expo-router";
+import { useRouter, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
 
 export default function ShiftTabs() {
