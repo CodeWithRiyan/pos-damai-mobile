@@ -242,7 +242,7 @@ export default function TransactionList() {
                       </Box>
                       <VStack className="flex-1">
                         <Heading size="md" className="line-clamp-2">
-                          {`${item.product.name}${item.product.type === "MULTIUNIT" ? ` (${item.unitWeight} ${item.product.unit})` : ""}`}
+                          {`${item.product.name}${item.variant ? ` - ${item.variant.name}` : ""}${item.product.type === "MULTIUNIT" ? ` (${item.unitWeight} ${item.product.unit})` : ""}`}
                         </Heading>
                         <Text size="sm" className="text-slate-500">
                           {`${item.quantity} x Rp ${

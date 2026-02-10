@@ -1,11 +1,11 @@
 import Header from "@/components/header";
 import { HStack, Pressable, Text, VStack } from "@/components/ui";
-import { usePathname, useRouter } from "expo-router";
+import { useRouter, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
 
 export default function ShiftTabs() {
-  const pathname = usePathname();
-  const tab = pathname.split("/")[2];
+  const segments = useSegments();
+  const tab = segments[segments.length - 1];
   const router = useRouter();
 
   const [tabActive, setTabActive] = useState<string>("");
