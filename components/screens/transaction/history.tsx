@@ -19,21 +19,30 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
-export default function TransactionHistory() {
+export default function TransactionHistory({
+  header = "HISTORI PENJUALAN",
+}: {
+  header?: string;
+}) {
   const router = useRouter();
 
   const { data: allTransactions, isLoading } = useTransactions();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const transactions = allTransactions?.filter((t) => t.status === "COMPLETED" && (
-    (t.local_ref_id || t.id).toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.customerName?.toLowerCase().includes(searchQuery.toLowerCase())
-  )) || [];
+  const transactions =
+    allTransactions?.filter(
+      (t) =>
+        t.status === "COMPLETED" &&
+        ((t.local_ref_id || t.id)
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+          t.customerName?.toLowerCase().includes(searchQuery.toLowerCase())),
+    ) || [];
 
   if (isLoading) {
     return (
       <VStack className="flex-1 bg-white">
-        <Header header="HISTORI PENJUALAN" isGoBack />
+        <Header header={header} isGoBack />
         <Box className="flex-1 justify-center items-center">
           <Spinner size="large" />
         </Box>
@@ -43,14 +52,14 @@ export default function TransactionHistory() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header="HISTORI PENJUALAN" isGoBack />
+      <Header header={header} isGoBack />
       <HStack space="sm" className="p-4 shadow-lg bg-background-0 items-center">
         <Input className="flex-1 border border-background-300 rounded-lg h-10">
           <InputSlot className="pl-3">
             <InputIcon as={SearchIcon} />
           </InputSlot>
-          <InputField 
-            placeholder="Cari no transaksi atau nama pelanggan" 
+          <InputField
+            placeholder="Cari no transaksi atau nama pelanggan"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
