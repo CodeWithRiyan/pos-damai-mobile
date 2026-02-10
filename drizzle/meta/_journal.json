@@ -85,6 +85,13 @@
       "when": 1770137510813,
       "tag": "0011_add_userid_to_finances",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1770710719759,
+      "tag": "0012_lethal_longshot",
+      "breakpoints": true
     }
   ]
 }
