@@ -20,10 +20,11 @@ import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function TransactionHistory({
-  header = "HISTORI PENJUALAN",
+  isReport,
 }: {
-  header?: string;
+  isReport?: boolean;
 }) {
+  const header = isReport ? "LAPORAN PENJUALAN" : "RIWAYAT PENJUALAN";
   const router = useRouter();
 
   const { data: allTransactions, isLoading } = useTransactions();

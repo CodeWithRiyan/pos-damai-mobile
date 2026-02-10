@@ -1,5 +1,5 @@
 import PurchasingHistory from "@/components/screens/purchasing/history";
 
 export default function PurchasingReportScreen() {
-  return <PurchasingHistory header="LAPORAN PEMBELIAN" />;
+  return <PurchasingHistory isReport />;
 }

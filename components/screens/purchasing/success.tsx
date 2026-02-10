@@ -28,6 +28,14 @@ export default function PurchasingSuccess() {
           />
           <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
             <HStack className="w-full flex-row justify-between">
+              <Text className="text-typography-500 text-lg">Status</Text>
+              <Text
+                className={`font-bold text-lg${checkoutData?.isPayable ? " text-error-500" : " text-success-500"}`}
+              >
+                {checkoutData?.isPayable ? "Belum Lunas" : "Lunas"}
+              </Text>
+            </HStack>
+            <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-500 text-lg">
                 Total Transaksi
               </Text>
@@ -75,17 +83,14 @@ export default function PurchasingSuccess() {
             <Pressable
               className="w-full rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-background-0 border border-primary-500 active:bg-primary-100"
               onPress={() => {
-                resetCart();
                 const id = checkoutData?.id;
-                setCheckoutData(null);
                 if (id) {
-                  router.replace({
-                    pathname: "/(main)/purchasing/receipt/[id]",
-                    params: { id },
-                  });
+                  router.replace(`/(main)/purchasing/receipt/${id}`);
                 } else {
                   router.replace("/(main)/purchasing");
                 }
+                resetCart();
+                setCheckoutData(null);
               }}
             >
               <Icon as={Printer} size="xl" color="#3d2117" />

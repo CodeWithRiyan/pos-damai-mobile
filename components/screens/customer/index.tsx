@@ -203,7 +203,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
                       <Text className="text-brand-primary text-sm font-bold">
                         0 Poin
                       </Text>
-                      <Text className="text-xs">Total Transaksi: Rp 0</Text>
+                      <Text className="text-xs">Total Transaksi: 0</Text>
                       <Text className="text-xs">Total Omset: Rp 0</Text>
                       <Text className="text-xs">Total Keuntungan: Rp 0</Text>
                     </VStack>

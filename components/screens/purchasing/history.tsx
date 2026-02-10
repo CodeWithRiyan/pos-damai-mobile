@@ -19,10 +19,11 @@ import { useRouter } from "expo-router";
 import { ScrollView } from "react-native";
 
 export default function PurchasingHistory({
-  header = "HISTORI PEMBELIAN",
+  isReport,
 }: {
-  header?: string;
+  isReport?: boolean;
 }) {
+  const header = isReport ? "LAPORAN PEMBELIAN" : "RIWAYAT PEMBELIAN";
   const router = useRouter();
   const { data: allPurchases, isLoading } = usePurchases();
   const purchases = allPurchases?.filter((p) => p.status === "COMPLETED") || [];
@@ -64,10 +65,7 @@ export default function PurchasingHistory({
                 key={purchase.id}
                 className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
                 onPress={() =>
-                  router.navigate({
-                    pathname: "/(main)/purchasing/receipt/[id]",
-                    params: { id: purchase.id },
-                  })
+                  router.navigate(`/(main)/purchasing/receipt/${purchase.id}`)
                 }
               >
                 <HStack space="xl" className="items-center">

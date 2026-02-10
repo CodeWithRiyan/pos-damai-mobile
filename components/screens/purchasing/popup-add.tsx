@@ -36,7 +36,8 @@ import z from "zod";
 
 export default function PopupAddProduct() {
   const toast = useToast();
-  const { addProduct, cart, setAddProduct, addCartItem } = usePurchasingStore();
+  const { addProduct, cart, setAddProduct, addCartItem, removeCartItem } =
+    usePurchasingStore();
 
   const addProductSchema = z.object({
     purchasePrice: z.number().min(1, "Harga beli harus diisi"),
@@ -318,6 +319,21 @@ export default function PopupAddProduct() {
                 </Text>
               </Pressable>
             </HStack>
+            {cart.some((s) => s.product.id === addProduct?.id) && (
+              <HStack space="md" className="w-full p-4 pt-0">
+                <Pressable
+                  className="flex-1 items-center justify-center h-12 px-4 rounded-lg border border-error-500 bg-error-500 active:bg-error-400"
+                  onPress={() => {
+                    setAddProduct(null);
+                    removeCartItem(addProduct?.id || "");
+                  }}
+                >
+                  <Text size="lg" className="text-typography-0 font-bold">
+                    HAPUS
+                  </Text>
+                </Pressable>
+              </HStack>
+            )}
           </VStack>
         </ModalBody>
       </ModalContent>
