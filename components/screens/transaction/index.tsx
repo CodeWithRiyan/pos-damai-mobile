@@ -9,8 +9,6 @@ import {
   SearchIcon,
   Text,
   useToast,
-  Toast,
-  ToastTitle,
 } from "@/components/ui";
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
@@ -21,20 +19,19 @@ import {
 } from "@/components/ui/solar-icon-wrapper";
 import { VStack } from "@/components/ui/vstack";
 // import { useBulkDeleteTransaction, Transaction, useTransaction } from "@/lib/api/transaction";
+import { Button, ButtonText } from "@/components/ui/button";
 import SelectModal from "@/components/ui/select/select-modal";
+import { Spinner } from "@/components/ui/spinner";
 import { useCustomers } from "@/lib/api/customers";
 import { useProducts } from "@/lib/api/products";
+import { useCurrentShift } from "@/lib/api/shifts";
 import { findSellPrice } from "@/lib/price";
 import { useTransactionStore } from "@/stores/transaction";
 import { useRouter } from "expo-router";
-import { Plus, PlusIcon } from "lucide-react-native";
+import { AlertCircle, Plus, PlusIcon } from "lucide-react-native";
 import React from "react";
 import { ScrollView } from "react-native";
 import PopupAddProduct from "./popup-add";
-import { useCurrentShift } from "@/lib/api/shifts";
-import { Spinner } from "@/components/ui/spinner";
-import { AlertCircle } from "lucide-react-native";
-import { Button, ButtonText } from "@/components/ui/button";
 
 export default function TransactionList() {
   const { cart, customer, setCustomer, setAddProduct, setStatus } =
@@ -47,9 +44,10 @@ export default function TransactionList() {
 
   const [searchQuery, setSearchQuery] = React.useState("");
 
-  const filteredProducts = products?.filter((p) =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.barcode?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredProducts = products?.filter(
+    (p) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.barcode?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   if (isLoadingShift) {
@@ -66,13 +64,16 @@ export default function TransactionList() {
         <Header header="TRANSAKSI PENJUALAN" />
         <VStack className="flex-1 justify-center items-center p-8" space="lg">
           <Icon as={AlertCircle} size="xl" color="#f59e0b" />
-          <Heading size="lg" className="text-center">Shift Belum Dibuka</Heading>
+          <Heading size="lg" className="text-center">
+            Shift Belum Dibuka
+          </Heading>
           <Text className="text-center text-typography-500">
-            Anda harus membuka shift sebelum dapat melakukan transaksi penjualan.
+            Anda harus membuka shift sebelum dapat melakukan transaksi
+            penjualan.
           </Text>
           <Button
             className="mt-4 bg-primary-500 rounded-lg"
-            onPress={() => router.push("/(main)/shift/current")}
+            onPress={() => router.push("/(main)/shift/(tab)/current")}
           >
             <ButtonText>BUKA SHIFT SEKARANG</ButtonText>
           </Button>
@@ -118,8 +119,9 @@ export default function TransactionList() {
               placeholder="Pilih Pelanggan"
               options={
                 customers?.map((customer) => ({
-                  label: customer.name,
                   value: customer.id,
+                  label: customer.name,
+                  desc: customer.code || "",
                 })) || []
               }
               className="flex-1"
@@ -154,8 +156,8 @@ export default function TransactionList() {
               <InputSlot className="pl-3">
                 <InputIcon as={SearchIcon} />
               </InputSlot>
-              <InputField 
-                placeholder="Cari nama atau kode" 
+              <InputField
+                placeholder="Cari nama atau kode"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
@@ -242,7 +244,7 @@ export default function TransactionList() {
                       </Box>
                       <VStack className="flex-1">
                         <Heading size="md" className="line-clamp-2">
-                          {`${item.product.name}${item.product.type === "MULTIUNIT" ? ` (${item.unitWeight} ${item.product.unit})` : ""}`}
+                          {`${item.product.name}${item.variant ? ` - ${item.variant.name}` : ""}${item.product.type === "MULTIUNIT" ? ` (${item.unitWeight} ${item.product.unit})` : ""}`}
                         </Heading>
                         <Text size="sm" className="text-slate-500">
                           {`${item.quantity} x Rp ${
@@ -286,17 +288,6 @@ export default function TransactionList() {
               <Pressable
                 className="flex-1 flex-row items-center justify-between h-16 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
                 onPress={() => {
-                  if (!customer) {
-                    toast.show({
-                      placement: "top",
-                      render: ({ id }) => (
-                        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-                          <ToastTitle>Silakan pilih pelanggan terlebih dahulu</ToastTitle>
-                        </Toast>
-                      ),
-                    });
-                    return;
-                  }
                   router.navigate("/(main)/transaction/checkout");
                   setStatus("COMPLETED");
                 }}
@@ -318,17 +309,6 @@ export default function TransactionList() {
               <Pressable
                 className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                 onPress={() => {
-                  if (!customer) {
-                    toast.show({
-                      placement: "top",
-                      render: ({ id }) => (
-                        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-                          <ToastTitle>Silakan pilih pelanggan terlebih dahulu</ToastTitle>
-                        </Toast>
-                      ),
-                    });
-                    return;
-                  }
                   router.navigate("/(main)/transaction/checkout");
                   setStatus("DRAFT");
                 }}

@@ -13,6 +13,7 @@ export interface Customer {
   code: string | null;
   phone: string | null;
   address: string | null;
+  points: number;
   organizationId: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
@@ -87,6 +88,7 @@ export function useCreateCustomer() {
         code: data.code ?? null,
         phone: data.phone ?? null,
         address: data.address ?? null,
+        points: 0,
         organizationId: orgId,
         createdAt: now,
         updatedAt: now,

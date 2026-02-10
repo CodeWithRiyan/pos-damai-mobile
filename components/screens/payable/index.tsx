@@ -28,9 +28,9 @@ import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
 import {
+  PayableBySupplier,
   useBulkDeletePayableBySupplier,
   usePayableList,
-  PayableBySupplier,
 } from "@/lib/api/payable";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
@@ -39,10 +39,14 @@ import { CalendarIcon } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
-export default function PayableList() {
+export default function PayableList({ isReport }: { isReport?: boolean }) {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
-  const { data: payableBySupplier = [], isLoading: isLoadingFetch, refetch } = usePayableList();
+  const {
+    data: payableBySupplier = [],
+    isLoading: isLoadingFetch,
+    refetch,
+  } = usePayableList();
   const deleteMutation = useBulkDeletePayableBySupplier();
 
   const isLoading = isLoadingFetch || deleteMutation.isPending;
@@ -145,34 +149,39 @@ export default function PayableList() {
   return (
     <Box className="flex-1 bg-white">
       <Header
-        header="HUTANG"
+        header={isReport ? "LAPORAN HUTANG" : "HUTANG"}
         isGoBack
         selectedItemsLength={selectedItems?.length}
         selectedItemsSuffixLabel="Hutang terpilih"
         onCancelSelectedItems={() => setSelectedItems(null)}
         action={
-          <HStack space="sm" className="w-[72px]">
-            {!!selectedItems?.length ? (
-              isLoading ? (
-                <Box className="p-6">
-                  <Spinner size="small" color="#FFFFFF" />
-                </Box>
+          !isReport && (
+            <HStack space="sm" className="w-[72px]">
+              {!!selectedItems?.length ? (
+                isLoading ? (
+                  <Box className="p-6">
+                    <Spinner size="small" color="#FFFFFF" />
+                  </Box>
+                ) : (
+                  <Pressable
+                    className="p-6"
+                    onPress={() => handleDeletePress()}
+                  >
+                    <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                  </Pressable>
+                )
               ) : (
-                <Pressable className="p-6" onPress={() => handleDeletePress()}>
-                  <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                <Pressable className="p-6" onPress={() => {}}>
+                  <SolarIconBold
+                    name="MenuDots"
+                    size={20}
+                    color="#FDFBF9"
+                    style={{ transform: [{ rotate: "90deg" }] }}
+                  />
                 </Pressable>
-              )
-            ) : (
-              <Pressable className="p-6" onPress={() => {}}>
-                <SolarIconBold
-                  name="MenuDots"
-                  size={20}
-                  color="#FDFBF9"
-                  style={{ transform: [{ rotate: "90deg" }] }}
-                />
-              </Pressable>
-            )}
-          </HStack>
+              )}
+            </HStack>
+          )
         }
       />
       <Box className="flex-1 bg-white">
@@ -192,8 +201,8 @@ export default function PayableList() {
                 <InputSlot className="pl-3">
                   <InputIcon as={SearchIcon} />
                 </InputSlot>
-                <InputField 
-                  placeholder="Cari nama supplier" 
+                <InputField
+                  placeholder="Cari nama supplier"
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                 />
@@ -303,8 +312,10 @@ export default function PayableList() {
                       : "Lunas",
                   ),
                 )
-                ?.filter((r) => 
-                  r.supplierName.toLowerCase().includes(searchQuery.toLowerCase())
+                ?.filter((r) =>
+                  r.supplierName
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase()),
                 )
                 ?.map((payable) => (
                   <Pressable
@@ -329,7 +340,7 @@ export default function PayableList() {
                         );
                       }
                     }}
-                    onLongPress={() => handlePayablePress(payable)}
+                    onLongPress={() => !isReport && handlePayablePress(payable)}
                   >
                     <HStack className="justify-between items-center">
                       <HStack space="md" className="items-center">

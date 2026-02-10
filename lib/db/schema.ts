@@ -116,6 +116,7 @@ export const customers = sqliteTable('customers', {
   code: text('code').unique(),
   phone: text('phone'),
   address: text('address'),
+  points: real('points').default(0),
   organizationId: text('organizationId'),
   ...syncColumns,
 });
@@ -260,6 +261,7 @@ export const transactionItems = sqliteTable('transaction_items', {
   id: text('id').primaryKey(),
   transactionId: text('transactionId').notNull(),
   productId: text('productId').notNull(),
+  variantId: text('variantId'),
   quantity: real('quantity').notNull(),
   sellPrice: real('sellPrice').notNull(),
   note: text('note'),

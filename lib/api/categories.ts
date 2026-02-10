@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as schema from '../db/schema';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, ne } from 'drizzle-orm';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
 
@@ -144,6 +144,21 @@ export function useCreateCategory() {
         throw new Error('Gagal menambahkan kategori: ID Organisasi tidak ditemukan. Silakan login kembali.');
       }
 
+      // Check for duplicate name
+      const existing = await db
+        .select()
+        .from(schema.categories)
+        .where(and(
+          eq(schema.categories.name, data.name),
+          eq(schema.categories.organizationId, orgId),
+          isNull(schema.categories.deletedAt)
+        ))
+        .limit(1);
+      
+      if (existing.length > 0) {
+        throw new Error(`Kategori dengan nama "${data.name}" sudah ada.`);
+      }
+
       const id = `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
 
@@ -178,7 +193,25 @@ export function useUpdateCategory() {
   return useMutation({
     mutationFn: async (data: UpdateCategoryDTO) => {
       const { id, ...rest } = data;
+      const orgId = useAuthStore.getState().getOrganizationId();
       const now = new Date();
+
+      if (rest.name) {
+        const existing = await db
+          .select()
+          .from(schema.categories)
+          .where(and(
+            eq(schema.categories.name, rest.name),
+            eq(schema.categories.organizationId, orgId),
+            ne(schema.categories.id, id),
+            isNull(schema.categories.deletedAt)
+          ))
+          .limit(1);
+
+        if (existing.length > 0) {
+          throw new Error(`Kategori dengan nama "${rest.name}" sudah ada.`);
+        }
+      }
 
       await db
         .update(schema.categories)

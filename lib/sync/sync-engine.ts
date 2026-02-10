@@ -84,6 +84,7 @@ export class SyncEngine {
         finances: schema.finances,
         shifts: schema.shifts,
         cashDrawers: schema.cashDrawers,
+        users: schema.users,
       };
 
       await db.transaction(async (tx) => {

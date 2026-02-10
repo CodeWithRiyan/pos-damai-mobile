@@ -14,19 +14,24 @@ import {
 import { Box } from "@/components/ui/box";
 import { Spinner } from "@/components/ui/spinner";
 import { usePurchases } from "@/lib/api/purchasing";
-import { useRouter } from "expo-router";
 import dayjs from "dayjs";
+import { useRouter } from "expo-router";
 import { ScrollView } from "react-native";
 
-export default function PurchasingHistory() {
+export default function PurchasingHistory({
+  isReport,
+}: {
+  isReport?: boolean;
+}) {
+  const header = isReport ? "LAPORAN PEMBELIAN" : "RIWAYAT PEMBELIAN";
   const router = useRouter();
   const { data: allPurchases, isLoading } = usePurchases();
-  const purchases = allPurchases?.filter(p => p.status === 'COMPLETED') || [];
+  const purchases = allPurchases?.filter((p) => p.status === "COMPLETED") || [];
 
   if (isLoading) {
     return (
       <VStack className="flex-1 bg-white">
-        <Header header="HISTORI PEMBELIAN" isGoBack />
+        <Header header={header} isGoBack />
         <Box className="flex-1 justify-center items-center">
           <Spinner size="large" />
         </Box>
@@ -36,7 +41,7 @@ export default function PurchasingHistory() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header="HISTORI PEMBELIAN" isGoBack />
+      <Header header={header} isGoBack />
       <HStack space="sm" className="p-4 shadow-lg bg-background-0 items-center">
         <Input className="flex-1 border border-background-300 rounded-lg h-10">
           <InputSlot className="pl-3">
@@ -46,21 +51,22 @@ export default function PurchasingHistory() {
         </Input>
       </HStack>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {(!purchases || purchases.length === 0) ? (
+        {!purchases || purchases.length === 0 ? (
           <Box className="flex-1 justify-center items-center py-10">
             <Text className="text-gray-500">Belum ada histori pembelian</Text>
           </Box>
         ) : (
           purchases.map((purchase) => {
-            const date = purchase.createdAt ? dayjs(purchase.createdAt) : dayjs();
+            const date = purchase.createdAt
+              ? dayjs(purchase.createdAt)
+              : dayjs();
             return (
               <Pressable
                 key={purchase.id}
                 className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
-                onPress={() => router.navigate({
-                  pathname: "/(main)/purchasing/receipt/[id]",
-                  params: { id: purchase.id }
-                })}
+                onPress={() =>
+                  router.navigate(`/(main)/purchasing/receipt/${purchase.id}`)
+                }
               >
                 <HStack space="xl" className="items-center">
                   <VStack>
@@ -90,11 +96,17 @@ export default function PurchasingHistory() {
                         </Text>
                       </VStack>
                       <VStack>
-                        <Text className="text-typography-400 text-xs">Supplier</Text>
-                        <Text className="font-bold">{purchase.supplierName}</Text>
+                        <Text className="text-typography-400 text-xs">
+                          Supplier
+                        </Text>
+                        <Text className="font-bold">
+                          {purchase.supplierName}
+                        </Text>
                       </VStack>
                       <VStack>
-                        <Text className="text-typography-400 text-xs">Tipe</Text>
+                        <Text className="text-typography-400 text-xs">
+                          Tipe
+                        </Text>
                         <Text className="font-bold">
                           {purchase.paymentType === "CASH" ? "Tunai" : "Hutang"}
                         </Text>

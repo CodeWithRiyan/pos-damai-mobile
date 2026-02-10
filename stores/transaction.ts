@@ -5,6 +5,7 @@ import { create } from "zustand";
 
 interface CartItem {
   product: Product;
+  variant?: { id: string; name: string };
   quantity: number;
   unitWeight?: number;
   tempSellPrice?: number;
@@ -44,7 +45,7 @@ interface TransactionState {
   setAddProduct: (state: Product | null) => void;
   setCheckoutData: (state: TransactionCheckoutResponse | null) => void;
   addCartItem: (item: CartItem) => void;
-  removeCartItem: (productId: string) => void;
+  removeCartItem: (productId: string, variantId?: string) => void;
   resetCart: () => void;
 }
 
@@ -66,7 +67,9 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   addCartItem: (item) =>
     set((state) => {
       const existingItemIndex = state.cart?.findIndex(
-        (cartItem) => cartItem.product.id === item.product.id,
+        (cartItem) =>
+          cartItem.product.id === item.product.id &&
+          cartItem.variant?.id === item.variant?.id,
       );
 
       let updatedCart: CartItem[];
@@ -97,10 +100,11 @@ export const useTransactionStore = create<TransactionState>((set) => ({
 
       return { cart: updatedCart, cartTotal: total };
     }),
-  removeCartItem: (productId) =>
+  removeCartItem: (productId, variantId) =>
     set((state) => {
       const updatedCart = state.cart?.filter(
-        (cartItem) => cartItem.product.id !== productId,
+        (cartItem) => 
+          !(cartItem.product.id === productId && cartItem.variant?.id === variantId)
       );
 
       const total = updatedCart.reduce(
