@@ -20,7 +20,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { ScrollView } from "react-native";
 
-export default function CustomerList() {
+export default function CustomerList({ isReport }: { isReport?: boolean }) {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data, isLoading, refetch } = useCustomers();
@@ -126,34 +126,39 @@ export default function CustomerList() {
   return (
     <Box className="flex-1 bg-white">
       <Header
-        header="PELANGGAN"
+        header={isReport ? "LAPORAN PELANGGAN" : "PELANGGAN"}
         isGoBack
         selectedItemsLength={selectedItems?.length}
         selectedItemsSuffixLabel="Produk terpilih"
         onCancelSelectedItems={() => setSelectedItems(null)}
         action={
-          <HStack space="sm" className="w-[72px]">
-            {!!selectedItems?.length ? (
-              deleteMutation.isPending ? (
-                <Box className="p-6">
-                  <Spinner size="small" color="#FFFFFF" />
-                </Box>
+          !isReport && (
+            <HStack space="sm" className="w-[72px]">
+              {!!selectedItems?.length ? (
+                deleteMutation.isPending ? (
+                  <Box className="p-6">
+                    <Spinner size="small" color="#FFFFFF" />
+                  </Box>
+                ) : (
+                  <Pressable
+                    className="p-6"
+                    onPress={() => handleDeletePress()}
+                  >
+                    <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                  </Pressable>
+                )
               ) : (
-                <Pressable className="p-6" onPress={() => handleDeletePress()}>
-                  <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                <Pressable className="p-6" onPress={() => {}}>
+                  <SolarIconBold
+                    name="MenuDots"
+                    size={20}
+                    color="#FDFBF9"
+                    style={{ transform: [{ rotate: "90deg" }] }}
+                  />
                 </Pressable>
-              )
-            ) : (
-              <Pressable className="p-6" onPress={() => {}}>
-                <SolarIconBold
-                  name="MenuDots"
-                  size={20}
-                  color="#FDFBF9"
-                  style={{ transform: [{ rotate: "90deg" }] }}
-                />
-              </Pressable>
-            )}
-          </HStack>
+              )}
+            </HStack>
+          )
         }
       />
       <Box className="flex-1 bg-white">
@@ -178,7 +183,7 @@ export default function CustomerList() {
                       setSelectedItems(null);
                     }
                   }}
-                  onLongPress={() => handleItemPress(item)}
+                  onLongPress={() => !isReport && handleItemPress(item)}
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
@@ -198,7 +203,7 @@ export default function CustomerList() {
                       <Text className="text-brand-primary text-sm font-bold">
                         0 Poin
                       </Text>
-                      <Text className="text-xs">Total Transaksi: Rp 0</Text>
+                      <Text className="text-xs">Total Transaksi: 0</Text>
                       <Text className="text-xs">Total Omset: Rp 0</Text>
                       <Text className="text-xs">Total Keuntungan: Rp 0</Text>
                     </VStack>
@@ -214,15 +219,17 @@ export default function CustomerList() {
               )}
             </VStack>
           </ScrollView>
-          <HStack className="w-full p-4">
-            <Button
-              size="sm"
-              className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
-              onPress={handleAdd}
-            >
-              <ButtonText className="text-white">TAMBAH PELANGGAN</ButtonText>
-            </Button>
-          </HStack>
+          {!isReport && (
+            <HStack className="w-full p-4">
+              <Button
+                size="sm"
+                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                onPress={handleAdd}
+              >
+                <ButtonText className="text-white">TAMBAH PELANGGAN</ButtonText>
+              </Button>
+            </HStack>
+          )}
         </VStack>
       </Box>
     </Box>

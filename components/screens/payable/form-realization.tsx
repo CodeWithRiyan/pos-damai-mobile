@@ -23,25 +23,24 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
+import SelectModal from "@/components/ui/select/select-modal";
 import { getErrorMessage } from "@/lib/api/client";
 import {
+  Payable,
   useCreatePayableRealization,
   usePayableList,
-  Payable,
 } from "@/lib/api/payable";
-import SelectModal from "@/components/ui/select/select-modal";
-import { SolarIconBoldDuotone } from "@/components/ui/solar-icon-wrapper";
+import { usePaymentTypes } from "@/lib/api/payment-types";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { CalendarIcon, CheckIcon, PlusIcon } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
-import { usePaymentTypes } from "@/lib/api/payment-types";
 
 export default function PayableRealizationForm() {
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
@@ -80,16 +79,16 @@ export default function PayableRealizationForm() {
     useState<boolean>(false);
 
   const { data: allPayables = [] } = usePayableList();
-  
+
   // Flat list of payables from all suppliers if needed, but usually filtered by supplier in detail screen
   // Actually the detail screen navigates here with specific IDs
   // Since usePayableList returns PayableBySupplier[], I need to fetch all payables or we need a hook that returns all payables.
-  
+
   // Wait, I should add usePayables (all payables) or just filter from what I have if I update usePayableList
   // Let's assume we need a usePayables hook.
-  
+
   const selectedPayables: Payable[] = []; // This will need real data
-  
+
   const totalPayable = selectedPayables.reduce(
     (total, payable) => total + payable.nominal,
     0,
@@ -124,40 +123,47 @@ export default function PayableRealizationForm() {
   const onSubmit: SubmitHandler<PayableRealizationFormValues> = async (
     data: PayableRealizationFormValues,
   ) => {
-      // For now, let's just implement single realization if it's one ID
-      if (payableIds.length === 1) {
-          createMutation.mutate({
-              payableId: payableIds[0],
-              nominal: data.nominal,
-              paymentMethodId: data.paymentTypeId,
-              realizationDate: data.realizationDate.toISOString(),
-              note: data.note,
-          }, {
-              onSuccess: () => {
-                toast.show({
-                    placement: "top",
-                    render: ({ id }) => (
-                      <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                        <ToastTitle>Pembayaran berhasil disimpan</ToastTitle>
-                      </Toast>
-                    ),
-                  });
-                router.back();
-              },
-              onError: (error) => showErrorToast(error)
-          });
-      } else {
-          // Bulk logic: distribute nominal across payableIds
-          // This requires fetching the current state of those payables to know how much is left on each
-          toast.show({
+    // For now, let's just implement single realization if it's one ID
+    if (payableIds.length === 1) {
+      createMutation.mutate(
+        {
+          payableId: payableIds[0],
+          nominal: data.nominal,
+          paymentMethodId: data.paymentTypeId,
+          realizationDate: data.realizationDate.toISOString(),
+          note: data.note,
+        },
+        {
+          onSuccess: () => {
+            toast.show({
               placement: "top",
               render: ({ id }) => (
-                <Toast nativeID={`toast-${id}`} action="info" variant="solid">
-                  <ToastTitle>Bulk payment logic coming soon</ToastTitle>
+                <Toast
+                  nativeID={`toast-${id}`}
+                  action="success"
+                  variant="solid"
+                >
+                  <ToastTitle>Pembayaran berhasil disimpan</ToastTitle>
                 </Toast>
               ),
             });
-      }
+            router.back();
+          },
+          onError: (error) => showErrorToast(error),
+        },
+      );
+    } else {
+      // Bulk logic: distribute nominal across payableIds
+      // This requires fetching the current state of those payables to know how much is left on each
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="info" variant="solid">
+            <ToastTitle>Bulk payment logic coming soon</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
   };
 
   return (
@@ -226,6 +232,9 @@ export default function PayableRealizationForm() {
                   size="md"
                   onChange={(v) => {
                     onChange(v);
+                    if (v) {
+                      form.setValue("nominal", remainingTotal);
+                    }
                   }}
                   onBlur={onBlur}
                 >
@@ -298,7 +307,10 @@ export default function PayableRealizationForm() {
                   <SelectModal
                     value={value}
                     placeholder="Pilih Metode Pembayaran"
-                    options={paymentMethods.map(pm => ({ label: pm.name, value: pm.id }))}
+                    options={paymentMethods.map((pm) => ({
+                      label: pm.name,
+                      value: pm.id,
+                    }))}
                     className="flex-1"
                     onChange={onChange}
                   />

@@ -9,7 +9,7 @@ import {
   FormControlLabelText,
 } from "@/components/ui/form-control";
 import { HStack } from "@/components/ui/hstack";
-import { Input, InputField } from "@/components/ui/input";
+import { Input, InputField, InputSlot } from "@/components/ui/input";
 import SelectModal from "@/components/ui/select/select-modal";
 import { Spinner } from "@/components/ui/spinner";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
@@ -56,6 +56,7 @@ export default function CustomerForm() {
     resolver: zodResolver(customerSchema),
     defaultValues: initialValues,
   });
+  const isRetail = form.watch("category") === "RETAIL";
 
   const { data: customer, isLoading: loadingCustomer } = useCustomer(id || "");
   const createMutation = useCreateCustomer();
@@ -108,7 +109,11 @@ export default function CustomerForm() {
   ) => {
     if (customerId && customer) {
       updateMutation.mutate(
-        { ...data, id: customerId },
+        {
+          ...data,
+          id: customerId,
+          code: `${isRetail ? "B" : "M"}${data.code}`,
+        },
         {
           onSuccess: () => {
             showSuccessToast("Pelanggan berhasil diperbarui");
@@ -174,35 +179,6 @@ export default function CustomerForm() {
           />
 
           <Controller
-            name="code"
-            control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
-              <FormControl isInvalid={!!error}>
-                <FormControlLabel>
-                  <FormControlLabelText>Kode</FormControlLabelText>
-                </FormControlLabel>
-                <Input>
-                  <InputField
-                    value={value}
-                    autoComplete="off"
-                    placeholder="Masukkan kode"
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                  />
-                </Input>
-                {error && (
-                  <FormControlError>
-                    <FormControlErrorText>{error.message}</FormControlErrorText>
-                  </FormControlError>
-                )}
-              </FormControl>
-            )}
-          />
-
-          <Controller
             control={form.control}
             name="category"
             render={({ field: { onChange, value }, fieldState: { error } }) => (
@@ -218,6 +194,40 @@ export default function CustomerForm() {
                   showSearch={false}
                   onChange={onChange}
                 />
+                {error && (
+                  <FormControlError>
+                    <FormControlErrorText>{error.message}</FormControlErrorText>
+                  </FormControlError>
+                )}
+              </FormControl>
+            )}
+          />
+
+          <Controller
+            name="code"
+            control={form.control}
+            render={({
+              field: { onChange, onBlur, value },
+              fieldState: { error },
+            }) => (
+              <FormControl isInvalid={!!error}>
+                <FormControlLabel>
+                  <FormControlLabelText>Kode</FormControlLabelText>
+                </FormControlLabel>
+                <Input>
+                  <InputSlot>
+                    <Text className="text-gray-500 font-bold pl-4">
+                      {isRetail ? "B" : "M"}
+                    </Text>
+                  </InputSlot>
+                  <InputField
+                    value={value}
+                    autoComplete="off"
+                    placeholder="Masukkan kode"
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                  />
+                </Input>
                 {error && (
                   <FormControlError>
                     <FormControlErrorText>{error.message}</FormControlErrorText>

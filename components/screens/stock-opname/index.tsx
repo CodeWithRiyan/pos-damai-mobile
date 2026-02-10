@@ -7,23 +7,23 @@ import { Pressable } from "@/components/ui/pressable";
 import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
+import { useStockOpnames } from "@/lib/api/stock-opname";
 import { useStockOpnameStore } from "@/stores/stock-opname";
 import dayjs from "dayjs";
-import { useStockOpnames } from "@/lib/api/stock-opname";
-import { useRouter, useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { CircleAlert } from "lucide-react-native";
-import React, { useState, useCallback } from "react";
-import { ScrollView, RefreshControl } from "react-native";
+import React, { useCallback, useState } from "react";
+import { RefreshControl, ScrollView } from "react-native";
 
-export default function StockOpnameList() {
+export default function StockOpnameList({ isReport }: { isReport?: boolean }) {
   const { cart } = useStockOpnameStore();
   const router = useRouter();
   const { data: stockOpname, isLoading, refetch } = useStockOpnames();
-  
+
   useFocusEffect(
     useCallback(() => {
       refetch();
-    }, [refetch])
+    }, [refetch]),
   );
 
   const [refreshing, setRefreshing] = useState(false);
@@ -47,10 +47,13 @@ export default function StockOpnameList() {
 
   return (
     <Box className="flex-1 bg-white">
-      <Header header="STOCK OPNAME" isGoBack />
+      <Header
+        header={isReport ? "LAPORAN STOCK OPNAME" : "STOCK OPNAME"}
+        isGoBack
+      />
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
-          <ScrollView 
+          <ScrollView
             className="flex-1"
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -87,7 +90,12 @@ export default function StockOpnameList() {
                         ) : (
                           <VStack className="items-center">
                             <Icon as={CircleAlert} size="md" color="#ef4444" />
-                            <Text size="xs" className="text-error-500 font-bold">Selisih</Text>
+                            <Text
+                              size="xs"
+                              className="text-error-500 font-bold"
+                            >
+                              Selisih
+                            </Text>
                           </VStack>
                         )}
                       </HStack>
@@ -109,17 +117,19 @@ export default function StockOpnameList() {
               )}
             </VStack>
           </ScrollView>
-          <HStack className="w-full p-4">
-            <Button
-              size="sm"
-              className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
-              onPress={handleAddStockOpname}
-            >
-              <ButtonText className="text-white">
-                TAMBAH STOCK OPNAME
-              </ButtonText>
-            </Button>
-          </HStack>
+          {!isReport && (
+            <HStack className="w-full p-4">
+              <Button
+                size="sm"
+                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                onPress={handleAddStockOpname}
+              >
+                <ButtonText className="text-white">
+                  TAMBAH STOCK OPNAME
+                </ButtonText>
+              </Button>
+            </HStack>
+          )}
         </VStack>
       </Box>
     </Box>

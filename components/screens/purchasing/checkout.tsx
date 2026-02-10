@@ -85,7 +85,8 @@ export default function PurchasingCheckoutForm() {
   const router = useRouter();
 
   const { data: user } = useCurrentUser();
-  const { cart, cartTotal, status, setCheckoutData, purchaseId } = usePurchasingStore();
+  const { cart, cartTotal, status, setCheckoutData, purchaseId } =
+    usePurchasingStore();
 
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
   const [showTransactionDatePicker, setShowTransactionDatePicker] =
@@ -420,7 +421,13 @@ export default function PurchasingCheckoutForm() {
                           <DateTimePicker
                             mode="date"
                             value={value instanceof Date ? value : new Date()}
-                            maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() + 5))}
+                            maximumDate={
+                              new Date(
+                                new Date().setFullYear(
+                                  new Date().getFullYear() + 5,
+                                ),
+                              )
+                            }
                             onChange={(event, selectedDate) => {
                               setShowDueDatePicker(false);
                               if (event.type === "set" && selectedDate) {

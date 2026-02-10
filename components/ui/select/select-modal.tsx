@@ -55,7 +55,7 @@ export default function SelectModal({
 }: {
   header?: string;
   value: string;
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; desc?: string }[];
   placeholder?: string;
   searchPlaceholder?: string;
   showSearch?: boolean;
@@ -138,9 +138,16 @@ export default function SelectModal({
                       setSearch("");
                     }}
                   >
-                    <Text className="flex-1 text-lg text-typography-700 font-normal font-body tracking-md text-left mx-2">
-                      {option.label}
-                    </Text>
+                    <VStack className="flex-1">
+                      <Text className="flex-1 text-lg leading-5 text-typography-700 font-normal font-body text-left mx-2">
+                        {option.label}
+                      </Text>
+                      {option.desc && (
+                        <Text className="flex-1 leading-4 text-typography-500 font-normal font-body text-left mx-2">
+                          {option.desc}
+                        </Text>
+                      )}
+                    </VStack>
                     {option.value === value && (
                       <Icon as={CheckIcon} className="text-primary-500" />
                     )}

@@ -175,7 +175,7 @@ export default function CustomerDetail() {
             </VStack>
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Total Transaksi</Text>
-              <Text className="font-bold">Rp 0</Text>
+              <Text className="font-bold">0</Text>
             </VStack>
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Total Omset</Text>

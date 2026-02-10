@@ -30,9 +30,9 @@ import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
 import {
+  ReceivableByUser,
   useBulkDeleteReceivableByUser,
   useReceivableList,
-  ReceivableByUser,
 } from "@/lib/api/receivable";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
@@ -41,10 +41,11 @@ import { CalendarIcon } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
-export default function ReceivableList() {
+export default function ReceivableList({ isReport }: { isReport?: boolean }) {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
-  const { data: receivableByUser = [], isLoading: isLoadingFetch } = useReceivableList();
+  const { data: receivableByUser = [], isLoading: isLoadingFetch } =
+    useReceivableList();
   const deleteMutation = useBulkDeleteReceivableByUser();
 
   const isLoading = isLoadingFetch || deleteMutation.isPending;
@@ -121,7 +122,7 @@ export default function ReceivableList() {
         hidePopUpConfirm();
         // Since useReceivableList is a hook that likely uses queryKey ['receivables'],
         // the mutation should invalidate it. But adding refetch explicitly is safer if defined.
-        
+
         toast.show({
           placement: "top",
           render: ({ id }) => (
@@ -149,34 +150,39 @@ export default function ReceivableList() {
   return (
     <Box className="flex-1 bg-white">
       <Header
-        header="PIUTANG"
+        header={isReport ? "LAPORAN PIUTANG" : "PIUTANG"}
         isGoBack
         selectedItemsLength={selectedItems?.length}
         selectedItemsSuffixLabel="Piutang terpilih"
         onCancelSelectedItems={() => setSelectedItems(null)}
         action={
-          <HStack space="sm" className="w-[72px]">
-            {!!selectedItems?.length ? (
-              isLoading ? (
-                <Box className="p-6">
-                  <Spinner size="small" color="#FFFFFF" />
-                </Box>
+          !isReport && (
+            <HStack space="sm" className="w-[72px]">
+              {!!selectedItems?.length ? (
+                isLoading ? (
+                  <Box className="p-6">
+                    <Spinner size="small" color="#FFFFFF" />
+                  </Box>
+                ) : (
+                  <Pressable
+                    className="p-6"
+                    onPress={() => handleDeletePress()}
+                  >
+                    <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                  </Pressable>
+                )
               ) : (
-                <Pressable className="p-6" onPress={() => handleDeletePress()}>
-                  <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                <Pressable className="p-6" onPress={() => {}}>
+                  <SolarIconBold
+                    name="MenuDots"
+                    size={20}
+                    color="#FDFBF9"
+                    style={{ transform: [{ rotate: "90deg" }] }}
+                  />
                 </Pressable>
-              )
-            ) : (
-              <Pressable className="p-6" onPress={() => {}}>
-                <SolarIconBold
-                  name="MenuDots"
-                  size={20}
-                  color="#FDFBF9"
-                  style={{ transform: [{ rotate: "90deg" }] }}
-                />
-              </Pressable>
-            )}
-          </HStack>
+              )}
+            </HStack>
+          )
         }
       />
       <Box className="flex-1 bg-white">
@@ -196,8 +202,8 @@ export default function ReceivableList() {
                 <InputSlot className="pl-3">
                   <InputIcon as={SearchIcon} />
                 </InputSlot>
-                <InputField 
-                  placeholder="Cari nama user" 
+                <InputField
+                  placeholder="Cari nama user"
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                 />
@@ -238,7 +244,14 @@ export default function ReceivableList() {
                   Total Belum Lunas
                 </Text>
                 <Heading size="xl" className="text-error-500">
-                  Rp {receivableByUser.reduce((sum, r) => sum + (r.totalReceivable - r.totalRealization), 0).toLocaleString("id-ID")}
+                  Rp{" "}
+                  {receivableByUser
+                    .reduce(
+                      (sum, r) =>
+                        sum + (r.totalReceivable - r.totalRealization),
+                      0,
+                    )
+                    .toLocaleString("id-ID")}
                 </Heading>
               </VStack>
               <VStack className="flex-1 items-end">
@@ -301,8 +314,8 @@ export default function ReceivableList() {
                       : "Lunas",
                   ),
                 )
-                ?.filter((r) => 
-                  r.userName.toLowerCase().includes(searchQuery.toLowerCase())
+                ?.filter((r) =>
+                  r.userName.toLowerCase().includes(searchQuery.toLowerCase()),
                 )
                 ?.map((receivable) => (
                   <Pressable
@@ -322,21 +335,27 @@ export default function ReceivableList() {
                         setSelectedItems(null);
                       }
                     }}
-                    onLongPress={() => handleReceivablePress(receivable)}
+                    onLongPress={() =>
+                      !isReport && handleReceivablePress(receivable)
+                    }
                   >
                     <HStack className="justify-between items-center">
                       <HStack space="md" className="items-center">
                         <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
                           <Text className="text-brand-primary font-bold">
-                            {receivable.userName?.substring(0, 1).toUpperCase() || '?'}
+                            {receivable.userName
+                              ?.substring(0, 1)
+                              .toUpperCase() || "?"}
                           </Text>
                         </Box>
                         <VStack>
                           <Heading size="sm">{receivable.userName}</Heading>
                           <Text size="xs" className="text-slate-500">
-                            {receivable.nearestDueDate ? dayjs(receivable.nearestDueDate).format(
-                              "DD/MM/YYYY",
-                            ) : '-'}
+                            {receivable.nearestDueDate
+                              ? dayjs(receivable.nearestDueDate).format(
+                                  "DD/MM/YYYY",
+                                )
+                              : "-"}
                           </Text>
                           <Text size="xs" className="text-blue-500">
                             {`Rp ${receivable.totalReceivable.toLocaleString("id-ID")}`}
@@ -377,15 +396,17 @@ export default function ReceivableList() {
               )}
             </VStack>
           </ScrollView>
-          <HStack className="w-full p-4">
-            <Button
-              size="sm"
-              className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
-              onPress={handleAdd}
-            >
-              <ButtonText className="text-white">TAMBAH PIUTANG</ButtonText>
-            </Button>
-          </HStack>
+          {!isReport && (
+            <HStack className="w-full p-4">
+              <Button
+                size="sm"
+                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                onPress={handleAdd}
+              >
+                <ButtonText className="text-white">TAMBAH PIUTANG</ButtonText>
+              </Button>
+            </HStack>
+          )}
         </VStack>
       </Box>
     </Box>
