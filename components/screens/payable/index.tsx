@@ -225,7 +225,6 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
                   <DateTimePicker
                     mode="date"
                     value={dueDate instanceof Date ? dueDate : new Date()}
-                    maximumDate={new Date()}
                     onChange={(event, selectedDate) => {
                       setShowDueDatePicker(false);
                       if (event.type === "set" && selectedDate) {
