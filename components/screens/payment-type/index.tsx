@@ -15,12 +15,12 @@ import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
+import { getErrorMessage } from "@/lib/api/client";
 import {
   PaymentType,
   useBulkDeletePaymentType,
   usePaymentTypes,
 } from "@/lib/api/payment-types";
-import { getErrorMessage } from "@/lib/api/client";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { useRouter } from "expo-router";
 import { SearchIcon } from "lucide-react-native";
@@ -174,12 +174,6 @@ export default function PaymentTypeList() {
               className="size-10 items-center justify-center"
               onPress={() => {}}
             >
-              <SolarIconLinear name="Bell" size={20} color="#3d2117" />
-            </Pressable>
-            <Pressable
-              className="size-10 items-center justify-center"
-              onPress={() => {}}
-            >
               <SolarIconLinear name="Filter" size={20} color="#3d2117" />
             </Pressable>
             <Input className="flex-1 border border-background-300 rounded-lg h-10">
@@ -220,6 +214,7 @@ export default function PaymentTypeList() {
                         Komisi
                       </Text>
                       <VStack className="items-end">
+                        {/* TODO: Sesuaikan komisi by commisionType (prefix Rp atau  suffix %) */}
                         <Text size="xs">
                           Rp {item.commission.toLocaleString("id-ID")}
                         </Text>

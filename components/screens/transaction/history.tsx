@@ -15,7 +15,7 @@ import { Box } from "@/components/ui/box";
 import { Spinner } from "@/components/ui/spinner";
 import { useTransactions } from "@/lib/api/transactions";
 import dayjs from "dayjs";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
@@ -24,10 +24,14 @@ export default function TransactionHistory({
 }: {
   isReport?: boolean;
 }) {
-  const header = isReport ? "LAPORAN PENJUALAN" : "RIWAYAT PENJUALAN";
+  const { customerId } = useLocalSearchParams<{ customerId: string }>();
+  const header =
+    isReport && !customerId ? "LAPORAN PENJUALAN" : "RIWAYAT TRANSAKSI";
   const router = useRouter();
 
-  const { data: allTransactions, isLoading } = useTransactions();
+  const { data: allTransactions, isLoading } = useTransactions({
+    customerId,
+  });
   const [searchQuery, setSearchQuery] = useState("");
 
   const transactions =
@@ -60,7 +64,7 @@ export default function TransactionHistory({
             <InputIcon as={SearchIcon} />
           </InputSlot>
           <InputField
-            placeholder="Cari no transaksi atau nama pelanggan"
+            placeholder={`Cari no transaksi${!customerId ? " atau nama pelanggan" : ""}`}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />

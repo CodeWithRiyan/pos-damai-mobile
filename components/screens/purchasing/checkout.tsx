@@ -1,5 +1,6 @@
 import Header from "@/components/header";
 import {
+  Box,
   Checkbox,
   CheckboxIcon,
   CheckboxIndicator,
@@ -30,13 +31,14 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
 // import { usePurchasing } from "@/lib/api/purchasing";
+import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import InputVirtualKeyboard from "@/components/ui/input-virtual-keyboard";
 import SelectModal from "@/components/ui/select/select-modal";
 import { useCurrentUser } from "@/lib/api/auth";
 import { usePurchasingStore } from "@/stores/purchasing";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
-import { CalendarIcon, Check, PlusIcon } from "lucide-react-native";
+import { ArrowRight, CalendarIcon, Check, PlusIcon } from "lucide-react-native";
 
 const purchasingSchema = z
   .object({
@@ -82,10 +84,11 @@ const purchasingSchema = z
 export type PurchasingFormValues = z.infer<typeof purchasingSchema>;
 
 export default function PurchasingCheckoutForm() {
+  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
 
   const { data: user } = useCurrentUser();
-  const { cart, cartTotal, status, setCheckoutData, purchaseId } =
+  const { cart, cartTotal, status, setCheckoutData, resetCart, purchaseId } =
     usePurchasingStore();
 
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
@@ -109,6 +112,7 @@ export default function PurchasingCheckoutForm() {
     defaultValues: initialValues,
   });
 
+  const transactionDate = form.watch("transactionDate");
   const totalPaid = form.watch("totalPaid");
   const isPayable = form.watch("isPayable");
   const { data: suppliers = [] } = useSuppliers();
@@ -185,11 +189,60 @@ export default function PurchasingCheckoutForm() {
           updatedByName: user?.name || "",
           items: cart,
         });
-
+        const changedProductPrice = cart.filter(
+          (item) => item.newPurchasePrice !== item.product.purchasePrice,
+        );
         if (data.status === "DRAFT") {
           router.replace("/(main)/purchasing");
         } else {
           router.replace("/(main)/purchasing/success");
+          if (!!changedProductPrice.length) {
+            showPopUpConfirm({
+              title: `ADA PERUBAHAN HARGA BELI`,
+              icon: "warning",
+              description: (
+                <VStack space="sm">
+                  <Text className="text-slate-500">
+                    Harga Beli berubah pada beberapa produk. Apakah Anda ingin
+                    menyesuaikan Harga Jual?
+                  </Text>
+                  {changedProductPrice.map((item) => (
+                    <HStack
+                      key={item.product.id}
+                      space="sm"
+                      className="items-center"
+                    >
+                      <Box className="w-2 h-2 rounded-full bg-slate-500" />
+                      <Text className="text-slate-500 font-bold">
+                        {item.product.name}
+                      </Text>
+                      <Text className="font-bold text-slate-500">
+                        {`Rp ${item.product.purchasePrice.toLocaleString("id-ID")}`}
+                      </Text>
+                      <Icon as={ArrowRight} className="text-slate-500" />
+                      <Text
+                        className={`font-bold${item.newPurchasePrice < item.product.purchasePrice ? " text-success-500" : " text-error-500"}`}
+                      >
+                        {`Rp ${item.newPurchasePrice.toLocaleString("id-ID")}`}
+                      </Text>
+                    </HStack>
+                  ))}
+                </VStack>
+              ),
+              showClose: true,
+              okText: "UBAH HARGA",
+              closeText: "NANTI SAJA",
+              okVariant: "solid",
+              closeVariant: "destructive",
+              onOk: () => {
+                router.replace(
+                  "/(main)/management/product-category-brand/product",
+                );
+                resetCart();
+                setCheckoutData(null);
+              },
+            });
+          }
         }
       },
       onError: (error) => {
@@ -421,13 +474,7 @@ export default function PurchasingCheckoutForm() {
                           <DateTimePicker
                             mode="date"
                             value={value instanceof Date ? value : new Date()}
-                            maximumDate={
-                              new Date(
-                                new Date().setFullYear(
-                                  new Date().getFullYear() + 5,
-                                ),
-                              )
-                            }
+                            minimumDate={transactionDate || new Date()}
                             onChange={(event, selectedDate) => {
                               setShowDueDatePicker(false);
                               if (event.type === "set" && selectedDate) {
