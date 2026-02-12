@@ -12,13 +12,12 @@ import {
 } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import {
-  usePaymentTypes,
-  usePaymentType,
-  useDeletePaymentType,
-  PaymentType,
-} from "@/lib/api/payment-types";
 import { getErrorMessage } from "@/lib/api/client";
+import {
+  useDeletePaymentType,
+  usePaymentType,
+  usePaymentTypes
+} from "@/lib/api/payment-types";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
@@ -162,6 +161,7 @@ export default function PaymentTypeDetail() {
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Komisi</Text>
               <Text className="font-bold">
+                {/* TODO: Sesuaikan komisi by commisionType (prefix Rp atau  suffix %) */}
                 {paymentType?.commission || "-"}
               </Text>
             </VStack>

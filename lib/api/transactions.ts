@@ -1,8 +1,8 @@
-import { db } from '../db';
-import * as schema from '../db/schema';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { and, desc, eq, isNull, like } from 'drizzle-orm';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from "@/stores/auth";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { and, desc, eq, isNull, like } from "drizzle-orm";
+import { db } from "../db";
+import * as schema from "../db/schema";
 
 export interface Transaction {
   id: string;
@@ -53,31 +53,37 @@ export interface CreateTransactionDTO {
 }
 
 // Get all transactions from local SQLite
-export function useTransactions() {
-  const orgId = useAuthStore(state => state.getOrganizationId());
+export function useTransactions(params: { customerId?: string } | undefined) {
+  const orgId = useAuthStore((state) => state.getOrganizationId());
+  const conditions = [
+    eq(schema.transactions.organizationId, orgId),
+    isNull(schema.transactions.deletedAt),
+  ];
+
+  if (params?.customerId) {
+    conditions.push(eq(schema.transactions.customerId, params.customerId));
+  }
+
   return useQuery({
-    queryKey: ['transactions', orgId],
+    queryKey: ["transactions", orgId, params?.customerId], // ← Tambahkan customerId di sini
     queryFn: async () => {
       const transactionResult = await db
         .select()
         .from(schema.transactions)
-        .where(and(
-          eq(schema.transactions.organizationId, orgId),
-          isNull(schema.transactions.deletedAt)
-        ))
+        .where(and(...conditions))
         .orderBy(desc(schema.transactions.createdAt));
 
       // Join with customer and payment type names
       const transactionsWithDetails = await Promise.all(
         transactionResult.map(async (transaction) => {
-          let customerName = 'Walk-in Customer';
+          let customerName = "Walk-in Customer";
           if (transaction.customerId) {
             const customer = await db
               .select({ name: schema.customers.name })
               .from(schema.customers)
               .where(eq(schema.customers.id, transaction.customerId))
               .limit(1);
-            customerName = customer[0]?.name || 'Unknown';
+            customerName = customer[0]?.name || "Unknown";
           }
 
           const paymentType = await db
@@ -89,9 +95,9 @@ export function useTransactions() {
           return {
             ...transaction,
             customerName,
-            paymentTypeName: paymentType[0]?.name || 'Unknown',
+            paymentTypeName: paymentType[0]?.name || "Unknown",
           };
-        })
+        }),
       );
 
       return transactionsWithDetails as Transaction[];
@@ -103,7 +109,7 @@ export function useTransactions() {
 // Get single transaction with items
 export function useTransaction(id: string) {
   return useQuery({
-    queryKey: ['transactions', id],
+    queryKey: ["transactions", id],
     queryFn: async () => {
       // Get transaction record
       const transactionResult = await db
@@ -117,14 +123,14 @@ export function useTransaction(id: string) {
       const transaction = transactionResult[0];
 
       // Get customer name
-      let customerName = 'Walk-in Customer';
+      let customerName = "Walk-in Customer";
       if (transaction.customerId) {
         const customer = await db
           .select({ name: schema.customers.name })
           .from(schema.customers)
           .where(eq(schema.customers.id, transaction.customerId))
           .limit(1);
-        customerName = customer[0]?.name || 'Unknown';
+        customerName = customer[0]?.name || "Unknown";
       }
 
       // Get payment type name
@@ -161,16 +167,16 @@ export function useTransaction(id: string) {
 
           return {
             ...item,
-            productName: product[0]?.name || 'Unknown',
+            productName: product[0]?.name || "Unknown",
             variantName,
           };
-        })
+        }),
       );
 
       return {
         ...transaction,
         customerName,
-        paymentTypeName: paymentType[0]?.name || 'Unknown',
+        paymentTypeName: paymentType[0]?.name || "Unknown",
         items: itemsWithProductNames,
       } as Transaction;
     },
@@ -186,10 +192,12 @@ export function useCreateTransaction() {
     mutationFn: async (data: CreateTransactionDTO) => {
       const orgId = useAuthStore.getState().getOrganizationId();
       if (!orgId) {
-        throw new Error('ID Organisasi tidak ditemukan');
+        throw new Error("ID Organisasi tidak ditemukan");
       }
 
-      const transactionId = data.id || `trans_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const transactionId =
+        data.id ||
+        `trans_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const localRefId = `ref_trans_${Date.now()}`;
       const now = new Date();
 
@@ -214,30 +222,48 @@ export function useCreateTransaction() {
 
         if (data.id) {
           // Update existing transaction
-          const existing = await tx.select().from(schema.transactions).where(eq(schema.transactions.id, data.id)).limit(1);
+          const existing = await tx
+            .select()
+            .from(schema.transactions)
+            .where(eq(schema.transactions.id, data.id))
+            .limit(1);
           const finalRefId = existing[0]?.local_ref_id || localRefId;
-          
-          await tx.update(schema.transactions)
+
+          await tx
+            .update(schema.transactions)
             .set({ ...transactionValues, local_ref_id: finalRefId })
             .where(eq(schema.transactions.id, data.id));
 
           // Delete old transaction items
-          await tx.delete(schema.transactionItems)
+          await tx
+            .delete(schema.transactionItems)
             .where(eq(schema.transactionItems.transactionId, data.id));
 
           // Efficiently delete old inventory transactions
-          await tx.delete(schema.inventoryTransactions)
+          await tx
+            .delete(schema.inventoryTransactions)
             .where(
               and(
                 eq(schema.inventoryTransactions.organizationId, orgId),
-                like(schema.inventoryTransactions.local_ref_id, `${finalRefId}_%`)
-              )
+                like(
+                  schema.inventoryTransactions.local_ref_id,
+                  `${finalRefId}_%`,
+                ),
+              ),
             );
         } else {
           await tx.insert(schema.transactions).values(transactionValues);
         }
 
-        const finalLocalRefId = data.id ? (await tx.select({r: schema.transactions.local_ref_id}).from(schema.transactions).where(eq(schema.transactions.id, transactionId)).limit(1))[0]?.r || localRefId : localRefId;
+        const finalLocalRefId = data.id
+          ? (
+              await tx
+                .select({ r: schema.transactions.local_ref_id })
+                .from(schema.transactions)
+                .where(eq(schema.transactions.id, transactionId))
+                .limit(1)
+            )[0]?.r || localRefId
+          : localRefId;
 
         // 2. Create Transaction Items and Inventory Transactions
         for (const item of data.items) {
@@ -259,15 +285,15 @@ export function useCreateTransaction() {
           });
 
           // Create inventory transaction (negative quantity for sales)
-          if (data.status === 'COMPLETED') {
+          if (data.status === "COMPLETED") {
             const invTxId = `inv_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             await tx.insert(schema.inventoryTransactions).values({
               id: invTxId,
               local_ref_id: `${finalLocalRefId}_${item.product.id}`,
               productId: item.product.id,
-              type: 'SALE',
+              type: "SALE",
               quantity: -item.quantity, // Negative for sales
-              status: 'COMPLETED',
+              status: "COMPLETED",
               organizationId: orgId,
               createdAt: data.transactionDate || now,
               updatedAt: now,
@@ -282,9 +308,11 @@ export function useCreateTransaction() {
     },
     onSuccess: (responseData) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['products', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['transactions', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['transactions', responseData.id] });
+      queryClient.invalidateQueries({ queryKey: ["products", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["transactions", orgId] });
+      queryClient.invalidateQueries({
+        queryKey: ["transactions", responseData.id],
+      });
     },
   });
 }
@@ -327,7 +355,9 @@ export function useDeleteTransaction() {
               .from(schema.inventoryTransactions)
               .where(eq(schema.inventoryTransactions.organizationId, orgId));
 
-            const filtered = transactions.filter(t => t.local_ref_id?.startsWith(refId));
+            const filtered = transactions.filter((t) =>
+              t.local_ref_id?.startsWith(refId),
+            );
             for (const t of filtered) {
               await tx
                 .delete(schema.inventoryTransactions)
@@ -341,8 +371,8 @@ export function useDeleteTransaction() {
     },
     onSuccess: () => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['transactions', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['products', orgId] });
+      queryClient.invalidateQueries({ queryKey: ["transactions", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["products", orgId] });
     },
   });
 }

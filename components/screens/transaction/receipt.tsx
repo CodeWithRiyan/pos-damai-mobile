@@ -11,6 +11,7 @@ export default function TransactionReceipt() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: transaction, isLoading } = useTransaction(id || "");
   const profile = useAuthStore((state) => state.profile);
+  console.log("transaction:", transaction);
 
   if (isLoading || !id) {
     return (
@@ -86,7 +87,10 @@ export default function TransactionReceipt() {
               {transaction.items?.map((item) => (
                 <HStack key={item.id} className="justify-between items-center">
                   <VStack className="flex-1 mr-2">
-                    <Heading size="sm">{item.productName}{item.variantName ? ` - ${item.variantName}` : ""}</Heading>
+                    <Heading size="sm">
+                      {item.productName}
+                      {item.variantName ? ` - ${item.variantName}` : ""}
+                    </Heading>
                     <Text className="text-typography-500 text-sm">
                       {item.quantity} x Rp{" "}
                       {(item.sellPrice || 0).toLocaleString("id-ID")}

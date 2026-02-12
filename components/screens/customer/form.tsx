@@ -123,14 +123,20 @@ export default function CustomerForm() {
         },
       );
     } else {
-      createMutation.mutate(data, {
-        onSuccess: () => {
-          showSuccessToast("Pelanggan berhasil ditambahkan");
-          form.reset(initialValues);
-          router.back();
+      createMutation.mutate(
+        {
+          ...data,
+          code: `${isRetail ? "B" : "M"}${data.code}`,
         },
-        onError: showErrorToast,
-      });
+        {
+          onSuccess: () => {
+            showSuccessToast("Pelanggan berhasil ditambahkan");
+            form.reset(initialValues);
+            router.back();
+          },
+          onError: showErrorToast,
+        },
+      );
     }
   };
 
@@ -210,7 +216,7 @@ export default function CustomerForm() {
               field: { onChange, onBlur, value },
               fieldState: { error },
             }) => (
-              <FormControl isInvalid={!!error}>
+              <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Kode</FormControlLabelText>
                 </FormControlLabel>
