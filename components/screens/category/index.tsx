@@ -1,3 +1,4 @@
+import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import { Input, InputField, InputIcon, InputSlot } from "@/components/ui";
@@ -18,9 +19,9 @@ import { VStack } from "@/components/ui/vstack";
 import {
   Category,
   useBulkDeleteCategory,
+  useCapitalValueByCategory,
   useCategories,
   useProductCountsByCategory,
-  useCapitalValueByCategory,
 } from "@/lib/api/categories";
 import { getErrorMessage } from "@/lib/api/client";
 import { useCategoryStore } from "@/stores/category";
@@ -32,6 +33,7 @@ import { ScrollView } from "react-native";
 export default function CategoryList() {
   const { setOpen, setData } = useCategoryStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useCategories();
   const { data: productCounts, refetch: refetchCounts } =
@@ -155,7 +157,29 @@ export default function CategoryList() {
                 </Pressable>
               )
             ) : (
-              <Pressable className="p-6" onPress={() => {}}>
+              <Pressable
+                className="p-6"
+                onPress={() => {
+                  showActionDrawer({
+                    actions: [
+                      {
+                        label: "Export Data",
+                        icon: "Export",
+                        onPress: () => {
+                          hideActionDrawer();
+                        },
+                      },
+                      {
+                        label: "Import Data",
+                        icon: "Import",
+                        onPress: () => {
+                          hideActionDrawer();
+                        },
+                      },
+                    ],
+                  });
+                }}
+              >
                 <SolarIconBold
                   name="MenuDots"
                   size={20}
@@ -234,7 +258,10 @@ export default function CategoryList() {
                         Nilai Modal
                       </Text>
                       <Text size="xs">
-                        Rp {(capitalValues?.[item.id] ?? 0).toLocaleString('id-ID')}
+                        Rp{" "}
+                        {(capitalValues?.[item.id] ?? 0).toLocaleString(
+                          "id-ID",
+                        )}
                       </Text>
                     </VStack>
                   </HStack>

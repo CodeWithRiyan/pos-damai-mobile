@@ -1,5 +1,7 @@
+import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
-import { Box, Heading, HStack, Text, VStack } from "@/components/ui";
+import { Box, Heading, HStack, Pressable, Text, VStack } from "@/components/ui";
+import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { usePurchase } from "@/lib/api/purchasing";
 import { useAuthStore } from "@/stores/auth";
@@ -8,6 +10,7 @@ import { useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
 
 export default function PurchasingReceipt() {
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: purchase, isLoading } = usePurchase(id || "");
   const profile = useAuthStore((state) => state.profile);
@@ -38,7 +41,49 @@ export default function PurchasingReceipt() {
 
   return (
     <VStack className="flex-1 bg-primary-200">
-      <Header header="STRUK PEMBELIAN BARANG" isGoBack />
+      <Header
+        header="STRUK PEMBELIAN BARANG"
+        isGoBack
+        action={
+          <Pressable
+            className="p-6"
+            onPress={() => {
+              showActionDrawer({
+                actions: [
+                  {
+                    label: "Cetak Struk",
+                    icon: "Printer",
+                    onPress: () => {
+                      hideActionDrawer();
+                    },
+                  },
+                  {
+                    label: "Download",
+                    icon: "Download",
+                    onPress: () => {
+                      hideActionDrawer();
+                    },
+                  },
+                  {
+                    label: "Share",
+                    icon: "Share",
+                    onPress: () => {
+                      hideActionDrawer();
+                    },
+                  },
+                ],
+              });
+            }}
+          >
+            <SolarIconBold
+              name="MenuDots"
+              size={20}
+              color="#FDFBF9"
+              style={{ transform: [{ rotate: "90deg" }] }}
+            />
+          </Pressable>
+        }
+      />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <Box className="p-4 flex-1">
           <VStack className="flex-1 bg-background-0 p-6 shadow">

@@ -1,3 +1,4 @@
+import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import { Input, InputField, InputIcon, InputSlot } from "@/components/ui";
@@ -32,6 +33,7 @@ import ProductNotification from "./notification";
 
 export default function ProductList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
 
   const [openNotification, setOpenNotification] = useState<boolean>(false);
@@ -207,7 +209,29 @@ export default function ProductList() {
               </Pressable>
             )
           ) : (
-            <Pressable className="p-6" onPress={() => {}}>
+            <Pressable
+              className="p-6"
+              onPress={() => {
+                showActionDrawer({
+                  actions: [
+                    {
+                      label: "Export Data",
+                      icon: "Export",
+                      onPress: () => {
+                        hideActionDrawer();
+                      },
+                    },
+                    {
+                      label: "Import Data",
+                      icon: "Import",
+                      onPress: () => {
+                        hideActionDrawer();
+                      },
+                    },
+                  ],
+                });
+              }}
+            >
               <SolarIconBold
                 name="MenuDots"
                 size={20}

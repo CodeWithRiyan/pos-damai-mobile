@@ -1,3 +1,4 @@
+import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import { Box } from "@/components/ui/box";
@@ -19,6 +20,7 @@ import { ScrollView } from "react-native";
 
 export default function UserList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useUsers();
   const [selectedItems, setSelectedItems] = useState<User[] | null>(null);
@@ -106,7 +108,7 @@ export default function UserList() {
           showErrorToast(error);
           hidePopUpConfirm();
         },
-      }
+      },
     );
   };
 
@@ -139,7 +141,29 @@ export default function UserList() {
                 </Pressable>
               )
             ) : (
-              <Pressable className="p-6" onPress={() => {}}>
+              <Pressable
+                className="p-6"
+                onPress={() => {
+                  showActionDrawer({
+                    actions: [
+                      {
+                        label: "Export Data",
+                        icon: "Export",
+                        onPress: () => {
+                          hideActionDrawer();
+                        },
+                      },
+                      {
+                        label: "Import Data",
+                        icon: "Import",
+                        onPress: () => {
+                          hideActionDrawer();
+                        },
+                      },
+                    ],
+                  });
+                }}
+              >
                 <SolarIconBold
                   name="MenuDots"
                   size={20}
@@ -168,7 +192,7 @@ export default function UserList() {
                       handleUserPress(user);
                     } else {
                       router.navigate(
-                        `/(main)/management/role-user/user/detail/${user.id}`
+                        `/(main)/management/role-user/user/detail/${user.id}`,
                       );
                       setSelectedItems(null);
                     }
