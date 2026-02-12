@@ -1,3 +1,4 @@
+import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import { Box } from "@/components/ui/box";
@@ -18,6 +19,7 @@ import { ScrollView } from "react-native";
 
 export default function RoleList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useRoles();
   const [selectedItems, setSelectedItems] = useState<Role[] | null>(null);
@@ -106,7 +108,7 @@ export default function RoleList() {
           showErrorToast(error);
           hidePopUpConfirm();
         },
-      }
+      },
     );
   };
 
@@ -139,7 +141,29 @@ export default function RoleList() {
                 </Pressable>
               )
             ) : (
-              <Pressable className="p-6" onPress={() => {}}>
+              <Pressable
+                className="p-6"
+                onPress={() => {
+                  showActionDrawer({
+                    actions: [
+                      {
+                        label: "Export Data",
+                        icon: "Export",
+                        onPress: () => {
+                          hideActionDrawer();
+                        },
+                      },
+                      {
+                        label: "Import Data",
+                        icon: "Import",
+                        onPress: () => {
+                          hideActionDrawer();
+                        },
+                      },
+                    ],
+                  });
+                }}
+              >
                 <SolarIconBold
                   name="MenuDots"
                   size={20}
@@ -168,7 +192,7 @@ export default function RoleList() {
                       handleRolePress(role);
                     } else {
                       router.navigate(
-                        `/(main)/management/role-user/role/detail/${role.id}`
+                        `/(main)/management/role-user/role/detail/${role.id}`,
                       );
                       setSelectedItems(null);
                     }
@@ -185,7 +209,10 @@ export default function RoleList() {
                       )}
                     </VStack>
                     <VStack className="items-end">
-                      <Text size="xs" className="text-brand-primary text-sm font-bold">
+                      <Text
+                        size="xs"
+                        className="text-brand-primary text-sm font-bold"
+                      >
                         User Aktif
                       </Text>
                       <Text size="xs">-</Text>
