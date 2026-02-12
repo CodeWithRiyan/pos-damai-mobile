@@ -1,17 +1,17 @@
-import { db } from '../db';
-import * as schema from '../db/schema';
-import { and, eq, isNull } from 'drizzle-orm';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from "@/stores/auth";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { and, eq, isNull, like, or } from "drizzle-orm";
+import { db } from "../db";
+import * as schema from "../db/schema";
 
-export type ProductListItem = Omit<Product, 'sellPrices' | 'variants'>;
+export type ProductListItem = Omit<Product, "sellPrices" | "variants">;
 
 export interface ProductPrice {
   id: string;
   label: string;
   price: number;
   minimumPurchase: number;
-  type: 'RETAIL' | 'WHOLESALE';
+  type: "RETAIL" | "WHOLESALE";
 }
 
 export interface ProductVariant {
@@ -30,7 +30,7 @@ export interface Product {
   description: string | null;
   isFavorite: boolean;
   isActive: boolean;
-  type: 'DEFAULT' | 'MULTIUNIT' | 'VARIANTS';
+  type: "DEFAULT" | "MULTIUNIT" | "VARIANTS";
   unit: string | null;
   minimumStock: number;
   categoryId: string;
@@ -55,13 +55,13 @@ export interface CreateProductDTO {
   description?: string;
   isFavorite?: boolean;
   isActive?: boolean;
-  type: 'DEFAULT' | 'MULTIUNIT' | 'VARIANTS';
+  type: "DEFAULT" | "MULTIUNIT" | "VARIANTS";
   unit?: string | null;
   minimumStock?: number;
   categoryId: string;
   brandId?: string;
-  prices: Omit<ProductPrice, 'id'>[];
-  variants?: Omit<ProductVariant, 'id'>[];
+  prices: Omit<ProductPrice, "id">[];
+  variants?: Omit<ProductVariant, "id">[];
   discountId?: string | null;
 }
 
@@ -69,28 +69,63 @@ export interface UpdateProductDTO extends Partial<CreateProductDTO> {
   id: string;
 }
 
+export type ShowByStock = "NO_STOCK" | "LOW_STOCK" | "ALL_STOCK";
+
+export interface ProductParams {
+  search?: string;
+  showByStock?: ShowByStock;
+  brandId?: string;
+  categoryId?: string;
+}
 
 // Get all products from local SQLite (excluding soft-deleted)
-export function useProducts() {
-  const orgId = useAuthStore(state => state.getOrganizationId());
+export function useProducts(params: ProductParams | void) {
+  const orgId = useAuthStore((state) => state.getOrganizationId());
+  const conditions = [
+    eq(schema.products.organizationId, orgId),
+    isNull(schema.products.deletedAt),
+  ];
+
+  if (params?.search) {
+    const searchTerm = `%${params.search}%`;
+    conditions.push(
+      or(
+        like(schema.products.name, searchTerm),
+        like(schema.products.barcode, searchTerm),
+      )!,
+    );
+  }
+
+  if (params?.brandId) {
+    conditions.push(eq(schema.products.brandId, params.brandId));
+  }
+
+  if (params?.categoryId) {
+    conditions.push(eq(schema.products.categoryId, params.categoryId));
+  }
+
   return useQuery({
-    queryKey: ["products", orgId],
+    queryKey: [
+      "products",
+      orgId,
+      params?.search,
+      params?.showByStock,
+      params?.brandId,
+      params?.categoryId,
+    ],
     queryFn: async () => {
       const productResult = await db
         .select()
         .from(schema.products)
-        .where(and(
-          eq(schema.products.organizationId, orgId),
-          isNull(schema.products.deletedAt)
-        ));
-      
+        .where(and(...conditions));
+
       const productsWithPrices = await Promise.all(
         productResult.map(async (product) => {
           const prices = await db
             .select()
             .from(schema.productPrices)
             .where(eq(schema.productPrices.productId, product.id));
-            
+
           const variants = await db
             .select()
             .from(schema.productVariants)
@@ -100,17 +135,29 @@ export function useProducts() {
           const transactions = await db
             .select()
             .from(schema.inventoryTransactions)
-            .where(and(
-              eq(schema.inventoryTransactions.productId, product.id),
-              eq(schema.inventoryTransactions.status, 'COMPLETED')
-            ));
-          
-          const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
-          
-          if (transactions.length > 0 && product.name === 'DEBUG_PRODUCT_NAME') { // Optional filter
-             console.log(`📊 [STOCK DEBUG] ${product.name} transactions:`, transactions.map(t => ({ type: t.type, qty: t.quantity })));
+            .where(
+              and(
+                eq(schema.inventoryTransactions.productId, product.id),
+                eq(schema.inventoryTransactions.status, "COMPLETED"),
+              ),
+            );
+
+          const totalStock = transactions.reduce(
+            (sum, tx) => sum + tx.quantity,
+            0,
+          );
+
+          if (
+            transactions.length > 0 &&
+            product.name === "DEBUG_PRODUCT_NAME"
+          ) {
+            // Optional filter
+            console.log(
+              `📊 [STOCK DEBUG] ${product.name} transactions:`,
+              transactions.map((t) => ({ type: t.type, qty: t.quantity })),
+            );
           }
-          
+
           return {
             ...product,
             code: product.barcode,
@@ -119,8 +166,21 @@ export function useProducts() {
             stock: totalStock,
             discountId: product.discountId,
           };
-        })
+        }),
       );
+
+      // TODO: olah data dengan drizzle-orm jika diperlukan
+      if (params?.showByStock) {
+        if (params.showByStock === "NO_STOCK") {
+          return productsWithPrices.filter(
+            (p) => p.stock === 0,
+          ) as unknown as Product[];
+        } else if (params.showByStock === "LOW_STOCK") {
+          return productsWithPrices.filter(
+            (p) => p.stock < (p.minimumStock || 0),
+          ) as unknown as Product[];
+        }
+      }
 
       return productsWithPrices as unknown as Product[];
     },
@@ -130,19 +190,21 @@ export function useProducts() {
 
 // Get products by category
 export function useProductsByCategory(categoryId: string) {
-  const orgId = useAuthStore(state => state.getOrganizationId());
+  const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ['products', orgId, 'byCategory', categoryId],
+    queryKey: ["products", orgId, "byCategory", categoryId],
     queryFn: async () => {
       const productResult = await db
         .select()
         .from(schema.products)
-        .where(and(
-          eq(schema.products.organizationId, orgId),
-          eq(schema.products.categoryId, categoryId),
-          isNull(schema.products.deletedAt)
-        ));
-      
+        .where(
+          and(
+            eq(schema.products.organizationId, orgId),
+            eq(schema.products.categoryId, categoryId),
+            isNull(schema.products.deletedAt),
+          ),
+        );
+
       // Fetch prices for each product
       const productsWithPrices = await Promise.all(
         productResult.map(async (product) => {
@@ -155,13 +217,18 @@ export function useProductsByCategory(categoryId: string) {
           const transactions = await db
             .select()
             .from(schema.inventoryTransactions)
-            .where(and(
-              eq(schema.inventoryTransactions.productId, product.id),
-              eq(schema.inventoryTransactions.status, 'COMPLETED')
-            ));
-          
-          const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
-          
+            .where(
+              and(
+                eq(schema.inventoryTransactions.productId, product.id),
+                eq(schema.inventoryTransactions.status, "COMPLETED"),
+              ),
+            );
+
+          const totalStock = transactions.reduce(
+            (sum, tx) => sum + tx.quantity,
+            0,
+          );
+
           return {
             ...product,
             code: product.barcode,
@@ -170,9 +237,9 @@ export function useProductsByCategory(categoryId: string) {
             stock: totalStock,
             discountId: product.discountId,
           };
-        })
+        }),
       );
-      
+
       return productsWithPrices as unknown as Product[];
     },
     enabled: !!categoryId,
@@ -181,19 +248,21 @@ export function useProductsByCategory(categoryId: string) {
 
 // Get products by brand
 export function useProductsByBrand(brandId: string) {
-  const orgId = useAuthStore(state => state.getOrganizationId());
+  const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ['products', orgId, 'byBrand', brandId],
+    queryKey: ["products", orgId, "byBrand", brandId],
     queryFn: async () => {
       const productResult = await db
         .select()
         .from(schema.products)
-        .where(and(
-          eq(schema.products.organizationId, orgId),
-          eq(schema.products.brandId, brandId),
-          isNull(schema.products.deletedAt)
-        ));
-      
+        .where(
+          and(
+            eq(schema.products.organizationId, orgId),
+            eq(schema.products.brandId, brandId),
+            isNull(schema.products.deletedAt),
+          ),
+        );
+
       // Fetch prices for each product
       const productsWithPrices = await Promise.all(
         productResult.map(async (product) => {
@@ -206,13 +275,18 @@ export function useProductsByBrand(brandId: string) {
           const transactions = await db
             .select()
             .from(schema.inventoryTransactions)
-            .where(and(
-              eq(schema.inventoryTransactions.productId, product.id),
-              eq(schema.inventoryTransactions.status, 'COMPLETED')
-            ));
-          
-          const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
-          
+            .where(
+              and(
+                eq(schema.inventoryTransactions.productId, product.id),
+                eq(schema.inventoryTransactions.status, "COMPLETED"),
+              ),
+            );
+
+          const totalStock = transactions.reduce(
+            (sum, tx) => sum + tx.quantity,
+            0,
+          );
+
           return {
             ...product,
             code: product.barcode,
@@ -221,9 +295,9 @@ export function useProductsByBrand(brandId: string) {
             stock: totalStock,
             discountId: product.discountId,
           };
-        })
+        }),
       );
-      
+
       return productsWithPrices as unknown as Product[];
     },
     enabled: !!brandId,
@@ -233,46 +307,64 @@ export function useProductsByBrand(brandId: string) {
 // Get single product with relative data
 export function useProduct(id: string) {
   return useQuery({
-    queryKey: ['products', id],
+    queryKey: ["products", id],
     queryFn: async () => {
       const productResult = await db
         .select({
           product: schema.products,
           category: schema.categories,
           brand: schema.brands,
-          discount: schema.discounts, 
+          discount: schema.discounts,
         })
         .from(schema.products)
-        .leftJoin(schema.categories, eq(schema.products.categoryId, schema.categories.id))
+        .leftJoin(
+          schema.categories,
+          eq(schema.products.categoryId, schema.categories.id),
+        )
         .leftJoin(schema.brands, eq(schema.products.brandId, schema.brands.id))
-        .leftJoin(schema.discounts, eq(schema.products.discountId, schema.discounts.id))
+        .leftJoin(
+          schema.discounts,
+          eq(schema.products.discountId, schema.discounts.id),
+        )
         .where(eq(schema.products.id, id))
         .limit(1);
-      
+
       if (productResult.length === 0) return undefined;
-      
+
       const { product, category, brand, discount } = productResult[0];
-      const prices = await db.select().from(schema.productPrices).where(eq(schema.productPrices.productId, id));
-      const variants = await db.select().from(schema.productVariants).where(eq(schema.productVariants.productId, id));
+      const prices = await db
+        .select()
+        .from(schema.productPrices)
+        .where(eq(schema.productPrices.productId, id));
+      const variants = await db
+        .select()
+        .from(schema.productVariants)
+        .where(eq(schema.productVariants.productId, id));
 
       // Calculate stock from inventory transactions (only COMPLETED)
       const transactions = await db
         .select()
         .from(schema.inventoryTransactions)
-        .where(and(
-          eq(schema.inventoryTransactions.productId, id),
-          eq(schema.inventoryTransactions.status, 'COMPLETED')
-        ));
-      
+        .where(
+          and(
+            eq(schema.inventoryTransactions.productId, id),
+            eq(schema.inventoryTransactions.status, "COMPLETED"),
+          ),
+        );
+
       const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
 
       console.log(`📊 [STOCK DEBUG] Product ${id} details:`, {
         transactionCount: transactions.length,
-        types: transactions.map(t => t.type),
+        types: transactions.map((t) => t.type),
         totalStock: totalStock,
-        transactions: transactions.map(t => ({ type: t.type, quantity: t.quantity, id: t.id }))
+        transactions: transactions.map((t) => ({
+          type: t.type,
+          quantity: t.quantity,
+          id: t.id,
+        })),
       });
-      
+
       return {
         ...product,
         stock: totalStock,
@@ -280,9 +372,13 @@ export function useProduct(id: string) {
         sellPrices: prices,
         variants,
         discountId: product.discountId,
-        category: category ? { id: category.id, name: category.name } : undefined,
+        category: category
+          ? { id: category.id, name: category.name }
+          : undefined,
         brand: brand ? { id: brand.id, name: brand.name } : undefined,
-        discount: discount ? { id: discount.id, name: discount.name } : undefined,
+        discount: discount
+          ? { id: discount.id, name: discount.name }
+          : undefined,
       } as unknown as Product;
     },
     enabled: !!id,
@@ -351,7 +447,7 @@ export function useCreateProduct() {
             id: `invtx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             local_ref_id: `initial_${id}`,
             productId: id,
-            type: 'INITIAL_STOCK',
+            type: "INITIAL_STOCK",
             quantity: productData.stock,
             organizationId: orgId,
             createdAt: now,
@@ -366,7 +462,7 @@ export function useCreateProduct() {
     },
     onSuccess: (data) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['products', orgId] });
+      queryClient.invalidateQueries({ queryKey: ["products", orgId] });
     },
   });
 }
@@ -384,18 +480,20 @@ export function useUpdateProduct() {
       await db.transaction(async (tx) => {
         await tx
           .update(schema.products)
-          .set({ 
-            ...productData, 
+          .set({
+            ...productData,
             barcode: productData.code,
-            updatedAt: now, 
-            _dirty: true 
+            updatedAt: now,
+            _dirty: true,
           })
           .where(eq(schema.products.id, id));
 
         if (prices) {
           // Simplest reconciliation: delete existing and re-insert
           // Better: upsert based on ID if available, but DTO doesn't have it for new ones
-          await tx.delete(schema.productPrices).where(eq(schema.productPrices.productId, id));
+          await tx
+            .delete(schema.productPrices)
+            .where(eq(schema.productPrices.productId, id));
           for (const price of prices) {
             await tx.insert(schema.productPrices).values({
               id: `price_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -411,7 +509,9 @@ export function useUpdateProduct() {
         }
 
         if (variants) {
-          await tx.delete(schema.productVariants).where(eq(schema.productVariants.productId, id));
+          await tx
+            .delete(schema.productVariants)
+            .where(eq(schema.productVariants.productId, id));
           for (const variant of variants) {
             await tx.insert(schema.productVariants).values({
               id: `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -431,8 +531,8 @@ export function useUpdateProduct() {
     },
     onSuccess: (data) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['products', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['products', data.id] });
+      queryClient.invalidateQueries({ queryKey: ["products", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["products", data.id] });
     },
   });
 }
@@ -454,7 +554,7 @@ export function useDeleteProduct() {
     },
     onSuccess: () => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['products', orgId] });
+      queryClient.invalidateQueries({ queryKey: ["products", orgId] });
     },
   });
 }
@@ -477,7 +577,7 @@ export function useBulkDeleteProduct() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
     },
   });
 }
@@ -500,8 +600,8 @@ export function useAssignProductsToCategory() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['productCountsByCategory'] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["productCountsByCategory"] });
     },
   });
 }
@@ -524,8 +624,8 @@ export function useAssignProductsToBrand() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['productCountsByBrand'] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["productCountsByBrand"] });
     },
   });
 }
