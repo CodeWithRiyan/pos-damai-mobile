@@ -230,9 +230,13 @@ export default function PaymentTypeList() {
                   onLongPress={() => handleItemPress(item)}
                 >
                   <HStack className="justify-between items-center">
-                    <VStack>
+                    <HStack space="sm">
                       <Heading size="sm">{item.name}</Heading>
-                    </VStack>
+                      {/* TODO: Hanya boleh ada 1 paymentType default */}
+                      <Badge size="sm" variant="solid" action="success">
+                        <BadgeText className="text-xs">Default</BadgeText>
+                      </Badge>
+                    </HStack>
                     <VStack className="items-end">
                       <Text className="text-brand-primary text-sm font-bold">
                         Komisi

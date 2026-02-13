@@ -6,7 +6,7 @@ export default function TransactionLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        animation: "slide_from_left",
+        animation: "slide_from_right",
       }}
     >
       <Stack.Screen

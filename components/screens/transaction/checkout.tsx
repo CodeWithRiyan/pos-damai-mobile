@@ -23,14 +23,14 @@ import { z } from "zod";
 // import { useTransaction } from "@/lib/api/transaction";
 import InputVirtualKeyboard from "@/components/ui/input-virtual-keyboard";
 import SelectModal from "@/components/ui/select/select-modal";
-import { usePaymentTypes } from "@/lib/api/payment-types";
+import { useCurrentUser } from "@/lib/api/auth";
 import { useCustomers } from "@/lib/api/customers";
+import { usePaymentTypes } from "@/lib/api/payment-types";
+import { useCreateTransaction } from "@/lib/api/transactions";
+import { findSellPrice } from "@/lib/price";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { useTransactionStore } from "@/stores/transaction";
 import { useRouter } from "expo-router";
-import { useCreateTransaction } from "@/lib/api/transactions";
-import { useCurrentUser } from "@/lib/api/auth";
-import { findSellPrice } from "@/lib/price";
 import { Check, PlusIcon } from "lucide-react-native";
 
 const transactionSchema = z
@@ -42,7 +42,6 @@ const transactionSchema = z
     isCashdrawer: z.boolean(),
     status: z.string(),
     paymentTypeId: z.string().min(1, "Metode pembayaran harus dipilih"),
-    customerId: z.string().min(1, "Pelanggan harus dipilih"),
     note: z.string(),
   })
   .superRefine((data, ctx) => {
@@ -65,7 +64,6 @@ export type TransactionFormValues = z.infer<typeof transactionSchema>;
 export default function TransactionCheckoutForm() {
   const router = useRouter();
 
-
   const { data: user } = useCurrentUser();
   const { data: paymentTypesData } = usePaymentTypes();
   const { data: customersData } = useCustomers();
@@ -75,10 +73,11 @@ export default function TransactionCheckoutForm() {
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
 
   // Map payment types to select options
-  const paymentTypes = paymentTypesData?.map((pt) => ({
-    label: pt.name,
-    value: pt.id,
-  })) || [];
+  const paymentTypes =
+    paymentTypesData?.map((pt) => ({
+      label: pt.name,
+      value: pt.id,
+    })) || [];
   // const createMutation = useCreateTransaction();
 
   const initialValues: TransactionFormValues = {
@@ -87,7 +86,6 @@ export default function TransactionCheckoutForm() {
     isCashdrawer: false,
     status: "DRAFT",
     paymentTypeId: "",
-    customerId: customer?.id || "",
     note: "",
   };
 
@@ -100,14 +98,14 @@ export default function TransactionCheckoutForm() {
 
   useEffect(() => {
     if (cartTotal) {
+      // TODO: uncomment jika sudah menambahkan flaging "isDefault" pada paymentTypes
+      // const defaultPaymentType = paymentTypesData.find((pt) => pt.isDefault)?.id || ""
+
       form.setValue("totalPurchase", cartTotal);
       form.setValue("status", status);
+      // form.setValue("paymentTypeId", defaultPaymentType);
     }
-    if (customer) {
-      form.setValue("customerId", customer.id);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, cartTotal, customer]);
+  }, [form, cartTotal, customer, paymentTypesData, status]);
 
   const toast = useToast();
   const createTransactionMutation = useCreateTransaction();
@@ -129,9 +127,7 @@ export default function TransactionCheckoutForm() {
     data: TransactionFormValues,
   ) => {
     try {
-      const selectedCustomer = customersData?.find(c => c.id === data.customerId);
       const submissionData = {
-        customerId: data.customerId,
         totalAmount: cartTotal,
         totalPaid: parseFloat(data.totalPaid),
         paymentTypeId: data.paymentTypeId,
@@ -147,16 +143,15 @@ export default function TransactionCheckoutForm() {
             item.tempSellPrice ||
             findSellPrice({
               sellPrices: item.product.sellPrices,
-              type: selectedCustomer?.category,
+              type: customer?.category,
               quantity: item.quantity,
             }),
           note: item.note,
         })),
       };
 
-      const result = await createTransactionMutation.mutateAsync(
-        submissionData,
-      );
+      const result =
+        await createTransactionMutation.mutateAsync(submissionData);
 
       if (result.id) {
         setCheckoutData({
@@ -171,7 +166,7 @@ export default function TransactionCheckoutForm() {
           items: cart,
           totalItems: cartTotal,
           totalPaid: data.totalPaid,
-          customerId: data.customerId,
+          customerId: customer?.id || "",
           transactionDate: new Date(),
           isCashdrawer: false,
           status: status,
@@ -216,48 +211,6 @@ export default function TransactionCheckoutForm() {
                 </Heading>
               </HStack>
               <VStack space="lg" className="p-4">
-                <Controller
-                  control={form.control}
-                  name="customerId"
-                  render={({
-                    field: { onChange, value },
-                    fieldState: { error },
-                  }) => (
-                    <FormControl isRequired isInvalid={!!error}>
-                      <HStack space="md">
-                        <SelectModal
-                          value={value}
-                          placeholder="Pilih Pelanggan"
-                          options={customersData?.map((c) => ({
-                            label: c.name,
-                            value: c.id,
-                          })) || []}
-                          className="flex-1"
-                          onChange={(val) => {
-                            onChange(val);
-                            const selected = customersData?.find(c => c.id === val);
-                            if (selected) setCustomer(selected);
-                          }}
-                        />
-                        <Pressable
-                          className="size-10 rounded-full bg-primary-500 items-center justify-center"
-                          onPress={() =>
-                            router.push("/(main)/management/customer-supplier/customer/add")
-                          }
-                        >
-                          <Icon as={PlusIcon} color="white" />
-                        </Pressable>
-                      </HStack>
-                      {error && (
-                        <FormControlError>
-                          <FormControlErrorText>
-                            {error.message}
-                          </FormControlErrorText>
-                        </FormControlError>
-                      )}
-                    </FormControl>
-                  )}
-                />
                 <Controller
                   control={form.control}
                   name="paymentTypeId"
@@ -322,24 +275,26 @@ export default function TransactionCheckoutForm() {
             </VStack>
           </ScrollView>
         </VStack>
-        <VStack className="flex-1">
-          <ScrollView className="flex-1">
-            <VStack className="flex-1">
-              <HStack className="justify-center p-6">
-                <Heading size="3xl" className="font-bold">
-                  Rp{" "}
-                  {totalPaid
-                    ? parseFloat(totalPaid).toLocaleString("id-ID")
-                    : "0"}
-                </Heading>
-              </HStack>
-              <InputVirtualKeyboard
-                nominal={totalPaid}
-                onChange={(value) => form.setValue("totalPaid", value)}
-              />
-            </VStack>
-          </ScrollView>
-        </VStack>
+        {status === "COMPLETED" && (
+          <VStack className="flex-1">
+            <ScrollView className="flex-1">
+              <VStack className="flex-1">
+                <HStack className="justify-center p-6">
+                  <Heading size="3xl" className="font-bold">
+                    Rp{" "}
+                    {totalPaid
+                      ? parseFloat(totalPaid).toLocaleString("id-ID")
+                      : "0"}
+                  </Heading>
+                </HStack>
+                <InputVirtualKeyboard
+                  nominal={totalPaid}
+                  onChange={(value) => form.setValue("totalPaid", value)}
+                />
+              </VStack>
+            </ScrollView>
+          </VStack>
+        )}
       </HStack>
     </VStack>
   );

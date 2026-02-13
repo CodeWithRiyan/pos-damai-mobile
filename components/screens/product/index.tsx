@@ -180,17 +180,13 @@ export default function ProductList() {
     );
   };
 
-  if (isLoading) {
-    return (
-      <Box className="flex-1 justify-center items-center">
-        <Spinner size="large" />
-        <PopUp />
-      </Box>
-    );
-  }
-
   return (
     <Box className="flex-1 bg-white">
+      {isLoading && (
+        <Box className="absolute inset-0 bg-black/40 justify-center items-center z-[100]">
+          <Spinner size="large" />
+        </Box>
+      )}
       <Header
         header="PRODUK"
         isGoBack

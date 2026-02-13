@@ -32,6 +32,7 @@ export default function ProductFilter({
 }) {
   const { data: categories = [] } = useCategories();
   const { data: brands = [] } = useBrands();
+  const hasFiltered = Boolean(brandId || categoryId);
 
   return (
     <Modal
@@ -86,18 +87,20 @@ export default function ProductFilter({
                 TUTUP
               </Text>
             </Pressable>
-            <Pressable
-              className="flex-1 flex px-4 h-12 items-center justify-center rounded-lg border border-error-500 bg-error-100 active:bg-error-200"
-              onPress={() => {
-                setBrandId("");
-                setCategoryId("");
-                setOpen(false);
-              }}
-            >
-              <Text size="sm" className="text-error-500 font-bold">
-                BERSIHKAN FILTER
-              </Text>
-            </Pressable>
+            {hasFiltered && (
+              <Pressable
+                className="flex-1 flex px-4 h-12 items-center justify-center rounded-lg border border-error-500 bg-error-100 active:bg-error-200"
+                onPress={() => {
+                  setBrandId("");
+                  setCategoryId("");
+                  setOpen(false);
+                }}
+              >
+                <Text size="sm" className="text-error-500 font-bold">
+                  BERSIHKAN FILTER
+                </Text>
+              </Pressable>
+            )}
           </HStack>
         </ModalFooter>
       </ModalContent>

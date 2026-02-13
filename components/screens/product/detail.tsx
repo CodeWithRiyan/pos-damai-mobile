@@ -100,11 +100,11 @@ export default function ProductDetail() {
     showActionDrawer({
       actions: [
         {
-          label: "Edit",
-          icon: "Pen",
+          label: "Lihat Daftar Supplier",
+          icon: "UsersGroupRounded",
           onPress: () => {
-            router.navigate(
-              `/(main)/management/product-category-brand/product/edit/${product?.id}`,
+            router.push(
+              `/(main)/management/product-category-brand/product/suppliers/${productId}` as any,
             );
             hideActionDrawer();
           },
@@ -282,13 +282,13 @@ export default function ProductDetail() {
         <Pressable
           className="w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-brand-primary"
           onPress={() => {
-            router.push(
-              `/(main)/management/product-category-brand/product/suppliers/${productId}` as any
+            router.navigate(
+              `/(main)/management/product-category-brand/product/edit/${product?.id}`,
             );
           }}
         >
           <Text size="sm" className="text-brand-primary font-bold">
-            LIHAT DAFTAR SUPPLIER
+            EDIT PRODUK
           </Text>
         </Pressable>
       </VStack>

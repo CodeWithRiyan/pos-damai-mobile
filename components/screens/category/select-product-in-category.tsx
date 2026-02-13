@@ -67,7 +67,7 @@ export default function SelectProductInCategory() {
   return (
     <SelectingProductList
       usedFor="category"
-      header="TAMBAH PRODUK"
+      header={`TAMBAH PRODUK KE ${data?.name?.toUpperCase() ?? "KATEGORI"}`}
       selectedItems={products?.filter((p) => p.categoryId.includes(categoryId))}
       onSubmit={handleSubmit}
     />

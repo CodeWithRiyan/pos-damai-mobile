@@ -7,8 +7,7 @@ import {
   InputIcon,
   InputSlot,
   SearchIcon,
-  Text,
-  useToast,
+  Text
 } from "@/components/ui";
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
@@ -28,7 +27,7 @@ import { useCurrentShift } from "@/lib/api/shifts";
 import { findSellPrice } from "@/lib/price";
 import { useTransactionStore } from "@/stores/transaction";
 import { useRouter } from "expo-router";
-import { AlertCircle, Plus, PlusIcon } from "lucide-react-native";
+import { AlertCircle, PlusIcon } from "lucide-react-native";
 import React from "react";
 import { ScrollView } from "react-native";
 import PopupAddProduct from "./popup-add";
@@ -40,7 +39,6 @@ export default function TransactionList() {
   const { data: products } = useProducts();
   const { data: currentShift, isLoading: isLoadingShift } = useCurrentShift();
   const router = useRouter();
-  const toast = useToast();
 
   const [searchQuery, setSearchQuery] = React.useState("");
 
@@ -165,21 +163,6 @@ export default function TransactionList() {
           </HStack>
           <ScrollView className="flex-1">
             <VStack className="flex-1">
-              <VStack className="p-4">
-                <Pressable
-                  className="w-full rounded-md h-10 flex-row justify-center items-center gap-4 bg-primary-100 border border-primary-500 active:bg-primary-200"
-                  onPress={() =>
-                    router.navigate(
-                      "/(main)/management/product-category-brand/product/add",
-                    )
-                  }
-                >
-                  <Icon as={Plus} size="sm" color="#3d2117" />
-                  <Text size="sm" className="text-brand-primary font-bold">
-                    Tambah Barang
-                  </Text>
-                </Pressable>
-              </VStack>
               {filteredProducts?.map((product, index) => {
                 const productInChart = cart?.find(
                   (f) => f.product.id === product.id,

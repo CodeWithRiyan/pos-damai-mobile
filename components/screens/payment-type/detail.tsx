@@ -16,13 +16,16 @@ import { getErrorMessage } from "@/lib/api/client";
 import {
   useDeletePaymentType,
   usePaymentType,
-  usePaymentTypes
+  usePaymentTypes,
 } from "@/lib/api/payment-types";
 import { usePaymentTypeStore } from "@/stores/payment-type";
+import classNames from "classnames";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function PaymentTypeDetail() {
+  const [isDefault, setIsDefault] = useState<boolean>(false);
   const { setOpen, setData } = usePaymentTypeStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -174,6 +177,29 @@ export default function PaymentTypeDetail() {
           </Box>
         </VStack>
       </ScrollView>
+      <VStack space="md" className="w-full p-4">
+        {/* TODO: ubah useState dengan service mutation (tambahkan flaging "isDefault" pada payment-type) */}
+        <Pressable
+          className={classNames(
+            "w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-brand-primary",
+            !isDefault && "bg-brand-primary",
+          )}
+          disabled={isDefault}
+          onPress={() => {
+            setIsDefault(!isDefault);
+          }}
+        >
+          <Text
+            size="sm"
+            className={classNames(
+              "text-brand-primary font-bold",
+              !isDefault && "text-white",
+            )}
+          >
+            {isDefault ? "DEFAULT PEMBAYARAN" : "JADIKAN DEFAULT PEMBAYARAN"}
+          </Text>
+        </Pressable>
+      </VStack>
     </VStack>
   );
 }
