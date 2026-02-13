@@ -1,8 +1,13 @@
-import { db } from "../db";
-import { purchaseReturns, purchaseReturnItems, inventoryTransactions, suppliers } from "../db/schema";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { eq, desc } from "drizzle-orm";
 import { useAuthStore } from "@/stores/auth";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { desc, eq } from "drizzle-orm";
+import { db } from "../db";
+import {
+  inventoryTransactions,
+  purchaseReturnItems,
+  purchaseReturns,
+  suppliers,
+} from "../db/schema";
 
 export interface ReturnPurchasingItem {
   productId: string;
@@ -17,67 +22,105 @@ export interface ReturnPurchasing {
   supplierId: string;
   supplierName?: string;
   totalAmount: number;
-  returnType: 'CASH' | 'ITEM';
+  returnType: "CASH" | "ITEM";
   items?: ReturnPurchasingItem[];
   createdAt: Date;
 }
 
-export const usePurchaseReturns = () => {
-  const organizationId = useAuthStore((state) => state.profile?.selectedOrganizationId);
+export interface PurchaseReturnParams {
+  supplierId: string;
+}
+
+export const usePurchaseReturns = (params: PurchaseReturnParams | void) => {
+  console.log("usePurchaseReturns called with params:", params);
+  const isUsedFilter = !!params?.supplierId;
+  const organizationId = useAuthStore(
+    (state) => state.profile?.selectedOrganizationId,
+  );
 
   return useQuery({
-    queryKey: ["purchase-returns", organizationId],
+    queryKey: ["purchase-returns", organizationId, params?.supplierId],
     queryFn: async () => {
       if (!organizationId) return [];
-      
+
       const [retdat, supdat] = await Promise.all([
-        db.select().from(purchaseReturns).where(eq(purchaseReturns.organizationId, organizationId)).orderBy(desc(purchaseReturns.createdAt)),
-        db.select().from(suppliers).where(eq(suppliers.organizationId, organizationId))
+        db
+          .select()
+          .from(purchaseReturns)
+          .where(eq(purchaseReturns.organizationId, organizationId))
+          .orderBy(desc(purchaseReturns.createdAt)),
+        db
+          .select()
+          .from(suppliers)
+          .where(eq(suppliers.organizationId, organizationId)),
       ]);
-      
-      const supplierMap = new Map(supdat.map(s => [s.id, s.name]));
-      
-      return retdat.map(r => ({
+
+      const supplierMap = new Map(supdat.map((s) => [s.id, s.name]));
+
+      const retData = retdat.map((r) => ({
         ...r,
-        supplierName: supplierMap.get(r.supplierId) || "Unknown"
+        supplierName: supplierMap.get(r.supplierId) || "Unknown",
       }));
+
+      const filteredRetData = retData.filter(
+        (r) => r.supplierId === params?.supplierId,
+      );
+
+      return isUsedFilter ? filteredRetData : retData;
     },
     enabled: !!organizationId,
   });
 };
 
 export const usePurchaseReturn = (id: string) => {
-  const organizationId = useAuthStore((state) => state.profile?.selectedOrganizationId);
+  const organizationId = useAuthStore(
+    (state) => state.profile?.selectedOrganizationId,
+  );
 
   return useQuery({
     queryKey: ["purchase-return", id],
     queryFn: async () => {
       if (!organizationId || !id) return null;
-      
+
       // Get return record
-      const returnResult = await db.select().from(purchaseReturns).where(eq(purchaseReturns.id, id)).limit(1);
+      const returnResult = await db
+        .select()
+        .from(purchaseReturns)
+        .where(eq(purchaseReturns.id, id))
+        .limit(1);
       if (!returnResult.length) return null;
-      
+
       const returnRecord = returnResult[0];
-      
+
       // Get supplier name
-      const supplierResult = await db.select({ name: suppliers.name }).from(suppliers).where(eq(suppliers.id, returnRecord.supplierId)).limit(1);
-      
+      const supplierResult = await db
+        .select({ name: suppliers.name })
+        .from(suppliers)
+        .where(eq(suppliers.id, returnRecord.supplierId))
+        .limit(1);
+
       // Get items with product names
-      const items = await db.select().from(purchaseReturnItems).where(eq(purchaseReturnItems.purchaseReturnId, id));
-      
+      const items = await db
+        .select()
+        .from(purchaseReturnItems)
+        .where(eq(purchaseReturnItems.purchaseReturnId, id));
+
       // Import products to get names
       const { products } = await import("../db/schema");
       const itemsWithNames = await Promise.all(
         items.map(async (item) => {
-          const productResult = await db.select({ name: products.name }).from(products).where(eq(products.id, item.productId)).limit(1);
+          const productResult = await db
+            .select({ name: products.name })
+            .from(products)
+            .where(eq(products.id, item.productId))
+            .limit(1);
           return {
             ...item,
-            productName: productResult[0]?.name || "Unknown"
+            productName: productResult[0]?.name || "Unknown",
           };
-        })
+        }),
       );
-      
+
       return {
         ...returnRecord,
         supplierName: supplierResult[0]?.name || "Unknown",
@@ -90,17 +133,21 @@ export const usePurchaseReturn = (id: string) => {
 
 export const useCreatePurchaseReturn = () => {
   const queryClient = useQueryClient();
-  const organizationId = useAuthStore((state) => state.profile?.selectedOrganizationId);
+  const organizationId = useAuthStore(
+    (state) => state.profile?.selectedOrganizationId,
+  );
 
   return useMutation({
-    mutationFn: async (data: Omit<ReturnPurchasing, "id" | "local_ref_id" | "createdAt">) => {
+    mutationFn: async (
+      data: Omit<ReturnPurchasing, "id" | "local_ref_id" | "createdAt">,
+    ) => {
       if (!organizationId) throw new Error("Organization ID is required");
 
       const returnId = `ret_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const localRefId = `ref_ret_${Date.now()}`;
       const now = new Date();
 
-      console.log('🔍 [RETURN API] Starting return creation:', {
+      console.log("🔍 [RETURN API] Starting return creation:", {
         returnId,
         localRefId,
         supplierId: data.supplierId,
@@ -122,21 +169,21 @@ export const useCreatePurchaseReturn = () => {
           createdAt: now,
           updatedAt: now,
         });
-        console.log('✅ [RETURN API] Return header created');
+        console.log("✅ [RETURN API] Return header created");
 
         // 2. Create Items and Transactions
         if (data.items) {
           for (const item of data.items) {
             const itemId = `reti_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            
-            console.log('➕ [RETURN API] Creating item:', {
+
+            console.log("➕ [RETURN API] Creating item:", {
               itemId,
               productId: item.productId,
               productName: item.productName,
               quantity: item.quantity,
               purchasePrice: item.purchasePrice,
             });
-            
+
             // 2a. Save item
             await tx.insert(purchaseReturnItems).values({
               id: itemId,
@@ -149,27 +196,33 @@ export const useCreatePurchaseReturn = () => {
               createdAt: now,
               updatedAt: now,
             });
-            console.log('✅ [RETURN API] Item saved');
+            console.log("✅ [RETURN API] Item saved");
 
             // 2b. Reduce stock via transaction only if returnType is CASH
-            // Per business process: 
+            // Per business process:
             // - CASH return: stock decreases (-quantity)
             // - ITEM return: stock change is +0 (assuming swap/replenishment)
-            if (data.returnType === 'CASH') {
+            if (data.returnType === "CASH") {
               const txId = `itrt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
               const txRefId = `${localRefId}-${item.productId}`;
-              
-              console.log('📉 [RETURN API] Creating inventory transaction for stock reduction (CASH return):', {
-                id: txId,
-                local_ref_id: txRefId,
-                productId: item.productId,
-                type: 'RETURN_PURCHASE',
-                quantity: -item.quantity,
-                status: 'COMPLETED',
-              });
-              
+
+              console.log(
+                "📉 [RETURN API] Creating inventory transaction for stock reduction (CASH return):",
+                {
+                  id: txId,
+                  local_ref_id: txRefId,
+                  productId: item.productId,
+                  type: "RETURN_PURCHASE",
+                  quantity: -item.quantity,
+                  status: "COMPLETED",
+                },
+              );
+
               if (!item.productId) {
-                console.error('❌ [RETURN API] Product ID is missing for item!', item);
+                console.error(
+                  "❌ [RETURN API] Product ID is missing for item!",
+                  item,
+                );
                 continue;
               }
 
@@ -177,23 +230,27 @@ export const useCreatePurchaseReturn = () => {
                 id: txId,
                 local_ref_id: txRefId,
                 productId: item.productId,
-                type: 'RETURN_PURCHASE',
+                type: "RETURN_PURCHASE",
                 quantity: -item.quantity,
-                status: 'COMPLETED',
+                status: "COMPLETED",
                 organizationId,
                 _dirty: true,
                 createdAt: now,
                 updatedAt: now,
               });
-              console.log(`✅ [RETURN API] Inventory transaction created for product ${item.productId} - stock reduced by ${item.quantity}`);
+              console.log(
+                `✅ [RETURN API] Inventory transaction created for product ${item.productId} - stock reduced by ${item.quantity}`,
+              );
             } else {
-              console.log(`ℹ️ [RETURN API] Skipping inventory transaction for product ${item.productId} (returnType is ITEM, net stock change +0)`);
+              console.log(
+                `ℹ️ [RETURN API] Skipping inventory transaction for product ${item.productId} (returnType is ITEM, net stock change +0)`,
+              );
             }
           }
         }
       });
 
-      console.log('🎉 [RETURN API] Return creation completed successfully');
+      console.log("🎉 [RETURN API] Return creation completed successfully");
       return { id: returnId, local_ref_id: localRefId };
     },
     onSuccess: () => {

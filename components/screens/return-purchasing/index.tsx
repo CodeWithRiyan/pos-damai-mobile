@@ -1,108 +1,104 @@
 import Header from "@/components/header";
 import {
   Heading,
-  HStack,
   Input,
   InputField,
   InputIcon,
   InputSlot,
-  Pressable,
   SearchIcon,
   Text,
   VStack,
 } from "@/components/ui";
+import { Box } from "@/components/ui/box";
+import { HStack } from "@/components/ui/hstack";
+import { Pressable } from "@/components/ui/pressable";
+import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
-import { usePurchaseReturns } from "@/lib/api/return-purchasing";
-import dayjs from "dayjs";
+import { useSuppliers } from "@/lib/api/suppliers";
 import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
-export default function ReturnPurchasing() {
+export default function PurchasingSupplierList() {
+  const { data: suppliers, isLoading: loadingSuppliers } = useSuppliers();
+  const [search, setSearch] = useState("");
   const router = useRouter();
-  const { data: returns, isLoading } = usePurchaseReturns();
 
   return (
-    <VStack className="flex-1 bg-white">
-      <Header header="RETUR PEMBELIAN BARANG" isGoBack />
-      <VStack space="sm" className="p-4 shadow-lg bg-background-0">
-        <Input className="border border-background-300 rounded-lg h-10">
-          <InputSlot className="pl-3">
-            <InputIcon as={SearchIcon} />
-          </InputSlot>
-          <InputField placeholder="Cari no transaksi atau nama supplier" />
-        </Input>
+    <Box className="flex-1 bg-white">
+      <Header
+        header="PILIH SUPPLIER"
+        isGoBack
+        action={
+          <Pressable
+            className="p-6"
+            onPress={() =>
+              router.push("/(main)/management/return/purchasing/history")
+            }
+          >
+            <SolarIconBold name="History" size={20} color="#FDFBF9" />
+          </Pressable>
+        }
+      />
+      <VStack className="flex-1">
+        <HStack
+          space="sm"
+          className="p-4 shadow-lg bg-background-0 items-center"
+        >
+          <Input className="flex-1 border border-background-300 rounded-lg h-10">
+            <InputSlot className="pl-3">
+              <InputIcon as={SearchIcon} />
+            </InputSlot>
+            <InputField
+              placeholder="Cari nama supplier..."
+              value={search}
+              onChangeText={setSearch}
+            />
+          </Input>
+        </HStack>
+        <ScrollView className="flex-1">
+          {loadingSuppliers ? (
+            <VStack className="items-center py-10">
+              <Spinner />
+            </VStack>
+          ) : !suppliers?.length ? (
+            <VStack className="items-center py-10">
+              <Text className="text-gray-400">Belum ada supplier</Text>
+            </VStack>
+          ) : (
+            suppliers
+              ?.filter(
+                (s) =>
+                  !search ||
+                  s.name.toLowerCase().includes(search.toLowerCase()),
+              )
+              .map((supplier) => (
+                <Pressable
+                  key={supplier.id}
+                  className="px-4 py-4 border-b border-gray-200 active:bg-gray-100"
+                  onPress={() => {
+                    router.navigate(
+                      `/(main)/management/return/purchasing/supplier/${supplier.id}`,
+                    );
+                    // setSearch("");
+                  }}
+                >
+                  <HStack className="justify-between items-center">
+                    <VStack className="flex-1">
+                      <Heading size="sm">{supplier.name}</Heading>
+                      {supplier.phone && (
+                        <Text size="xs" className="text-gray-500">
+                          {supplier.phone}
+                        </Text>
+                      )}
+                    </VStack>
+                    <Text className="text-gray-400 text-lg">›</Text>
+                  </HStack>
+                </Pressable>
+              ))
+          )}
+        </ScrollView>
       </VStack>
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {isLoading ? (
-          <VStack className="items-center py-10">
-            <Spinner />
-          </VStack>
-        ) : !returns?.length ? (
-          <VStack className="items-center py-10">
-            <Text className="text-typography-400">Belum ada riwayat retur</Text>
-          </VStack>
-        ) : (
-          returns.map((ret: any) => {
-            const date = dayjs(ret.createdAt);
-            return (
-              <Pressable
-                key={ret.id}
-                className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
-                onPress={() =>
-                  router.navigate({
-                    pathname: "/(main)/management/return/purchasing/detail",
-                    params: { id: ret.id },
-                  })
-                }
-              >
-                <HStack space="xl" className="items-center">
-                  <VStack>
-                    <Text className="text-typography-500 font-bold">
-                      {date.format("HH:mm:ss")}
-                    </Text>
-                    <HStack space="sm" className="items-center">
-                      <Heading size="4xl">{date.date()}</Heading>
-                      <VStack>
-                        <Text className="text-typography-500 font-bold">
-                          {date.format("MMM")}
-                        </Text>
-                        <Text className="text-typography-500 font-bold">
-                          {date.year()}
-                        </Text>
-                      </VStack>
-                    </HStack>
-                  </VStack>
-                  <VStack space="sm" className="flex-1">
-                    <HStack className="justify-between">
-                      <VStack>
-                        <Text className="text-typography-400 text-xs">
-                          Jumlah Retur
-                        </Text>
-                        <Text className="font-bold">
-                          Rp {ret.totalAmount.toLocaleString("id-ID")}
-                        </Text>
-                      </VStack>
-                      <VStack>
-                        <Text className="text-typography-400 text-xs">
-                          Supplier
-                        </Text>
-                        <Text className="font-bold">{ret.supplierName}</Text>
-                      </VStack>
-                      <VStack />
-                    </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-400 font-bold">
-                        No: {ret.local_ref_id}
-                      </Text>
-                    </HStack>
-                  </VStack>
-                  <Text className="text-typography-400 text-lg">›</Text>
-                </HStack>
-              </Pressable>
-            );
-          })
-        )}
-      </ScrollView>
-    </VStack>
+    </Box>
   );
 }
