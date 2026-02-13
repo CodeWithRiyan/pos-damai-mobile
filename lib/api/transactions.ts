@@ -53,7 +53,7 @@ export interface CreateTransactionDTO {
 }
 
 // Get all transactions from local SQLite
-export function useTransactions(params: { customerId?: string } | undefined) {
+export function useTransactions(params: { customerId?: string } | void) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   const conditions = [
     eq(schema.transactions.organizationId, orgId),

@@ -1,9 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from './client';
-import { db } from '../db';
-import * as schema from '../db/schema';
-import { and, eq, isNull } from 'drizzle-orm';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from "@/stores/auth";
+import { useQuery } from "@tanstack/react-query";
+import { and, eq, isNull } from "drizzle-orm";
+import { db } from "../db";
+import * as schema from "../db/schema";
+import { apiClient } from "./client";
 
 export interface ProductSupplier {
   supplierId: string;
@@ -24,15 +24,20 @@ export interface ProductSupplierTransaction {
 }
 
 export function useProductSuppliers(productId: string) {
-  const orgId = useAuthStore(state => state.getOrganizationId());
-  
+  const orgId = useAuthStore((state) => state.getOrganizationId());
+
   return useQuery({
-    queryKey: ['product-suppliers', productId, orgId],
+    queryKey: ["product-suppliers", productId, orgId],
     queryFn: async () => {
-      console.log('[useProductSuppliers] Starting query for productId:', productId, 'orgId:', orgId);
-      
+      console.log(
+        "[useProductSuppliers] Starting query for productId:",
+        productId,
+        "orgId:",
+        orgId,
+      );
+
       if (!productId || !orgId) {
-        console.log('[useProductSuppliers] Missing productId or orgId');
+        console.log("[useProductSuppliers] Missing productId or orgId");
         return [];
       }
 
@@ -43,15 +48,21 @@ export function useProductSuppliers(productId: string) {
         .where(
           and(
             eq(schema.inventoryTransactions.productId, productId),
-            eq(schema.inventoryTransactions.type, 'PURCHASE'),
-            eq(schema.inventoryTransactions.status, 'COMPLETED'),
+            eq(schema.inventoryTransactions.type, "PURCHASE"),
+            eq(schema.inventoryTransactions.status, "COMPLETED"),
             eq(schema.inventoryTransactions.organizationId, orgId),
-            isNull(schema.inventoryTransactions.deletedAt)
-          )
+            isNull(schema.inventoryTransactions.deletedAt),
+          ),
         );
 
-      console.log('[useProductSuppliers] Found transactions:', transactions.length);
-      console.log('[useProductSuppliers] Transactions:', JSON.stringify(transactions, null, 2));
+      console.log(
+        "[useProductSuppliers] Found transactions:",
+        transactions.length,
+      );
+      console.log(
+        "[useProductSuppliers] Transactions:",
+        JSON.stringify(transactions, null, 2),
+      );
 
       if (transactions.length === 0) return [];
 
@@ -59,16 +70,24 @@ export function useProductSuppliers(productId: string) {
       // Pattern: {purchaseLocalRefId}_{productId}
       // We need to remove the _{productId} suffix
       const purchaseRefs = new Set<string>();
-      transactions.forEach(tx => {
+      transactions.forEach((tx) => {
         if (tx.local_ref_id) {
           // Remove _{productId} from the end
-          const purchaseRef = tx.local_ref_id.replace(`_${productId}`, '');
+          const purchaseRef = tx.local_ref_id.replace(`_${productId}`, "");
           purchaseRefs.add(purchaseRef);
-          console.log('[useProductSuppliers] Extracted purchaseRef:', purchaseRef, 'from', tx.local_ref_id);
+          console.log(
+            "[useProductSuppliers] Extracted purchaseRef:",
+            purchaseRef,
+            "from",
+            tx.local_ref_id,
+          );
         }
       });
 
-      console.log('[useProductSuppliers] Purchase refs:', Array.from(purchaseRefs));
+      console.log(
+        "[useProductSuppliers] Purchase refs:",
+        Array.from(purchaseRefs),
+      );
 
       if (purchaseRefs.size === 0) return [];
 
@@ -79,29 +98,46 @@ export function useProductSuppliers(productId: string) {
         .where(
           and(
             eq(schema.purchases.organizationId, orgId),
-            eq(schema.purchases.status, 'COMPLETED'),
-            isNull(schema.purchases.deletedAt)
-          )
+            eq(schema.purchases.status, "COMPLETED"),
+            isNull(schema.purchases.deletedAt),
+          ),
         );
 
-      console.log('[useProductSuppliers] Found purchases:', purchases.length);
-      console.log('[useProductSuppliers] Purchases:', JSON.stringify(purchases.map(p => ({ id: p.id, local_ref_id: p.local_ref_id, supplierId: p.supplierId })), null, 2));
-
-      // Filter purchases by local_ref_id
-      const relevantPurchases = purchases.filter(p => 
-        p.local_ref_id && purchaseRefs.has(p.local_ref_id)
+      console.log("[useProductSuppliers] Found purchases:", purchases.length);
+      console.log(
+        "[useProductSuppliers] Purchases:",
+        JSON.stringify(
+          purchases.map((p) => ({
+            id: p.id,
+            local_ref_id: p.local_ref_id,
+            supplierId: p.supplierId,
+          })),
+          null,
+          2,
+        ),
       );
 
-      console.log('[useProductSuppliers] Relevant purchases:', relevantPurchases.length);
+      // Filter purchases by local_ref_id
+      const relevantPurchases = purchases.filter(
+        (p) => p.local_ref_id && purchaseRefs.has(p.local_ref_id),
+      );
+
+      console.log(
+        "[useProductSuppliers] Relevant purchases:",
+        relevantPurchases.length,
+      );
 
       // Group by supplierId
-      const supplierMap = new Map<string, {
-        supplierId: string;
-        totalQuantity: number;
-        totalValue: number;
-        lastPurchaseDate: Date | null;
-        purchaseIds: Set<string>;
-      }>();
+      const supplierMap = new Map<
+        string,
+        {
+          supplierId: string;
+          totalQuantity: number;
+          totalValue: number;
+          lastPurchaseDate: Date | null;
+          purchaseIds: Set<string>;
+        }
+      >();
 
       // Get current product price for calculation
       const productData = await db
@@ -109,9 +145,9 @@ export function useProductSuppliers(productId: string) {
         .from(schema.products)
         .where(eq(schema.products.id, productId))
         .limit(1);
-      
+
       const currentPrice = productData[0]?.purchasePrice || 0;
-      console.log('[useProductSuppliers] Current product price:', currentPrice);
+      console.log("[useProductSuppliers] Current product price:", currentPrice);
 
       for (const purchase of relevantPurchases) {
         if (!purchase.supplierId) continue;
@@ -127,13 +163,19 @@ export function useProductSuppliers(productId: string) {
         }
 
         const supplierData = supplierMap.get(purchase.supplierId)!;
-        
+
         // Find transactions for this purchase and product
-        const purchaseTxs = transactions.filter(tx => 
-          tx.local_ref_id?.startsWith(purchase.local_ref_id + '_')
+        const purchaseTxs = transactions.filter((tx) =>
+          tx.local_ref_id?.startsWith(purchase.local_ref_id + "_"),
         );
 
-        console.log('[useProductSuppliers] Purchase', purchase.id, 'has', purchaseTxs.length, 'transactions');
+        console.log(
+          "[useProductSuppliers] Purchase",
+          purchase.id,
+          "has",
+          purchaseTxs.length,
+          "transactions",
+        );
 
         for (const tx of purchaseTxs) {
           supplierData.totalQuantity += tx.quantity;
@@ -141,7 +183,11 @@ export function useProductSuppliers(productId: string) {
         }
 
         // Update last purchase date
-        if (purchase.createdAt && (!supplierData.lastPurchaseDate || purchase.createdAt > supplierData.lastPurchaseDate)) {
+        if (
+          purchase.createdAt &&
+          (!supplierData.lastPurchaseDate ||
+            purchase.createdAt > supplierData.lastPurchaseDate)
+        ) {
           supplierData.lastPurchaseDate = purchase.createdAt;
         }
 
@@ -149,11 +195,11 @@ export function useProductSuppliers(productId: string) {
         supplierData.purchaseIds.add(purchase.id);
       }
 
-      console.log('[useProductSuppliers] Supplier map size:', supplierMap.size);
+      console.log("[useProductSuppliers] Supplier map size:", supplierMap.size);
 
       // Get supplier names and build final result
       const result: ProductSupplier[] = [];
-      
+
       for (const [supplierId, data] of supplierMap.entries()) {
         const supplier = await db
           .select({ name: schema.suppliers.name })
@@ -163,7 +209,7 @@ export function useProductSuppliers(productId: string) {
 
         result.push({
           supplierId: data.supplierId,
-          supplierName: supplier[0]?.name || 'Unknown Supplier',
+          supplierName: supplier[0]?.name || "Unknown Supplier",
           totalQuantity: data.totalQuantity,
           totalValue: data.totalValue,
           lastPurchaseDate: data.lastPurchaseDate || new Date(),
@@ -172,29 +218,31 @@ export function useProductSuppliers(productId: string) {
       }
 
       // Sort by last purchase date (most recent first)
-      result.sort((a, b) => 
-        new Date(b.lastPurchaseDate).getTime() - new Date(a.lastPurchaseDate).getTime()
+      result.sort(
+        (a, b) =>
+          new Date(b.lastPurchaseDate).getTime() -
+          new Date(a.lastPurchaseDate).getTime(),
       );
 
-      console.log('[useProductSuppliers] Final result:', result);
+      console.log("[useProductSuppliers] Final result:", result);
 
       return result;
     },
     enabled: !!productId && !!orgId,
-    refetchOnMount: 'always',
+    refetchOnMount: "always",
     staleTime: 0,
   });
 }
 
 export function useProductSupplierTransactions(
   productId: string,
-  supplierId: string
+  supplierId: string,
 ) {
   return useQuery({
-    queryKey: ['product-supplier-transactions', productId, supplierId],
+    queryKey: ["product-supplier-transactions", productId, supplierId],
     queryFn: async () => {
       const response = await apiClient.get<ProductSupplierTransaction[]>(
-        `/products/${productId}/suppliers/${supplierId}/transactions`
+        `/products/${productId}/suppliers/${supplierId}/transactions`,
       );
       return response.data;
     },

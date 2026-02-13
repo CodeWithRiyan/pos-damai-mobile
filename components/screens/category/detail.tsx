@@ -315,7 +315,7 @@ export default function CategoryDetail() {
           }}
         >
           <Text size="sm" className="text-typography-0 font-bold">
-            TAMBAHKAN PRODUK
+            {`TAMBAHKAN PRODUK `}
           </Text>
         </Pressable>
       </VStack>
