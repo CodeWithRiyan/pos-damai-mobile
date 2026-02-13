@@ -1,3 +1,4 @@
+import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import { Input, InputField, InputIcon, InputSlot } from "@/components/ui";
@@ -16,18 +17,55 @@ import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
-import { Product, useBulkDeleteProduct, useProducts } from "@/lib/api/products";
+import {
+  Product,
+  ShowByStock,
+  useBulkDeleteProduct,
+  useProducts,
+} from "@/lib/api/products";
 import { useFocusEffect, useRouter } from "expo-router";
+import { debounce } from "lodash";
 import { SearchIcon } from "lucide-react-native";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { ScrollView } from "react-native";
+import ProductFilter from "./filter";
+import ProductNotification from "./notification";
 
 export default function ProductList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
-  const { data, isLoading, refetch } = useProducts();
+
+  const [openNotification, setOpenNotification] = useState<boolean>(false);
+  const [stockFilter, setStockFilter] = useState<ShowByStock>("ALL_STOCK");
+
+  const [openFilter, setOpenFilter] = useState<boolean>(false);
+  const [brandId, setBrandId] = useState<string>("");
+  const [categoryId, setCategoryId] = useState<string>("");
+
+  const [search, setSearch] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const { data, isLoading, refetch } = useProducts({
+    search: searchQuery,
+    showByStock: stockFilter,
+    brandId,
+    categoryId,
+  });
   const [selectedItems, setSelectedItems] = useState<Product[] | null>(null);
-  console.log(data);
+
+  const debouncedSetSearch = useMemo(
+    () =>
+      debounce((value: string) => {
+        setSearchQuery(value);
+      }, 300),
+    [],
+  );
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    debouncedSetSearch(value);
+  };
+
   useFocusEffect(
     useCallback(() => {
       refetch();
@@ -121,10 +159,32 @@ export default function ProductList() {
     );
   };
 
+  const PopUp = () => {
+    return (
+      <>
+        <ProductNotification
+          open={openNotification}
+          setOpen={setOpenNotification}
+          value={stockFilter}
+          onChange={(v) => setStockFilter(v as ShowByStock)}
+        />
+        <ProductFilter
+          open={openFilter}
+          setOpen={setOpenFilter}
+          brandId={brandId || ""}
+          setBrandId={setBrandId}
+          categoryId={categoryId || ""}
+          setCategoryId={setCategoryId}
+        />
+      </>
+    );
+  };
+
   if (isLoading) {
     return (
       <Box className="flex-1 justify-center items-center">
         <Spinner size="large" />
+        <PopUp />
       </Box>
     );
   }
@@ -149,7 +209,29 @@ export default function ProductList() {
               </Pressable>
             )
           ) : (
-            <Pressable className="p-6" onPress={() => {}}>
+            <Pressable
+              className="p-6"
+              onPress={() => {
+                showActionDrawer({
+                  actions: [
+                    {
+                      label: "Export Data",
+                      icon: "Export",
+                      onPress: () => {
+                        hideActionDrawer();
+                      },
+                    },
+                    {
+                      label: "Import Data",
+                      icon: "Import",
+                      onPress: () => {
+                        hideActionDrawer();
+                      },
+                    },
+                  ],
+                });
+              }}
+            >
               <SolarIconBold
                 name="MenuDots"
                 size={20}
@@ -168,13 +250,13 @@ export default function ProductList() {
           >
             <Pressable
               className="size-10 items-center justify-center"
-              onPress={() => {}}
+              onPress={() => setOpenNotification(true)}
             >
               <SolarIconLinear name="Bell" size={20} color="#3d2117" />
             </Pressable>
             <Pressable
               className="size-10 items-center justify-center"
-              onPress={() => {}}
+              onPress={() => setOpenFilter(true)}
             >
               <SolarIconLinear name="Filter" size={20} color="#3d2117" />
             </Pressable>
@@ -182,7 +264,11 @@ export default function ProductList() {
               <InputSlot className="pl-3">
                 <InputIcon as={SearchIcon} />
               </InputSlot>
-              <InputField placeholder="Cari nama atau kode" />
+              <InputField
+                placeholder="Cari nama atau kode"
+                value={search}
+                onChangeText={handleSearchChange} // ← Gunakan handler baru
+              />
             </Input>
           </HStack>
           <ScrollView className="flex-1">
@@ -282,6 +368,7 @@ export default function ProductList() {
           </HStack>
         </VStack>
       </Box>
+      <PopUp />
     </Box>
   );
 }

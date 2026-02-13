@@ -1,3 +1,4 @@
+import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import { Box } from "@/components/ui/box";
@@ -11,15 +12,18 @@ import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
-import { useBulkDeleteSupplier, Supplier, useSuppliers } from "@/lib/api/suppliers";
+import {
+  Supplier,
+  useBulkDeleteSupplier,
+  useSuppliers,
+} from "@/lib/api/suppliers";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useState, useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { ScrollView } from "react-native";
-
-
 
 export default function SupplierList() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useSuppliers();
   const [selectedItems, setSelectedItems] = useState<any[] | null>(null);
@@ -27,7 +31,7 @@ export default function SupplierList() {
   useFocusEffect(
     useCallback(() => {
       refetch();
-    }, [refetch])
+    }, [refetch]),
   );
 
   const suppliers = data || [];
@@ -76,7 +80,9 @@ export default function SupplierList() {
       description: (
         <Text className="text-slate-500">
           {`Apakah Anda yakin ingin menghapus `}
-          <Text className="font-bold text-slate-900">{supplierIds?.length}</Text>
+          <Text className="font-bold text-slate-900">
+            {supplierIds?.length}
+          </Text>
           {` supplier? Tindakan ini tidak dapat dibatalkan.`}
         </Text>
       ),
@@ -113,7 +119,7 @@ export default function SupplierList() {
           showErrorToast(error);
           hidePopUpConfirm();
         },
-      }
+      },
     );
   };
 
@@ -146,7 +152,29 @@ export default function SupplierList() {
                 </Pressable>
               )
             ) : (
-              <Pressable className="p-6" onPress={() => {}}>
+              <Pressable
+                className="p-6"
+                onPress={() => {
+                  showActionDrawer({
+                    actions: [
+                      {
+                        label: "Export Data",
+                        icon: "Export",
+                        onPress: () => {
+                          hideActionDrawer();
+                        },
+                      },
+                      {
+                        label: "Import Data",
+                        icon: "Import",
+                        onPress: () => {
+                          hideActionDrawer();
+                        },
+                      },
+                    ],
+                  });
+                }}
+              >
                 <SolarIconBold
                   name="MenuDots"
                   size={20}
@@ -175,7 +203,7 @@ export default function SupplierList() {
                       handlePress(supplier);
                     } else {
                       router.navigate(
-                        `/(main)/management/customer-supplier/supplier/detail/${supplier.id}`
+                        `/(main)/management/customer-supplier/supplier/detail/${supplier.id}`,
                       );
                       setSelectedItems(null);
                     }

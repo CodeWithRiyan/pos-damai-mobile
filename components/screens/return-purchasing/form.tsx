@@ -28,16 +28,19 @@ import { VStack } from "@/components/ui/vstack";
 //   useUpdateReturnPurchasing,
 // } from "@/lib/api/return-purchasing";
 import { getErrorMessage } from "@/lib/api/client";
+import { usePurchase } from "@/lib/api/purchasing";
 import { useCreatePurchaseReturn } from "@/lib/api/return-purchasing";
 import { useReturnPurchasingStore } from "@/stores/return-purchasing";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
 export default function ReturnPurchasingConfirmForm() {
-  const { cart, openConfirm, setOpenConfirm, resetCart, selectedPurchase } =
+  const { purchaseId } = useLocalSearchParams<{ purchaseId: string }>();
+  const { data: purchase } = usePurchase(purchaseId || "");
+  const { cart, openConfirm, setOpenConfirm, setConfirmData, resetCart } =
     useReturnPurchasingStore();
   const router = useRouter();
   const toast = useToast();
@@ -85,18 +88,14 @@ export default function ReturnPurchasingConfirmForm() {
   const onSubmit: SubmitHandler<ReturnPurchasingFormValues> = (
     data: ReturnPurchasingFormValues,
   ) => {
-    if (!selectedPurchase) {
-      showErrorToast(new Error("Pilih pembelian terlebih dahulu"));
-      return;
-    }
-
     const totalAmount = cart.reduce(
       (acc, item) => acc + item.quantity * (item.product.purchasePrice || 0),
       0,
     );
 
+    // TODO: tambahkan reason
     const returnData = {
-      supplierId: selectedPurchase.supplierId,
+      supplierId: purchase?.supplierId || "",
       totalAmount,
       returnType: data.returnType as "CASH" | "ITEM",
       items: cart.map((item) => ({
@@ -107,7 +106,7 @@ export default function ReturnPurchasingConfirmForm() {
       })),
     };
 
-    console.log('📦 [RETURN FORM] Submitting return:', {
+    console.log("📦 [RETURN FORM] Submitting return:", {
       supplierId: returnData.supplierId,
       totalAmount: returnData.totalAmount,
       returnType: returnData.returnType,
@@ -115,18 +114,16 @@ export default function ReturnPurchasingConfirmForm() {
       items: returnData.items,
     });
 
-    createMutation.mutate(
-      returnData,
-      {
-        onSuccess: () => {
-          showSuccessToast("Retur berhasil disimpan");
-          setOpenConfirm(false);
-          resetCart();
-          router.back();
-        },
-        onError: showErrorToast,
+    createMutation.mutate(returnData, {
+      onSuccess: (data) => {
+        showSuccessToast("Retur berhasil disimpan");
+        setOpenConfirm(false);
+        router.navigate(
+          `/(main)/management/return/purchasing/success/${data.id}`,
+        );
       },
-    );
+      onError: showErrorToast,
+    });
   };
 
   return (

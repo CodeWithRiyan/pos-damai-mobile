@@ -1,3 +1,4 @@
+import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import { Input, InputField, InputIcon, InputSlot } from "@/components/ui";
@@ -19,8 +20,8 @@ import {
   Brand,
   useBrands,
   useBulkDeleteBrand,
-  useProductCountsByBrand,
   useCapitalValueByBrand,
+  useProductCountsByBrand,
 } from "@/lib/api/brands";
 import { getErrorMessage } from "@/lib/api/client";
 import { useBrandStore } from "@/stores/brand";
@@ -32,6 +33,7 @@ import { ScrollView } from "react-native";
 export default function BrandList() {
   const { setOpen, setData } = useBrandStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useBrands();
   const { data: productCounts, refetch: refetchCounts } =
@@ -155,7 +157,29 @@ export default function BrandList() {
                 </Pressable>
               )
             ) : (
-              <Pressable className="p-6" onPress={() => {}}>
+              <Pressable
+                className="p-6"
+                onPress={() => {
+                  showActionDrawer({
+                    actions: [
+                      {
+                        label: "Export Data",
+                        icon: "Export",
+                        onPress: () => {
+                          hideActionDrawer();
+                        },
+                      },
+                      {
+                        label: "Import Data",
+                        icon: "Import",
+                        onPress: () => {
+                          hideActionDrawer();
+                        },
+                      },
+                    ],
+                  });
+                }}
+              >
                 <SolarIconBold
                   name="MenuDots"
                   size={20}
@@ -230,7 +254,10 @@ export default function BrandList() {
                         Nilai Modal
                       </Text>
                       <Text size="xs">
-                        Rp {(capitalValues?.[item.id] ?? 0).toLocaleString('id-ID')}
+                        Rp{" "}
+                        {(capitalValues?.[item.id] ?? 0).toLocaleString(
+                          "id-ID",
+                        )}
                       </Text>
                     </VStack>
                   </HStack>

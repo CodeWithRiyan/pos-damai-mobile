@@ -1,3 +1,4 @@
+import { Box, VStack } from "@/components/ui";
 import { tva } from "@gluestack-ui/utils/nativewind-utils";
 import { createContext, useCallback, useContext, useState } from "react";
 import { GestureResponderEvent } from "react-native";
@@ -12,7 +13,6 @@ import {
   HStack,
 } from "./ui";
 import { SolarIconBold, SolarIconBoldProps } from "./ui/solar-icon-wrapper";
-import { VStack, Box } from "@/components/ui";
 
 type TTheme = "default" | "primary" | "red" | "green" | "yellow" | "blue";
 
@@ -102,7 +102,7 @@ export function ActionDrawer({
                 {action.icon && (
                   <SolarIconBold
                     name={action.icon}
-                    size={16}
+                    size={20}
                     color={iconColor(action.theme || "default")}
                   />
                 )}
