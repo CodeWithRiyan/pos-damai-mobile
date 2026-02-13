@@ -1,92 +1,96 @@
-'use client';
-import { PrimitiveIcon, UIIcon } from '@gluestack-ui/core/icon/creator';
-import type { VariantProps } from '@gluestack-ui/utils/nativewind-utils';
-import { tva, useStyleContext, withStyleContext } from '@gluestack-ui/utils/nativewind-utils';
-import { cssInterop } from 'nativewind';
-import React, { useMemo } from 'react';
-import { Text, View } from 'react-native';
+"use client";
+import { PrimitiveIcon, UIIcon } from "@gluestack-ui/core/icon/creator";
+import type { VariantProps } from "@gluestack-ui/utils/nativewind-utils";
+import {
+  tva,
+  useStyleContext,
+  withStyleContext,
+} from "@gluestack-ui/utils/nativewind-utils";
+import { cssInterop } from "nativewind";
+import React, { useMemo } from "react";
+import { Text, View } from "react-native";
 
-import { Svg } from 'react-native-svg';
-const SCOPE = 'BADGE';
+import { Svg } from "react-native-svg";
+const SCOPE = "BADGE";
 
 const badgeStyle = tva({
-  base: 'flex-row items-center rounded-md data-[disabled=true]:opacity-50 px-2 py-1',
+  base: "flex-row items-center rounded-md data-[disabled=true]:opacity-50 px-2 py-1",
   variants: {
     action: {
-      error: 'bg-error-300 border-error-500',
-      warning: 'bg-warning-300 border-warning-500',
-      success: 'bg-success-300 border-success-500',
-      info: 'bg-info-300 border-info-500',
-      muted: 'bg-background-200 border-background-400',
+      error: "bg-error-200 border-error-500",
+      warning: "bg-warning-200 border-warning-500",
+      success: "bg-success-200 border-success-500",
+      info: "bg-info-200 border-info-500",
+      muted: "bg-background-200 border-background-400",
     },
     variant: {
-      solid: '',
-      outline: 'border',
+      solid: "",
+      outline: "border",
     },
     size: {
-      sm: '',
-      md: '',
-      lg: '',
+      sm: "",
+      md: "",
+      lg: "",
     },
   },
 });
 
 const badgeTextStyle = tva({
-  base: 'text-typography-700 font-body font-normal tracking-normal',
+  base: "text-typography-700 font-body font-normal tracking-normal",
 
   parentVariants: {
     action: {
-      error: 'text-error-600',
-      warning: 'text-warning-600',
-      success: 'text-success-600',
-      info: 'text-info-600',
-      muted: 'text-background-800',
+      error: "text-error-600",
+      warning: "text-warning-600",
+      success: "text-success-600",
+      info: "text-info-600",
+      muted: "text-background-800",
     },
     size: {
-      sm: 'text-2xs',
-      md: 'text-xs',
-      lg: 'text-sm',
+      sm: "text-2xs",
+      md: "text-xs",
+      lg: "text-sm",
     },
   },
   variants: {
     isTruncated: {
-      true: 'web:truncate',
+      true: "web:truncate",
     },
     bold: {
-      true: 'font-bold',
+      true: "font-bold",
     },
     underline: {
-      true: 'underline',
+      true: "underline",
     },
     strikeThrough: {
-      true: 'line-through',
+      true: "line-through",
     },
     sub: {
-      true: 'text-xs',
+      true: "text-xs",
     },
     italic: {
-      true: 'italic',
+      true: "italic",
     },
     highlight: {
-      true: 'bg-yellow-500',
+      true: "bg-yellow-500",
     },
   },
 });
 
 const badgeIconStyle = tva({
-  base: 'fill-none',
+  base: "fill-none",
   parentVariants: {
     action: {
-      error: 'text-error-600',
-      warning: 'text-warning-600',
-      success: 'text-success-600',
-      info: 'text-info-600',
-      muted: 'text-background-800',
+      error: "text-error-600",
+      warning: "text-warning-600",
+      success: "text-success-600",
+      info: "text-info-600",
+      muted: "text-background-800",
     },
     size: {
-      sm: 'h-3 w-3',
-      md: 'h-3.5 w-3.5',
-      lg: 'h-4 w-4',
+      sm: "h-3 w-3",
+      md: "h-3.5 w-3.5",
+      lg: "h-4 w-4",
     },
   },
 });
@@ -95,12 +99,12 @@ const ContextView = withStyleContext(View, SCOPE);
 
 cssInterop(PrimitiveIcon, {
   className: {
-    target: 'style',
+    target: "style",
     nativeStyleToProp: {
       height: true,
       width: true,
       fill: true,
-      color: 'classNameColor',
+      color: "classNameColor",
       stroke: true,
     },
   },
@@ -110,16 +114,15 @@ type IBadgeProps = React.ComponentPropsWithoutRef<typeof ContextView> &
   VariantProps<typeof badgeStyle>;
 function Badge({
   children,
-  action = 'muted',
-  variant = 'solid',
-  size = 'md',
+  action = "muted",
+  variant = "solid",
+  size = "md",
   className,
   ...props
 }: { className?: string } & IBadgeProps) {
-
   const contextValue = useMemo(
     () => ({ action, variant, size }),
-    [action, variant, size]
+    [action, variant, size],
   );
 
   return (
@@ -168,7 +171,7 @@ const BadgeIcon = React.forwardRef<
 >(function BadgeIcon({ className, size, ...props }, ref) {
   const { size: parentSize, action: parentAction } = useStyleContext(SCOPE);
 
-  if (typeof size === 'number') {
+  if (typeof size === "number") {
     return (
       <UIIcon
         ref={ref}
@@ -205,8 +208,8 @@ const BadgeIcon = React.forwardRef<
   );
 });
 
-Badge.displayName = 'Badge';
-BadgeText.displayName = 'BadgeText';
-BadgeIcon.displayName = 'BadgeIcon';
+Badge.displayName = "Badge";
+BadgeText.displayName = "BadgeText";
+BadgeIcon.displayName = "BadgeIcon";
 
 export { Badge, BadgeIcon, BadgeText };

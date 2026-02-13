@@ -15,7 +15,8 @@ import {
   Text,
   VStack,
 } from "@/components/ui";
-import { ShowByStock } from "@/lib/api/products";
+import { ShowByStock, useProducts } from "@/lib/api/products";
+import classNames from "classnames";
 import { ChevronRight } from "lucide-react-native";
 
 export default function ProductNotification({
@@ -29,6 +30,12 @@ export default function ProductNotification({
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
+  const { data } = useProducts();
+  const noStockLength = data?.filter((d) => d.stock === 0).length || 0;
+  const lowStockLength =
+    data?.filter((d) => d.stock <= d.minimumStock && d.stock > 0).length || 0;
+  const allStockLength = data?.length || 0;
+
   return (
     <Modal
       isOpen={open}
@@ -58,33 +65,43 @@ export default function ProductNotification({
                 value="NO_STOCK"
                 size="md"
                 isInvalid={false}
-                isDisabled={false} // TODO: isDisabled true jika no stock = 0
-                className={`p-4 border rounded-full flex flex-1 items-center justify-center${
-                  value === "NO_STOCK"
-                    ? " bg-primary-200 text-primary-500 border-primary-500"
-                    : " bg-background-100 border-background-300"
-                }`}
+                isDisabled={noStockLength === 0}
+                className={classNames(
+                  "p-4 border bg-background-100 border-background-300 rounded-full flex flex-1 items-center justify-center",
+                  value === "NO_STOCK" &&
+                    "bg-primary-200 text-primary-500 border-primary-500",
+                  noStockLength === 0 && "pointer-events-none opacity-50",
+                )}
               >
-                <Box className="size-4 bg-error-500 rounded-full" />
-                {/* TODO: hardcode dengan data dinamis */}
-                <Text className="flex-1 font-bold">Stok Habis : 0 Barang</Text>
+                <Box
+                  className={classNames(
+                    "size-4 rounded-full bg-background-300",
+                    noStockLength > 0 && " bg-error-500",
+                  )}
+                />
+                <Text className="flex-1 font-bold">{`Stok Habis : ${noStockLength} Barang`}</Text>
                 <Icon as={ChevronRight} size="md" color="#6b7280" />
               </Radio>
               <Radio
                 value="LOW_STOCK"
                 size="md"
                 isInvalid={false}
-                isDisabled={false} // TODO: isDisabled true jika low stock = 0
-                className={`p-4 border rounded-full flex flex-1 items-center justify-center${
-                  value === "LOW_STOCK"
-                    ? " bg-primary-200 text-primary-500 border-primary-500"
-                    : " bg-background-100 border-background-300"
-                }`}
+                isDisabled={lowStockLength === 0}
+                className={classNames(
+                  "p-4 border bg-background-100 border-background-300 rounded-full flex flex-1 items-center justify-center",
+                  value === "LOW_STOCK" &&
+                    "bg-primary-200 text-primary-500 border-primary-500",
+                  lowStockLength === 0 && "pointer-events-none opacity-50",
+                )}
               >
-                <Box className="size-4 bg-warning-500 rounded-full" />
-                {/* TODO: hardcode dengan data dinamis */}
+                <Box
+                  className={classNames(
+                    "size-4 rounded-full bg-background-300",
+                    lowStockLength > 0 && " bg-warning-500",
+                  )}
+                />
                 <Text className="flex-1 font-bold">
-                  Stok Menipis : 0 Barang
+                  {`Stok Menipis : ${lowStockLength} Barang`}
                 </Text>
                 <Icon as={ChevronRight} size="md" color="#6b7280" />
               </Radio>
@@ -93,15 +110,14 @@ export default function ProductNotification({
                 size="md"
                 isInvalid={false}
                 isDisabled={false}
-                className={`p-4 border rounded-full flex flex-1 items-center justify-center${
-                  value === "ALL_STOCK"
-                    ? " bg-primary-200 text-primary-500 border-primary-500"
-                    : " bg-background-100 border-background-300"
-                }`}
+                className={classNames(
+                  "p-4 border bg-background-100 border-background-300 rounded-full flex flex-1 items-center justify-center",
+                  value === "ALL_STOCK" &&
+                    "bg-primary-200 text-primary-500 border-primary-500",
+                )}
               >
                 <Box className="size-4 bg-primary-500 rounded-full" />
-                {/* TODO: hardcode dengan data dinamis */}
-                <Text className="flex-1 font-bold">Semua Stok : 0 Barang</Text>
+                <Text className="flex-1 font-bold">{`Semua Stok : ${allStockLength} Barang`}</Text>
                 <Icon as={ChevronRight} size="md" color="#6b7280" />
               </Radio>
             </RadioGroup>

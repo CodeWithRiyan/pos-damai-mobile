@@ -194,6 +194,8 @@ export default function PurchasingCheckoutForm() {
         );
         if (data.status === "DRAFT") {
           router.replace("/(main)/purchasing");
+          resetCart();
+          setCheckoutData(null);
         } else {
           router.replace("/(main)/purchasing/success");
           if (!!changedProductPrice.length) {
@@ -411,39 +413,41 @@ export default function PurchasingCheckoutForm() {
                     </FormControl>
                   )}
                 />
-                <Controller
-                  name="isPayable"
-                  control={form.control}
-                  render={({
-                    field: { onChange, onBlur, value },
-                    fieldState: { error },
-                  }) => (
-                    <FormControl isInvalid={!!error}>
-                      <Checkbox
-                        value={value.toString()}
-                        isChecked={value}
-                        size="md"
-                        onChange={(v) => {
-                          onChange(v);
-                          if (!v) form.setValue("note", "");
-                        }}
-                        onBlur={onBlur}
-                      >
-                        <CheckboxIndicator>
-                          <CheckboxIcon as={CheckIcon} />
-                        </CheckboxIndicator>
-                        <CheckboxLabel>Hutang</CheckboxLabel>
-                      </Checkbox>
-                      {error && (
-                        <FormControlError>
-                          <FormControlErrorText>
-                            {error.message}
-                          </FormControlErrorText>
-                        </FormControlError>
-                      )}
-                    </FormControl>
-                  )}
-                />
+                {status === "COMPLETED" && (
+                  <Controller
+                    name="isPayable"
+                    control={form.control}
+                    render={({
+                      field: { onChange, onBlur, value },
+                      fieldState: { error },
+                    }) => (
+                      <FormControl isInvalid={!!error}>
+                        <Checkbox
+                          value={value.toString()}
+                          isChecked={value}
+                          size="md"
+                          onChange={(v) => {
+                            onChange(v);
+                            if (!v) form.setValue("note", "");
+                          }}
+                          onBlur={onBlur}
+                        >
+                          <CheckboxIndicator>
+                            <CheckboxIcon as={CheckIcon} />
+                          </CheckboxIndicator>
+                          <CheckboxLabel>Hutang</CheckboxLabel>
+                        </Checkbox>
+                        {error && (
+                          <FormControlError>
+                            <FormControlErrorText>
+                              {error.message}
+                            </FormControlErrorText>
+                          </FormControlError>
+                        )}
+                      </FormControl>
+                    )}
+                  />
+                )}
                 {isPayable && (
                   <Controller
                     name="dueDate"
@@ -525,24 +529,26 @@ export default function PurchasingCheckoutForm() {
             </VStack>
           </ScrollView>
         </VStack>
-        <VStack className="flex-1">
-          <ScrollView className="flex-1">
-            <VStack className="flex-1">
-              <HStack className="justify-center p-6">
-                <Heading size="3xl" className="font-bold">
-                  Rp{" "}
-                  {totalPaid
-                    ? parseFloat(totalPaid).toLocaleString("id-ID")
-                    : "0"}
-                </Heading>
-              </HStack>
-              <InputVirtualKeyboard
-                nominal={totalPaid}
-                onChange={(value) => form.setValue("totalPaid", value)}
-              />
-            </VStack>
-          </ScrollView>
-        </VStack>
+        {status === "COMPLETED" && (
+          <VStack className="flex-1">
+            <ScrollView className="flex-1">
+              <VStack className="flex-1">
+                <HStack className="justify-center p-6">
+                  <Heading size="3xl" className="font-bold">
+                    Rp{" "}
+                    {totalPaid
+                      ? parseFloat(totalPaid).toLocaleString("id-ID")
+                      : "0"}
+                  </Heading>
+                </HStack>
+                <InputVirtualKeyboard
+                  nominal={totalPaid}
+                  onChange={(value) => form.setValue("totalPaid", value)}
+                />
+              </VStack>
+            </ScrollView>
+          </VStack>
+        )}
       </HStack>
     </VStack>
   );
