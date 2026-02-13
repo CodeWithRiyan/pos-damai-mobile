@@ -7,14 +7,13 @@ import {
   InputIcon,
   InputSlot,
   SearchIcon,
-  Text
+  Text,
 } from "@/components/ui";
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
 import {
-  SolarIconBold,
-  SolarIconLinear,
+  SolarIconBold
 } from "@/components/ui/solar-icon-wrapper";
 import { VStack } from "@/components/ui/vstack";
 // import { useBulkDeleteTransaction, Transaction, useTransaction } from "@/lib/api/transaction";
@@ -138,18 +137,6 @@ export default function TransactionList() {
             space="sm"
             className="p-4 shadow-lg bg-background-0 items-center"
           >
-            <Pressable
-              className="size-10 items-center justify-center"
-              onPress={() => {}}
-            >
-              <SolarIconLinear name="Bell" size={20} color="#3d2117" />
-            </Pressable>
-            <Pressable
-              className="size-10 items-center justify-center"
-              onPress={() => {}}
-            >
-              <SolarIconLinear name="Filter" size={20} color="#3d2117" />
-            </Pressable>
             <Input className="flex-1 border border-background-300 rounded-lg h-10">
               <InputSlot className="pl-3">
                 <InputIcon as={SearchIcon} />

@@ -8,53 +8,31 @@ import {
 import { Link } from "expo-router";
 import { ScrollView } from "react-native";
 
-export default function ManagementScreen() {
-  const managementItems: {
+export default function StockChangesScreen() {
+  const stockChangesItems: {
     label: string;
     href: string;
     icon: SolarIconLinearProps["name"];
   }[] = [
     {
-      label: "Produk, Kategori dan Brand",
-      href: "/management/product-category-brand",
-      icon: "Box",
-    },
-    // { label: "Diskon", href: "/management/discount", icon: "TicketSale" },
-    {
-      label: "Pelanggan dan Supplier",
-      href: "/management/customer-supplier",
-      icon: "Card2",
-    },
-    {
-      label: "Hutang dan Piutang",
-      href: "/management/payable-receivable",
-      icon: "NotebookBookmark",
-    },
-    {
-      label: "Perubahan Stock",
-      href: "/management/stock-changes",
+      label: "Stok Opname",
+      href: "(main)/management/stock-changes/stock-opname",
       icon: "ArchiveCheck",
     },
-    { label: "Retur", href: "/management/return", icon: "History" },
     {
-      label: "Jenis Pembayaran",
-      href: "/management/payment-type",
-      icon: "Banknote2",
-    },
-    {
-      label: "Karyawan dan Role",
-      href: "/management/role-user",
-      icon: "UsersGroupTwoRounded",
+      label: "Kebutuhan Toko",
+      href: "(main)/management/stock-changes/store-supplies",
+      icon: "Shop",
     },
   ];
 
   return (
     <Box className="flex-1 bg-white">
-      <Header header="MANAJEMEN" />
+      <Header header="PERUBAHAN STOK" isGoBack />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack>
-          {managementItems.map((item, index) => (
+          {stockChangesItems.map((item, index) => (
             <Link href={item.href as any} key={item.href} asChild>
               <Pressable className="flex-row items-center gap-4 p-4 border-bottom bg--white active:bg-gray-50">
                 <SolarIconLinear

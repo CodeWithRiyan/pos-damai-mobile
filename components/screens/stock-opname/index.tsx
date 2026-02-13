@@ -34,7 +34,7 @@ export default function StockOpnameList({ isReport }: { isReport?: boolean }) {
   }, [refetch]);
 
   const handleAddStockOpname = () => {
-    router.push("/(main)/management/stock-opname/input");
+    router.push("/(main)/management/stock-changes/stock-opname/input");
   };
 
   if (isLoading && !refreshing) {
@@ -48,7 +48,7 @@ export default function StockOpnameList({ isReport }: { isReport?: boolean }) {
   return (
     <Box className="flex-1 bg-white">
       <Header
-        header={isReport ? "LAPORAN STOCK OPNAME" : "STOCK OPNAME"}
+        header={isReport ? "LAPORAN STOK OPNAME" : "STOK OPNAME"}
         isGoBack
       />
       <Box className="flex-1 bg-white">
@@ -66,7 +66,7 @@ export default function StockOpnameList({ isReport }: { isReport?: boolean }) {
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100${!!cart.find((item) => item.product.id === so.id) ? " bg-gray-100" : ""}`}
                   onPress={() => {
                     router.navigate(
-                      `/(main)/management/stock-opname/detail/${so.id}`,
+                      `/(main)/management/stock-changes/stock-opname/detail/${so.id}`,
                     );
                   }}
                 >
@@ -125,7 +125,7 @@ export default function StockOpnameList({ isReport }: { isReport?: boolean }) {
                 onPress={handleAddStockOpname}
               >
                 <ButtonText className="text-white">
-                  TAMBAH STOCK OPNAME
+                  TAMBAH STOK OPNAME
                 </ButtonText>
               </Button>
             </HStack>

@@ -194,6 +194,8 @@ export default function PurchasingCheckoutForm() {
         );
         if (data.status === "DRAFT") {
           router.replace("/(main)/purchasing");
+          resetCart();
+          setCheckoutData(null);
         } else {
           router.replace("/(main)/purchasing/success");
           if (!!changedProductPrice.length) {
@@ -411,39 +413,41 @@ export default function PurchasingCheckoutForm() {
                     </FormControl>
                   )}
                 />
-                <Controller
-                  name="isPayable"
-                  control={form.control}
-                  render={({
-                    field: { onChange, onBlur, value },
-                    fieldState: { error },
-                  }) => (
-                    <FormControl isInvalid={!!error}>
-                      <Checkbox
-                        value={value.toString()}
-                        isChecked={value}
-                        size="md"
-                        onChange={(v) => {
-                          onChange(v);
-                          if (!v) form.setValue("note", "");
-                        }}
-                        onBlur={onBlur}
-                      >
-                        <CheckboxIndicator>
-                          <CheckboxIcon as={CheckIcon} />
-                        </CheckboxIndicator>
-                        <CheckboxLabel>Hutang</CheckboxLabel>
-                      </Checkbox>
-                      {error && (
-                        <FormControlError>
-                          <FormControlErrorText>
-                            {error.message}
-                          </FormControlErrorText>
-                        </FormControlError>
-                      )}
-                    </FormControl>
-                  )}
-                />
+                {status === "COMPLETED" && (
+                  <Controller
+                    name="isPayable"
+                    control={form.control}
+                    render={({
+                      field: { onChange, onBlur, value },
+                      fieldState: { error },
+                    }) => (
+                      <FormControl isInvalid={!!error}>
+                        <Checkbox
+                          value={value.toString()}
+                          isChecked={value}
+                          size="md"
+                          onChange={(v) => {
+                            onChange(v);
+                            if (!v) form.setValue("note", "");
+                          }}
+                          onBlur={onBlur}
+                        >
+                          <CheckboxIndicator>
+                            <CheckboxIcon as={CheckIcon} />
+                          </CheckboxIndicator>
+                          <CheckboxLabel>Hutang</CheckboxLabel>
+                        </Checkbox>
+                        {error && (
+                          <FormControlError>
+                            <FormControlErrorText>
+                              {error.message}
+                            </FormControlErrorText>
+                          </FormControlError>
+                        )}
+                      </FormControl>
+                    )}
+                  />
+                )}
                 {isPayable && (
                   <Controller
                     name="dueDate"

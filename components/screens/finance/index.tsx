@@ -1,9 +1,5 @@
 import Header from "@/components/header";
 import {
-  Checkbox,
-  CheckboxIcon,
-  CheckboxIndicator,
-  CheckboxLabel,
   FormControl,
   FormControlError,
   FormControlErrorText,
@@ -15,22 +11,22 @@ import {
   InputSlot,
   Text,
   Textarea,
-  TextareaInput,
+  TextareaInput
 } from "@/components/ui";
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { VStack } from "@/components/ui/vstack";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
-import { useCreateFinance } from "@/lib/api/finances";
 import { Radio, RadioGroup, RadioLabel } from "@/components/ui/radio";
 import SelectModal from "@/components/ui/select/select-modal";
+import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
+import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
+import { VStack } from "@/components/ui/vstack";
+import { useCreateFinance } from "@/lib/api/finances";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
-import { CalendarIcon, CheckIcon } from "lucide-react-native";
+import { CalendarIcon } from "lucide-react-native";
 import React, { useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
@@ -44,7 +40,6 @@ const financeSchema = z.object({
   nominal: z.number().min(1, "Nominal wajib diisi."),
   transactionDate: z.date(),
   note: z.string(),
-  inputToCashdrawer: z.boolean(),
 });
 
 export type FinanceFormValues = z.infer<typeof financeSchema>;
@@ -78,7 +73,6 @@ export default function FinanceTransaction() {
     nominal: 0,
     transactionDate: new Date(),
     note: "",
-    inputToCashdrawer: false,
   };
 
   const form = useForm<FinanceFormValues>({
@@ -97,11 +91,15 @@ export default function FinanceTransaction() {
     handleSave(data, "DRAFT");
   };
 
-  const handleSave = (data: FinanceFormValues, status: "DRAFT" | "COMPLETED") => {
+  const handleSave = (
+    data: FinanceFormValues,
+    status: "DRAFT" | "COMPLETED",
+  ) => {
     createFinance(
       {
         ...data,
         nominal: data.nominal,
+        inputToCashdrawer: status === "COMPLETED",
         status,
       },
       {
@@ -138,7 +136,7 @@ export default function FinanceTransaction() {
             ),
           });
         },
-      }
+      },
     );
   };
 
@@ -367,40 +365,6 @@ export default function FinanceTransaction() {
                         onBlur={onBlur}
                       />
                     </Textarea>
-                    {error && (
-                      <FormControlError>
-                        <FormControlErrorText>
-                          {error.message}
-                        </FormControlErrorText>
-                      </FormControlError>
-                    )}
-                  </FormControl>
-                )}
-              />
-              {/* TODO: inputToCashdrawer tidak muncul di role admin */}
-              <Controller
-                name="inputToCashdrawer"
-                control={form.control}
-                render={({
-                  field: { onChange, onBlur, value },
-                  fieldState: { error },
-                }) => (
-                  <FormControl isInvalid={!!error}>
-                    <Checkbox
-                      value={value.toString()}
-                      isChecked={value}
-                      size="md"
-                      onChange={(v) => {
-                        onChange(v);
-                        if (!v) form.setValue("note", "");
-                      }}
-                      onBlur={onBlur}
-                    >
-                      <CheckboxIndicator>
-                        <CheckboxIcon as={CheckIcon} />
-                      </CheckboxIndicator>
-                      <CheckboxLabel>Masukkan kedalam cashdrawer</CheckboxLabel>
-                    </Checkbox>
                     {error && (
                       <FormControlError>
                         <FormControlErrorText>
