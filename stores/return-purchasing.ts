@@ -1,4 +1,4 @@
-import { Purchase, PurchaseItem } from "@/lib/api/purchasing";
+import { PurchaseItem } from "@/lib/api/purchasing";
 import { create } from "zustand";
 
 interface CartItem {
@@ -7,15 +7,20 @@ interface CartItem {
   note?: string;
 }
 
+interface ConfirmData {
+  reason: string;
+  returnType: string;
+}
+
 interface ReturnPurchasingState {
   addProduct: PurchaseItem | null;
-  selectedPurchase: Purchase | null;
   cart: CartItem[];
   cartTotal: number;
   openConfirm: boolean;
+  confirmData: ConfirmData | null;
   setOpenConfirm: (state: boolean) => void;
+  setConfirmData: (data: ConfirmData | null) => void;
   setAddProduct: (state: PurchaseItem | null) => void;
-  setSelectedPurchase: (state: Purchase | null) => void;
   addCartItem: (item: CartItem) => void;
   removeCartItem: (productId: string) => void;
   resetCart: () => void;
@@ -24,13 +29,13 @@ interface ReturnPurchasingState {
 export const useReturnPurchasingStore = create<ReturnPurchasingState>(
   (set) => ({
     addProduct: null,
-    selectedPurchase: null,
     cart: [],
     cartTotal: 0,
     openConfirm: false,
+    confirmData: null,
     setOpenConfirm: (state) => set({ openConfirm: state }),
+    setConfirmData: (data) => set({ confirmData: data }),
     setAddProduct: (state) => set({ addProduct: state }),
-    setSelectedPurchase: (state) => set({ selectedPurchase: state }),
     addCartItem: (item) =>
       set((state) => {
         const existingItemIndex = state.cart?.findIndex(
@@ -60,6 +65,6 @@ export const useReturnPurchasingStore = create<ReturnPurchasingState>(
 
         return { cart: updatedCart };
       }),
-    resetCart: () => set({ cart: [], cartTotal: 0, selectedPurchase: null }),
+    resetCart: () => set({ cart: [], cartTotal: 0 }),
   }),
 );

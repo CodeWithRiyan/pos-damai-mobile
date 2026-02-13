@@ -16,12 +16,12 @@ export default function ReturnScreen() {
   }[] = [
     {
       label: "Pembelian Barang",
-      href: "/management/return/purchasing",
+      href: "(main)/report/return/purchasing",
       icon: "Cart3",
     },
     {
       label: "Transaksi Penjualan",
-      href: "/management/return/sales",
+      href: "(main)/report/return/sales",
       icon: "Plain",
     },
   ];

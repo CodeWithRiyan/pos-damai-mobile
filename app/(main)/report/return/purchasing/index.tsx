@@ -1,5 +1,5 @@
-import ReturnPurchasingInput from "@/components/screens/return-purchasing/input";
+import ReturnPurchasingHistory from "@/components/screens/return-purchasing/history";
 
-export default function ReturnPurchasingScreen() {
-  return <ReturnPurchasingInput />;
+export default function ReturnPurchasingReportScreen() {
+  return <ReturnPurchasingHistory />;
 }
