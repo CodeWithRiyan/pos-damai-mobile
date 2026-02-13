@@ -50,6 +50,11 @@ export default function ReportScreen() {
       icon: "Chart",
     },
     {
+      label: "Laporan Retur",
+      href: "/report/return",
+      icon: "Chart",
+    },
+    {
       label: "Laporan Stok Opname",
       href: "/report/stock-opname",
       icon: "Chart",
