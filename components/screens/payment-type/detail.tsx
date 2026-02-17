@@ -17,15 +17,14 @@ import {
   useDeletePaymentType,
   usePaymentType,
   usePaymentTypes,
+  useSetDefaultPaymentType,
 } from "@/lib/api/payment-types";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import classNames from "classnames";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function PaymentTypeDetail() {
-  const [isDefault, setIsDefault] = useState<boolean>(false);
   const { setOpen, setData } = usePaymentTypeStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -38,8 +37,9 @@ export default function PaymentTypeDetail() {
     paymentTypeId || "",
   );
   const deleteMutation = useDeletePaymentType();
+  const setDefaultMutation = useSetDefaultPaymentType();
 
-  const isLoading = deleteMutation.isPending;
+  const isLoading = deleteMutation.isPending || setDefaultMutation.isPending;
   const toast = useToast();
 
   const onRefetch = () => {
@@ -164,8 +164,9 @@ export default function PaymentTypeDetail() {
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Komisi</Text>
               <Text className="font-bold">
-                {/* TODO: Sesuaikan komisi by commisionType (prefix Rp atau  suffix %) */}
-                {paymentType?.commission || "-"}
+                {paymentType?.commissionType === 'FLAT'
+                  ? `Rp ${paymentType?.commission?.toLocaleString("id-ID") || "-"}`
+                  : `${paymentType?.commission || "-"}%`}
               </Text>
             </VStack>
             <VStack className="w-1/2 pr-4">
@@ -178,25 +179,39 @@ export default function PaymentTypeDetail() {
         </VStack>
       </ScrollView>
       <VStack space="md" className="w-full p-4">
-        {/* TODO: ubah useState dengan service mutation (tambahkan flaging "isDefault" pada payment-type) */}
         <Pressable
           className={classNames(
             "w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-brand-primary",
-            !isDefault && "bg-brand-primary",
+            !paymentType?.isDefault && "bg-brand-primary",
           )}
-          disabled={isDefault}
+          disabled={paymentType?.isDefault || setDefaultMutation.isPending}
           onPress={() => {
-            setIsDefault(!isDefault);
+            if (paymentType?.id) {
+              setDefaultMutation.mutate(paymentType.id, {
+                onSuccess: () => {
+                  toast.show({
+                    placement: "top",
+                    render: ({ id }) => (
+                      <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                        <ToastTitle>Berhasil diatur sebagai default</ToastTitle>
+                      </Toast>
+                    ),
+                  });
+                  onRefetch();
+                },
+                onError: showErrorToast,
+              });
+            }
           }}
         >
           <Text
             size="sm"
             className={classNames(
               "text-brand-primary font-bold",
-              !isDefault && "text-white",
+              !paymentType?.isDefault && "text-white",
             )}
           >
-            {isDefault ? "DEFAULT PEMBAYARAN" : "JADIKAN DEFAULT PEMBAYARAN"}
+            {paymentType?.isDefault ? "DEFAULT PEMBAYARAN" : "JADIKAN DEFAULT PEMBAYARAN"}
           </Text>
         </Pressable>
       </VStack>

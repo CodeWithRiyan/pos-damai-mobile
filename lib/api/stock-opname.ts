@@ -21,6 +21,7 @@ export function useCreateStockOpname() {
       const orgId = useAuthStore.getState().getOrganizationId();
       const now = new Date();
       const opnameId = `opname_${Date.now()}`;
+      const userId = useAuthStore.getState().profile?.id;
       
       let totalGain = 0;
       let totalLoss = 0;
@@ -68,6 +69,8 @@ export function useCreateStockOpname() {
             purchasePrice,
             financialImpact,
             organizationId: orgId,
+            createdBy: userId,
+            updatedBy: userId,
             createdAt: now,
             updatedAt: now,
             _dirty: true,
@@ -83,6 +86,8 @@ export function useCreateStockOpname() {
               type: 'STOCK_OPNAME',
               quantity: difference,
               organizationId: orgId,
+              createdBy: userId,
+              updatedBy: userId,
               createdAt: now,
               updatedAt: now,
               _dirty: true,
@@ -100,7 +105,8 @@ export function useCreateStockOpname() {
           status: hasDifference ? 'DIFFERENCE' : 'DONE',
           totalGain,
           totalLoss,
-          createdBy: useAuthStore.getState().profile?.name || 'Unknown',
+          createdBy: userId,
+          updatedBy: userId,
           organizationId: orgId,
           createdAt: now,
           updatedAt: now,

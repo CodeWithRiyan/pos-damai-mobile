@@ -177,6 +177,7 @@ export default function PurchasingCheckoutForm() {
 
     createMutation.mutate(submissionData, {
       onSuccess: (responseData) => {
+        console.log("responseData", responseData);
         setCheckoutData({
           ...data,
           id: responseData.id,
@@ -197,7 +198,7 @@ export default function PurchasingCheckoutForm() {
           resetCart();
           setCheckoutData(null);
         } else {
-          router.replace("/(main)/purchasing/success");
+          router.replace(`/(main)/purchasing/success/${responseData.id}` as any);
           if (!!changedProductPrice.length) {
             showPopUpConfirm({
               title: `ADA PERUBAHAN HARGA BELI`,

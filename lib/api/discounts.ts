@@ -12,6 +12,10 @@ export interface Discount {
   startDate: Date;
   endDate: Date;
   organizationId: string;
+  createdBy: string | null;
+  updatedBy: string | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
 }
 
 export interface CreateDiscountDTO {
@@ -74,6 +78,8 @@ export function useCreateDiscount() {
       const id = `disc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       const newDiscount = {
         id,
         name: data.name,
@@ -82,6 +88,8 @@ export function useCreateDiscount() {
         startDate: data.startDate,
         endDate: data.endDate,
         organizationId: orgId,
+        createdBy: userId,
+        updatedBy: userId,
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
@@ -107,9 +115,16 @@ export function useUpdateDiscount() {
       const { id, ...rest } = data;
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       await db
         .update(schema.discounts)
-        .set({ ...rest, updatedAt: now, _dirty: true })
+        .set({
+          ...rest,
+          updatedBy: userId,
+          updatedAt: now,
+          _dirty: true,
+        })
         .where(eq(schema.discounts.id, id));
 
       return { id, ...rest };
@@ -129,9 +144,16 @@ export function useDeleteDiscount() {
   return useMutation({
     mutationFn: async (id: string) => {
       const now = new Date();
+      const userId = useAuthStore.getState().profile?.id;
+
       await db
         .update(schema.discounts)
-        .set({ deletedAt: now, _dirty: true })
+        .set({
+          deletedAt: now,
+          updatedBy: userId,
+          updatedAt: now,
+          _dirty: true,
+        })
         .where(eq(schema.discounts.id, id));
       return { id };
     },

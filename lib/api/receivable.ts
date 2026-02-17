@@ -14,6 +14,8 @@ export interface ReceivableRealization {
   paymentMethodId: string;
   note: string | null;
   organizationId: string;
+  createdBy: string | null;
+  updatedBy: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 }
@@ -25,6 +27,8 @@ export interface Receivable {
   dueDate: Date | null;
   note: string | null;
   organizationId: string;
+  createdBy: string | null;
+  updatedBy: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
   user?: User;
@@ -268,6 +272,7 @@ export function useCreateReceivable() {
       const id = `rec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
       const local_ref_id = `L-REC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const userId = useAuthStore.getState().profile?.id;
 
       await db.insert(schema.receivables).values({
         id,
@@ -275,6 +280,8 @@ export function useCreateReceivable() {
         ...data,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         organizationId: orgId,
+        createdBy: userId,
+        updatedBy: userId,
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
@@ -299,6 +306,7 @@ export function useCreateReceivableRealization() {
       const id = `recrel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
       const local_ref_id = `L-REC-REL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const userId = useAuthStore.getState().profile?.id;
 
       await db.insert(schema.receivableRealizations).values({
         id,
@@ -306,6 +314,8 @@ export function useCreateReceivableRealization() {
         ...data,
         realizationDate: new Date(data.realizationDate),
         organizationId: orgId,
+        createdBy: userId,
+        updatedBy: userId,
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
@@ -327,7 +337,12 @@ export function useDeleteReceivable() {
       mutationFn: async (id: string) => {
         await db
           .update(schema.receivables)
-          .set({ deletedAt: new Date(), _dirty: true })
+          .set({
+            deletedAt: new Date(),
+            updatedBy: useAuthStore.getState().profile?.id,
+            updatedAt: new Date(),
+            _dirty: true,
+          })
           .where(eq(schema.receivables.id, id));
       },
       onSuccess: () => {
@@ -345,7 +360,12 @@ export function useDeleteReceivable() {
       for (const userId of userIds) {
         await db
           .update(schema.receivables)
-          .set({ deletedAt: now, _dirty: true })
+          .set({
+            deletedAt: now,
+            updatedBy: useAuthStore.getState().profile?.id,
+            updatedAt: now,
+            _dirty: true,
+          })
           .where(
             and(
               eq(schema.receivables.userId, userId),
@@ -374,6 +394,7 @@ export function useUpdateReceivable() {
         .set({
           ...updateData,
           dueDate: updateData.dueDate ? new Date(updateData.dueDate) : undefined,
+          updatedBy: useAuthStore.getState().profile?.id,
           updatedAt: now,
           _dirty: true,
         })

@@ -36,6 +36,8 @@ export interface Product {
   categoryId: string;
   brandId: string | null;
   organizationId: string;
+  createdBy: string | null;
+  updatedBy: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
   sellPrices: ProductPrice[]; // Renamed from prices to sellPrices
@@ -169,7 +171,6 @@ export function useProducts(params: ProductParams | void) {
         }),
       );
 
-      // TODO: olah data dengan drizzle-orm jika diperlukan
       if (params?.showByStock) {
         if (params.showByStock === "NO_STOCK") {
           return productsWithPrices.filter(
@@ -397,12 +398,16 @@ export function useCreateProduct() {
 
       const { prices, variants, ...productData } = data;
 
+      const userId = useAuthStore.getState().profile?.id;
+
       await db.transaction(async (tx) => {
         await tx.insert(schema.products).values({
           id,
           ...productData,
           barcode: productData.code, // Map 'code' from UI to 'barcode' in DB
           organizationId: orgId,
+          createdBy: userId,
+          updatedBy: userId,
           createdAt: now,
           updatedAt: now,
           deletedAt: null,
@@ -418,6 +423,8 @@ export function useCreateProduct() {
               ...price,
               productId: id,
               organizationId: orgId,
+              createdBy: userId,
+              updatedBy: userId,
               createdAt: now,
               updatedAt: now,
               _dirty: true,
@@ -433,6 +440,8 @@ export function useCreateProduct() {
               ...variant,
               productId: id,
               organizationId: orgId,
+              createdBy: userId,
+              updatedBy: userId,
               createdAt: now,
               updatedAt: now,
               _dirty: true,
@@ -450,6 +459,8 @@ export function useCreateProduct() {
             type: "INITIAL_STOCK",
             quantity: productData.stock,
             organizationId: orgId,
+            createdBy: userId,
+            updatedBy: userId,
             createdAt: now,
             updatedAt: now,
             _dirty: true,
@@ -477,12 +488,15 @@ export function useUpdateProduct() {
       const now = new Date();
       const orgId = useAuthStore.getState().getOrganizationId();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       await db.transaction(async (tx) => {
         await tx
           .update(schema.products)
           .set({
             ...productData,
             barcode: productData.code,
+            updatedBy: userId,
             updatedAt: now,
             _dirty: true,
           })
@@ -500,6 +514,8 @@ export function useUpdateProduct() {
               ...price,
               productId: id,
               organizationId: orgId,
+              createdBy: userId,
+              updatedBy: userId,
               createdAt: now,
               updatedAt: now,
               _dirty: true,
@@ -518,6 +534,8 @@ export function useUpdateProduct() {
               ...variant,
               productId: id,
               organizationId: orgId,
+              createdBy: userId,
+              updatedBy: userId,
               createdAt: now,
               updatedAt: now,
               _dirty: true,
@@ -545,9 +563,16 @@ export function useDeleteProduct() {
     mutationFn: async (id: string) => {
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       await db
         .update(schema.products)
-        .set({ deletedAt: now, _dirty: true })
+        .set({
+          deletedAt: now,
+          updatedBy: userId,
+          updatedAt: now,
+          _dirty: true,
+        })
         .where(eq(schema.products.id, id));
 
       return { id };
@@ -567,10 +592,17 @@ export function useBulkDeleteProduct() {
     mutationFn: async (data: { ids: string[] }) => {
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       for (const id of data.ids) {
         await db
           .update(schema.products)
-          .set({ deletedAt: now, _dirty: true })
+          .set({
+            deletedAt: now,
+            updatedBy: userId,
+            updatedAt: now,
+            _dirty: true,
+          })
           .where(eq(schema.products.id, id));
       }
 
@@ -590,10 +622,17 @@ export function useAssignProductsToCategory() {
     mutationFn: async (data: { productIds: string[]; categoryId: string }) => {
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       for (const productId of data.productIds) {
         await db
           .update(schema.products)
-          .set({ categoryId: data.categoryId, updatedAt: now, _dirty: true })
+          .set({
+            categoryId: data.categoryId,
+            updatedBy: userId,
+            updatedAt: now,
+            _dirty: true,
+          })
           .where(eq(schema.products.id, productId));
       }
 
@@ -614,10 +653,17 @@ export function useAssignProductsToBrand() {
     mutationFn: async (data: { productIds: string[]; brandId: string }) => {
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       for (const productId of data.productIds) {
         await db
           .update(schema.products)
-          .set({ brandId: data.brandId, updatedAt: now, _dirty: true })
+          .set({
+            brandId: data.brandId,
+            updatedBy: userId,
+            updatedAt: now,
+            _dirty: true,
+          })
           .where(eq(schema.products.id, productId));
       }
 

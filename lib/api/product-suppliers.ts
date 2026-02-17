@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "../db";
 import * as schema from "../db/schema";
-import { apiClient } from "./client";
 
 export interface ProductSupplier {
   supplierId: string;
@@ -238,14 +237,139 @@ export function useProductSupplierTransactions(
   productId: string,
   supplierId: string,
 ) {
+  const orgId = useAuthStore((state) => state.getOrganizationId());
+
   return useQuery({
-    queryKey: ["product-supplier-transactions", productId, supplierId],
+    queryKey: ["product-supplier-transactions", productId, supplierId, orgId],
     queryFn: async () => {
-      const response = await apiClient.get<ProductSupplierTransaction[]>(
-        `/products/${productId}/suppliers/${supplierId}/transactions`,
+      console.log(
+        "[useProductSupplierTransactions] Starting query for productId:",
+        productId,
+        "supplierId:",
+        supplierId,
+        "orgId:",
+        orgId,
       );
-      return response.data;
+
+      if (!productId || !supplierId || !orgId) {
+        console.log(
+          "[useProductSupplierTransactions] Missing required parameters",
+        );
+        return [];
+      }
+
+      // Get all inventory transactions for this product (type = PURCHASE, status = COMPLETED)
+      const transactions = await db
+        .select()
+        .from(schema.inventoryTransactions)
+        .where(
+          and(
+            eq(schema.inventoryTransactions.productId, productId),
+            eq(schema.inventoryTransactions.type, "PURCHASE"),
+            eq(schema.inventoryTransactions.status, "COMPLETED"),
+            eq(schema.inventoryTransactions.organizationId, orgId),
+            isNull(schema.inventoryTransactions.deletedAt),
+          ),
+        );
+
+      console.log(
+        "[useProductSupplierTransactions] Found transactions:",
+        transactions.length,
+      );
+
+      if (transactions.length === 0) return [];
+
+      // Extract purchase refs from transaction local_ref_id
+      const purchaseRefs = new Set<string>();
+      transactions.forEach((tx) => {
+        if (tx.local_ref_id) {
+          const purchaseRef = tx.local_ref_id.replace(`_${productId}`, "");
+          purchaseRefs.add(purchaseRef);
+        }
+      });
+
+      console.log(
+        "[useProductSupplierTransactions] Purchase refs:",
+        Array.from(purchaseRefs),
+      );
+
+      if (purchaseRefs.size === 0) return [];
+
+      // Get all completed purchases for this supplier
+      const purchases = await db
+        .select()
+        .from(schema.purchases)
+        .where(
+          and(
+            eq(schema.purchases.supplierId, supplierId),
+            eq(schema.purchases.organizationId, orgId),
+            eq(schema.purchases.status, "COMPLETED"),
+            isNull(schema.purchases.deletedAt),
+          ),
+        );
+
+      console.log(
+        "[useProductSupplierTransactions] Found purchases for supplier:",
+        purchases.length,
+      );
+
+      // Filter purchases by local_ref_id
+      const relevantPurchases = purchases.filter(
+        (p) => p.local_ref_id && purchaseRefs.has(p.local_ref_id),
+      );
+
+      console.log(
+        "[useProductSupplierTransactions] Relevant purchases:",
+        relevantPurchases.length,
+      );
+
+      // Get current product price for calculation
+      const productData = await db
+        .select({ purchasePrice: schema.products.purchasePrice })
+        .from(schema.products)
+        .where(eq(schema.products.id, productId))
+        .limit(1);
+
+      const currentPrice = productData[0]?.purchasePrice || 0;
+
+      // Build transaction details
+      const result: ProductSupplierTransaction[] = [];
+
+      for (const purchase of relevantPurchases) {
+        // Find transactions for this purchase and product
+        const purchaseTxs = transactions.filter((tx) =>
+          tx.local_ref_id?.startsWith(purchase.local_ref_id + "_"),
+        );
+
+        for (const tx of purchaseTxs) {
+          result.push({
+            id: tx.id,
+            purchaseDate: purchase.createdAt || new Date(),
+            quantity: tx.quantity,
+            unitPrice: currentPrice,
+            totalPrice: tx.quantity * currentPrice,
+            note: null,
+          });
+        }
+      }
+
+      // Sort by purchase date (most recent first)
+      result.sort(
+        (a, b) =>
+          new Date(b.purchaseDate).getTime() -
+          new Date(a.purchaseDate).getTime(),
+      );
+
+      console.log(
+        "[useProductSupplierTransactions] Final result:",
+        result.length,
+        "transactions",
+      );
+
+      return result;
     },
-    enabled: !!productId && !!supplierId,
+    enabled: !!productId && !!supplierId && !!orgId,
+    refetchOnMount: "always",
+    staleTime: 0,
   });
 }

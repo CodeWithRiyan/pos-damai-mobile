@@ -9,6 +9,8 @@ export interface Brand {
   name: string;
   description: string | null;
   organizationId: string;
+  createdBy: string | null;
+  updatedBy: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 }
@@ -166,11 +168,15 @@ export function useCreateBrand() {
       const id = `brand_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       const newBrand = {
         id,
         name: data.name,
         description: data.description ?? null,
         organizationId: orgId,
+        createdBy: userId,
+        updatedBy: userId,
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
@@ -217,9 +223,16 @@ export function useUpdateBrand() {
         }
       }
 
+      const userId = useAuthStore.getState().profile?.id;
+
       await db
         .update(schema.brands)
-        .set({ ...rest, updatedAt: now, _dirty: true })
+        .set({
+          ...rest,
+          updatedBy: userId,
+          updatedAt: now,
+          _dirty: true,
+        })
         .where(eq(schema.brands.id, id));
 
       return { id, ...rest };
@@ -240,9 +253,16 @@ export function useDeleteBrand() {
     mutationFn: async (id: string) => {
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       await db
         .update(schema.brands)
-        .set({ deletedAt: now, _dirty: true })
+        .set({
+          deletedAt: now,
+          updatedBy: userId,
+          updatedAt: now,
+          _dirty: true,
+        })
         .where(eq(schema.brands.id, id));
 
       return { id };
@@ -262,10 +282,17 @@ export function useBulkDeleteBrand() {
     mutationFn: async (data: { ids: string[] }) => {
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       for (const id of data.ids) {
         await db
           .update(schema.brands)
-          .set({ deletedAt: now, _dirty: true })
+          .set({
+            deletedAt: now,
+            updatedBy: userId,
+            updatedAt: now,
+            _dirty: true,
+          })
           .where(eq(schema.brands.id, id));
       }
 

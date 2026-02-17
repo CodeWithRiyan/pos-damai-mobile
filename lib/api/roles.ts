@@ -16,6 +16,8 @@ export interface Role {
   level: number;
   isSystem: boolean;
   permissions?: Permission[];
+  createdBy?: string;
+  updatedBy?: string;
   createdAt: string;
   updatedAt: string;
 }

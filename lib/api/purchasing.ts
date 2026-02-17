@@ -14,6 +14,8 @@ export interface Purchase {
   dueDate: Date | null;
   organizationId: string;
   status: string;
+  createdBy: string | null;
+  updatedBy: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
   items?: PurchaseItem[];
@@ -168,6 +170,7 @@ export function useCreatePurchasing() {
       const purchaseId = data.id || `purch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const localRefId = `ref_${Date.now()}`;
       const now = new Date();
+      const userId = useAuthStore.getState().profile?.id;
 
       await db.transaction(async (tx) => {
         const existingRef = data.id ? (await tx.select({ r: schema.purchases.local_ref_id }).from(schema.purchases).where(eq(schema.purchases.id, data.id)).limit(1))[0]?.r : null;
@@ -182,6 +185,8 @@ export function useCreatePurchasing() {
           status: data.status,
           dueDate: data.dueDate,
           organizationId: orgId,
+          createdBy: userId,
+          updatedBy: userId,
           createdAt: data.transactionDate || now,
           updatedAt: now,
           _dirty: true,
@@ -214,6 +219,8 @@ export function useCreatePurchasing() {
             quantity: item.quantity,
             status: data.status,
             organizationId: orgId,
+            createdBy: userId,
+            updatedBy: userId,
             createdAt: data.transactionDate || now,
             updatedAt: now,
             _dirty: true,
@@ -226,6 +233,7 @@ export function useCreatePurchasing() {
             await tx.update(schema.products)
               .set({ 
                 purchasePrice: item.newPurchasePrice,
+                updatedBy: userId,
                 updatedAt: now,
                 _dirty: true 
               })
@@ -243,6 +251,8 @@ export function useCreatePurchasing() {
             dueDate: data.dueDate,
             note: data.note || '',
             organizationId: orgId,
+            createdBy: userId,
+            updatedBy: userId,
             createdAt: data.transactionDate || now,
             updatedAt: now,
             _dirty: true,
@@ -253,7 +263,7 @@ export function useCreatePurchasing() {
       });
 
       const finalRef = (await db.select({r: schema.purchases.local_ref_id}).from(schema.purchases).where(eq(schema.purchases.id, purchaseId)).limit(1))[0]?.r;
-      return { id: purchaseId, localRefId: finalRef, ...data };
+      return { ...data, id: purchaseId, localRefId: finalRef };
     },
     onSuccess: (responseData) => {
       const orgId = useAuthStore.getState().getOrganizationId();

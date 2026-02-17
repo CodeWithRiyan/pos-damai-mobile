@@ -98,12 +98,11 @@ export default function TransactionCheckoutForm() {
 
   useEffect(() => {
     if (cartTotal) {
-      // TODO: uncomment jika sudah menambahkan flaging "isDefault" pada paymentTypes
-      // const defaultPaymentType = paymentTypesData.find((pt) => pt.isDefault)?.id || ""
+      const defaultPaymentType = paymentTypesData?.find((pt) => pt.isDefault)?.id || "";
 
       form.setValue("totalPurchase", cartTotal);
       form.setValue("status", status);
-      // form.setValue("paymentTypeId", defaultPaymentType);
+      form.setValue("paymentTypeId", defaultPaymentType);
     }
   }, [form, cartTotal, customer, paymentTypesData, status]);
 

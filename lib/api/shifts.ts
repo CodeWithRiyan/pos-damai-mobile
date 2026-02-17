@@ -20,6 +20,8 @@ export interface Shift {
   status: string; // 'ACTIVE' | 'CLOSED'
   note: string | null;
   organizationId: string;
+  createdBy: string | null;
+  updatedBy: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 }
@@ -249,6 +251,8 @@ export function useStartShift() {
         status: 'ACTIVE',
         note: data.note || null,
         organizationId: orgId,
+        createdBy: userId,
+        updatedBy: userId,
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
@@ -299,6 +303,7 @@ export function useEndShift() {
           difference: difference,
           status: 'CLOSED',
           note: data.note || shift[0].note,
+          updatedBy: useAuthStore.getState().profile?.id,
           updatedAt: now,
           _dirty: true,
         })

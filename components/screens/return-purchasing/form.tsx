@@ -93,11 +93,11 @@ export default function ReturnPurchasingConfirmForm() {
       0,
     );
 
-    // TODO: tambahkan reason
     const returnData = {
       supplierId: purchase?.supplierId || "",
       totalAmount,
       returnType: data.returnType as "CASH" | "ITEM",
+      note: data.reason, // Map 'reason' from form to 'note' in database
       items: cart.map((item) => ({
         productId: item.product.productId,
         productName: item.product.productName || "",

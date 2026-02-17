@@ -10,6 +10,8 @@ export interface CashDrawer {
   description: string | null;
   isActive: boolean;
   organizationId: string;
+  createdBy: string | null;
+  updatedBy: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 }
@@ -75,6 +77,7 @@ export function useCreateCashDrawer() {
       const id = `cd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
       const local_ref_id = `L-CD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const userId = useAuthStore.getState().profile?.id;
 
       const newCashDrawer = {
         id,
@@ -83,6 +86,8 @@ export function useCreateCashDrawer() {
         description: data.description || null,
         isActive: data.isActive ?? true,
         organizationId: orgId,
+        createdBy: userId,
+        updatedBy: userId,
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
@@ -110,7 +115,12 @@ export function useUpdateCashDrawer() {
 
       await db
         .update(schema.cashDrawers)
-        .set({ ...rest, updatedAt: now, _dirty: true })
+        .set({
+          ...rest,
+          updatedBy: useAuthStore.getState().profile?.id,
+          updatedAt: now,
+          _dirty: true,
+        })
         .where(eq(schema.cashDrawers.id, id));
 
       return { id, ...rest };
@@ -133,7 +143,12 @@ export function useDeleteCashDrawer() {
 
       await db
         .update(schema.cashDrawers)
-        .set({ deletedAt: now, _dirty: true })
+        .set({
+          deletedAt: now,
+          updatedBy: useAuthStore.getState().profile?.id,
+          updatedAt: now,
+          _dirty: true,
+        })
         .where(eq(schema.cashDrawers.id, id));
 
       return { id };

@@ -16,6 +16,8 @@ export interface User {
   lockReason: string | null;
   selectedOrganizationId: string;
   createdById: string | null;
+  createdBy: string | null;
+  updatedBy: string | null;
   lastLoginAt: string | null;
   passwordChangedAt: string | null;
   createdAt: string;
@@ -27,6 +29,8 @@ export interface User {
       roleId: string;
       assignedAt: string;
       assignedBy: string | null;
+      createdBy: string | null;
+      updatedBy: string | null;
       expiresAt: string | null;
       role: Role;
     }

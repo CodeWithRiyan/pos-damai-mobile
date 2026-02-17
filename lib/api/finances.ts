@@ -16,6 +16,8 @@ export interface Finance {
   inputToCashdrawer: boolean;
   userId?: string | null;
   organizationId: string;
+  createdBy: string | null;
+  updatedBy: string | null;
   _dirty: boolean;
   _syncedAt: Date | null;
   createdAt: Date;
@@ -72,6 +74,7 @@ export function useCreateFinance() {
       const localRefId = data.local_ref_id || `L-FIN-${Date.now()}`;
 
       const profile = useAuthStore.getState().profile;
+      const userId = profile?.id || null;
 
       const financeValues = {
         id: financeId,
@@ -83,8 +86,10 @@ export function useCreateFinance() {
         status: data.status || "COMPLETED",
         note: data.note || null,
         inputToCashdrawer: data.inputToCashdrawer ?? false,
-        userId: profile?.id || null,
+        userId: userId,
         organizationId: orgId,
+        createdBy: userId,
+        updatedBy: userId,
         createdAt: data.createdAt || now,
         updatedAt: now,
         _dirty: true,
@@ -98,6 +103,7 @@ export function useCreateFinance() {
           target: schema.finances.id,
           set: {
             ...financeValues,
+            updatedBy: userId,
             updatedAt: now,
             _dirty: true,
           },
@@ -120,12 +126,15 @@ export function useDeleteFinance() {
   return useMutation({
     mutationFn: async (id: string) => {
       const now = new Date();
+      const userId = useAuthStore.getState().profile?.id;
+
       await db
         .update(schema.finances)
         .set({
           deletedAt: now,
-          _dirty: true,
+          updatedBy: userId,
           updatedAt: now,
+          _dirty: true,
         })
         .where(eq(schema.finances.id, id));
       
