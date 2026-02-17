@@ -57,9 +57,7 @@ export default function ReturnPurchasingSuccess() {
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-500 text-lg">Kasir / Admin</Text>
               <Text className="font-bold text-lg">
-                {/* TODO: add createdByName from backend */}
-                {/* {returnData?.createdByName} */}
-                Admin
+                {returnData?.createdByName || "Admin"}
               </Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">

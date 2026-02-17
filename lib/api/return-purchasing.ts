@@ -7,6 +7,7 @@ import {
   purchaseReturnItems,
   purchaseReturns,
   suppliers,
+  users,
 } from "../db/schema";
 
 export interface ReturnPurchasingItem {
@@ -26,6 +27,7 @@ export interface ReturnPurchasing {
   note: string; // Required field for return reason
   items?: ReturnPurchasingItem[];
   createdBy: string | null;
+  createdByName?: string;
   updatedBy: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -103,6 +105,19 @@ export const usePurchaseReturn = (id: string) => {
         .where(eq(suppliers.id, returnRecord.supplierId))
         .limit(1);
 
+      // Get creator name
+      let createdByName = 'Admin';
+      if (returnRecord.createdBy) {
+        const creatorResult = await db
+          .select({ name: users.name })
+          .from(users)
+          .where(eq(users.id, returnRecord.createdBy))
+          .limit(1);
+        if (creatorResult.length > 0) {
+          createdByName = creatorResult[0].name;
+        }
+      }
+
       // Get items with product names
       const items = await db
         .select()
@@ -128,6 +143,7 @@ export const usePurchaseReturn = (id: string) => {
       return {
         ...returnRecord,
         supplierName: supplierResult[0]?.name || "Unknown",
+        createdByName,
         items: itemsWithNames,
       };
     },
