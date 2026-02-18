@@ -12,6 +12,8 @@ export interface Category {
   wholesalePoint: number;
   description: string | null;
   organizationId: string;
+  createdBy: string | null;
+  updatedBy: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 }
@@ -162,6 +164,8 @@ export function useCreateCategory() {
       const id = `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       const newCategory = {
         id,
         name: data.name,
@@ -170,6 +174,8 @@ export function useCreateCategory() {
         wholesalePoint: data.wholesalePoint ?? 0,
         description: data.description ?? null,
         organizationId: orgId,
+        createdBy: userId,
+        updatedBy: userId,
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
@@ -213,9 +219,16 @@ export function useUpdateCategory() {
         }
       }
 
+      const userId = useAuthStore.getState().profile?.id;
+
       await db
         .update(schema.categories)
-        .set({ ...rest, updatedAt: now, _dirty: true })
+        .set({
+          ...rest,
+          updatedBy: userId,
+          updatedAt: now,
+          _dirty: true,
+        })
         .where(eq(schema.categories.id, id));
 
       return { id, ...rest };
@@ -236,10 +249,17 @@ export function useDeleteCategory() {
     mutationFn: async (id: string) => {
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       // Soft delete locally
       await db
         .update(schema.categories)
-        .set({ deletedAt: now, _dirty: true })
+        .set({
+          deletedAt: now,
+          updatedBy: userId,
+          updatedAt: now,
+          _dirty: true,
+        })
         .where(eq(schema.categories.id, id));
 
       return { id };
@@ -259,10 +279,17 @@ export function useBulkDeleteCategory() {
     mutationFn: async (data: { ids: string[] }) => {
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       for (const id of data.ids) {
         await db
           .update(schema.categories)
-          .set({ deletedAt: now, _dirty: true })
+          .set({
+            deletedAt: now,
+            updatedBy: userId,
+            updatedAt: now,
+            _dirty: true,
+          })
           .where(eq(schema.categories.id, id));
       }
 

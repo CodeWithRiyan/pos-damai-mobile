@@ -10,6 +10,8 @@ export interface Supplier {
   phone?: string | null;
   address?: string | null;
   organizationId: string;
+  createdBy: string | null;
+  updatedBy: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
   deletedAt?: Date | null;
@@ -58,10 +60,14 @@ export function useCreateSupplier() {
       const id = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
       
+      const userId = useAuthStore.getState().profile?.id;
+
       const newSupplier = {
         id,
         ...data,
         organizationId: orgId,
+        createdBy: userId,
+        updatedBy: userId,
         createdAt: now,
         updatedAt: now,
         _dirty: true,
@@ -83,10 +89,13 @@ export function useUpdateSupplier() {
       const { id, ...updateData } = data;
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       await db
         .update(suppliers)
         .set({
           ...updateData,
+          updatedBy: userId,
           updatedAt: now,
           _dirty: true,
         })
@@ -106,12 +115,15 @@ export function useDeleteSupplier() {
   return useMutation({
     mutationFn: async (id: string) => {
       const now = new Date();
+      const userId = useAuthStore.getState().profile?.id;
+
       await db
         .update(suppliers)
         .set({
           deletedAt: now,
-          _dirty: true,
+          updatedBy: userId,
           updatedAt: now,
+          _dirty: true,
         })
         .where(eq(suppliers.id, id));
       return id;
@@ -128,12 +140,15 @@ export function useBulkDeleteSupplier() {
   return useMutation({
     mutationFn: async ({ ids }: { ids: string[] }) => {
       const now = new Date();
+      const userId = useAuthStore.getState().profile?.id;
+
       await db
         .update(suppliers)
         .set({
           deletedAt: now,
-          _dirty: true,
+          updatedBy: userId,
           updatedAt: now,
+          _dirty: true,
         })
         .where(inArray(suppliers.id, ids));
       return ids;

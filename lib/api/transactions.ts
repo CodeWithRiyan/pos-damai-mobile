@@ -17,6 +17,8 @@ export interface Transaction {
   status: string;
   note: string | null;
   organizationId: string;
+  createdBy: string | null;
+  updatedBy: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
   items?: TransactionItem[];
@@ -200,6 +202,7 @@ export function useCreateTransaction() {
         `trans_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const localRefId = `ref_trans_${Date.now()}`;
       const now = new Date();
+      const userId = useAuthStore.getState().profile?.id;
 
       await db.transaction(async (tx) => {
         // 1. Create/Update Transaction record
@@ -214,6 +217,8 @@ export function useCreateTransaction() {
           status: data.status,
           note: data.note || null,
           organizationId: orgId,
+          createdBy: userId,
+          updatedBy: userId,
           createdAt: data.transactionDate || now,
           updatedAt: now,
           _dirty: true,
@@ -278,6 +283,8 @@ export function useCreateTransaction() {
             sellPrice: item.tempSellPrice,
             note: item.note || null,
             organizationId: orgId,
+            createdBy: userId,
+            updatedBy: userId,
             createdAt: now,
             updatedAt: now,
             _dirty: true,
@@ -295,10 +302,12 @@ export function useCreateTransaction() {
               quantity: -item.quantity, // Negative for sales
               status: "COMPLETED",
               organizationId: orgId,
-              createdAt: data.transactionDate || now,
-              updatedAt: now,
+              createdBy: userId,
+              updatedBy: userId,
               _dirty: true,
               _syncedAt: null,
+              createdAt: data.transactionDate || now,
+              updatedAt: now,
             });
           }
         }
@@ -340,7 +349,12 @@ export function useDeleteTransaction() {
           // Soft delete transaction
           await tx
             .update(schema.transactions)
-            .set({ deletedAt: now, _dirty: true })
+            .set({
+              deletedAt: now,
+              updatedBy: useAuthStore.getState().profile?.id,
+              updatedAt: now,
+              _dirty: true,
+            })
             .where(eq(schema.transactions.id, id));
 
           // Delete transaction items

@@ -13,6 +13,8 @@ export interface PayableRealization {
   paymentMethodId: string;
   note: string | null;
   organizationId: string;
+  createdBy: string | null;
+  updatedBy: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 }
@@ -24,6 +26,8 @@ export interface Payable {
   dueDate: Date | null;
   note: string | null;
   organizationId: string;
+  createdBy: string | null;
+  updatedBy: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
   supplier?: Supplier;
@@ -227,6 +231,7 @@ export function useCreatePayable() {
       const id = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
       const local_ref_id = `L-PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const userId = useAuthStore.getState().profile?.id;
 
       await db.insert(schema.payables).values({
         id,
@@ -234,6 +239,8 @@ export function useCreatePayable() {
         ...data,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         organizationId: orgId,
+        createdBy: userId,
+        updatedBy: userId,
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
@@ -258,6 +265,7 @@ export function useCreatePayableRealization() {
       const id = `payrel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
       const local_ref_id = `L-PAY-REL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const userId = useAuthStore.getState().profile?.id;
 
       await db.insert(schema.payableRealizations).values({
         id,
@@ -265,6 +273,8 @@ export function useCreatePayableRealization() {
         ...data,
         realizationDate: new Date(data.realizationDate),
         organizationId: orgId,
+        createdBy: userId,
+        updatedBy: userId,
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
@@ -286,7 +296,12 @@ export function useDeletePayable() {
     mutationFn: async (id: string) => {
       await db
         .update(schema.payables)
-        .set({ deletedAt: new Date(), _dirty: true })
+        .set({
+          deletedAt: new Date(),
+          updatedBy: useAuthStore.getState().profile?.id,
+          updatedAt: new Date(),
+          _dirty: true,
+        })
         .where(eq(schema.payables.id, id));
     },
     onSuccess: () => {
@@ -304,7 +319,12 @@ export function useBulkDeletePayableBySupplier() {
       for (const supplierId of supplierIds) {
         await db
           .update(schema.payables)
-          .set({ deletedAt: now, _dirty: true })
+          .set({
+            deletedAt: now,
+            updatedBy: useAuthStore.getState().profile?.id,
+            updatedAt: now,
+            _dirty: true,
+          })
           .where(
             and(
               eq(schema.payables.supplierId, supplierId),
@@ -333,6 +353,7 @@ export function useUpdatePayable() {
         .set({
           ...updateData,
           dueDate: updateData.dueDate ? new Date(updateData.dueDate) : undefined,
+          updatedBy: useAuthStore.getState().profile?.id,
           updatedAt: now,
           _dirty: true,
         })

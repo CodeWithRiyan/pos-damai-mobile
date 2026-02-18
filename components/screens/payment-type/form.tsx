@@ -94,7 +94,7 @@ export default function PaymentTypeForm() {
       form.reset({
         name: dataPaymentType.name,
         commission: dataPaymentType.commission,
-        commissionType: "PERCENTAGE", // TODO: Handle commissionType
+        commissionType: dataPaymentType.commissionType || "PERCENTAGE",
         minimalAmount: dataPaymentType.minimalAmount,
       });
     } else {

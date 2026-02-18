@@ -15,6 +15,8 @@ export interface Customer {
   address: string | null;
   points: number;
   organizationId: string | null;
+  createdBy: string | null;
+  updatedBy: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 }
@@ -81,6 +83,8 @@ export function useCreateCustomer() {
       const id = `cust_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       const newCustomer = {
         id,
         name: data.name,
@@ -90,6 +94,8 @@ export function useCreateCustomer() {
         address: data.address ?? null,
         points: 0,
         organizationId: orgId,
+        createdBy: userId,
+        updatedBy: userId,
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
@@ -116,9 +122,16 @@ export function useUpdateCustomer() {
       const { id, ...rest } = data;
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       await db
         .update(schema.customers)
-        .set({ ...rest, updatedAt: now, _dirty: true })
+        .set({
+          ...rest,
+          updatedBy: userId,
+          updatedAt: now,
+          _dirty: true,
+        })
         .where(eq(schema.customers.id, id));
 
       return { id, ...rest };
@@ -140,9 +153,16 @@ export function useDeleteCustomer() {
     mutationFn: async (id: string) => {
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       await db
         .update(schema.customers)
-        .set({ deletedAt: now, _dirty: true })
+        .set({
+          deletedAt: now,
+          updatedBy: userId,
+          updatedAt: now,
+          _dirty: true,
+        })
         .where(eq(schema.customers.id, id));
 
       return { id };
@@ -162,10 +182,17 @@ export function useBulkDeleteCustomer() {
     mutationFn: async (data: { ids: string[] }) => {
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       for (const id of data.ids) {
         await db
           .update(schema.customers)
-          .set({ deletedAt: now, _dirty: true })
+          .set({
+            deletedAt: now,
+            updatedBy: userId,
+            updatedAt: now,
+            _dirty: true,
+          })
           .where(eq(schema.customers.id, id));
       }
 

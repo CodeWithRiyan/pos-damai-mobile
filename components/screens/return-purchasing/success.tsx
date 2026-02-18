@@ -50,15 +50,14 @@ export default function ReturnPurchasingSuccess() {
               <Text className="text-typography-500 text-lg">
                 Alasan Pengembalian
               </Text>
-              {/* TODO: add reason from backend */}
-              <Text className="font-bold text-lg">Tidak ada alasan</Text>
+              <Text className="font-bold text-lg">
+                {returnData?.note || "Tidak ada alasan"}
+              </Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-500 text-lg">Kasir / Admin</Text>
               <Text className="font-bold text-lg">
-                {/* TODO: add createdByName from backend */}
-                {/* {returnData?.createdByName} */}
-                Admin
+                {returnData?.createdByName || "Admin"}
               </Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
