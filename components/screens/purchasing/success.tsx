@@ -3,7 +3,7 @@ import { Image } from "@/components/ui/image";
 import { Pressable } from "@/components/ui/pressable";
 import { useSupplier } from "@/lib/api/suppliers";
 import { usePurchasingStore } from "@/stores/purchasing";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Printer } from "lucide-react-native";
 import { ScrollView } from "react-native";
 
@@ -11,10 +11,10 @@ export default function PurchasingSuccess() {
   const router = useRouter();
   const { id: urlId } = useLocalSearchParams<{ id: string }>();
   const { checkoutData, setCheckoutData, resetCart } = usePurchasingStore();
-  
+
   // Use ID from URL params as primary source, fallback to checkoutData
   const purchaseId = urlId || checkoutData?.id;
-  
+
   const { data: supplier } = useSupplier(checkoutData?.supplierId || "");
 
   return (
@@ -88,7 +88,6 @@ export default function PurchasingSuccess() {
             <Pressable
               className="w-full rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-background-0 border border-primary-500 active:bg-primary-100"
               onPress={() => {
-                console.log("purchaseId", purchaseId);
                 if (purchaseId) {
                   router.replace(`/(main)/purchasing/receipt/${purchaseId}`);
                 } else {

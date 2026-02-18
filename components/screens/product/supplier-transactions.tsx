@@ -26,7 +26,6 @@ export default function ProductSupplierTransactions() {
   );
   const { data: transactions = [], isLoading: isLoadingTransactions } =
     useProductSupplierTransactions(productId || "", supplierId || "");
-    console.log("transactions", transactions);
 
   const isLoading =
     isLoadingProduct || isLoadingSupplier || isLoadingTransactions;
