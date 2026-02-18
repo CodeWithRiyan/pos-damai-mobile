@@ -24,11 +24,11 @@ import {
   VStack,
 } from "@/components/ui";
 import SelectModal from "@/components/ui/select/select-modal";
+import { SolarIconBoldDuotone } from "@/components/ui/solar-icon-wrapper";
 import { getErrorMessage } from "@/lib/api/client";
 import {
-  Payable,
   useCreatePayableRealization,
-  usePayableList,
+  usePayableBySupplier
 } from "@/lib/api/payable";
 import { usePaymentTypes } from "@/lib/api/payment-types";
 import { usePaymentTypeStore } from "@/stores/payment-type";
@@ -48,6 +48,7 @@ export default function PayableRealizationForm() {
   const router = useRouter();
   const params = useLocalSearchParams();
 
+  const supplierId = params.supplierId as string;
   const action = params.actionRealization as string;
   const isAdd = action === "add";
   const payableIds = (params.payableIds as string)?.split("-") || [];
@@ -75,11 +76,11 @@ export default function PayableRealizationForm() {
     defaultValues: initialValues,
   });
 
+  const payOff = form.watch("payOff");
   const [showRealizationDatePicker, setShowRealizationDatePicker] =
     useState<boolean>(false);
 
-  const { data: allPayables = [] } = usePayableList();
-
+  const { data: payableList = [] } = usePayableBySupplier(supplierId);
   // Flat list of payables from all suppliers if needed, but usually filtered by supplier in detail screen
   // Actually the detail screen navigates here with specific IDs
   // Since usePayableList returns PayableBySupplier[], I need to fetch all payables or we need a hook that returns all payables.
@@ -87,7 +88,9 @@ export default function PayableRealizationForm() {
   // Wait, I should add usePayables (all payables) or just filter from what I have if I update usePayableList
   // Let's assume we need a usePayables hook.
 
-  const selectedPayables: Payable[] = []; // This will need real data
+  const selectedPayables = payableList.filter((payable) =>
+    payableIds.includes(payable.id),
+  );
 
   const totalPayable = selectedPayables.reduce(
     (total, payable) => total + payable.nominal,
@@ -175,10 +178,57 @@ export default function PayableRealizationForm() {
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="lg" className="p-4">
-          <VStack space="sm">
-            <Text className="text-gray-500 text-sm">Total Transaksi</Text>
-            <Text className="text-sm font-bold">{payableIds?.length}</Text>
-          </VStack>
+          {payableIds?.length <= 1 ? (
+            <HStack space="sm">
+              <HStack space="sm" className="items-center">
+                <SolarIconBoldDuotone
+                  name="UserCircle"
+                  size={24}
+                  color="#3b82f6"
+                />
+                <Text className="text-primary-500 font-bold">
+                  {selectedPayables?.[0]?.supplier?.name}
+                </Text>
+              </HStack>
+              <VStack className="flex-1 items-end">
+                <Text className="text-gray-500 text-sm">Belum Dibayar</Text>
+                <Text className="text-sm font-bold text-error-500">
+                  {`Rp ${(totalPayable - totalRealization).toLocaleString("id-ID")}`}
+                </Text>
+              </VStack>
+            </HStack>
+          ) : (
+            <HStack space="sm" className="justify-between">
+              <VStack space="sm">
+                <HStack space="sm" className="items-center">
+                  <SolarIconBoldDuotone
+                    name="UserCircle"
+                    size={24}
+                    color="#3b82f6"
+                  />
+                  <Text className="text-primary-500 font-bold">
+                    {selectedPayables?.[0]?.supplier?.name}
+                  </Text>
+                </HStack>
+                <VStack className="flex-1">
+                  <Text className="text-gray-500 text-sm">
+                    Sisa yang harus dibayar
+                  </Text>
+                  <Text className="text-sm font-bold text-error-500">
+                    {`Rp ${(totalPayable - totalRealization).toLocaleString("id-ID")}`}
+                  </Text>
+                </VStack>
+                <Text className="text-gray-500 text-sm">
+                  Transaksi dengan jatuh tempo paling awal akan dilunasi
+                  terlebih dahulu.
+                </Text>
+              </VStack>
+              <VStack className="flex-1 items-end">
+                <Text className="text-gray-500 text-sm">Total Transaksi</Text>
+                <Text className="text-sm font-bold">{payableIds?.length}</Text>
+              </VStack>
+            </HStack>
+          )}
 
           <Controller
             name="nominal"
@@ -188,7 +238,7 @@ export default function PayableRealizationForm() {
               field: { onChange, onBlur, value },
               fieldState: { error },
             }) => (
-              <FormControl isRequired isInvalid={!!error}>
+              <FormControl isRequired isDisabled={payOff} isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Nominal</FormControlLabelText>
                 </FormControlLabel>
@@ -232,6 +282,7 @@ export default function PayableRealizationForm() {
                   size="md"
                   onChange={(v) => {
                     onChange(v);
+                    console.log("Remaining total:", remainingTotal);
                     if (v) {
                       form.setValue("nominal", remainingTotal);
                     }

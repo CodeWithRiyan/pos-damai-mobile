@@ -1,8 +1,8 @@
-import { db } from '../db';
-import * as schema from '../db/schema';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { and, desc, eq, isNull, like } from 'drizzle-orm';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from "@/stores/auth";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { and, desc, eq, isNull, like } from "drizzle-orm";
+import { db } from "../db";
+import * as schema from "../db/schema";
 
 export interface Purchase {
   id: string;
@@ -49,17 +49,19 @@ export interface CreatePurchasingDTO {
 
 // Get all purchases from local SQLite
 export function usePurchases() {
-  const orgId = useAuthStore(state => state.getOrganizationId());
+  const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ['purchases', orgId],
+    queryKey: ["purchases", orgId],
     queryFn: async () => {
       const purchaseResult = await db
         .select()
         .from(schema.purchases)
-        .where(and(
-          eq(schema.purchases.organizationId, orgId),
-          isNull(schema.purchases.deletedAt)
-        ))
+        .where(
+          and(
+            eq(schema.purchases.organizationId, orgId),
+            isNull(schema.purchases.deletedAt),
+          ),
+        )
         .orderBy(desc(schema.purchases.createdAt));
 
       // Join with supplier names
@@ -73,9 +75,9 @@ export function usePurchases() {
 
           return {
             ...purchase,
-            supplierName: supplier[0]?.name || 'Unknown',
+            supplierName: supplier[0]?.name || "Unknown",
           };
-        })
+        }),
       );
 
       return purchasesWithSupplier as Purchase[];
@@ -87,7 +89,7 @@ export function usePurchases() {
 // Get single purchase with items
 export function usePurchase(id: string) {
   return useQuery({
-    queryKey: ['purchases', id],
+    queryKey: ["purchases", id],
     queryFn: async () => {
       // Get purchase record
       const purchaseResult = await db
@@ -111,10 +113,12 @@ export function usePurchase(id: string) {
       // Transactions are created with local_ref_id pattern: {purchaseLocalRefId}_{productId}
       const purchaseRef = purchase.local_ref_id;
       if (!purchaseRef) {
-        console.warn('[usePurchase] Purchase has no local_ref_id, cannot find items');
+        console.warn(
+          "[usePurchase] Purchase has no local_ref_id, cannot find items",
+        );
         return {
           ...purchase,
-          supplierName: supplier[0]?.name || 'Unknown',
+          supplierName: supplier[0]?.name || "Unknown",
           items: [],
         } as Purchase;
       }
@@ -122,17 +126,25 @@ export function usePurchase(id: string) {
       const purchaseItems = await db
         .select()
         .from(schema.inventoryTransactions)
-        .where(and(
-          eq(schema.inventoryTransactions.type, 'PURCHASE'),
-          eq(schema.inventoryTransactions.organizationId, purchase.organizationId),
-          like(schema.inventoryTransactions.local_ref_id, `${purchaseRef}_%`)
-        ));
+        .where(
+          and(
+            eq(schema.inventoryTransactions.type, "PURCHASE"),
+            eq(
+              schema.inventoryTransactions.organizationId,
+              purchase.organizationId,
+            ),
+            like(schema.inventoryTransactions.local_ref_id, `${purchaseRef}_%`),
+          ),
+        );
 
       // Get product names for each item
       const itemsWithProductNames = await Promise.all(
         purchaseItems.map(async (item) => {
           const product = await db
-            .select({ name: schema.products.name, purchasePrice: schema.products.purchasePrice })
+            .select({
+              name: schema.products.name,
+              purchasePrice: schema.products.purchasePrice,
+            })
             .from(schema.products)
             .where(eq(schema.products.id, item.productId))
             .limit(1);
@@ -140,16 +152,16 @@ export function usePurchase(id: string) {
           return {
             id: item.id,
             productId: item.productId,
-            productName: product[0]?.name || 'Unknown',
+            productName: product[0]?.name || "Unknown",
             quantity: item.quantity,
             purchasePrice: product[0]?.purchasePrice || 0,
           };
-        })
+        }),
       );
 
       return {
         ...purchase,
-        supplierName: supplier[0]?.name || 'Unknown',
+        supplierName: supplier[0]?.name || "Unknown",
         items: itemsWithProductNames,
       } as Purchase;
     },
@@ -161,19 +173,30 @@ export function useCreatePurchasing() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    // TODO: jika data.totalPaid < data.totalPurchase, maka buat hutang senilai data.totalPurchase dan realisasikan hutang sebagai DP senilai data.totalPaid
     mutationFn: async (data: CreatePurchasingDTO) => {
       const orgId = useAuthStore.getState().getOrganizationId();
       if (!orgId) {
-        throw new Error('ID Organisasi tidak ditemukan');
+        throw new Error("ID Organisasi tidak ditemukan");
       }
 
-      const purchaseId = data.id || `purch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const purchaseId =
+        data.id ||
+        `purch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const localRefId = `ref_${Date.now()}`;
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
 
       await db.transaction(async (tx) => {
-        const existingRef = data.id ? (await tx.select({ r: schema.purchases.local_ref_id }).from(schema.purchases).where(eq(schema.purchases.id, data.id)).limit(1))[0]?.r : null;
+        const existingRef = data.id
+          ? (
+              await tx
+                .select({ r: schema.purchases.local_ref_id })
+                .from(schema.purchases)
+                .where(eq(schema.purchases.id, data.id))
+                .limit(1)
+            )[0]?.r
+          : null;
         const finalLocalRefId = existingRef || localRefId;
 
         const purchaseValues = {
@@ -181,7 +204,7 @@ export function useCreatePurchasing() {
           local_ref_id: finalLocalRefId,
           supplierId: data.supplierId,
           totalAmount: data.totalPurchase,
-          paymentType: data.isPayable ? 'DEBT' : 'CASH',
+          paymentType: data.isPayable ? "DEBT" : "CASH",
           status: data.status,
           dueDate: data.dueDate,
           organizationId: orgId,
@@ -194,16 +217,23 @@ export function useCreatePurchasing() {
         };
 
         if (data.id) {
-          await tx.update(schema.purchases)
+          await tx
+            .update(schema.purchases)
             .set(purchaseValues)
             .where(eq(schema.purchases.id, data.id));
 
           // Efficiently delete old inventory transactions for this purchase
-          await tx.delete(schema.inventoryTransactions)
-            .where(and(
-              eq(schema.inventoryTransactions.organizationId, orgId),
-              like(schema.inventoryTransactions.local_ref_id, `${finalLocalRefId}_%`)
-            ));
+          await tx
+            .delete(schema.inventoryTransactions)
+            .where(
+              and(
+                eq(schema.inventoryTransactions.organizationId, orgId),
+                like(
+                  schema.inventoryTransactions.local_ref_id,
+                  `${finalLocalRefId}_%`,
+                ),
+              ),
+            );
         } else {
           await tx.insert(schema.purchases).values(purchaseValues);
         }
@@ -215,7 +245,7 @@ export function useCreatePurchasing() {
             id: txId,
             local_ref_id: `${finalLocalRefId}_${item.product.id}`,
             productId: item.product.id,
-            type: 'PURCHASE',
+            type: "PURCHASE",
             quantity: item.quantity,
             status: data.status,
             organizationId: orgId,
@@ -227,15 +257,18 @@ export function useCreatePurchasing() {
             _syncedAt: null,
           });
 
-
           // 3. Update Product purchasePrice if it changed AND status is COMPLETED
-          if (data.status === 'COMPLETED' && item.newPurchasePrice !== item.product.purchasePrice) {
-            await tx.update(schema.products)
-              .set({ 
+          if (
+            data.status === "COMPLETED" &&
+            item.newPurchasePrice !== item.product.purchasePrice
+          ) {
+            await tx
+              .update(schema.products)
+              .set({
                 purchasePrice: item.newPurchasePrice,
                 updatedBy: userId,
                 updatedAt: now,
-                _dirty: true 
+                _dirty: true,
               })
               .where(eq(schema.products.id, item.product.id));
           }
@@ -249,7 +282,7 @@ export function useCreatePurchasing() {
             supplierId: data.supplierId,
             nominal: data.totalPurchase,
             dueDate: data.dueDate,
-            note: data.note || '',
+            note: data.note || "",
             organizationId: orgId,
             createdBy: userId,
             updatedBy: userId,
@@ -258,19 +291,29 @@ export function useCreatePurchasing() {
             _dirty: true,
             _syncedAt: null,
           });
-          console.log(`[useCreatePurchasing] Created payable ${payableId} for purchase ${purchaseId}, amount: ${data.totalPurchase}`);
+          console.log(
+            `[useCreatePurchasing] Created payable ${payableId} for purchase ${purchaseId}, amount: ${data.totalPurchase}`,
+          );
         }
       });
 
-      const finalRef = (await db.select({r: schema.purchases.local_ref_id}).from(schema.purchases).where(eq(schema.purchases.id, purchaseId)).limit(1))[0]?.r;
+      const finalRef = (
+        await db
+          .select({ r: schema.purchases.local_ref_id })
+          .from(schema.purchases)
+          .where(eq(schema.purchases.id, purchaseId))
+          .limit(1)
+      )[0]?.r;
       return { ...data, id: purchaseId, localRefId: finalRef };
     },
     onSuccess: (responseData) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['products', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['purchases', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['purchases', responseData.id] });
-      queryClient.invalidateQueries({ queryKey: ['payables'] }); // Invalidate payables list
+      queryClient.invalidateQueries({ queryKey: ["products", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["purchases", orgId] });
+      queryClient.invalidateQueries({
+        queryKey: ["purchases", responseData.id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["payables"] }); // Invalidate payables list
     },
   });
 }
