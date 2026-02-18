@@ -19,6 +19,7 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
+import { Grid, GridItem } from "@/components/ui/grid";
 import SelectModal from "@/components/ui/select/select-modal";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { useBrands } from "@/lib/api/brands";
@@ -74,6 +75,20 @@ export default function ProductForm() {
       purchasePrice: z.number().min(1, "Harga Beli wajib diisi."),
       stock: z.number(),
       minimumStock: z.number(),
+      unitVariants: z
+        .array(
+          z.object({
+            name: z.string().min(1, "Nama wajib diisi."),
+            code: z.string().min(1, "Kode wajib diisi."),
+            netto: z.number().min(1, "Netto wajib diisi."),
+            purchasePrice: z.number().min(1, "Harga Beli wajib diisi."),
+            retailPrice: z.number().min(1, "Harga wajib diisi."),
+            minimumPurchase: z
+              .number()
+              .min(1, "Minimal Pembelian wajib diisi."),
+          }),
+        )
+        .nullable(),
       variants: z
         .array(
           z.object({
@@ -82,17 +97,15 @@ export default function ProductForm() {
           }),
         )
         .nullable(),
-      retailPrice: z
-        .array(
-          z.object({
-            minimumPurchase: z.number().min(1, "Minimum purchase wajib diisi."),
-            price: z.number().min(1, "Harga wajib diisi."),
-          }),
-        )
-        .min(1, "Harga Retail wajib diisi."),
+      retailPrice: z.array(
+        z.object({
+          minimumPurchase: z.number().min(1, "Minimal Pembelian wajib diisi."),
+          price: z.number().min(1, "Harga wajib diisi."),
+        }),
+      ),
       wholesalePrice: z.array(
         z.object({
-          minimumPurchase: z.number().min(1, "Minimum purchase wajib diisi."),
+          minimumPurchase: z.number().min(1, "Minimal Pembelian wajib diisi."),
           price: z.number().min(1, "Harga wajib diisi."),
         }),
       ),
@@ -101,23 +114,72 @@ export default function ProductForm() {
       description: z.string(),
     })
     .superRefine((data, ctx) => {
-      data.retailPrice.map((dataRetail) => {
+      // Validasi khusus type MULTIUNIT
+      if (data.type === "MULTIUNIT") {
+        if (!data.unit) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Satuan wajib diisi.",
+            path: ["unit"],
+          });
+        }
+        if (!data.unitVariants || data.unitVariants.length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Varian Unit wajib diisi.",
+            path: ["unitVariants"],
+          });
+        }
+        // Validasi harga retail unit variant tidak boleh kurang dari harga beli
+        data.unitVariants?.forEach((variant, i) => {
+          if (variant.retailPrice < variant.purchasePrice) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Harga Retail tidak boleh kurang dari harga beli",
+              path: [`unitVariants.${i}.retailPrice`],
+            });
+          }
+        });
+      }
+
+      // Validasi khusus type VARIANTS
+      if (data.type === "VARIANTS") {
+        if (!data.variants || data.variants.length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Varian Produk wajib diisi.",
+            path: ["variants"],
+          });
+        }
+      }
+
+      // Validasi retail price wajib diisi jika bukan MULTIUNIT
+      if (data.type !== "MULTIUNIT" && data.retailPrice.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Harga Retail wajib diisi.",
+          path: ["retailPrice"],
+        });
+      }
+
+      // Validasi harga retail tidak boleh kurang dari harga beli
+      data.retailPrice.forEach((dataRetail, i) => {
         if (dataRetail.price < data.purchasePrice) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Harga Retail tidak boleh kurang dari harga beli",
-            path: [`retailPrice.${data.retailPrice.indexOf(dataRetail)}.price`],
+            path: [`retailPrice.${i}.price`],
           });
         }
       });
-      data.wholesalePrice.map((dataWholesale) => {
+
+      // Validasi harga grosir tidak boleh kurang dari harga beli
+      data.wholesalePrice.forEach((dataWholesale, i) => {
         if (dataWholesale.price < data.purchasePrice) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Harga Grosir tidak boleh kurang dari harga beli",
-            path: [
-              `wholesalePrice.${data.wholesalePrice.indexOf(dataWholesale)}.price`,
-            ],
+            path: [`wholesalePrice.${i}.price`],
           });
         }
       });
@@ -135,6 +197,7 @@ export default function ProductForm() {
     purchasePrice: 0,
     stock: 0,
     minimumStock: 0,
+    unitVariants: null,
     variants: null,
     retailPrice: [
       {
@@ -148,12 +211,25 @@ export default function ProductForm() {
     isActive: true,
   };
 
+  const [nettoInput, setNettoInput] = useState<
+    { index: number; netto: string }[]
+  >([]);
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: initialValues,
   });
 
   const purchasePrice = form.watch("purchasePrice");
+  const unit = form.watch("unit");
+
+  const {
+    fields: unitVariantFields,
+    append: unitVariantAppend,
+    remove: unitVariantRemove,
+  } = useFieldArray({
+    control: form.control,
+    name: "unitVariants",
+  });
 
   const {
     fields: variantFields,
@@ -218,6 +294,16 @@ export default function ProductForm() {
       },
     });
   };
+
+  useEffect(() => {
+    setNettoInput(
+      unitVariantFields.map((field, index) => ({
+        index,
+        netto: (field.netto ?? 0).toString(),
+      })),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unitVariantFields.length]);
 
   useEffect(() => {
     if (productId && product) {
@@ -333,8 +419,7 @@ export default function ProductForm() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header={isAdd ? "TAMBAH PRODUK" : "EDIT PRODUK"} isGoBack />
-
+      <Header header={isAdd ? "TAMBAH PRODUK " : "EDIT PRODUK "} isGoBack />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="lg" className="p-4">
           <Controller
@@ -435,7 +520,15 @@ export default function ProductForm() {
                   <InputField
                     value={value.toString()}
                     autoComplete="off"
-                    onChangeText={(text) => onChange(Number(text) || 0)}
+                    onChangeText={(text) => {
+                      onChange(Number(text) || 0);
+                      unitVariantFields.forEach((field, i) => {
+                        form.setValue(
+                          `unitVariants.${i}.purchasePrice`,
+                          Number(text) * field.netto,
+                        );
+                      });
+                    }}
                     onBlur={onBlur}
                     placeholder="Masukkan harga beli"
                     keyboardType="numeric"
@@ -544,7 +637,7 @@ export default function ProductForm() {
             render={({ field: { onChange, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
-                  <FormControlLabelText>Jenis Produk</FormControlLabelText>
+                  <FormControlLabelText>{`Jenis Produk `}</FormControlLabelText>
                 </FormControlLabel>
                 <SelectModal
                   value={value}
@@ -565,38 +658,369 @@ export default function ProductForm() {
             )}
           />
           {selectedType === "MULTIUNIT" && (
-            <Controller
-              control={form.control}
-              name="unit"
-              render={({
-                field: { onChange, value },
-                fieldState: { error },
-              }) => (
-                <FormControl
-                  isRequired={selectedType === "MULTIUNIT"}
-                  isInvalid={!!error}
+            <>
+              <Controller
+                control={form.control}
+                name="unit"
+                render={({
+                  field: { onChange, value },
+                  fieldState: { error },
+                }) => (
+                  <FormControl
+                    isRequired={selectedType === "MULTIUNIT"}
+                    isInvalid={!!error}
+                  >
+                    <FormControlLabel>
+                      <FormControlLabelText>Satuan</FormControlLabelText>
+                    </FormControlLabel>
+                    <SelectModal
+                      value={value || ""}
+                      placeholder="Pilih Satuan"
+                      options={productUnitOptions}
+                      className="flex-1"
+                      showSearch={false}
+                      onChange={onChange}
+                    />
+                    {error && (
+                      <FormControlError>
+                        <FormControlErrorText>
+                          {error.message}
+                        </FormControlErrorText>
+                      </FormControlError>
+                    )}
+                  </FormControl>
+                )}
+              />
+              <VStack space="sm">
+                <Text className="font-bold text-typography-700">
+                  Varian Unit
+                </Text>
+                <VStack
+                  space="md"
+                  className="p-4 border border-primary-300 rounded-md bg-primary-200 shadow-lg"
                 >
-                  <FormControlLabel>
-                    <FormControlLabelText>Satuan</FormControlLabelText>
-                  </FormControlLabel>
-                  <SelectModal
-                    value={value || ""}
-                    placeholder="Pilih Satuan"
-                    options={productUnitOptions}
-                    className="flex-1"
-                    showSearch={false}
-                    onChange={onChange}
-                  />
-                  {error && (
-                    <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
-                    </FormControlError>
-                  )}
-                </FormControl>
-              )}
-            />
+                  {unitVariantFields.map((field, index) => (
+                    <Grid
+                      key={field.id}
+                      className="p-4 border border-primary-300 rounded-md gap-4"
+                      _extra={{ className: "grid-cols-3" }}
+                    >
+                      <GridItem
+                        _extra={{
+                          className: "col-span-1",
+                        }}
+                      >
+                        <Controller
+                          name={`unitVariants.${index}.name`}
+                          control={form.control}
+                          render={({
+                            field: { onChange, onBlur, value },
+                            fieldState: { error },
+                          }) => (
+                            <FormControl
+                              isRequired
+                              isInvalid={!!error}
+                              className="flex-1"
+                            >
+                              <FormControlLabel>
+                                <FormControlLabelText>
+                                  Nama Varian Unit
+                                </FormControlLabelText>
+                              </FormControlLabel>
+                              <Input>
+                                <InputField
+                                  value={value}
+                                  onChangeText={onChange}
+                                  onBlur={onBlur}
+                                  placeholder="Contoh: Merah, Biru"
+                                />
+                              </Input>
+                              {error && (
+                                <FormControlError>
+                                  <FormControlErrorText>
+                                    {error.message}
+                                  </FormControlErrorText>
+                                </FormControlError>
+                              )}
+                            </FormControl>
+                          )}
+                        />
+                      </GridItem>
+                      <GridItem
+                        _extra={{
+                          className: "col-span-1",
+                        }}
+                      >
+                        <Controller
+                          name={`unitVariants.${index}.netto`}
+                          control={form.control}
+                          render={({
+                            field: { onChange, onBlur, value },
+                            fieldState: { error },
+                          }) => (
+                            <FormControl
+                              isRequired
+                              isInvalid={!!error}
+                              className="flex-1"
+                            >
+                              <FormControlLabel>
+                                <FormControlLabelText>
+                                  {`Netto${unit ? ` (${unit.toLowerCase()})` : ""}`}
+                                </FormControlLabelText>
+                              </FormControlLabel>
+                              <Input>
+                                <InputField
+                                  value={nettoInput
+                                    .find((f) => f.index === index)
+                                    ?.netto.toString()}
+                                  onChangeText={(text) => {
+                                    if (/^\d*\.?\d*$/.test(text)) {
+                                      setNettoInput(
+                                        nettoInput.map((f) =>
+                                          f.index === index
+                                            ? { ...f, netto: text }
+                                            : f,
+                                        ),
+                                      );
+                                    }
+                                  }}
+                                  onBlur={() => {
+                                    const numValue = parseFloat(
+                                      nettoInput.find((f) => f.index === index)
+                                        ?.netto || "0",
+                                    );
+
+                                    setNettoInput(
+                                      nettoInput.map((f) =>
+                                        f.index === index
+                                          ? { ...f, netto: numValue.toString() }
+                                          : f,
+                                      ),
+                                    );
+
+                                    onChange(Number(numValue) || 0);
+                                    form.setValue(
+                                      `unitVariants.${index}.purchasePrice`,
+                                      Number(numValue) * purchasePrice,
+                                    );
+                                    onBlur();
+                                  }}
+                                  placeholder="Masukkan netto"
+                                  keyboardType="numbers-and-punctuation"
+                                />
+                              </Input>
+                              {error && (
+                                <FormControlError>
+                                  <FormControlErrorText>
+                                    {error.message}
+                                  </FormControlErrorText>
+                                </FormControlError>
+                              )}
+                            </FormControl>
+                          )}
+                        />
+                      </GridItem>
+                      <GridItem
+                        _extra={{
+                          className: "col-span-1",
+                        }}
+                      >
+                        <Controller
+                          name={`unitVariants.${index}.purchasePrice`}
+                          control={form.control}
+                          render={({ field: { onChange, onBlur, value } }) => (
+                            <FormControl isDisabled className="flex-1">
+                              <FormControlLabel>
+                                <FormControlLabelText>
+                                  Harga Beli
+                                </FormControlLabelText>
+                              </FormControlLabel>
+                              <Input>
+                                <InputField
+                                  value={value?.toString() || ""}
+                                  onChangeText={(text) => {
+                                    onChange(Number(text) || 0);
+                                  }}
+                                  onBlur={onBlur}
+                                  placeholder="0"
+                                  keyboardType="numeric"
+                                />
+                              </Input>
+                            </FormControl>
+                          )}
+                        />
+                      </GridItem>
+                      <GridItem
+                        _extra={{
+                          className: "col-span-1",
+                        }}
+                      >
+                        <Controller
+                          name={`unitVariants.${index}.code`}
+                          control={form.control}
+                          render={({
+                            field: { onChange, onBlur, value },
+                            fieldState: { error },
+                          }) => (
+                            <FormControl
+                              isRequired
+                              isInvalid={!!error}
+                              className="flex-1"
+                            >
+                              <FormControlLabel>
+                                <FormControlLabelText>
+                                  Kode Varian
+                                </FormControlLabelText>
+                              </FormControlLabel>
+                              <Input>
+                                <InputField
+                                  value={value}
+                                  onChangeText={onChange}
+                                  onBlur={onBlur}
+                                  placeholder="Contoh: V001"
+                                />
+                              </Input>
+                              {error && (
+                                <FormControlError>
+                                  <FormControlErrorText>
+                                    {error.message}
+                                  </FormControlErrorText>
+                                </FormControlError>
+                              )}
+                            </FormControl>
+                          )}
+                        />
+                      </GridItem>
+                      <GridItem
+                        _extra={{
+                          className: "col-span-1",
+                        }}
+                      >
+                        <Controller
+                          name={`unitVariants.${index}.minimumPurchase`}
+                          control={form.control}
+                          render={({
+                            field: { onChange, onBlur, value },
+                            fieldState: { error },
+                          }) => (
+                            <FormControl
+                              isRequired
+                              isInvalid={!!error}
+                              className="flex-1"
+                            >
+                              <FormControlLabel>
+                                <FormControlLabelText>
+                                  Minimal Pembelian
+                                </FormControlLabelText>
+                              </FormControlLabel>
+                              <Input>
+                                <InputField
+                                  value={value?.toString() || ""}
+                                  onChangeText={(text) =>
+                                    onChange(Number(text) || 0)
+                                  }
+                                  onBlur={onBlur}
+                                  placeholder="1"
+                                  keyboardType="numeric"
+                                />
+                              </Input>
+                              {error && (
+                                <FormControlError>
+                                  <FormControlErrorText>
+                                    {error.message}
+                                  </FormControlErrorText>
+                                </FormControlError>
+                              )}
+                            </FormControl>
+                          )}
+                        />
+                      </GridItem>
+                      <GridItem
+                        _extra={{
+                          className: "col-span-1",
+                        }}
+                      >
+                        <Controller
+                          name={`unitVariants.${index}.retailPrice`}
+                          control={form.control}
+                          render={({
+                            field: { onChange, onBlur, value },
+                            fieldState: { error },
+                          }) => (
+                            <FormControl
+                              isRequired
+                              isInvalid={!!error}
+                              className="flex-1"
+                            >
+                              <FormControlLabel>
+                                <FormControlLabelText>
+                                  Harga Retail
+                                </FormControlLabelText>
+                              </FormControlLabel>
+                              <Input>
+                                <InputField
+                                  value={value?.toString() || ""}
+                                  onChangeText={(text) => {
+                                    onChange(Number(text) || 0);
+                                  }}
+                                  onBlur={onBlur}
+                                  placeholder="0"
+                                  keyboardType="numeric"
+                                />
+                              </Input>
+                              {error && (
+                                <FormControlError>
+                                  <FormControlErrorText>
+                                    {error.message}
+                                  </FormControlErrorText>
+                                </FormControlError>
+                              )}
+                            </FormControl>
+                          )}
+                        />
+                      </GridItem>
+                      {unitVariantFields.length > 1 && (
+                        <Button
+                          size="xs"
+                          action="negative"
+                          onPress={() => unitVariantRemove(index)}
+                        >
+                          <SolarIconBold
+                            name="TrashBin2"
+                            color="#FDFBF9"
+                            size={14}
+                          />
+                          <ButtonText className="text-white">Hapus</ButtonText>
+                        </Button>
+                      )}
+                    </Grid>
+                  ))}
+                  <Button
+                    size="sm"
+                    onPress={() => {
+                      const newIndex = unitVariantFields.length;
+                      unitVariantAppend({
+                        name: "",
+                        code: "",
+                        minimumPurchase: 0,
+                        netto: 0,
+                        purchasePrice: 0,
+                        retailPrice: 0,
+                      });
+                      setNettoInput([
+                        ...nettoInput,
+                        { index: newIndex, netto: "0" },
+                      ]);
+                    }}
+                    className="bg-brand-primary"
+                  >
+                    <ButtonText className="text-white">
+                      + Tambah Varian Unit
+                    </ButtonText>
+                  </Button>
+                </VStack>
+              </VStack>
+            </>
           )}
 
           {/* VARIANTS SECTION */}
@@ -610,81 +1034,83 @@ export default function ProductForm() {
                 className="p-4 border border-primary-300 rounded-md bg-primary-200 shadow-lg"
               >
                 {variantFields.map((field, index) => (
-                  <HStack
+                  <VStack
                     key={field.id}
                     space="md"
                     className="p-4 border border-primary-300 rounded-md"
                   >
-                    <Controller
-                      name={`variants.${index}.name`}
-                      control={form.control}
-                      render={({
-                        field: { onChange, onBlur, value },
-                        fieldState: { error },
-                      }) => (
-                        <FormControl
-                          isRequired
-                          isInvalid={!!error}
-                          className="flex-1"
-                        >
-                          <FormControlLabel>
-                            <FormControlLabelText>
-                              Nama Varian
-                            </FormControlLabelText>
-                          </FormControlLabel>
-                          <Input>
-                            <InputField
-                              value={value}
-                              onChangeText={onChange}
-                              onBlur={onBlur}
-                              placeholder="Contoh: Merah, Biru"
-                            />
-                          </Input>
-                          {error && (
-                            <FormControlError>
-                              <FormControlErrorText>
-                                {error.message}
-                              </FormControlErrorText>
-                            </FormControlError>
-                          )}
-                        </FormControl>
-                      )}
-                    />
-                    <Controller
-                      name={`variants.${index}.code`}
-                      control={form.control}
-                      render={({
-                        field: { onChange, onBlur, value },
-                        fieldState: { error },
-                      }) => (
-                        <FormControl
-                          isRequired
-                          isInvalid={!!error}
-                          className="flex-1"
-                        >
-                          <FormControlLabel>
-                            <FormControlLabelText>
-                              Kode Varian
-                            </FormControlLabelText>
-                          </FormControlLabel>
-                          <Input>
-                            <InputField
-                              value={value}
-                              onChangeText={onChange}
-                              onBlur={onBlur}
-                              placeholder="Contoh: V001"
-                            />
-                          </Input>
-                          {error && (
-                            <FormControlError>
-                              <FormControlErrorText>
-                                {error.message}
-                              </FormControlErrorText>
-                            </FormControlError>
-                          )}
-                        </FormControl>
-                      )}
-                    />
+                    <HStack space="md">
+                      <Controller
+                        name={`variants.${index}.name`}
+                        control={form.control}
+                        render={({
+                          field: { onChange, onBlur, value },
+                          fieldState: { error },
+                        }) => (
+                          <FormControl
+                            isRequired
+                            isInvalid={!!error}
+                            className="flex-1"
+                          >
+                            <FormControlLabel>
+                              <FormControlLabelText>
+                                Nama Varian
+                              </FormControlLabelText>
+                            </FormControlLabel>
+                            <Input>
+                              <InputField
+                                value={value}
+                                onChangeText={onChange}
+                                onBlur={onBlur}
+                                placeholder="Contoh: Merah, Biru"
+                              />
+                            </Input>
+                            {error && (
+                              <FormControlError>
+                                <FormControlErrorText>
+                                  {error.message}
+                                </FormControlErrorText>
+                              </FormControlError>
+                            )}
+                          </FormControl>
+                        )}
+                      />
+                      <Controller
+                        name={`variants.${index}.code`}
+                        control={form.control}
+                        render={({
+                          field: { onChange, onBlur, value },
+                          fieldState: { error },
+                        }) => (
+                          <FormControl
+                            isRequired
+                            isInvalid={!!error}
+                            className="flex-1"
+                          >
+                            <FormControlLabel>
+                              <FormControlLabelText>
+                                Kode Varian
+                              </FormControlLabelText>
+                            </FormControlLabel>
+                            <Input>
+                              <InputField
+                                value={value}
+                                onChangeText={onChange}
+                                onBlur={onBlur}
+                                placeholder="Contoh: V001"
+                              />
+                            </Input>
+                            {error && (
+                              <FormControlError>
+                                <FormControlErrorText>
+                                  {error.message}
+                                </FormControlErrorText>
+                              </FormControlError>
+                            )}
+                          </FormControl>
+                        )}
+                      />
+                    </HStack>
                     {variantFields.length > 1 && (
                       <Button
                         size="xs"
@@ -696,9 +1122,10 @@ export default function ProductForm() {
                           color="#FDFBF9"
                           size={14}
                         />
+                        <ButtonText className="text-white">Hapus</ButtonText>
                       </Button>
                     )}
-                  </HStack>
+                  </VStack>
                 ))}
                 <Button
                   size="sm"
@@ -714,116 +1141,125 @@ export default function ProductForm() {
           )}
 
           {/* RETAIL PRICE SECTION */}
-          <VStack space="sm">
-            <Text className="font-bold text-typography-700">Harga Retail</Text>
-            <VStack
-              space="md"
-              className="p-4 border border-primary-300 rounded-md bg-primary-200 shadow-lg"
-            >
-              {retailFields.map((field, index) => (
-                <HStack
-                  key={field.id}
-                  space="md"
-                  className="p-4 border border-primary-300 rounded-md"
-                >
-                  <Controller
-                    name={`retailPrice.${index}.minimumPurchase`}
-                    control={form.control}
-                    render={({
-                      field: { onChange, onBlur, value },
-                      fieldState: { error },
-                    }) => (
-                      <FormControl
-                        isRequired
-                        isInvalid={!!error}
-                        className="flex-1"
-                      >
-                        <FormControlLabel>
-                          <FormControlLabelText>
-                            Minimal Pembelian
-                          </FormControlLabelText>
-                        </FormControlLabel>
-                        <Input>
-                          <InputField
-                            value={value?.toString() || ""}
-                            onChangeText={(text) => onChange(Number(text) || 0)}
-                            onBlur={onBlur}
-                            placeholder="1"
-                            keyboardType="numeric"
-                          />
-                        </Input>
-                        {error && (
-                          <FormControlError>
-                            <FormControlErrorText>
-                              {error.message}
-                            </FormControlErrorText>
-                          </FormControlError>
-                        )}
-                      </FormControl>
-                    )}
-                  />
-                  <Controller
-                    name={`retailPrice.${index}.price`}
-                    control={form.control}
-                    render={({
-                      field: { onChange, onBlur, value },
-                      fieldState: { error },
-                    }) => (
-                      <FormControl
-                        isRequired
-                        isInvalid={!!error}
-                        className="flex-1"
-                      >
-                        <FormControlLabel>
-                          <FormControlLabelText>Harga</FormControlLabelText>
-                        </FormControlLabel>
-                        <Input>
-                          <InputField
-                            value={value?.toString() || ""}
-                            onChangeText={(text) => {
-                              onChange(Number(text) || 0);
-                            }}
-                            onBlur={onBlur}
-                            placeholder="0"
-                            keyboardType="numeric"
-                          />
-                        </Input>
-                        {error && (
-                          <FormControlError>
-                            <FormControlErrorText>
-                              {error.message}
-                            </FormControlErrorText>
-                          </FormControlError>
-                        )}
-                      </FormControl>
-                    )}
-                  />
-                  {retailFields.length > 1 && (
-                    <Button
-                      size="xs"
-                      action="negative"
-                      onPress={() => retailRemove(index)}
-                    >
-                      <SolarIconBold
-                        name="TrashBin2"
-                        color="#FDFBF9"
-                        size={14}
-                      />
-                    </Button>
-                  )}
-                </HStack>
-              ))}
-              <Button
-                size="sm"
-                onPress={() => retailAppend({ minimumPurchase: 1, price: 0 })}
-                className="bg-brand-primary"
+          {selectedType !== "MULTIUNIT" && (
+            <VStack space="sm">
+              <Text className="font-bold text-typography-700">
+                Harga Retail
+              </Text>
+              <VStack
+                space="md"
+                className="p-4 border border-primary-300 rounded-md bg-primary-200 shadow-lg"
               >
-                <ButtonText className="text-white">
-                  + Tambah Harga Retail
-                </ButtonText>
-              </Button>
+                {retailFields.map((field, index) => (
+                  <VStack
+                    key={field.id}
+                    space="md"
+                    className="p-4 border border-primary-300 rounded-md"
+                  >
+                    <HStack space="md">
+                      <Controller
+                        name={`retailPrice.${index}.minimumPurchase`}
+                        control={form.control}
+                        render={({
+                          field: { onChange, onBlur, value },
+                          fieldState: { error },
+                        }) => (
+                          <FormControl
+                            isRequired
+                            isInvalid={!!error}
+                            className="flex-1"
+                          >
+                            <FormControlLabel>
+                              <FormControlLabelText>
+                                Minimal Pembelian
+                              </FormControlLabelText>
+                            </FormControlLabel>
+                            <Input>
+                              <InputField
+                                value={value?.toString() || ""}
+                                onChangeText={(text) =>
+                                  onChange(Number(text) || 0)
+                                }
+                                onBlur={onBlur}
+                                placeholder="1"
+                                keyboardType="numeric"
+                              />
+                            </Input>
+                            {error && (
+                              <FormControlError>
+                                <FormControlErrorText>
+                                  {error.message}
+                                </FormControlErrorText>
+                              </FormControlError>
+                            )}
+                          </FormControl>
+                        )}
+                      />
+                      <Controller
+                        name={`retailPrice.${index}.price`}
+                        control={form.control}
+                        render={({
+                          field: { onChange, onBlur, value },
+                          fieldState: { error },
+                        }) => (
+                          <FormControl
+                            isRequired
+                            isInvalid={!!error}
+                            className="flex-1"
+                          >
+                            <FormControlLabel>
+                              <FormControlLabelText>Harga</FormControlLabelText>
+                            </FormControlLabel>
+                            <Input>
+                              <InputField
+                                value={value?.toString() || ""}
+                                onChangeText={(text) => {
+                                  onChange(Number(text) || 0);
+                                }}
+                                onBlur={onBlur}
+                                placeholder="0"
+                                keyboardType="numeric"
+                              />
+                            </Input>
+                            {error && (
+                              <FormControlError>
+                                <FormControlErrorText>
+                                  {error.message}
+                                </FormControlErrorText>
+                              </FormControlError>
+                            )}
+                          </FormControl>
+                        )}
+                      />
+                    </HStack>
+                    {retailFields.length > 1 && (
+                      <Button
+                        size="xs"
+                        action="negative"
+                        onPress={() => retailRemove(index)}
+                      >
+                        <SolarIconBold
+                          name="TrashBin2"
+                          color="#FDFBF9"
+                          size={14}
+                        />
+                        <ButtonText className="text-white">Hapus</ButtonText>
+                      </Button>
+                    )}
+                  </VStack>
+                ))}
+                <Button
+                  size="sm"
+                  onPress={() => retailAppend({ minimumPurchase: 1, price: 0 })}
+                  className="bg-brand-primary"
+                >
+                  <ButtonText className="text-white">
+                    + Tambah Harga Retail
+                  </ButtonText>
+                </Button>
+              </VStack>
             </VStack>
-          </VStack>
+          )}
 
           {/* WHOLESALE PRICE SECTION */}
           <VStack space="sm">
@@ -839,89 +1275,100 @@ export default function ProductForm() {
                 </Text>
               )}
               {wholesaleFields.map((field, index) => (
-                <HStack
+                <VStack
                   key={field.id}
                   space="md"
                   className="p-4 border border-primary-300 rounded-md"
                 >
-                  <Controller
-                    name={`wholesalePrice.${index}.minimumPurchase`}
-                    control={form.control}
-                    render={({
-                      field: { onChange, onBlur, value },
-                      fieldState: { error },
-                    }) => (
-                      <FormControl
-                        isRequired
-                        isInvalid={!!error}
-                        className="flex-1"
-                      >
-                        <FormControlLabel>
-                          <FormControlLabelText>
-                            Minimal Pembelian
-                          </FormControlLabelText>
-                        </FormControlLabel>
-                        <Input>
-                          <InputField
-                            value={value?.toString() || ""}
-                            onChangeText={(text) => onChange(Number(text) || 0)}
-                            onBlur={onBlur}
-                            placeholder="10"
-                            keyboardType="numeric"
-                          />
-                        </Input>
-                        {error && (
-                          <FormControlError>
-                            <FormControlErrorText>
-                              {error.message}
-                            </FormControlErrorText>
-                          </FormControlError>
-                        )}
-                      </FormControl>
-                    )}
-                  />
-                  <Controller
-                    name={`wholesalePrice.${index}.price`}
-                    control={form.control}
-                    render={({
-                      field: { onChange, onBlur, value },
-                      fieldState: { error },
-                    }) => (
-                      <FormControl
-                        isRequired
-                        isInvalid={!!error}
-                        className="flex-1"
-                      >
-                        <FormControlLabel>
-                          <FormControlLabelText>Harga</FormControlLabelText>
-                        </FormControlLabel>
-                        <Input>
-                          <InputField
-                            value={value?.toString() || ""}
-                            onChangeText={(text) => onChange(Number(text) || 0)}
-                            onBlur={onBlur}
-                            placeholder="0"
-                            keyboardType="numeric"
-                          />
-                        </Input>
-                        {error && (
-                          <FormControlError>
-                            <FormControlErrorText>
-                              {error.message}
-                            </FormControlErrorText>
-                          </FormControlError>
-                        )}
-                      </FormControl>
-                    )}
-                  />
+                  <HStack
+                    key={field.id}
+                    space="md"
+                    className="p-4 border border-primary-300 rounded-md"
+                  >
+                    <Controller
+                      name={`wholesalePrice.${index}.minimumPurchase`}
+                      control={form.control}
+                      render={({
+                        field: { onChange, onBlur, value },
+                        fieldState: { error },
+                      }) => (
+                        <FormControl
+                          isRequired
+                          isInvalid={!!error}
+                          className="flex-1"
+                        >
+                          <FormControlLabel>
+                            <FormControlLabelText>
+                              Minimal Pembelian
+                            </FormControlLabelText>
+                          </FormControlLabel>
+                          <Input>
+                            <InputField
+                              value={value?.toString() || ""}
+                              onChangeText={(text) =>
+                                onChange(Number(text) || 0)
+                              }
+                              onBlur={onBlur}
+                              placeholder="10"
+                              keyboardType="numeric"
+                            />
+                          </Input>
+                          {error && (
+                            <FormControlError>
+                              <FormControlErrorText>
+                                {error.message}
+                              </FormControlErrorText>
+                            </FormControlError>
+                          )}
+                        </FormControl>
+                      )}
+                    />
+                    <Controller
+                      name={`wholesalePrice.${index}.price`}
+                      control={form.control}
+                      render={({
+                        field: { onChange, onBlur, value },
+                        fieldState: { error },
+                      }) => (
+                        <FormControl
+                          isRequired
+                          isInvalid={!!error}
+                          className="flex-1"
+                        >
+                          <FormControlLabel>
+                            <FormControlLabelText>Harga</FormControlLabelText>
+                          </FormControlLabel>
+                          <Input>
+                            <InputField
+                              value={value?.toString() || ""}
+                              onChangeText={(text) =>
+                                onChange(Number(text) || 0)
+                              }
+                              onBlur={onBlur}
+                              placeholder="0"
+                              keyboardType="numeric"
+                            />
+                          </Input>
+                          {error && (
+                            <FormControlError>
+                              <FormControlErrorText>
+                                {error.message}
+                              </FormControlErrorText>
+                            </FormControlError>
+                          )}
+                        </FormControl>
+                      )}
+                    />
+                  </HStack>
                   <Button
                     size="xs"
                     action="negative"
                     onPress={() => wholesaleRemove(index)}
                   >
                     <SolarIconBold name="TrashBin2" color="#FDFBF9" size={14} />
+                    <ButtonText className="text-white">Hapus</ButtonText>
                   </Button>
-                </HStack>
+                </VStack>
               ))}
               <Button
                 size="sm"
