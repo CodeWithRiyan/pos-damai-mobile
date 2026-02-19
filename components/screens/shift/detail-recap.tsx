@@ -19,16 +19,16 @@ import {
 import { Box } from "@/components/ui/box";
 import { Grid, GridItem } from "@/components/ui/grid";
 import { Spinner } from "@/components/ui/spinner";
+import { useShiftDetail } from "@/lib/api/shifts";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView } from "react-native";
-import { useShiftDetail } from "@/lib/api/shifts";
 
 type TypeState = "IN" | "OUT";
 
 export const helperInOut = (
-  type: "INITIAL" | "SALES" | "INCOME" | "PURCHASES" | "EXPENSES"
+  type: "INITIAL" | "SALES" | "INCOME" | "PURCHASES" | "EXPENSES",
 ): TypeState => {
   if (type === "INITIAL") return "IN";
   if (type === "SALES") return "IN";
@@ -48,7 +48,7 @@ const typesOption: { label: string; value: TypeState }[] = [
   },
 ];
 
-export default function ShiftDetailHistory() {
+export default function ShiftDetailRecap() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [types, setTypes] = useState<TypeState[]>(["IN", "OUT"]);
@@ -62,7 +62,7 @@ export default function ShiftDetailHistory() {
   if (isLoading) {
     return (
       <VStack className="flex-1 bg-white">
-        <Header header="DETAIL RIWAYAT SHIFT" isGoBack />
+        <Header header="DETAIL REKAP SHIFT" isGoBack />
         <Box className="flex-1 justify-center items-center">
           <Spinner size="large" />
         </Box>
@@ -72,7 +72,7 @@ export default function ShiftDetailHistory() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header="DETAIL RIWAYAT SHIFT" isGoBack />
+      <Header header="DETAIL REKAP SHIFT" isGoBack />
       <VStack space="md" className="p-4 shadow-lg bg-background-0 items-center">
         <HStack space="sm">
           <Input className="flex-1 border border-background-300 rounded-lg h-10">
@@ -114,7 +114,7 @@ export default function ShiftDetailHistory() {
         {!transactionHistory || transactionHistory?.length === 0 ? (
           <Box className="flex-1 justify-center items-center py-10">
             <Text className="text-gray-500">
-              Belum ada histori transaksi keuangan
+              Belum ada histori transaksi shift
             </Text>
           </Box>
         ) : (

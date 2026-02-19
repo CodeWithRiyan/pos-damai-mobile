@@ -12,9 +12,7 @@ import {
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
-import {
-  SolarIconBold
-} from "@/components/ui/solar-icon-wrapper";
+import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { VStack } from "@/components/ui/vstack";
 // import { useBulkDeleteTransaction, Transaction, useTransaction } from "@/lib/api/transaction";
 import { Button, ButtonText } from "@/components/ui/button";
@@ -40,6 +38,16 @@ export default function TransactionList() {
   const router = useRouter();
 
   const [searchQuery, setSearchQuery] = React.useState("");
+
+  const optionsGroupCustomers =
+    ["WHOLESALE", "RETAIL"].map((category) => ({
+      label: category === "WHOLESALE" ? "GROSIR" : "RETAIL",
+      options:
+        customers
+          ?.filter((c) => c.category === category)
+          .map((c) => ({ label: c.name, value: c.id, desc: c.code || "" })) ||
+        [],
+    })) || [];
 
   const filteredProducts = products?.filter(
     (p) =>
@@ -114,13 +122,7 @@ export default function TransactionList() {
             <SelectModal
               value={customer?.id || ""}
               placeholder="Pilih Pelanggan"
-              options={
-                customers?.map((customer) => ({
-                  value: customer.id,
-                  label: customer.name,
-                  desc: customer.code || "",
-                })) || []
-              }
+              optionsGroup={optionsGroupCustomers}
               className="flex-1"
               onChange={(v) => {
                 if (v) {
