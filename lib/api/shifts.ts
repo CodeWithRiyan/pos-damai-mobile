@@ -1,7 +1,7 @@
 import { db } from '../db';
 import * as schema from '../db/schema';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq, isNull, gte, lte } from 'drizzle-orm';
 import { useAuthStore } from '@/stores/auth';
 
 export interface Shift {
@@ -24,6 +24,16 @@ export interface Shift {
   updatedBy: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
+}
+
+export interface ShiftTransactionHistory {
+  id: string;
+  transactionId: string | null;
+  ref: string | null;
+  transactionDate: Date;
+  type: "INITIAL" | "SALES" | "INCOME" | "PURCHASES" | "EXPENSES";
+  nominal: number;
+  note: string;
 }
 
 export interface StartShiftDTO {
@@ -318,5 +328,133 @@ export function useEndShift() {
       queryClient.invalidateQueries({ queryKey: ['shifts', 'current', orgId] });
       queryClient.invalidateQueries({ queryKey: ['shifts', 'last'] });
     },
+  });
+}
+
+// Get shift detail with transaction history
+export function useShiftDetail(id: string) {
+  const orgId = useAuthStore((state) => state.getOrganizationId());
+
+  return useQuery({
+    queryKey: ["shifts", "detail", id, orgId],
+    queryFn: async () => {
+      if (!id || !orgId) return null;
+
+      // 1. Get shift record
+      const shiftResult = await db
+        .select()
+        .from(schema.shifts)
+        .where(eq(schema.shifts.id, id))
+        .limit(1);
+
+      if (shiftResult.length === 0) return null;
+      const shift = shiftResult[0];
+      const start = shift.startTime;
+      const end = shift.endTime || new Date();
+
+      // 2. Fetch all related transactions in time range
+      const [sales, purchases, finances] = await Promise.all([
+        // Sales
+        db.select()
+          .from(schema.transactions)
+          .where(and(
+            eq(schema.transactions.organizationId, orgId),
+            gte(schema.transactions.transactionDate, start),
+            lte(schema.transactions.transactionDate, end),
+            isNull(schema.transactions.deletedAt)
+          )),
+        // Purchases
+        db.select()
+          .from(schema.purchases)
+          .where(and(
+            eq(schema.purchases.organizationId, orgId),
+            gte(schema.purchases.createdAt, start),
+            lte(schema.purchases.createdAt, end),
+            isNull(schema.purchases.deletedAt)
+          )),
+        // Finances (Income/Expenses)
+        db.select()
+          .from(schema.finances)
+          .where(and(
+            eq(schema.finances.organizationId, orgId),
+            gte(schema.finances.transactionDate, start),
+            lte(schema.finances.transactionDate, end),
+            isNull(schema.finances.deletedAt)
+          ))
+      ]);
+
+      // 3. Map to ShiftTransactionHistory
+      const history: ShiftTransactionHistory[] = [];
+
+      // Initial Balance
+      history.push({
+        id: `initial_${shift.id}`,
+        transactionId: null,
+        ref: null,
+        transactionDate: shift.startTime,
+        type: "INITIAL",
+        nominal: shift.initialBalance,
+        note: "Saldo Awal",
+      });
+
+      // Sales
+      sales.forEach(s => {
+        history.push({
+          id: s.id,
+          transactionId: s.id,
+          ref: s.local_ref_id,
+          transactionDate: s.transactionDate,
+          type: "SALES",
+          nominal: s.totalPaid || s.totalAmount,
+          note: `Transaksi Penjualan (${s.local_ref_id || s.id})`,
+        });
+      });
+
+      // Purchases
+      purchases.forEach(p => {
+        history.push({
+          id: p.id,
+          transactionId: p.id,
+          ref: p.local_ref_id,
+          transactionDate: p.createdAt!,
+          type: "PURCHASES",
+          nominal: p.totalAmount,
+          note: `Transaksi Pembelian (${p.local_ref_id || p.id})`,
+        });
+      });
+
+      // Finances
+      finances.forEach(f => {
+        history.push({
+          id: f.id,
+          transactionId: f.id,
+          ref: f.local_ref_id,
+          transactionDate: f.transactionDate,
+          type: f.type as "INCOME" | "EXPENSES",
+          nominal: f.nominal,
+          note: f.note || (f.type === "INCOME" ? "Pemasukkan Lainnya" : "Pengeluaran Lainnya"),
+        });
+      });
+
+      // Sort by date
+      history.sort((a, b) => a.transactionDate.getTime() - b.transactionDate.getTime());
+
+      // Get Cashier Name
+      const user = await db
+        .select({ name: schema.users.name })
+        .from(schema.users)
+        .where(eq(schema.users.id, shift.userId))
+        .limit(1);
+
+      return {
+        id: shift.id,
+        note: shift.note || "Aman Terkendali",
+        startShift: shift.startTime,
+        endShift: shift.endTime,
+        cashier: user[0]?.name || "Unknown",
+        transactionHistory: history,
+      };
+    },
+    enabled: !!id && !!orgId,
   });
 }

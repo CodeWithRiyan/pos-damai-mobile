@@ -23,12 +23,12 @@ import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView } from "react-native";
-import { dummyData, ShiftTransactionHistory } from "./history";
+import { useShiftDetail } from "@/lib/api/shifts";
 
 type TypeState = "IN" | "OUT";
 
 export const helperInOut = (
-  type: ShiftTransactionHistory["type"],
+  type: "INITIAL" | "SALES" | "INCOME" | "PURCHASES" | "EXPENSES"
 ): TypeState => {
   if (type === "INITIAL") return "IN";
   if (type === "SALES") return "IN";
@@ -51,12 +51,9 @@ const typesOption: { label: string; value: TypeState }[] = [
 export default function ShiftDetailHistory() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const [types, setTypes] = useState<TypeState[]>(["IN", "OUT"]); // TODO: "IN" = INITIAL, TRANSACTION, INCOME. "OUT" = EXPENSES
+  const [types, setTypes] = useState<TypeState[]>(["IN", "OUT"]);
 
-  // TODO: Ganti dengan get useShiftDetail filtered by id;
-  // const { data: detailShift, isLoading } = useShiftDetail();
-  const detailShift = dummyData?.find((f) => f.id === id);
-  const isLoading = false;
+  const { data: detailShift, isLoading } = useShiftDetail(id || "");
 
   const transactionHistory = detailShift?.transactionHistory.filter((f) => {
     return types.some((s) => s === helperInOut(f.type));
