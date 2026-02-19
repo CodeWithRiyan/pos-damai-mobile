@@ -5,11 +5,23 @@ import {
   HStack,
   Text,
   VStack,
+  Input,
+  InputField,
 } from "@/components/ui";
-import { Shift, useEndShift } from "@/lib/api/shifts";
+import {
+  Modal,
+  ModalBackdrop,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@/components/ui/modal";
+import { Shift, useEndShift, useShiftDetail } from "@/lib/api/shifts";
 import dayjs from "dayjs";
 import { ScrollView } from "react-native";
 import { useRouter } from "expo-router";
+import { useState, useMemo } from "react";
+import { Spinner } from "@/components/ui/spinner";
 
 interface ActiveShiftDisplayProps {
   shift: Shift;
@@ -17,21 +29,50 @@ interface ActiveShiftDisplayProps {
 
 export default function ActiveShiftDisplay({ shift }: ActiveShiftDisplayProps) {
   const router = useRouter();
+  const [showEndShiftModal, setShowEndShiftModal] = useState(false);
+  const [finalBalance, setFinalBalance] = useState<string>(shift.initialBalance.toString());
+  const [note, setNote] = useState<string>("Shift ditutup");
+  
+  const { data: detail, isLoading } = useShiftDetail(shift.id);
   const endShiftMutation = useEndShift();
 
+  const totals = useMemo(() => {
+    if (!detail?.transactionHistory) return { in: 0, out: 0 };
+    
+    return detail.transactionHistory.reduce((acc, trx) => {
+      if (trx.type === "INITIAL") return acc;
+      
+      if (trx.type === "SALES" || trx.type === "INCOME") {
+        acc.in += trx.nominal;
+      } else if (trx.type === "PURCHASES" || trx.type === "EXPENSES") {
+        acc.out += trx.nominal;
+      }
+      return acc;
+    }, { in: 0, out: 0 });
+  }, [detail]);
+
+  const currentBalance = shift.initialBalance + totals.in - totals.out;
+
   const handleEndShift = () => {
-    // For now, just end with the initial balance
-    // TODO: Add proper final balance input dialog
     endShiftMutation.mutate({
       id: shift.id,
-      finalBalance: shift.initialBalance,
-      note: "Shift ditutup",
+      finalBalance: parseFloat(finalBalance) || 0,
+      note: note,
     }, {
       onSuccess: () => {
-        // Stay on this screen, it will show the start shift form
+        setShowEndShiftModal(false);
       },
     });
   };
+
+  if (isLoading) {
+    return (
+      <VStack className="flex-1 bg-white items-center justify-center">
+        <Spinner size="large" />
+        <Text className="mt-2 text-typography-500">Memuat data shift...</Text>
+      </VStack>
+    );
+  }
 
   return (
     <VStack className="flex-1 bg-white">
@@ -76,17 +117,16 @@ export default function ActiveShiftDisplay({ shift }: ActiveShiftDisplayProps) {
                   Rp {shift.initialBalance.toLocaleString("id-ID")}
                 </Text>
               </HStack>
-              {/* TODO: Add transaction totals */}
               <HStack className="justify-between py-2 border-b border-gray-100">
                 <Text className="text-typography-500">Total Masuk</Text>
                 <Text className="text-success-600 font-medium">
-                  Rp 0
+                  Rp {totals.in.toLocaleString("id-ID")}
                 </Text>
               </HStack>
               <HStack className="justify-between py-2 border-b border-gray-100">
                 <Text className="text-typography-500">Total Keluar</Text>
                 <Text className="text-error-600 font-medium">
-                  Rp 0
+                  Rp {totals.out.toLocaleString("id-ID")}
                 </Text>
               </HStack>
               <HStack className="justify-between py-3 bg-primary-50 rounded px-2 mt-2">
@@ -94,7 +134,7 @@ export default function ActiveShiftDisplay({ shift }: ActiveShiftDisplayProps) {
                   Saldo Saat Ini
                 </Text>
                 <Text className="text-primary-600 font-bold text-lg">
-                  Rp {shift.initialBalance.toLocaleString("id-ID")}
+                  Rp {currentBalance.toLocaleString("id-ID")}
                 </Text>
               </HStack>
             </VStack>
@@ -111,27 +151,96 @@ export default function ActiveShiftDisplay({ shift }: ActiveShiftDisplayProps) {
       </ScrollView>
 
       {/* End Shift Button */}
-      <HStack className="w-full p-4 gap-2">
+      <VStack className="p-4 gap-2">
         <Button
-          size="sm"
-          className="flex-1 rounded-sm bg-brand-primary active:bg-brand-primary/90"
-          onPress={() => router.push("/(main)")}
+          size="md"
+          className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+          onPress={() => router.push("/(main)/transaction")}
         >
-          <ButtonText className="text-white font-bold">
-            MASUK KE MENU TRANSAKSI
+          <ButtonText className="text-white font-bold uppercase">
+            Masuk Ke Menu Transaksi
           </ButtonText>
         </Button>
         <Button
-          size="sm"
-          className="flex-1 rounded-sm bg-error-500 active:bg-error-600"
-          onPress={handleEndShift}
-          disabled={endShiftMutation.isPending}
+          size="md"
+          variant="outline"
+          className="w-full rounded-sm border-error-500 active:bg-error-50"
+          onPress={() => setShowEndShiftModal(true)}
         >
-          <ButtonText className="text-white">
-            {endShiftMutation.isPending ? "MENUTUP SHIFT..." : "TUTUP SHIFT"}
+          <ButtonText className="text-error-500 font-bold uppercase">
+            Tutup Shift
           </ButtonText>
         </Button>
-      </HStack>
+      </VStack>
+
+      {/* End Shift Modal */}
+      <Modal
+        isOpen={showEndShiftModal}
+        onClose={() => setShowEndShiftModal(false)}
+        size="md"
+      >
+        <ModalBackdrop />
+        <ModalContent>
+          <ModalHeader>
+            <Heading size="lg">Tutup Shift</Heading>
+          </ModalHeader>
+          <ModalBody>
+            <VStack space="md" className="py-4">
+              <Text className="text-typography-500">
+                Masukkan saldo akhir uang tunai yang ada di laci kasir (cash drawer).
+              </Text>
+              
+              <VStack space="xs">
+                <Text className="text-typography-900 font-bold">Saldo Akhir</Text>
+                <Input variant="outline" size="md">
+                  <InputField
+                    placeholder="0"
+                    keyboardType="numeric"
+                    value={finalBalance}
+                    onChangeText={setFinalBalance}
+                  />
+                </Input>
+                <HStack className="justify-between">
+                   <Text className="text-xs text-typography-500">Saldo Seharusnya:</Text>
+                   <Text className="text-xs font-bold">Rp {currentBalance.toLocaleString("id-ID")}</Text>
+                </HStack>
+              </VStack>
+
+              <VStack space="xs">
+                <Text className="text-typography-900 font-bold">Catatan</Text>
+                <Input variant="outline" size="md">
+                  <InputField
+                    placeholder="Contoh: Aman terkendali"
+                    value={note}
+                    onChangeText={setNote}
+                  />
+                </Input>
+              </VStack>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              action="secondary"
+              onPress={() => setShowEndShiftModal(false)}
+              className="mr-2"
+            >
+              <ButtonText>BATAL</ButtonText>
+            </Button>
+            <Button
+              size="sm"
+              action="negative"
+              onPress={handleEndShift}
+              disabled={endShiftMutation.isPending}
+            >
+              <ButtonText>
+                {endShiftMutation.isPending ? "MEMPROSES..." : "KONFIRMASI TUTUP SHIFT"}
+              </ButtonText>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </VStack>
   );
 }
