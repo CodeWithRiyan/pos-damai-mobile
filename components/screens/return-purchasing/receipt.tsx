@@ -159,8 +159,9 @@ export default function ReturnPurchasingReceipt() {
               </HStack>
               <HStack className="justify-between items-center">
                 <Text className="text-typography-500">Alasan Pengembalian</Text>
-                {/* TODO: add reason from backend */}
-                <Text className="text-typography-500">Tidak ada alasan</Text>
+                <Text className="text-typography-500">
+                  {returnData.note || "Tidak ada alasan"}
+                </Text>
               </HStack>
             </VStack>
           </VStack>

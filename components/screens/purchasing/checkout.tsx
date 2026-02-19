@@ -55,16 +55,6 @@ const purchasingSchema = z
     note: z.string(),
   })
   .superRefine((data, ctx) => {
-    if (
-      data.status === "COMPLETED" &&
-      parseFloat(data.totalPaid || "0") < data.totalPurchase
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Total pembayaran tidak boleh kurang dari total pembelian",
-        path: ["totalPaid"],
-      });
-    }
     if (data.transactionDate === null) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -144,23 +134,55 @@ export default function PurchasingCheckoutForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, cartTotal]);
 
-  useEffect(() => {
-    if (form.formState.errors.totalPaid) {
+  const onSubmit: SubmitHandler<PurchasingFormValues> = (
+    data: PurchasingFormValues,
+  ) => {
+    if (
+      data.status === "COMPLETED" &&
+      Number(data.totalPaid) < data.totalPurchase &&
+      !isPayable
+    ) {
       toast.show({
         placement: "top",
         render: ({ id }) => (
           <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{form.formState.errors.totalPaid?.message}</ToastTitle>
+            <ToastTitle>
+              Total pembayaran tidak boleh kurang dari total pembelian
+            </ToastTitle>
           </Toast>
         ),
       });
+    } else if (
+      data.status === "COMPLETED" &&
+      Number(data.totalPaid) < data.totalPurchase &&
+      isPayable
+    ) {
+      showPopUpConfirm({
+        title: `APAKAH INI TRANSAKSI HUTANG?`,
+        icon: "warning",
+        description: (
+          <Text className="text-slate-500">
+            <Text>{`Pembayaran senilai `}</Text>
+            <Text className="font-bold text-slate-900">{`Rp ${data.totalPaid ? Number(data.totalPaid).toLocaleString("id-ID") : 0}`}</Text>
+            <Text>{` akan digunakan sebagai DP. Apakah transaksi akan dilanjutkan?`}</Text>
+          </Text>
+        ),
+        showClose: true,
+        okText: "OKE",
+        closeText: "BATAL",
+        okVariant: "solid",
+        closeVariant: "destructive",
+        onOk: () => {
+          hidePopUpConfirm();
+          goSubmit(data);
+        },
+      });
+    } else {
+      goSubmit(data);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.formState.errors.totalPaid]);
+  };
 
-  const onSubmit: SubmitHandler<PurchasingFormValues> = (
-    data: PurchasingFormValues,
-  ) => {
+  const goSubmit = (data: PurchasingFormValues) => {
     const submissionData: CreatePurchasingDTO = {
       ...data,
       id: purchaseId || undefined,
@@ -197,7 +219,9 @@ export default function PurchasingCheckoutForm() {
           resetCart();
           setCheckoutData(null);
         } else {
-          router.replace("/(main)/purchasing/success");
+          router.replace(
+            `/(main)/purchasing/success/${responseData.id}` as any,
+          );
           if (!!changedProductPrice.length) {
             showPopUpConfirm({
               title: `ADA PERUBAHAN HARGA BELI`,

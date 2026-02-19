@@ -18,11 +18,17 @@ export interface LoginResponse {
   message: string;
 }
 
+export interface Permission {
+  name: string;
+  module: string;
+}
+
 export interface UserRole {
   id: string;
   name: string;
   description: string | null;
   level: number;
+  permissions?: Permission[];
 }
 
 export interface UserProfile {

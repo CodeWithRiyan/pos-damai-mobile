@@ -15,6 +15,8 @@ export const users = sqliteTable('users', {
 
 // Base columns for all sync-able tables
 const syncColumns = {
+  createdBy: text('createdBy'),
+  updatedBy: text('updatedBy'),
   _dirty: integer('_dirty', { mode: 'boolean' }).default(false),
   _syncedAt: integer('_syncedAt', { mode: 'timestamp' }),
   createdAt: integer('createdAt', { mode: 'timestamp' }),
@@ -84,6 +86,8 @@ export const paymentTypes = sqliteTable('payment_methods', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   commission: real('commission').default(0),
+  commissionType: text('commissionType').default('PERCENTAGE'), // 'FLAT' or 'PERCENTAGE'
+  isDefault: integer('isDefault', { mode: 'boolean' }).default(false),
   minimalAmount: real('minimalAmount').default(0),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
@@ -151,6 +155,7 @@ export const purchaseReturns = sqliteTable('purchase_returns', {
   supplierId: text('supplierId').notNull(),
   totalAmount: real('totalAmount').notNull(),
   returnType: text('returnType').default('CASH'),
+  note: text('note').notNull(), // Required field for return reason
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
 });
@@ -173,7 +178,6 @@ export const stockOpnames = sqliteTable('stock_opnames', {
   status: text('status').default('DIFFERENCE'),
   totalGain: real('totalGain').default(0),
   totalLoss: real('totalLoss').default(0),
-  createdBy: text('createdBy'),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
 });

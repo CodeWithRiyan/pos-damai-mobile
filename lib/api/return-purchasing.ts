@@ -7,6 +7,7 @@ import {
   purchaseReturnItems,
   purchaseReturns,
   suppliers,
+  users,
 } from "../db/schema";
 
 export interface ReturnPurchasingItem {
@@ -23,8 +24,13 @@ export interface ReturnPurchasing {
   supplierName?: string;
   totalAmount: number;
   returnType: "CASH" | "ITEM";
+  note: string; // Required field for return reason
   items?: ReturnPurchasingItem[];
+  createdBy: string | null;
+  createdByName?: string;
+  updatedBy: string | null;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface PurchaseReturnParams {
@@ -99,6 +105,19 @@ export const usePurchaseReturn = (id: string) => {
         .where(eq(suppliers.id, returnRecord.supplierId))
         .limit(1);
 
+      // Get creator name
+      let createdByName = 'Admin';
+      if (returnRecord.createdBy) {
+        const creatorResult = await db
+          .select({ name: users.name })
+          .from(users)
+          .where(eq(users.id, returnRecord.createdBy))
+          .limit(1);
+        if (creatorResult.length > 0) {
+          createdByName = creatorResult[0].name;
+        }
+      }
+
       // Get items with product names
       const items = await db
         .select()
@@ -124,6 +143,7 @@ export const usePurchaseReturn = (id: string) => {
       return {
         ...returnRecord,
         supplierName: supplierResult[0]?.name || "Unknown",
+        createdByName,
         items: itemsWithNames,
       };
     },
@@ -139,13 +159,14 @@ export const useCreatePurchaseReturn = () => {
 
   return useMutation({
     mutationFn: async (
-      data: Omit<ReturnPurchasing, "id" | "local_ref_id" | "createdAt">,
+      data: Omit<ReturnPurchasing, "id" | "local_ref_id" | "createdAt" | "updatedAt" | "createdBy" | "updatedBy">,
     ) => {
       if (!organizationId) throw new Error("Organization ID is required");
 
       const returnId = `ret_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const localRefId = `ref_ret_${Date.now()}`;
       const now = new Date();
+      const userId = useAuthStore.getState().profile?.id;
 
       console.log("🔍 [RETURN API] Starting return creation:", {
         returnId,
@@ -164,7 +185,10 @@ export const useCreatePurchaseReturn = () => {
           supplierId: data.supplierId,
           totalAmount: data.totalAmount,
           returnType: data.returnType,
+          note: data.note,
           organizationId,
+          createdBy: userId,
+          updatedBy: userId,
           _dirty: true,
           createdAt: now,
           updatedAt: now,
@@ -192,6 +216,8 @@ export const useCreatePurchaseReturn = () => {
               quantity: item.quantity,
               purchasePrice: item.purchasePrice,
               organizationId,
+              createdBy: userId,
+              updatedBy: userId,
               _dirty: true,
               createdAt: now,
               updatedAt: now,
@@ -234,6 +260,8 @@ export const useCreatePurchaseReturn = () => {
                 quantity: -item.quantity,
                 status: "COMPLETED",
                 organizationId,
+                createdBy: userId,
+                updatedBy: userId,
                 _dirty: true,
                 createdAt: now,
                 updatedAt: now,

@@ -232,19 +232,21 @@ export default function PaymentTypeList() {
                   <HStack className="justify-between items-center">
                     <HStack space="sm">
                       <Heading size="sm">{item.name}</Heading>
-                      {/* TODO: Hanya boleh ada 1 paymentType default */}
-                      <Badge size="sm" variant="solid" action="success">
-                        <BadgeText className="text-xs">Default</BadgeText>
-                      </Badge>
+                      {item.isDefault && (
+                        <Badge size="sm" variant="solid" action="success">
+                          <BadgeText className="text-xs">Default</BadgeText>
+                        </Badge>
+                      )}
                     </HStack>
                     <VStack className="items-end">
                       <Text className="text-brand-primary text-sm font-bold">
                         Komisi
                       </Text>
                       <VStack className="items-end">
-                        {/* TODO: Sesuaikan komisi by commisionType (prefix Rp atau  suffix %) */}
                         <Text size="xs">
-                          Rp {item.commission.toLocaleString("id-ID")}
+                          {item.commissionType === 'FLAT'
+                            ? `Rp ${item.commission.toLocaleString("id-ID")}`
+                            : `${item.commission}%`}
                         </Text>
                         <Badge size="sm" variant="solid" action="muted">
                           <BadgeText className="text-xs">

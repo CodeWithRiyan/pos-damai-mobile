@@ -8,8 +8,12 @@ export interface PaymentType {
   id: string;
   name: string;
   commission: number;
+  commissionType: 'FLAT' | 'PERCENTAGE';
+  isDefault: boolean;
   minimalAmount: number;
   organizationId: string;
+  createdBy: string | null;
+  updatedBy: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 }
@@ -17,6 +21,8 @@ export interface PaymentType {
 export interface CreatePaymentTypeDTO {
   name: string;
   commission?: number;
+  commissionType?: 'FLAT' | 'PERCENTAGE';
+  isDefault?: boolean;
   minimalAmount?: number;
 }
 
@@ -75,12 +81,18 @@ export function useCreatePaymentType() {
       const id = `pm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       const newPaymentType = {
         id,
         name: data.name,
         commission: data.commission ?? 0,
+        commissionType: data.commissionType ?? 'PERCENTAGE',
+        isDefault: data.isDefault ?? false,
         minimalAmount: data.minimalAmount ?? 0,
         organizationId: orgId,
+        createdBy: userId,
+        updatedBy: userId,
         createdAt: now,
         updatedAt: now,
         deletedAt: null,
@@ -106,9 +118,16 @@ export function useUpdatePaymentType() {
       const { id, ...rest } = data;
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       await db
         .update(schema.paymentTypes)
-        .set({ ...rest, updatedAt: now, _dirty: true })
+        .set({
+          ...rest,
+          updatedBy: userId,
+          updatedAt: now,
+          _dirty: true,
+        })
         .where(eq(schema.paymentTypes.id, id));
 
       return { id, ...rest };
@@ -129,10 +148,17 @@ export function useDeletePaymentType() {
     mutationFn: async (id: string) => {
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       // Soft delete locally
       await db
         .update(schema.paymentTypes)
-        .set({ deletedAt: now, _dirty: true })
+        .set({
+          deletedAt: now,
+          updatedBy: userId,
+          updatedAt: now,
+          _dirty: true,
+        })
         .where(eq(schema.paymentTypes.id, id));
 
       return { id };
@@ -152,14 +178,78 @@ export function useBulkDeletePaymentType() {
     mutationFn: async (data: { ids: string[] }) => {
       const now = new Date();
 
+      const userId = useAuthStore.getState().profile?.id;
+
       for (const id of data.ids) {
         await db
           .update(schema.paymentTypes)
-          .set({ deletedAt: now, _dirty: true })
+          .set({
+            deletedAt: now,
+            updatedBy: userId,
+            updatedAt: now,
+            _dirty: true,
+          })
           .where(eq(schema.paymentTypes.id, id));
       }
 
       return data;
+    },
+    onSuccess: () => {
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ['paymentTypes', orgId] });
+    },
+  });
+}
+
+// Set payment type as default (and unset others)
+export function useSetDefaultPaymentType() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const orgId = useAuthStore.getState().getOrganizationId();
+      const userId = useAuthStore.getState().profile?.id;
+      if (!orgId) {
+        throw new Error('Gagal mengatur pembayaran default: ID Organisasi tidak ditemukan.');
+      }
+
+      const now = new Date();
+
+      // First, unset all other defaults in this organization
+      const allPaymentTypes = await db
+        .select()
+        .from(schema.paymentTypes)
+        .where(and(
+          eq(schema.paymentTypes.organizationId, orgId),
+          isNull(schema.paymentTypes.deletedAt)
+        ));
+
+      for (const pt of allPaymentTypes) {
+        if (pt.isDefault) {
+          await db
+            .update(schema.paymentTypes)
+            .set({
+              isDefault: false,
+              updatedBy: userId,
+              updatedAt: now,
+              _dirty: true,
+            })
+            .where(eq(schema.paymentTypes.id, pt.id));
+        }
+      }
+
+      // Then set this one as default
+      await db
+        .update(schema.paymentTypes)
+        .set({
+          isDefault: true,
+          updatedBy: userId,
+          updatedAt: now,
+          _dirty: true,
+        })
+        .where(eq(schema.paymentTypes.id, id));
+
+      return { id };
     },
     onSuccess: () => {
       const orgId = useAuthStore.getState().getOrganizationId();
