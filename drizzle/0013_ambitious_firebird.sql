@@ -1,0 +1,50 @@
+ALTER TABLE `brands` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `brands` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `cash_drawers` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `cash_drawers` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `categories` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `categories` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `customers` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `customers` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `discounts` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `discounts` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `finances` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `finances` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `inventory_transactions` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `inventory_transactions` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `payable_realizations` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `payable_realizations` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `payables` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `payables` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `payment_methods` ADD `commissionType` text DEFAULT 'PERCENTAGE';--> statement-breakpoint
+ALTER TABLE `payment_methods` ADD `isDefault` integer DEFAULT false;--> statement-breakpoint
+ALTER TABLE `payment_methods` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `payment_methods` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `product_prices` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `product_prices` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `product_variants` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `product_variants` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `products` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `products` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `purchase_return_items` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `purchase_return_items` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `purchase_returns` ADD `note` text NOT NULL;--> statement-breakpoint
+ALTER TABLE `purchase_returns` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `purchase_returns` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `purchases` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `purchases` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `receivable_realizations` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `receivable_realizations` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `receivables` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `receivables` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `shifts` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `shifts` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `stock_opname_items` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `stock_opname_items` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `stock_opnames` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `suppliers` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `suppliers` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `transaction_items` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `transaction_items` ADD `updatedBy` text;--> statement-breakpoint
+ALTER TABLE `transactions` ADD `createdBy` text;--> statement-breakpoint
+ALTER TABLE `transactions` ADD `updatedBy` text;
