@@ -43,7 +43,8 @@ const selectTriggerStyle = tva({
 export default function SelectModal({
   header = "PILIH",
   value,
-  options,
+  options = [],
+  optionsGroup,
   placeholder,
   searchPlaceholder = "Cari",
   className,
@@ -55,7 +56,11 @@ export default function SelectModal({
 }: {
   header?: string;
   value: string;
-  options: { value: string; label: string; desc?: string }[];
+  options?: { value: string; label: string; desc?: string }[];
+  optionsGroup?: {
+    label: string;
+    options: { value: string; label: string; desc?: string }[];
+  }[];
   placeholder?: string;
   searchPlaceholder?: string;
   showSearch?: boolean;
@@ -68,6 +73,13 @@ export default function SelectModal({
   const filteredOptions = options.filter((option) =>
     option.label.toLowerCase().includes(search.toLowerCase()),
   );
+
+  const filteredOptionsGroup = optionsGroup?.map((group) => ({
+    ...group,
+    options: group.options.filter((option) =>
+      option.label.toLowerCase().includes(search.toLowerCase()),
+    ),
+  }));
 
   return (
     <>
@@ -125,7 +137,7 @@ export default function SelectModal({
           </ModalHeader>
           <ModalBody className="m-0" showsVerticalScrollIndicator={false}>
             <VStack>
-              {!!filteredOptions.length ? (
+              {!!filteredOptions.length && !filteredOptionsGroup ? (
                 filteredOptions.map((option) => (
                   <Pressable
                     key={option.value}
@@ -152,6 +164,41 @@ export default function SelectModal({
                       <Icon as={CheckIcon} className="text-primary-500" />
                     )}
                   </Pressable>
+                ))
+              ) : filteredOptionsGroup?.length ? (
+                filteredOptionsGroup.map((group) => (
+                  <VStack key={group.label}>
+                    <Text className="text-lg text-typography-700 font-semibold font-body text-left mx-2">
+                      {group.label}
+                    </Text>
+                    {group.options.map((option) => (
+                      <Pressable
+                        key={option.value}
+                        className={`w-full flex-row items-center p-4 rounded-sm data-[disabled=true]:opacity-40 data-[disabled=true]:web:pointer-events-auto data-[disabled=true]:web:cursor-not-allowed hover:bg-background-50 active:bg-background-100 data-[focus=true]:bg-background-100 web:data-[focus-visible=true]:bg-background-100 data-[checked=true]:bg-background-100${
+                          option.value === value ? " bg-background-100" : ""
+                        }`}
+                        onPress={() => {
+                          onChange(option.value);
+                          setOpen(false);
+                          setSearch("");
+                        }}
+                      >
+                        <VStack className="flex-1">
+                          <Text className="flex-1 text-lg leading-5 text-typography-700 font-normal font-body text-left mx-2">
+                            {option.label}
+                          </Text>
+                          {option.desc && (
+                            <Text className="flex-1 leading-4 text-typography-500 font-normal font-body text-left mx-2">
+                              {option.desc}
+                            </Text>
+                          )}
+                        </VStack>
+                        {option.value === value && (
+                          <Icon as={CheckIcon} className="text-primary-500" />
+                        )}
+                      </Pressable>
+                    ))}
+                  </VStack>
                 ))
               ) : (
                 <Text className="text-lg text-typography-500 text-center p-10">

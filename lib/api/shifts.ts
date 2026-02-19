@@ -1,8 +1,8 @@
-import { db } from '../db';
-import * as schema from '../db/schema';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { and, desc, eq, isNull, gte, lte } from 'drizzle-orm';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from "@/stores/auth";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { and, desc, eq, gte, isNull, lte } from "drizzle-orm";
+import { db } from "../db";
+import * as schema from "../db/schema";
 
 export interface Shift {
   id: string;
@@ -50,17 +50,19 @@ export interface EndShiftDTO {
 
 // Get all shifts from local SQLite
 export function useShifts() {
-  const orgId = useAuthStore(state => state.getOrganizationId());
+  const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ['shifts', orgId],
+    queryKey: ["shifts", orgId],
     queryFn: async () => {
       const shiftsResult = await db
         .select()
         .from(schema.shifts)
-        .where(and(
-          eq(schema.shifts.organizationId, orgId),
-          isNull(schema.shifts.deletedAt)
-        ))
+        .where(
+          and(
+            eq(schema.shifts.organizationId, orgId),
+            isNull(schema.shifts.deletedAt),
+          ),
+        )
         .orderBy(desc(schema.shifts.startTime));
 
       // Join with cashdrawer and user names
@@ -80,10 +82,10 @@ export function useShifts() {
 
           return {
             ...shift,
-            cashDrawerName: cashDrawer[0]?.name || 'Unknown',
-            userName: user[0]?.name || 'Unknown',
+            cashDrawerName: cashDrawer[0]?.name || "Unknown",
+            userName: user[0]?.name || "Unknown",
           };
-        })
+        }),
       );
 
       return shiftsWithDetails as Shift[];
@@ -94,21 +96,23 @@ export function useShifts() {
 
 // Get active shift for a cashdrawer
 export function useActiveShift(cashDrawerId?: string) {
-  const orgId = useAuthStore(state => state.getOrganizationId());
+  const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ['shifts', 'active', cashDrawerId, orgId],
+    queryKey: ["shifts", "active", cashDrawerId, orgId],
     queryFn: async () => {
       if (!cashDrawerId || !orgId) return null;
 
       const result = await db
         .select()
         .from(schema.shifts)
-        .where(and(
-          eq(schema.shifts.cashDrawerId, cashDrawerId),
-          eq(schema.shifts.status, 'ACTIVE'),
-          eq(schema.shifts.organizationId, orgId),
-          isNull(schema.shifts.deletedAt)
-        ))
+        .where(
+          and(
+            eq(schema.shifts.cashDrawerId, cashDrawerId),
+            eq(schema.shifts.status, "ACTIVE"),
+            eq(schema.shifts.organizationId, orgId),
+            isNull(schema.shifts.deletedAt),
+          ),
+        )
         .limit(1);
 
       if (result.length === 0) return null;
@@ -130,8 +134,8 @@ export function useActiveShift(cashDrawerId?: string) {
 
       return {
         ...shift,
-        cashDrawerName: cashDrawer[0]?.name || 'Unknown',
-        userName: user[0]?.name || 'Unknown',
+        cashDrawerName: cashDrawer[0]?.name || "Unknown",
+        userName: user[0]?.name || "Unknown",
       } as Shift;
     },
     enabled: !!cashDrawerId && !!orgId,
@@ -140,20 +144,22 @@ export function useActiveShift(cashDrawerId?: string) {
 
 // Get current active shift (any cashdrawer) for the logged-in user's organization
 export function useCurrentShift() {
-  const orgId = useAuthStore(state => state.getOrganizationId());
+  const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ['shifts', 'current', orgId],
+    queryKey: ["shifts", "current", orgId],
     queryFn: async () => {
       if (!orgId) return null;
 
       const result = await db
         .select()
         .from(schema.shifts)
-        .where(and(
-          eq(schema.shifts.status, 'ACTIVE'),
-          eq(schema.shifts.organizationId, orgId),
-          isNull(schema.shifts.deletedAt)
-        ))
+        .where(
+          and(
+            eq(schema.shifts.status, "ACTIVE"),
+            eq(schema.shifts.organizationId, orgId),
+            isNull(schema.shifts.deletedAt),
+          ),
+        )
         .limit(1);
 
       if (result.length === 0) return null;
@@ -175,8 +181,8 @@ export function useCurrentShift() {
 
       return {
         ...shift,
-        cashDrawerName: cashDrawer[0]?.name || 'Unknown',
-        userName: user[0]?.name || 'Unknown',
+        cashDrawerName: cashDrawer[0]?.name || "Unknown",
+        userName: user[0]?.name || "Unknown",
       } as Shift;
     },
     enabled: !!orgId,
@@ -185,21 +191,23 @@ export function useCurrentShift() {
 
 // Get last closed shift for a cashdrawer
 export function useLastShift(cashDrawerId?: string) {
-  const orgId = useAuthStore(state => state.getOrganizationId());
+  const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ['shifts', 'last', cashDrawerId, orgId],
+    queryKey: ["shifts", "last", cashDrawerId, orgId],
     queryFn: async () => {
       if (!cashDrawerId || !orgId) return null;
 
       const result = await db
         .select()
         .from(schema.shifts)
-        .where(and(
-          eq(schema.shifts.cashDrawerId, cashDrawerId),
-          eq(schema.shifts.status, 'CLOSED'),
-          eq(schema.shifts.organizationId, orgId),
-          isNull(schema.shifts.deletedAt)
-        ))
+        .where(
+          and(
+            eq(schema.shifts.cashDrawerId, cashDrawerId),
+            eq(schema.shifts.status, "CLOSED"),
+            eq(schema.shifts.organizationId, orgId),
+            isNull(schema.shifts.deletedAt),
+          ),
+        )
         .orderBy(desc(schema.shifts.endTime))
         .limit(1);
 
@@ -219,28 +227,32 @@ export function useStartShift() {
     mutationFn: async (data: StartShiftDTO) => {
       const orgId = useAuthStore.getState().getOrganizationId();
       const userId = useAuthStore.getState().profile?.id;
-      
+
       if (!orgId) {
-        throw new Error('ID Organisasi tidak ditemukan');
+        throw new Error("ID Organisasi tidak ditemukan");
       }
 
       if (!userId) {
-        throw new Error('User tidak ditemukan');
+        throw new Error("User tidak ditemukan");
       }
 
       // Check if there's already an active shift for this cashdrawer
       const activeShift = await db
         .select()
         .from(schema.shifts)
-        .where(and(
-          eq(schema.shifts.cashDrawerId, data.cashDrawerId),
-          eq(schema.shifts.status, 'ACTIVE'),
-          eq(schema.shifts.organizationId, orgId)
-        ))
+        .where(
+          and(
+            eq(schema.shifts.cashDrawerId, data.cashDrawerId),
+            eq(schema.shifts.status, "ACTIVE"),
+            eq(schema.shifts.organizationId, orgId),
+          ),
+        )
         .limit(1);
 
       if (activeShift.length > 0) {
-        throw new Error('Shift sudah aktif untuk cashdrawer ini. Silakan tutup shift yang aktif terlebih dahulu.');
+        throw new Error(
+          "Shift sudah aktif untuk cashdrawer ini. Silakan tutup shift yang aktif terlebih dahulu.",
+        );
       }
 
       const shiftId = `shift_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -258,7 +270,7 @@ export function useStartShift() {
         finalBalance: null,
         expectedBalance: null,
         difference: null,
-        status: 'ACTIVE',
+        status: "ACTIVE",
         note: data.note || null,
         organizationId: orgId,
         createdBy: userId,
@@ -275,9 +287,9 @@ export function useStartShift() {
     },
     onSuccess: (data) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['shifts', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['shifts', 'active'] });
-      queryClient.invalidateQueries({ queryKey: ['shifts', 'current', orgId] });
+      queryClient.invalidateQueries({ queryKey: ["shifts", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["shifts", "active"] });
+      queryClient.invalidateQueries({ queryKey: ["shifts", "current", orgId] });
     },
   });
 }
@@ -298,7 +310,7 @@ export function useEndShift() {
         .limit(1);
 
       if (shift.length === 0) {
-        throw new Error('Shift tidak ditemukan');
+        throw new Error("Shift tidak ditemukan");
       }
 
       const expectedBalance = shift[0].initialBalance; // You may want to add logic to calculate expected based on transactions
@@ -311,7 +323,7 @@ export function useEndShift() {
           finalBalance: data.finalBalance,
           expectedBalance: expectedBalance,
           difference: difference,
-          status: 'CLOSED',
+          status: "CLOSED",
           note: data.note || shift[0].note,
           updatedBy: useAuthStore.getState().profile?.id,
           updatedAt: now,
@@ -323,10 +335,10 @@ export function useEndShift() {
     },
     onSuccess: (data) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['shifts', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['shifts', 'active'] });
-      queryClient.invalidateQueries({ queryKey: ['shifts', 'current', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['shifts', 'last'] });
+      queryClient.invalidateQueries({ queryKey: ["shifts", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["shifts", "active"] });
+      queryClient.invalidateQueries({ queryKey: ["shifts", "current", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["shifts", "last"] });
     },
   });
 }
@@ -355,32 +367,41 @@ export function useShiftDetail(id: string) {
       // 2. Fetch all related transactions in time range
       const [sales, purchases, finances] = await Promise.all([
         // Sales
-        db.select()
+        db
+          .select()
           .from(schema.transactions)
-          .where(and(
-            eq(schema.transactions.organizationId, orgId),
-            gte(schema.transactions.transactionDate, start),
-            lte(schema.transactions.transactionDate, end),
-            isNull(schema.transactions.deletedAt)
-          )),
+          .where(
+            and(
+              eq(schema.transactions.organizationId, orgId),
+              gte(schema.transactions.transactionDate, start),
+              lte(schema.transactions.transactionDate, end),
+              isNull(schema.transactions.deletedAt),
+            ),
+          ),
         // Purchases
-        db.select()
+        db
+          .select()
           .from(schema.purchases)
-          .where(and(
-            eq(schema.purchases.organizationId, orgId),
-            gte(schema.purchases.createdAt, start),
-            lte(schema.purchases.createdAt, end),
-            isNull(schema.purchases.deletedAt)
-          )),
+          .where(
+            and(
+              eq(schema.purchases.organizationId, orgId),
+              gte(schema.purchases.createdAt, start),
+              lte(schema.purchases.createdAt, end),
+              isNull(schema.purchases.deletedAt),
+            ),
+          ),
         // Finances (Income/Expenses)
-        db.select()
+        db
+          .select()
           .from(schema.finances)
-          .where(and(
-            eq(schema.finances.organizationId, orgId),
-            gte(schema.finances.transactionDate, start),
-            lte(schema.finances.transactionDate, end),
-            isNull(schema.finances.deletedAt)
-          ))
+          .where(
+            and(
+              eq(schema.finances.organizationId, orgId),
+              gte(schema.finances.transactionDate, start),
+              lte(schema.finances.transactionDate, end),
+              isNull(schema.finances.deletedAt),
+            ),
+          ),
       ]);
 
       // 3. Map to ShiftTransactionHistory
@@ -398,7 +419,7 @@ export function useShiftDetail(id: string) {
       });
 
       // Sales
-      sales.forEach(s => {
+      sales.forEach((s) => {
         history.push({
           id: s.id,
           transactionId: s.id,
@@ -411,7 +432,7 @@ export function useShiftDetail(id: string) {
       });
 
       // Purchases
-      purchases.forEach(p => {
+      purchases.forEach((p) => {
         history.push({
           id: p.id,
           transactionId: p.id,
@@ -424,7 +445,7 @@ export function useShiftDetail(id: string) {
       });
 
       // Finances
-      finances.forEach(f => {
+      finances.forEach((f) => {
         history.push({
           id: f.id,
           transactionId: f.id,
@@ -432,12 +453,18 @@ export function useShiftDetail(id: string) {
           transactionDate: f.transactionDate,
           type: f.type as "INCOME" | "EXPENSES",
           nominal: f.nominal,
-          note: f.note || (f.type === "INCOME" ? "Pemasukkan Lainnya" : "Pengeluaran Lainnya"),
+          note:
+            f.note ||
+            (f.type === "INCOME"
+              ? "Pemasukkan Lainnya"
+              : "Pengeluaran Lainnya"),
         });
       });
 
       // Sort by date
-      history.sort((a, b) => a.transactionDate.getTime() - b.transactionDate.getTime());
+      history.sort(
+        (a, b) => a.transactionDate.getTime() - b.transactionDate.getTime(),
+      );
 
       // Get Cashier Name
       const user = await db
@@ -451,6 +478,9 @@ export function useShiftDetail(id: string) {
         note: shift.note || "Aman Terkendali",
         startShift: shift.startTime,
         endShift: shift.endTime,
+        initialBalance: shift.initialBalance,
+        finalBalance: shift.finalBalance, // TODO: Calculate final balance automatic by system (initial + in - out)
+        actualBalance: 0, // TODO: get actualBalance user input after end shift
         cashier: user[0]?.name || "Unknown",
         transactionHistory: history,
       };

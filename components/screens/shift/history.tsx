@@ -35,7 +35,7 @@ export default function HistoryShift() {
                 borderBottomColor: "rgba(0, 0, 0, 0.1)",
               }}
               onPress={() => {
-                router.push(`/shift/detail-history/${item.id}`);
+                router.push(`/shift/detail/${item.id}`);
               }}
             >
               <VStack space="md" className="flex-1">
