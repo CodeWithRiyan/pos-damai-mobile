@@ -74,6 +74,30 @@ export default function SettingScreen() {
               </Box>
             </VStack>
 
+            {/* Data Management Section */}
+            <VStack space="sm">
+              <Text className="text-gray-500 font-medium ml-1">Data & Synchronization</Text>
+              <Box className="bg-white rounded-xl overflow-hidden border border-gray-100">
+                <Pressable
+                  className="p-4 flex-row items-center justify-between active:bg-gray-50"
+                  onPress={() => router.push("/sync")}
+                >
+                  <HStack space="md" className="items-center">
+                    <Box className="w-8 h-8 rounded-full bg-orange-50 items-center justify-center">
+                      <IconSymbol name="arrow.triangle.2.circlepath" size={18} className="text-orange-500" />
+                    </Box>
+                    <VStack>
+                      <Text className="font-medium">Sinkronisasi Data</Text>
+                      <Text className="text-gray-500 text-sm">
+                        Kelola sinkronisasi data dengan server
+                      </Text>
+                    </VStack>
+                  </HStack>
+                  <IconSymbol name="chevron.right" size={16} className="text-gray-400" />
+                </Pressable>
+              </Box>
+            </VStack>
+
             {/* Danger Zone */}
             <VStack space="sm">
               <Text className="text-red-500 font-medium ml-1">Danger Zone</Text>
