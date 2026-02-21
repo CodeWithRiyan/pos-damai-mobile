@@ -39,6 +39,7 @@ export interface CreatePurchasingDTO {
   dueDate: Date | null;
   status: string;
   note: string;
+  paymentMethodId?: string;
   items: {
     product: { id: string; purchasePrice: number };
     newPurchasePrice: number;
@@ -173,7 +174,6 @@ export function useCreatePurchasing() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // TODO: jika data.totalPaid < data.totalPurchase, maka buat hutang senilai data.totalPurchase dan realisasikan hutang sebagai DP senilai data.totalPaid
     mutationFn: async (data: CreatePurchasingDTO) => {
       const orgId = useAuthStore.getState().getOrganizationId();
       if (!orgId) {
@@ -294,6 +294,30 @@ export function useCreatePurchasing() {
           console.log(
             `[useCreatePurchasing] Created payable ${payableId} for purchase ${purchaseId}, amount: ${data.totalPurchase}`,
           );
+
+          // 5. Create Payable Realization as DP if totalPaid < totalPurchase
+          const totalPaidNum = Number(data.totalPaid) || 0;
+          if (totalPaidNum > 0 && totalPaidNum < data.totalPurchase) {
+            const realizationId = `preal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            await tx.insert(schema.payableRealizations).values({
+              id: realizationId,
+              payableId: payableId,
+              nominal: totalPaidNum,
+              realizationDate: data.transactionDate || now,
+              paymentMethodId: data.paymentMethodId || 'CASH',
+              note: "DP Pembelian",
+              organizationId: orgId,
+              createdBy: userId,
+              updatedBy: userId,
+              createdAt: data.transactionDate || now,
+              updatedAt: now,
+              _dirty: true,
+              _syncedAt: null,
+            });
+            console.log(
+              `[useCreatePurchasing] Created payable realization (DP) ${realizationId} for payable ${payableId}, amount: ${totalPaidNum}`,
+            );
+          }
         }
       });
 

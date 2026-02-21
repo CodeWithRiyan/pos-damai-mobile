@@ -35,7 +35,9 @@ import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import InputVirtualKeyboard from "@/components/ui/input-virtual-keyboard";
 import SelectModal from "@/components/ui/select/select-modal";
 import { useCurrentUser } from "@/lib/api/auth";
+import { usePaymentTypes } from "@/lib/api/payment-types";
 import { usePurchasingStore } from "@/stores/purchasing";
+import { usePaymentTypeStore } from "@/stores/payment-type";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { ArrowRight, CalendarIcon, Check, PlusIcon } from "lucide-react-native";
@@ -52,6 +54,7 @@ const purchasingSchema = z
     dueDate: z.date().nullable(),
     isCashdrawer: z.boolean(),
     status: z.string(),
+    paymentMethodId: z.string().min(1, "Metode pembayaran harus dipilih"),
     note: z.string(),
   })
   .superRefine((data, ctx) => {
@@ -80,6 +83,8 @@ export default function PurchasingCheckoutForm() {
   const { data: user } = useCurrentUser();
   const { cart, cartTotal, status, setCheckoutData, resetCart, purchaseId } =
     usePurchasingStore();
+  const { data: paymentTypesData } = usePaymentTypes();
+  const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
 
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
   const [showTransactionDatePicker, setShowTransactionDatePicker] =
@@ -94,6 +99,7 @@ export default function PurchasingCheckoutForm() {
     dueDate: null,
     isCashdrawer: false,
     status: "DRAFT",
+    paymentMethodId: "",
     note: "",
   };
 
@@ -107,6 +113,12 @@ export default function PurchasingCheckoutForm() {
   const isPayable = form.watch("isPayable");
   const { data: suppliers = [] } = useSuppliers();
   const createMutation = useCreatePurchasing();
+
+  const paymentTypes =
+    paymentTypesData?.map((pt) => ({
+      label: pt.name,
+      value: pt.id,
+    })) || [];
 
   const toast = useToast();
 
@@ -126,13 +138,16 @@ export default function PurchasingCheckoutForm() {
 
   useEffect(() => {
     if (cartTotal) {
+      const defaultPaymentType = paymentTypesData?.find((pt) => pt.isDefault)?.id || "";
+
       form.setValue("totalPurchase", cartTotal);
       form.setValue("status", status);
+      form.setValue("paymentMethodId", defaultPaymentType);
     } else {
       form.reset(initialValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, cartTotal]);
+  }, [form, cartTotal, paymentTypesData, status]);
 
   const onSubmit: SubmitHandler<PurchasingFormValues> = (
     data: PurchasingFormValues,
@@ -522,6 +537,39 @@ export default function PurchasingCheckoutForm() {
                     )}
                   />
                 )}
+                <Controller
+                  control={form.control}
+                  name="paymentMethodId"
+                  render={({
+                    field: { onChange, value },
+                    fieldState: { error },
+                  }) => (
+                    <FormControl isRequired isInvalid={!!error}>
+                      <HStack space="md">
+                        <SelectModal
+                          value={value}
+                          placeholder="Metode Pembayaran"
+                          options={paymentTypes}
+                          className="flex-1"
+                          onChange={onChange}
+                        />
+                        <Pressable
+                          className="size-10 rounded-full bg-primary-500 items-center justify-center"
+                          onPress={() => setPaymentTypeOpen(true, () => {})}
+                        >
+                          <Icon as={PlusIcon} color="white" />
+                        </Pressable>
+                      </HStack>
+                      {error && (
+                        <FormControlError>
+                          <FormControlErrorText>
+                            {error.message}
+                          </FormControlErrorText>
+                        </FormControlError>
+                      )}
+                    </FormControl>
+                  )}
+                />
                 <Controller
                   name="note"
                   control={form.control}
