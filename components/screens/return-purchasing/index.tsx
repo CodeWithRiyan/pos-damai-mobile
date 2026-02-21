@@ -78,9 +78,8 @@ export default function PurchasingSupplierList() {
                   className="px-4 py-4 border-b border-gray-200 active:bg-gray-100"
                   onPress={() => {
                     router.navigate(
-                      `/(main)/management/return/purchasing/supplier/${supplier.id}`,
+                      `/(main)/management/return/purchasing/input/${supplier.id}`,
                     );
-                    // setSearch("");
                   }}
                 >
                   <HStack className="justify-between items-center">

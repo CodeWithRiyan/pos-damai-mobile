@@ -40,7 +40,7 @@ import z from "zod";
 export default function ReturnPurchasingConfirmForm() {
   const { purchaseId } = useLocalSearchParams<{ purchaseId: string }>();
   const { data: purchase } = usePurchase(purchaseId || "");
-  const { cart, openConfirm, setOpenConfirm, setConfirmData, resetCart } =
+  const { cart, openConfirm, setOpenConfirm, resetCart } =
     useReturnPurchasingStore();
   const router = useRouter();
   const toast = useToast();
@@ -99,20 +99,12 @@ export default function ReturnPurchasingConfirmForm() {
       returnType: data.returnType as "CASH" | "ITEM",
       note: data.reason, // Map 'reason' from form to 'note' in database
       items: cart.map((item) => ({
-        productId: item.product.productId,
-        productName: item.product.productName || "",
+        productId: item.product.id,
+        productName: item.product.name || "",
         quantity: item.quantity,
         purchasePrice: item.product.purchasePrice || 0,
       })),
     };
-
-    console.log("📦 [RETURN FORM] Submitting return:", {
-      supplierId: returnData.supplierId,
-      totalAmount: returnData.totalAmount,
-      returnType: returnData.returnType,
-      itemCount: returnData.items.length,
-      items: returnData.items,
-    });
 
     createMutation.mutate(returnData, {
       onSuccess: (data) => {
@@ -121,6 +113,7 @@ export default function ReturnPurchasingConfirmForm() {
         router.navigate(
           `/(main)/management/return/purchasing/success/${data.id}`,
         );
+        resetCart();
       },
       onError: showErrorToast,
     });

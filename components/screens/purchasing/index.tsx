@@ -18,17 +18,29 @@ import {
 } from "@/components/ui/solar-icon-wrapper";
 import { VStack } from "@/components/ui/vstack";
 // import { useBulkDeletePurchasing, Purchasing, usePurchasing } from "@/lib/api/purchasing";
-import { useProducts } from "@/lib/api/products";
+import { ShowByStock, useProducts } from "@/lib/api/products";
 import { usePurchasingStore } from "@/stores/purchasing";
 import { useRouter } from "expo-router";
 import { Plus } from "lucide-react-native";
-import React from "react";
+import React, { useState } from "react";
 import { ScrollView } from "react-native";
+import ProductNotification from "../product/notification";
+import PurchasingFilter from "./filter";
 import PopupAddProduct from "./popup-add";
 
 export default function PurchasingList() {
+  const [openNotification, setOpenNotification] = useState<boolean>(false);
+  const [stockFilter, setStockFilter] = useState<ShowByStock>("ALL_STOCK");
+
+  const [openFilter, setOpenFilter] = useState<boolean>(false);
+  const [supplierId, setSupplierId] = useState<string>("");
+  const activeFilterCount = [supplierId].filter(Boolean).length;
+
   const { cart, setAddProduct, setStatus } = usePurchasingStore();
-  const { data: products } = useProducts();
+  const { data: products } = useProducts({
+    supplierId,
+    showByStock: stockFilter,
+  });
   const router = useRouter();
 
   return (
@@ -60,15 +72,22 @@ export default function PurchasingList() {
           >
             <Pressable
               className="size-10 items-center justify-center"
-              onPress={() => {}}
+              onPress={() => setOpenNotification(true)}
             >
               <SolarIconLinear name="Bell" size={20} color="#3d2117" />
             </Pressable>
             <Pressable
-              className="size-10 items-center justify-center"
-              onPress={() => {}}
+              className="relative size-10 items-center justify-center"
+              onPress={() => setOpenFilter(true)}
             >
               <SolarIconLinear name="Filter" size={20} color="#3d2117" />
+              {!!activeFilterCount && (
+                <Box className="absolute top-0 right-0 w-4 h-4 bg-primary-500 rounded-full flex items-center justify-center">
+                  <Text size="xs" className="text-white font-bold">
+                    {activeFilterCount}
+                  </Text>
+                </Box>
+              )}
             </Pressable>
             <Input className="flex-1 border border-background-300 rounded-lg h-10">
               <InputSlot className="pl-3">
@@ -214,6 +233,18 @@ export default function PurchasingList() {
         </VStack>
       </HStack>
       <PopupAddProduct />
+      <ProductNotification
+        open={openNotification}
+        setOpen={setOpenNotification}
+        value={stockFilter}
+        onChange={(v) => setStockFilter(v as ShowByStock)}
+      />
+      <PurchasingFilter
+        open={openFilter}
+        setOpen={setOpenFilter}
+        supplierId={supplierId}
+        setSupplierId={setSupplierId}
+      />
     </Box>
   );
 }

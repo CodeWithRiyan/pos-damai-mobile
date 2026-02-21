@@ -1,3 +1,4 @@
+import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
@@ -41,6 +42,7 @@ import { ScrollView } from "react-native";
 
 export default function PayableList({ isReport }: { isReport?: boolean }) {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const {
     data: payableBySupplier = [],
@@ -171,7 +173,29 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
                   </Pressable>
                 )
               ) : (
-                <Pressable className="p-6" onPress={() => {}}>
+                <Pressable
+                  className="p-6"
+                  onPress={() => {
+                    showActionDrawer({
+                      actions: [
+                        {
+                          label: "Export Data",
+                          icon: "Export",
+                          onPress: () => {
+                            hideActionDrawer();
+                          },
+                        },
+                        {
+                          label: "Import Data",
+                          icon: "Import",
+                          onPress: () => {
+                            hideActionDrawer();
+                          },
+                        },
+                      ],
+                    });
+                  }}
+                >
                   <SolarIconBold
                     name="MenuDots"
                     size={20}

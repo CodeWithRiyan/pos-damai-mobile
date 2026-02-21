@@ -13,7 +13,7 @@ import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
 import { Spinner } from "@/components/ui/spinner";
-import { usePurchase } from "@/lib/api/purchasing";
+import { useProducts } from "@/lib/api/products";
 import { useReturnPurchasingStore } from "@/stores/return-purchasing";
 import { useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
@@ -24,20 +24,17 @@ import PopupAddProduct from "./popup-add";
 export default function ReturnPurchasingInput() {
   const { cart, setAddProduct, setOpenConfirm } = useReturnPurchasingStore();
   const [search, setSearch] = useState<string>("");
-  const { purchaseId } = useLocalSearchParams<{ purchaseId: string }>();
-  const { data: purchaseDetail, isLoading: loadingDetail } = usePurchase(
-    purchaseId || "",
-  );
+  const { supplierId } = useLocalSearchParams<{ supplierId: string }>();
+  const { data: products = [], isLoading: isLoadingProduct } = useProducts({
+    supplierId,
+    search,
+  });
 
-  // Once purchase is selected, show items from that purchase
-  const products = purchaseDetail?.items || [];
-  const filteredProducts = products.filter((p) =>
-    p.productName?.toLowerCase().includes(search.toLowerCase()),
-  );
+  const isLoading = isLoadingProduct;
 
   return (
     <Box className="flex-1 bg-white">
-      <Header header={`RETUR: ${purchaseDetail?.local_ref_id}`} isGoBack />
+      <Header header="RETUR PEMBELIAN" isGoBack />
       <HStack className="flex-1 bg-white">
         <VStack className="flex-1 border-r border-gray-300">
           <HStack
@@ -56,18 +53,18 @@ export default function ReturnPurchasingInput() {
           </HStack>
           <ScrollView className="flex-1">
             <VStack className="flex-1">
-              {loadingDetail ? (
+              {isLoading ? (
                 <VStack className="items-center py-10">
                   <Spinner />
                 </VStack>
-              ) : !filteredProducts.length ? (
+              ) : !products.length ? (
                 <VStack className="items-center py-10">
                   <Text className="text-gray-400">
-                    Tidak ada item dalam pembelian ini
+                    Tidak ada produk yang dibeli dari supplier ini
                   </Text>
                 </VStack>
               ) : (
-                filteredProducts.map((item, index) => {
+                products.map((item, index) => {
                   return (
                     <Pressable
                       key={index}
@@ -78,12 +75,12 @@ export default function ReturnPurchasingInput() {
                         <HStack space="md" className="items-center">
                           <Box className="size-16 rounded-lg bg-primary-200 items-center justify-center">
                             <Heading className="text-primary-500 font-bold">
-                              {item.productName?.charAt(0).toUpperCase() || "?"}
+                              {item.name?.charAt(0).toUpperCase() || "?"}
                             </Heading>
                           </Box>
                           <VStack className="flex-1">
                             <Heading size="sm" className="line-clamp-2">
-                              {item.productName || "Unknown"}
+                              {item.name || "Unknown"}
                             </Heading>
                             <Text size="xs" className="text-slate-500">
                               {`Rp ${item.purchasePrice?.toLocaleString("id-ID") || 0}`}
@@ -92,14 +89,13 @@ export default function ReturnPurchasingInput() {
                           <HStack space="sm">
                             <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
                               <Text className="font-bold">
-                                {cart?.find(
-                                  (f) => f.product.id === item.productId,
-                                )?.quantity || 0}
+                                {cart?.find((f) => f.product.id === item.id)
+                                  ?.quantity || 0}
                               </Text>
                             </Box>
                             <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
                               <Text className="text-typography-0 font-bold">
-                                {item.quantity}
+                                {item.stock}
                               </Text>
                             </Box>
                           </HStack>
@@ -128,7 +124,7 @@ export default function ReturnPurchasingInput() {
                       </Box>
                       <VStack className="flex-1">
                         <Heading size="md" className="line-clamp-2">
-                          {item.product.productName}
+                          {item.product.name}
                         </Heading>
                         <Text size="sm" className="text-slate-500">
                           {item.quantity} x Rp{" "}
