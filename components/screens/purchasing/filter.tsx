@@ -12,27 +12,21 @@ import {
   VStack,
 } from "@/components/ui";
 import SelectModal from "@/components/ui/select/select-modal";
-import { useBrands } from "@/lib/api/brands";
-import { useCategories } from "@/lib/api/categories";
+import { useSuppliers } from "@/lib/api/suppliers";
 
-export default function ProductFilter({
-  brandId,
-  setBrandId,
-  categoryId,
-  setCategoryId,
+export default function PurchasingFilter({
+  supplierId,
+  setSupplierId,
   open,
   setOpen,
 }: {
-  brandId: string;
-  setBrandId: (brandId: string) => void;
-  categoryId: string;
-  setCategoryId: (categoryId: string) => void;
+  supplierId: string;
+  setSupplierId: (supplierId: string) => void;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
-  const { data: categories = [] } = useCategories();
-  const { data: brands = [] } = useBrands();
-  const hasFiltered = Boolean(brandId || categoryId);
+  const { data: suppliers = [] } = useSuppliers();
+  const hasFiltered = Boolean(supplierId);
 
   return (
     <Modal
@@ -52,26 +46,15 @@ export default function ProductFilter({
         <ModalBody className="m-0" showsVerticalScrollIndicator={false}>
           <VStack space="lg" className="p-4">
             <SelectModal
-              value={categoryId}
-              placeholder="Pilih Kategori"
-              searchPlaceholder="Cari Kategori"
-              options={categories?.map((cat) => ({
-                label: cat.name,
-                value: cat.id,
+              value={supplierId}
+              placeholder="Pilih Supplier"
+              searchPlaceholder="Cari Supplier"
+              options={suppliers?.map((supplier) => ({
+                label: supplier.name,
+                value: supplier.id,
               }))}
               className="flex-1"
-              onChange={(v) => setCategoryId(v || "")}
-            />
-            <SelectModal
-              value={brandId}
-              placeholder="Pilih Brand"
-              searchPlaceholder="Cari Brand"
-              options={brands?.map((brand) => ({
-                label: brand.name,
-                value: brand.id,
-              }))}
-              className="flex-1"
-              onChange={(v) => setBrandId(v || "")}
+              onChange={(v) => setSupplierId(v || "")}
             />
           </VStack>
         </ModalBody>
@@ -91,8 +74,7 @@ export default function ProductFilter({
               <Pressable
                 className="flex-1 flex px-4 h-12 items-center justify-center rounded-lg border border-error-500 bg-error-100 active:bg-error-200"
                 onPress={() => {
-                  setBrandId("");
-                  setCategoryId("");
+                  setSupplierId("");
                   setOpen(false);
                 }}
               >

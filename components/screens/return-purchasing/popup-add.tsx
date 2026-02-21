@@ -123,12 +123,12 @@ export default function PopupAddProduct() {
               <HStack space="md" className="items-center">
                 <Box className="size-16 rounded-lg bg-primary-200 items-center justify-center">
                   <Heading className="text-primary-500 font-bold">
-                    {addProduct?.productName?.charAt(0)}
+                    {addProduct?.name?.charAt(0)}
                   </Heading>
                 </Box>
                 <VStack className="flex-1">
                   <Heading size="md" className="line-clamp-2">
-                    {addProduct?.productName}
+                    {addProduct?.name}
                   </Heading>
                 </VStack>
                 <HStack space="sm">
@@ -144,7 +144,7 @@ export default function PopupAddProduct() {
                 className="w-full justify-between items-center"
               >
                 <Pressable
-                  className={`items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300${quantity <= 0 ? " opacity-100" : ""}`}
+                  className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                   disabled={quantity <= 0}
                   onPress={() => {
                     const currentQuantity = quantity;
@@ -170,19 +170,12 @@ export default function PopupAddProduct() {
                       isInvalid={!!error}
                       className="w-44 h-full"
                     >
-                      <Input className="flex-1 border-white data-[focus=true]:border-white">
+                      <Input className="flex-1 border-transparent data-[focus=true]:border-transparent bg-transparent">
                         <InputField
                           value={value.toString()}
                           autoComplete="off"
                           onChangeText={(text) => {
-                            if (Number(text) > (addProduct?.quantity || 0)) {
-                              form.setValue(
-                                "quantity",
-                                addProduct?.quantity || 0,
-                              );
-                            } else {
-                              onChange(Number(text) || 0);
-                            }
+                            onChange(Number(text) || 0);
                           }}
                           onBlur={onBlur}
                           keyboardType="numeric"
@@ -194,10 +187,8 @@ export default function PopupAddProduct() {
                 />
                 <Pressable
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
-                  disabled={quantity >= (addProduct?.quantity || 0)}
                   onPress={() => {
                     const currentQuantity = quantity;
-
                     form.setValue("quantity", currentQuantity + 1);
                   }}
                 >
