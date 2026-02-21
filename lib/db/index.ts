@@ -52,12 +52,12 @@ export async function checkAndResetDbOnUpdate() {
     console.log(`[DB Check] Last: ${lastRunVersion}, Current: ${fullCurrentVersion}`);
 
     if (lastRunVersion !== fullCurrentVersion) {
-      console.log('App updated! Resetting database...');
-      await resetDb();
+      console.warn(`[DB Check] App updated from ${lastRunVersion} to ${fullCurrentVersion}. Automatic reset disabled to prevent data loss.`);
+      // await resetDb(); // Disabled to prevent accidental data loss of _dirty records
       await AsyncStorage.setItem('last_run_version', fullCurrentVersion);
-      // Re-initialize DB after reset to ensure tables exist
+      // Ensure DB is initialized regardless of version change
       await initializeDb();
-      return true; // Indicates a reset happened
+      return false; // Indicates no reset happened now
     }
     return false;
   } catch (error) {
