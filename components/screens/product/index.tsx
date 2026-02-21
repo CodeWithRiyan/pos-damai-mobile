@@ -42,6 +42,7 @@ export default function ProductList() {
   const [openFilter, setOpenFilter] = useState<boolean>(false);
   const [brandId, setBrandId] = useState<string>("");
   const [categoryId, setCategoryId] = useState<string>("");
+  const activeFilterCount = [brandId, categoryId].filter(Boolean).length;
 
   const [search, setSearch] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -251,10 +252,17 @@ export default function ProductList() {
               <SolarIconLinear name="Bell" size={20} color="#3d2117" />
             </Pressable>
             <Pressable
-              className="size-10 items-center justify-center"
+              className="relative size-10 items-center justify-center"
               onPress={() => setOpenFilter(true)}
             >
               <SolarIconLinear name="Filter" size={20} color="#3d2117" />
+              {!!activeFilterCount && (
+                <Box className="absolute top-0 right-0 w-4 h-4 bg-primary-500 rounded-full flex items-center justify-center">
+                  <Text size="xs" className="text-white font-bold">
+                    {activeFilterCount}
+                  </Text>
+                </Box>
+              )}
             </Pressable>
             <Input className="flex-1 border border-background-300 rounded-lg h-10">
               <InputSlot className="pl-3">

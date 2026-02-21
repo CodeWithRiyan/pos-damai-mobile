@@ -35,7 +35,7 @@ import {
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Percent } from "lucide-react-native";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
@@ -74,6 +74,7 @@ export default function PaymentTypeForm() {
     defaultValues: initialValues,
   });
 
+  const [commisionInput, setCommisionInput] = useState<string>("");
   const { refetch: refetchPaymentTypes } = usePaymentTypes();
   const { refetch: refetchPaymentType } = usePaymentType(
     dataPaymentType?.id || "",
@@ -91,6 +92,8 @@ export default function PaymentTypeForm() {
 
   useEffect(() => {
     if (dataPaymentType) {
+      setCommisionInput(dataPaymentType.commission.toString());
+
       form.reset({
         name: dataPaymentType.name,
         commission: dataPaymentType.commission,
@@ -98,6 +101,7 @@ export default function PaymentTypeForm() {
         minimalAmount: dataPaymentType.minimalAmount,
       });
     } else {
+      setCommisionInput("");
       form.reset(initialValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -225,14 +229,22 @@ export default function PaymentTypeForm() {
                   <HStack space="md">
                     <Input className="flex-1">
                       <InputField
-                        value={value.toString()}
-                        keyboardType="numeric"
-                        placeholder="Masukkan komisi"
+                        value={commisionInput}
+                        autoComplete="off"
                         onChangeText={(text) => {
-                          const num = parseFloat(text) || 0;
-                          onChange(num);
+                          if (/^\d*\.?\d*$/.test(text)) {
+                            setCommisionInput(text);
+                          }
                         }}
-                        onBlur={onBlur}
+                        onBlur={() => {
+                          const numValue = parseFloat(commisionInput) || 0;
+                          onChange(numValue);
+                          setCommisionInput(numValue.toString());
+
+                          onBlur();
+                        }}
+                        placeholder="Masukkan komisi"
+                        keyboardType="numbers-and-punctuation"
                       />
                     </Input>
                     <Controller

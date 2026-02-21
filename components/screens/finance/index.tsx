@@ -11,7 +11,7 @@ import {
   InputSlot,
   Text,
   Textarea,
-  TextareaInput
+  TextareaInput,
 } from "@/components/ui";
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
@@ -46,16 +46,20 @@ export type FinanceFormValues = z.infer<typeof financeSchema>;
 
 export const expensesTypeOptions = [
   {
-    label: "Store Expenses",
-    value: "STORE_EXPENSES",
+    label: "Bayar Hutang",
+    value: "PAYABLE_REALIZATION",
   },
   {
-    label: "Supplies",
+    label: "Beli Barang",
     value: "SUPPLIES",
   },
   {
-    label: "Equipment",
-    value: "EQUIPMENT",
+    label: "Perlengkapan",
+    value: "EQUIPMENT_1",
+  },
+  {
+    label: "Peralatan",
+    value: "EQUIPMENT_2",
   },
 ];
 
@@ -69,7 +73,7 @@ export default function FinanceTransaction() {
 
   const initialValues: FinanceFormValues = {
     type: "INCOME",
-    expensesType: "STORE_EXPENSES",
+    expensesType: "",
     nominal: 0,
     transactionDate: new Date(),
     note: "",
@@ -95,11 +99,16 @@ export default function FinanceTransaction() {
     data: FinanceFormValues,
     status: "DRAFT" | "COMPLETED",
   ) => {
+    const isEquipment = data.expensesType.includes("EQUIPMENT");
     createFinance(
       {
         ...data,
+        expensesType: isEquipment ? "EQUIPMENT" : data.expensesType,
         nominal: data.nominal,
         inputToCashdrawer: status === "COMPLETED",
+        note: !isEquipment
+          ? data.note
+          : `${data.expensesType.includes("1") ? "Perlengkapan" : "Peralatan"}${data.note ? `: ${data.note}` : ""}`,
         status,
       },
       {

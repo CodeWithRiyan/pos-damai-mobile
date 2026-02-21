@@ -56,9 +56,6 @@ export default function ProductForm() {
   const { setOpen: setOpenBrand, setData: setDataBrand } = useBrandStore();
   const { setOpen: setOpenDiscount, setData: setDataDiscount } =
     useDiscountStore();
-  const [searchCategory, setSearchCategory] = useState<string>("");
-  const [searchBrand, setSearchBrand] = useState<string>("");
-  const [searchDiscount, setSearchDiscount] = useState<string>("");
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const isAdd = !id;
