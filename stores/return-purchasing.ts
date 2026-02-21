@@ -1,8 +1,8 @@
-import { PurchaseItem } from "@/lib/api/purchasing";
+import { Product } from "@/lib/api/products";
 import { create } from "zustand";
 
 interface CartItem {
-  product: PurchaseItem;
+  product: Product;
   quantity: number;
   note?: string;
 }
@@ -13,14 +13,14 @@ interface ConfirmData {
 }
 
 interface ReturnPurchasingState {
-  addProduct: PurchaseItem | null;
+  addProduct: Product | null;
   cart: CartItem[];
   cartTotal: number;
   openConfirm: boolean;
   confirmData: ConfirmData | null;
   setOpenConfirm: (state: boolean) => void;
   setConfirmData: (data: ConfirmData | null) => void;
-  setAddProduct: (state: PurchaseItem | null) => void;
+  setAddProduct: (state: Product | null) => void;
   addCartItem: (item: CartItem) => void;
   removeCartItem: (productId: string) => void;
   resetCart: () => void;

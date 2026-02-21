@@ -78,6 +78,7 @@ export interface ProductParams {
   showByStock?: ShowByStock;
   brandId?: string;
   categoryId?: string;
+  supplierId?: string;
 }
 
 // Get all products from local SQLite (excluding soft-deleted)
@@ -106,6 +107,10 @@ export function useProducts(params: ProductParams | void) {
     conditions.push(eq(schema.products.categoryId, params.categoryId));
   }
 
+  if (params?.supplierId) {
+    conditions.push(eq(schema.products.supplierId, params.supplierId));
+  }
+
   return useQuery({
     queryKey: [
       "products",
@@ -114,6 +119,7 @@ export function useProducts(params: ProductParams | void) {
       params?.showByStock,
       params?.brandId,
       params?.categoryId,
+      params?.supplierId,
     ],
     queryFn: async () => {
       const productResult = await db

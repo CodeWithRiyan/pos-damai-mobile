@@ -33,6 +33,9 @@ export default function TransactionList() {
   const { cart, customer, setCustomer, setAddProduct, setStatus } =
     useTransactionStore();
   const { data: customers } = useCustomers();
+  // TODO: Tampilkan semua produk (parent & child) dalam 1 level, (spread children)
+  // Untuk produk multiunit, tampilkan parent dan childnya
+  // Untuk produk variants, hanya menampilkan child, tanpa parent
   const { data: products } = useProducts();
   const { data: currentShift, isLoading: isLoadingShift } = useCurrentShift();
   const router = useRouter();

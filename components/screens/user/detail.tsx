@@ -98,6 +98,14 @@ export default function UserDetail() {
     showActionDrawer({
       actions: [
         {
+          label: "Log Produk",
+          icon: "ClipboardList",
+          onPress: () => {
+            router.push(`/(main)/management/role-user/user/log/${user?.id}`);
+            hideActionDrawer();
+          },
+        },
+        {
           label: "Edit",
           icon: "Pen",
           onPress: () => {

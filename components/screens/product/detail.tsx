@@ -100,11 +100,21 @@ export default function ProductDetail() {
     showActionDrawer({
       actions: [
         {
+          label: "Log Produk",
+          icon: "ClipboardList",
+          onPress: () => {
+            router.push(
+              `/(main)/management/product-category-brand/product/log/${productId}`,
+            );
+            hideActionDrawer();
+          },
+        },
+        {
           label: "Lihat Daftar Supplier",
           icon: "UsersGroupRounded",
           onPress: () => {
             router.push(
-              `/(main)/management/product-category-brand/product/suppliers/${productId}` as any,
+              `/(main)/management/product-category-brand/product/suppliers/${productId}`,
             );
             hideActionDrawer();
           },

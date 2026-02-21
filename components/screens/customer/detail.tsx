@@ -35,6 +35,10 @@ export default function CustomerDetail() {
   const deleteMutation = useDeleteCustomer();
   const toast = useToast();
 
+  const helperCategory = (category = "") => {
+    return category === "RETAIL" ? "RETAIL" : "GROSIR";
+  };
+
   const onRefetch = () => {
     refetchCustomers();
     refetchCustomer();
@@ -157,7 +161,9 @@ export default function CustomerDetail() {
             </VStack>
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Kategori</Text>
-              <Text className="font-bold">{customer?.category || "-"}</Text>
+              <Text className="font-bold">
+                {helperCategory(customer?.category)}
+              </Text>
             </VStack>
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">No. Handphone</Text>
