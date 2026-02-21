@@ -47,6 +47,9 @@ export interface Product {
   category?: { id: string; name: string };
   brand?: { id: string; name: string };
   discount?: { id: string; name: string };
+  isVariant?: boolean;   // Added for flattened list UI support
+  variantData?: any;     // Added for flattened list UI support
+  originalId?: string;   // Added to reference parent
 }
 
 export interface CreateProductDTO {
@@ -177,19 +180,65 @@ export function useProducts(params: ProductParams | void) {
         }),
       );
 
+      // Flatten the products based on their type
+      const flattenedProducts = productsWithPrices.flatMap((product) => {
+        const items = [];
+        const hasVariants = product.variants && product.variants.length > 0;
+
+        if (product.type === "DEFAULT" || product.type === "MULTIUNIT") {
+          // Parent product is always added for DEFAULT and MULTIUNIT
+          items.push({
+            ...product,
+            isVariant: false,
+            variantData: undefined,
+          });
+        }
+
+        // Add variants/children for MULTIUNIT and VARIANTS if they exist
+        if (
+          (product.type === "MULTIUNIT" || product.type === "VARIANTS") &&
+          hasVariants
+        ) {
+          product.variants.forEach((variant) => {
+            const variantProduct = {
+              ...product,
+              id: `${product.id}-${variant.id}`, // Unique ID for list rendering
+              originalId: product.id, // Keep reference to original product ID
+              name: `${product.name} - ${variant.name}`, // Override name for display
+              code: variant.code || product.code, // Use variant code if available
+              isVariant: true,
+              variantData: variant,
+            };
+            // Note: In an ideal world we'd also adjust stock per variant if tracked
+            items.push(variantProduct);
+          });
+        }
+
+        // Fallback: If type is VARIANTS but it has no variants yet, still show the parent
+        if (product.type === "VARIANTS" && !hasVariants) {
+          items.push({
+            ...product,
+            isVariant: false,
+            variantData: undefined,
+          });
+        }
+
+        return items;
+      });
+
       if (params?.showByStock) {
         if (params.showByStock === "NO_STOCK") {
-          return productsWithPrices.filter(
+          return flattenedProducts.filter(
             (p) => p.stock === 0,
           ) as unknown as Product[];
         } else if (params.showByStock === "LOW_STOCK") {
-          return productsWithPrices.filter(
+          return flattenedProducts.filter(
             (p) => p.stock < (p.minimumStock || 0),
           ) as unknown as Product[];
         }
       }
 
-      return productsWithPrices as unknown as Product[];
+      return flattenedProducts as unknown as Product[];
     },
     enabled: !!orgId,
   });
