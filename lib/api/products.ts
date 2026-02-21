@@ -1,10 +1,19 @@
 import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { and, eq, isNull, like, or } from "drizzle-orm";
+import { and, desc, eq, isNull, like, or } from "drizzle-orm";
 import { db } from "../db";
 import * as schema from "../db/schema";
 
 export type ProductListItem = Omit<Product, "sellPrices" | "variants">;
+
+export interface IProductLog {
+  id: string;
+  type: string;
+  quantity: number;
+  createdAt: Date | null;
+  status: string | null;
+  local_ref_id: string | null;
+}
 
 export interface ProductPrice {
   id: string;
@@ -438,6 +447,31 @@ export function useProduct(id: string) {
       } as unknown as Product;
     },
     enabled: !!id,
+  });
+}
+
+// Get product logs (inventory transactions)
+export function useProductLog(productId: string) {
+  const orgId = useAuthStore((state) => state.getOrganizationId());
+
+  return useQuery({
+    queryKey: ["productLogs", orgId, productId],
+    queryFn: async () => {
+      const logs = await db
+        .select()
+        .from(schema.inventoryTransactions)
+        .where(
+          and(
+            eq(schema.inventoryTransactions.organizationId, orgId),
+            eq(schema.inventoryTransactions.productId, productId),
+            eq(schema.inventoryTransactions.status, "COMPLETED")
+          )
+        )
+        .orderBy(desc(schema.inventoryTransactions.createdAt));
+
+      return logs as IProductLog[];
+    },
+    enabled: !!orgId && !!productId,
   });
 }
 

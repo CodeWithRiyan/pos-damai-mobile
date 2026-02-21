@@ -131,7 +131,7 @@ export default function SupplierForm() {
         },
       });
     } else {
-      const createData: CreateSupplierDTO = data;
+      const createData = data as CreateSupplierDTO;
       createMutation.mutate(createData, {
         onSuccess: () => {
           onRefetch();
