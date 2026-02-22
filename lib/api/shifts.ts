@@ -68,6 +68,8 @@ export function useShifts() {
       // Join with cashdrawer and user names
       const shiftsWithDetails = await Promise.all(
         shiftsResult.map(async (shift) => {
+          console.log(`[useActiveShift] Shift loaded: ID=${shift.id}, userId=${shift.userId}`);
+
           const cashDrawer = await db
             .select({ name: schema.cashDrawers.name })
             .from(schema.cashDrawers)
@@ -75,10 +77,16 @@ export function useShifts() {
             .limit(1);
 
           const user = await db
-            .select({ name: schema.users.name })
+            .select({ id: schema.users.id, name: schema.users.name })
             .from(schema.users)
             .where(eq(schema.users.id, shift.userId))
             .limit(1);
+            
+          console.log(`[useActiveShift] Assigned Cashier User Query result:`, user);
+
+          // DEBUG: print all users in DB
+          const allUsers = await db.select({ id: schema.users.id, name: schema.users.name }).from(schema.users);
+          console.log(`[useActiveShift] Total users in DB: ${allUsers.length}. Sample:`, allUsers.map(u => u.name));
 
           return {
             ...shift,

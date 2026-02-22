@@ -108,80 +108,82 @@ export function useTransactions(params: { customerId?: string } | void) {
   });
 }
 
+export async function fetchTransaction(id: string): Promise<Transaction | null> {
+  // Get transaction record
+  const transactionResult = await db
+    .select()
+    .from(schema.transactions)
+    .where(eq(schema.transactions.id, id))
+    .limit(1);
+
+  if (transactionResult.length === 0) return null;
+
+  const transaction = transactionResult[0];
+
+  // Get customer name
+  let customerName = "Walk-in Customer";
+  if (transaction.customerId) {
+    const customer = await db
+      .select({ name: schema.customers.name })
+      .from(schema.customers)
+      .where(eq(schema.customers.id, transaction.customerId))
+      .limit(1);
+    customerName = customer[0]?.name || "Unknown";
+  }
+
+  // Get payment type name
+  const paymentType = await db
+    .select({ name: schema.paymentTypes.name })
+    .from(schema.paymentTypes)
+    .where(eq(schema.paymentTypes.id, transaction.paymentTypeId))
+    .limit(1);
+
+  // Get transaction items
+  const items = await db
+    .select()
+    .from(schema.transactionItems)
+    .where(eq(schema.transactionItems.transactionId, id));
+
+  // Get product names for each item
+  const itemsWithProductNames = await Promise.all(
+    items.map(async (item) => {
+      const product = await db
+        .select({ name: schema.products.name })
+        .from(schema.products)
+        .where(eq(schema.products.id, item.productId))
+        .limit(1);
+
+      let variantName;
+      if (item.variantId) {
+        const variant = await db
+          .select({ name: schema.productVariants.name })
+          .from(schema.productVariants)
+          .where(eq(schema.productVariants.id, item.variantId))
+          .limit(1);
+        variantName = variant[0]?.name;
+      }
+
+      return {
+        ...item,
+        productName: product[0]?.name || "Unknown",
+        variantName,
+      };
+    }),
+  );
+
+  return {
+    ...transaction,
+    customerName,
+    paymentTypeName: paymentType[0]?.name || "Unknown",
+    items: itemsWithProductNames,
+  } as Transaction;
+}
+
 // Get single transaction with items
 export function useTransaction(id: string) {
   return useQuery({
     queryKey: ["transactions", id],
-    queryFn: async () => {
-      // Get transaction record
-      const transactionResult = await db
-        .select()
-        .from(schema.transactions)
-        .where(eq(schema.transactions.id, id))
-        .limit(1);
-
-      if (transactionResult.length === 0) return null;
-
-      const transaction = transactionResult[0];
-
-      // Get customer name
-      let customerName = "Walk-in Customer";
-      if (transaction.customerId) {
-        const customer = await db
-          .select({ name: schema.customers.name })
-          .from(schema.customers)
-          .where(eq(schema.customers.id, transaction.customerId))
-          .limit(1);
-        customerName = customer[0]?.name || "Unknown";
-      }
-
-      // Get payment type name
-      const paymentType = await db
-        .select({ name: schema.paymentTypes.name })
-        .from(schema.paymentTypes)
-        .where(eq(schema.paymentTypes.id, transaction.paymentTypeId))
-        .limit(1);
-
-      // Get transaction items
-      const items = await db
-        .select()
-        .from(schema.transactionItems)
-        .where(eq(schema.transactionItems.transactionId, id));
-
-      // Get product names for each item
-      const itemsWithProductNames = await Promise.all(
-        items.map(async (item) => {
-          const product = await db
-            .select({ name: schema.products.name })
-            .from(schema.products)
-            .where(eq(schema.products.id, item.productId))
-            .limit(1);
-
-          let variantName;
-          if (item.variantId) {
-            const variant = await db
-              .select({ name: schema.productVariants.name })
-              .from(schema.productVariants)
-              .where(eq(schema.productVariants.id, item.variantId))
-              .limit(1);
-            variantName = variant[0]?.name;
-          }
-
-          return {
-            ...item,
-            productName: product[0]?.name || "Unknown",
-            variantName,
-          };
-        }),
-      );
-
-      return {
-        ...transaction,
-        customerName,
-        paymentTypeName: paymentType[0]?.name || "Unknown",
-        items: itemsWithProductNames,
-      } as Transaction;
-    },
+    queryFn: () => fetchTransaction(id),
     enabled: !!id,
   });
 }

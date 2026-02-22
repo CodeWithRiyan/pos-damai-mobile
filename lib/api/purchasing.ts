@@ -87,85 +87,87 @@ export function usePurchases() {
   });
 }
 
+export async function fetchPurchase(id: string): Promise<Purchase | null> {
+  // Get purchase record
+  const purchaseResult = await db
+    .select()
+    .from(schema.purchases)
+    .where(eq(schema.purchases.id, id))
+    .limit(1);
+
+  if (purchaseResult.length === 0) return null;
+
+  const purchase = purchaseResult[0];
+
+  // Get supplier name
+  const supplier = await db
+    .select({ name: schema.suppliers.name })
+    .from(schema.suppliers)
+    .where(eq(schema.suppliers.id, purchase.supplierId))
+    .limit(1);
+
+  // Get related inventory transactions (items)
+  // Transactions are created with local_ref_id pattern: {purchaseLocalRefId}_{productId}
+  const purchaseRef = purchase.local_ref_id;
+  if (!purchaseRef) {
+    console.warn(
+      "[fetchPurchase] Purchase has no local_ref_id, cannot find items",
+    );
+    return {
+      ...purchase,
+      supplierName: supplier[0]?.name || "Unknown",
+      items: [],
+    } as Purchase;
+  }
+
+  const purchaseItems = await db
+    .select()
+    .from(schema.inventoryTransactions)
+    .where(
+      and(
+        eq(schema.inventoryTransactions.type, "PURCHASE"),
+        eq(
+          schema.inventoryTransactions.organizationId,
+          purchase.organizationId,
+        ),
+        like(schema.inventoryTransactions.local_ref_id, `${purchaseRef}_%`),
+      ),
+    );
+
+  // Get product names for each item
+  const itemsWithProductNames = await Promise.all(
+    purchaseItems.map(async (item) => {
+      const product = await db
+        .select({
+          name: schema.products.name,
+          purchasePrice: schema.products.purchasePrice,
+        })
+        .from(schema.products)
+        .where(eq(schema.products.id, item.productId))
+        .limit(1);
+
+      return {
+        id: item.id,
+        productId: item.productId,
+        productName: product[0]?.name || "Unknown",
+        quantity: item.quantity,
+        purchasePrice: product[0]?.purchasePrice || 0,
+      };
+    }),
+  );
+
+  return {
+    ...purchase,
+    supplierName: supplier[0]?.name || "Unknown",
+    items: itemsWithProductNames,
+  } as Purchase;
+}
+
 // Get single purchase with items
 export function usePurchase(id: string) {
   return useQuery({
     queryKey: ["purchases", id],
-    queryFn: async () => {
-      // Get purchase record
-      const purchaseResult = await db
-        .select()
-        .from(schema.purchases)
-        .where(eq(schema.purchases.id, id))
-        .limit(1);
-
-      if (purchaseResult.length === 0) return null;
-
-      const purchase = purchaseResult[0];
-
-      // Get supplier name
-      const supplier = await db
-        .select({ name: schema.suppliers.name })
-        .from(schema.suppliers)
-        .where(eq(schema.suppliers.id, purchase.supplierId))
-        .limit(1);
-
-      // Get related inventory transactions (items)
-      // Transactions are created with local_ref_id pattern: {purchaseLocalRefId}_{productId}
-      const purchaseRef = purchase.local_ref_id;
-      if (!purchaseRef) {
-        console.warn(
-          "[usePurchase] Purchase has no local_ref_id, cannot find items",
-        );
-        return {
-          ...purchase,
-          supplierName: supplier[0]?.name || "Unknown",
-          items: [],
-        } as Purchase;
-      }
-
-      const purchaseItems = await db
-        .select()
-        .from(schema.inventoryTransactions)
-        .where(
-          and(
-            eq(schema.inventoryTransactions.type, "PURCHASE"),
-            eq(
-              schema.inventoryTransactions.organizationId,
-              purchase.organizationId,
-            ),
-            like(schema.inventoryTransactions.local_ref_id, `${purchaseRef}_%`),
-          ),
-        );
-
-      // Get product names for each item
-      const itemsWithProductNames = await Promise.all(
-        purchaseItems.map(async (item) => {
-          const product = await db
-            .select({
-              name: schema.products.name,
-              purchasePrice: schema.products.purchasePrice,
-            })
-            .from(schema.products)
-            .where(eq(schema.products.id, item.productId))
-            .limit(1);
-
-          return {
-            id: item.id,
-            productId: item.productId,
-            productName: product[0]?.name || "Unknown",
-            quantity: item.quantity,
-            purchasePrice: product[0]?.purchasePrice || 0,
-          };
-        }),
-      );
-
-      return {
-        ...purchase,
-        supplierName: supplier[0]?.name || "Unknown",
-        items: itemsWithProductNames,
-      } as Purchase;
-    },
+    queryFn: () => fetchPurchase(id),
     enabled: !!id,
   });
 }

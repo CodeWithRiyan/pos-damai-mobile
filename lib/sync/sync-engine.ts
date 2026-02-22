@@ -41,6 +41,27 @@ export class SyncEngine {
       useAuthStore.getState().setProfile(currentUser);
       queryClient.setQueryData(['auth', 'profile'], currentUser);
 
+      // Force insert the current user into local SQLite so that queries relying on 
+      // the local `schema.users` table (like Shift history) can always resolve the name.
+      await db.insert(schema.users).values({
+        id: currentUser.id,
+        name: currentUser.name || currentUser.email || 'Unknown',
+        email: currentUser.email,
+        username: currentUser.email || currentUser.id, // Fallback if no explicit username mapping
+        organizationId: organizationIdForSync,
+        _dirty: false,
+        _syncedAt: new Date()
+      }).onConflictDoUpdate({
+        target: schema.users.id,
+        set: {
+          name: currentUser.name || currentUser.email || 'Unknown',
+          email: currentUser.email,
+          username: currentUser.email || currentUser.id,
+          organizationId: organizationIdForSync,
+          _syncedAt: new Date()
+        }
+      });
+
       const orgId = organizationIdForSync;
 
       // 2. Determine Pull Type (Bootstrap vs Incremental)
