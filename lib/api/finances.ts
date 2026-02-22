@@ -3,6 +3,7 @@ import * as schema from "@/lib/db/schema";
 import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { eq, desc, and, isNull } from "drizzle-orm";
+import { generateLocalRefId } from "../utils/reference";
 
 export interface Finance {
   id: string;
@@ -81,7 +82,7 @@ export function useCreateFinance() {
         ? await db.select({ r: schema.finances.local_ref_id }).from(schema.finances).where(eq(schema.finances.id, data.id)).limit(1)
         : [];
       
-      const localRefId = existing.length > 0 ? existing[0].r : (data.local_ref_id || `L-FIN-${Date.now()}`);
+      const localRefId = existing.length > 0 ? existing[0].r : (data.local_ref_id || await generateLocalRefId(db, schema.finances, "FIN"));
 
       const profile = useAuthStore.getState().profile;
       const userId = profile?.id || null;

@@ -179,7 +179,7 @@ export default function TransactionCheckoutForm() {
       if (result.id) {
         setCheckoutData({
           id: result.id,
-          referenceNumber: result.localRefId || "",
+          referenceNumber: result.local_ref_id || "",
           createdById: user?.id || "",
           createdByName: user?.name || "",
           createdAt: new Date().toISOString(),

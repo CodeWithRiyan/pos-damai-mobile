@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { and, desc, eq, isNull, like } from "drizzle-orm";
 import { db } from "../db";
 import * as schema from "../db/schema";
+import { generateLocalRefId } from "../utils/reference";
 
 export interface Purchase {
   id: string;
@@ -185,11 +186,13 @@ export function useCreatePurchasing() {
       const purchaseId =
         data.id ||
         `purch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const localRefId = `ref_${Date.now()}`;
+      
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
 
       await db.transaction(async (tx) => {
+        const localRefId = await generateLocalRefId(tx, schema.purchases, "PUR");
+
         const existingRef = data.id
           ? (
               await tx
@@ -199,7 +202,22 @@ export function useCreatePurchasing() {
                 .limit(1)
             )[0]?.r
           : null;
-        const finalLocalRefId = existingRef || localRefId;
+        let finalLocalRefId = existingRef || localRefId;
+
+        if (data.id) {
+          const existing = await tx
+              .select({ status: schema.purchases.status })
+              .from(schema.purchases)
+              .where(eq(schema.purchases.id, data.id))
+              .limit(1);
+
+          const statusCompleted =
+             data.status === "COMPLETED" && existing[0]?.status === "DRAFT";
+
+          if (statusCompleted) {
+             finalLocalRefId = await generateLocalRefId(tx, schema.purchases, "PUR");
+          }
+        }
 
         const purchaseValues = {
           id: purchaseId,
@@ -330,7 +348,7 @@ export function useCreatePurchasing() {
           .where(eq(schema.purchases.id, purchaseId))
           .limit(1)
       )[0]?.r;
-      return { ...data, id: purchaseId, localRefId: finalRef };
+      return { ...data, id: purchaseId, local_ref_id: finalRef };
     },
     onSuccess: (responseData) => {
       const orgId = useAuthStore.getState().getOrganizationId();

@@ -2,6 +2,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { desc, eq } from "drizzle-orm";
 import { db } from "../db";
+import { generateLocalRefId } from "../utils/reference";
 import {
   inventoryTransactions,
   transactionReturnItems,
@@ -169,15 +170,18 @@ export const useCreateTransactionReturn = () => {
       if (!organizationId) throw new Error("Organization ID is required");
 
       const returnId = `tret_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const localRefId = `ref_tret_${Date.now()}`;
+      
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
+      let finalLocalRefId = "";
 
       await db.transaction(async (tx) => {
+        finalLocalRefId = await generateLocalRefId(tx, transactionReturns, "RTS");
+
         // 1. Create Return Header
         await tx.insert(transactionReturns).values({
           id: returnId,
-          local_ref_id: localRefId,
+          local_ref_id: finalLocalRefId,
           customerId: data.customerId || null,
           totalAmount: data.totalAmount,
           returnType: data.returnType,
@@ -213,7 +217,7 @@ export const useCreateTransactionReturn = () => {
             // 2b. Add stock via transaction only if returnType is CASH (barang kembali)
             if (data.returnType === "CASH") {
               const txId = `invrt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-              const txRefId = `${localRefId}-${item.productId}`;
+              const txRefId = `${finalLocalRefId}-${item.productId}`;
 
               if (!item.productId) continue;
 
@@ -236,7 +240,7 @@ export const useCreateTransactionReturn = () => {
         }
       });
 
-      return { id: returnId, local_ref_id: localRefId };
+      return { id: returnId, local_ref_id: finalLocalRefId };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transaction-returns"] });

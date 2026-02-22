@@ -21,6 +21,7 @@ import { CalendarIcon } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView } from "react-native";
 import { useFinances } from "@/lib/api/finances";
+import { formatDisplayRefId } from "@/lib/utils/reference";
 
 export default function FinanceHistory() {
   const router = useRouter();
@@ -150,7 +151,7 @@ export default function FinanceHistory() {
                     </HStack>
                     <HStack className="justify-between">
                       <Text className="text-typography-400 font-bold">
-                        No: {purchase.local_ref_id || purchase.id}
+                        No: {formatDisplayRefId(purchase.local_ref_id) || purchase.id}
                       </Text>
                     </HStack>
                   </VStack>

@@ -16,6 +16,7 @@ import { useTransactionReturns } from "@/lib/api/return-transaction";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
+import { formatDisplayRefId } from "@/lib/utils/reference";
 
 export default function ReturnTransactionHistory({
   isReport,
@@ -105,7 +106,7 @@ export default function ReturnTransactionHistory({
                     </HStack>
                     <HStack className="justify-between">
                       <Text className="text-typography-400 font-bold">
-                        No: {ret.local_ref_id}
+                        No: {formatDisplayRefId(ret.local_ref_id)}
                       </Text>
                     </HStack>
                   </VStack>

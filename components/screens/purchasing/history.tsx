@@ -14,6 +14,7 @@ import {
 import { Box } from "@/components/ui/box";
 import { Spinner } from "@/components/ui/spinner";
 import { usePurchases } from "@/lib/api/purchasing";
+import { formatDisplayRefId } from "@/lib/utils/reference";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
 import { ScrollView } from "react-native";
@@ -114,7 +115,7 @@ export default function PurchasingHistory({
                     </HStack>
                     <HStack className="justify-between">
                       <Text className="text-typography-400 font-bold">
-                        No: {purchase.local_ref_id || purchase.id}
+                        No: {formatDisplayRefId(purchase.local_ref_id) || purchase.id}
                       </Text>
                     </HStack>
                   </VStack>

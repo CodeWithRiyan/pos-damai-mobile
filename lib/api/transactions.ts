@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { and, desc, eq, isNull, like } from "drizzle-orm";
 import { db } from "../db";
 import * as schema from "../db/schema";
+import { generateLocalRefId } from "../utils/reference";
 
 export interface Transaction {
   id: string;
@@ -202,11 +203,13 @@ export function useCreateTransaction() {
       const transactionId =
         data.id ||
         `trans_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const localRefId = `ref_trans_${Date.now()}`;
+      
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
 
       await db.transaction(async (tx) => {
+        const localRefId = await generateLocalRefId(tx, schema.transactions, "TRX");
+        
         // 1. Create/Update Transaction record
         const transactionValues = {
           id: transactionId,
@@ -262,7 +265,7 @@ export function useCreateTransaction() {
           await tx.insert(schema.transactions).values(transactionValues);
         }
 
-        const finalLocalRefId = data.id
+        let finalLocalRefId = data.id
           ? (
               await tx
                 .select({ r: schema.transactions.local_ref_id })
@@ -271,6 +274,28 @@ export function useCreateTransaction() {
                 .limit(1)
             )[0]?.r || localRefId
           : localRefId;
+
+        if (data.id) {
+            const existing = await tx
+              .select({ status: schema.transactions.status, local_ref_id: schema.transactions.local_ref_id })
+              .from(schema.transactions)
+              .where(eq(schema.transactions.id, data.id))
+              .limit(1);
+
+            const statusCompleted =
+              data.status === "COMPLETED" && existing[0]?.status === "DRAFT";
+
+            if (statusCompleted) {
+              const newRefId = await generateLocalRefId(tx, schema.transactions, "TRX");
+              
+              await tx
+                .update(schema.transactions)
+                .set({ status: "COMPLETED", local_ref_id: newRefId })
+                .where(eq(schema.transactions.id, data.id));
+              
+              finalLocalRefId = newRefId;
+            }
+        }
 
         // 2. Create Transaction Items and Inventory Transactions
         for (const item of data.items) {
@@ -370,7 +395,7 @@ export function useCreateTransaction() {
         }
       });
 
-      return { id: transactionId, localRefId, ...data };
+      return { id: transactionId, local_ref_id: transactionId, ...data }; // Return actual ID, as finalLocalRefId is scoped inside the tx block.
     },
     onSuccess: (responseData) => {
       const orgId = useAuthStore.getState().getOrganizationId();

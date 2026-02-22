@@ -241,7 +241,7 @@ export default function PurchasingCheckoutForm() {
         setCheckoutData({
           ...data,
           id: responseData.id,
-          referenceNumber: responseData.localRefId || "",
+          referenceNumber: responseData.local_ref_id || "",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           createdById: user?.id || "",
