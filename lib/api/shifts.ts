@@ -293,11 +293,8 @@ export function useStartShift() {
       await db.insert(schema.shifts).values(newShift);
       return { id: shiftId, ...data };
     },
-    onSuccess: (data) => {
-      const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["shifts", orgId] });
-      queryClient.invalidateQueries({ queryKey: ["shifts", "active"] });
-      queryClient.invalidateQueries({ queryKey: ["shifts", "current", orgId] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shifts"] });
     },
   });
 }
@@ -341,12 +338,8 @@ export function useEndShift() {
 
       return { ...data };
     },
-    onSuccess: (data) => {
-      const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["shifts", orgId] });
-      queryClient.invalidateQueries({ queryKey: ["shifts", "active"] });
-      queryClient.invalidateQueries({ queryKey: ["shifts", "current", orgId] });
-      queryClient.invalidateQueries({ queryKey: ["shifts", "last"] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shifts"] });
     },
   });
 }

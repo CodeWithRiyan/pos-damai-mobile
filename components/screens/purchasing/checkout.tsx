@@ -138,7 +138,7 @@ export default function PurchasingCheckoutForm() {
 
   useEffect(() => {
     if (cartTotal) {
-      const defaultPaymentType = paymentTypesData?.find((pt) => pt.isDefault)?.id || "";
+      const defaultPaymentType = paymentTypesData?.find((pt) => pt.isDefault)?.id || paymentTypesData?.find((pt) => pt.name.toLowerCase() === 'cash' || pt.name.toLowerCase() === 'tunai')?.id || "";
 
       form.setValue("totalPurchase", cartTotal);
       form.setValue("status", status);

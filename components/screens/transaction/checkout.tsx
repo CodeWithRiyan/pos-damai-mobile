@@ -25,7 +25,7 @@ import { z } from "zod";
 import InputVirtualKeyboard from "@/components/ui/input-virtual-keyboard";
 import SelectModal from "@/components/ui/select/select-modal";
 import { useCurrentUser } from "@/lib/api/auth";
-import { useCustomers } from "@/lib/api/customers";
+
 import { usePaymentTypes } from "@/lib/api/payment-types";
 import { useCreateTransaction } from "@/lib/api/transactions";
 import { findSellPrice } from "@/lib/price";
@@ -67,8 +67,7 @@ export default function TransactionCheckoutForm() {
 
   const { data: user } = useCurrentUser();
   const { data: paymentTypesData } = usePaymentTypes();
-  const { data: customersData } = useCustomers();
-  const { customer, cart, cartTotal, status, setCheckoutData, setCustomer } =
+  const { customer, cart, cartTotal, status, setCheckoutData } =
     useTransactionStore();
   const { resetCart } = useTransactionStore();
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
@@ -99,7 +98,7 @@ export default function TransactionCheckoutForm() {
 
   useEffect(() => {
     if (cartTotal) {
-      const defaultPaymentType = paymentTypesData?.find((pt) => pt.isDefault)?.id || "";
+      const defaultPaymentType = paymentTypesData?.find((pt) => pt.isDefault)?.id || paymentTypesData?.find((pt) => pt.name.toLowerCase() === 'cash' || pt.name.toLowerCase() === 'tunai')?.id || "";
 
       form.setValue("totalPurchase", cartTotal);
       form.setValue("status", status);
