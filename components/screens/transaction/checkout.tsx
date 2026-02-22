@@ -17,7 +17,7 @@ import {
 } from "@/components/ui";
 // import { CreateTransactionDTO, useCreateTransaction } from "@/lib/api/transaction";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
@@ -95,16 +95,40 @@ export default function TransactionCheckoutForm() {
   });
 
   const totalPaid = form.watch("totalPaid");
+  const paymentTypeId = form.watch("paymentTypeId");
+
+  const { grandTotal, commission } = useMemo(() => {
+    let comm = 0;
+    const pt = paymentTypesData?.find((p) => p.id === paymentTypeId);
+    if (pt && cartTotal) {
+      comm =
+        pt.commissionType === "PERCENTAGE"
+          ? (cartTotal * pt.commission) / 100
+          : pt.commission;
+    }
+    return { commission: comm, grandTotal: cartTotal + comm };
+  }, [cartTotal, paymentTypesData, paymentTypeId]);
 
   useEffect(() => {
     if (cartTotal) {
-      const defaultPaymentType = paymentTypesData?.find((pt) => pt.isDefault)?.id || paymentTypesData?.find((pt) => pt.name.toLowerCase() === 'cash' || pt.name.toLowerCase() === 'tunai')?.id || "";
-
-      form.setValue("totalPurchase", cartTotal);
       form.setValue("status", status);
-      form.setValue("paymentTypeId", defaultPaymentType);
+      if (!paymentTypeId && paymentTypesData && paymentTypesData.length > 0) {
+        const defaultPaymentType =
+          paymentTypesData?.find((pt) => pt.isDefault)?.id ||
+          paymentTypesData?.find(
+            (pt) =>
+              pt.name.toLowerCase() === "cash" ||
+              pt.name.toLowerCase() === "tunai",
+          )?.id ||
+          "";
+        form.setValue("paymentTypeId", defaultPaymentType);
+      }
     }
-  }, [form, cartTotal, customer, paymentTypesData, status]);
+  }, [form, cartTotal, status, paymentTypesData, paymentTypeId]);
+
+  useEffect(() => {
+    form.setValue("totalPurchase", grandTotal);
+  }, [form, grandTotal]);
 
   const toast = useToast();
   const createTransactionMutation = useCreateTransaction();
@@ -127,7 +151,7 @@ export default function TransactionCheckoutForm() {
   ) => {
     try {
       const submissionData = {
-        totalAmount: cartTotal,
+        totalAmount: grandTotal,
         totalPaid: parseFloat(data.totalPaid),
         paymentTypeId: data.paymentTypeId,
         transactionDate: new Date(),
@@ -204,10 +228,18 @@ export default function TransactionCheckoutForm() {
         <VStack className="flex-1 border-r border-gray-300">
           <ScrollView className="flex-1">
             <VStack className="flex-1">
-              <HStack className="justify-center p-6">
-                <Heading size="3xl" className="font-bold">
+              <HStack className="justify-center p-6 flex-col items-center">
+                <Text className="text-typography-600 mb-2 font-bold">
+                  Total Tagihan
+                </Text>
+                <Heading size="3xl" className="font-bold text-center">
                   {`Rp ${form.getValues("totalPurchase").toLocaleString("id-ID")}`}
                 </Heading>
+                {commission > 0 && (
+                  <Text className="text-warning-600 mt-2 font-bold">
+                    *Termasuk tambahan biaya Rp {commission.toLocaleString("id-ID")}
+                  </Text>
+                )}
               </HStack>
               <VStack space="lg" className="p-4">
                 <Controller

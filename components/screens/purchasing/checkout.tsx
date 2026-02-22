@@ -26,7 +26,7 @@ import { CreatePurchasingDTO, useCreatePurchasing } from "@/lib/api/purchasing";
 import { useSuppliers } from "@/lib/api/suppliers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
@@ -111,8 +111,21 @@ export default function PurchasingCheckoutForm() {
   const transactionDate = form.watch("transactionDate");
   const totalPaid = form.watch("totalPaid");
   const isPayable = form.watch("isPayable");
+  const paymentMethodId = form.watch("paymentMethodId");
   const { data: suppliers = [] } = useSuppliers();
   const createMutation = useCreatePurchasing();
+
+  const { grandTotal, commission } = useMemo(() => {
+    let comm = 0;
+    const pt = paymentTypesData?.find((p) => p.id === paymentMethodId);
+    if (pt && cartTotal) {
+      comm =
+        pt.commissionType === "PERCENTAGE"
+          ? (cartTotal * pt.commission) / 100
+          : pt.commission;
+    }
+    return { commission: comm, grandTotal: cartTotal + comm };
+  }, [cartTotal, paymentTypesData, paymentMethodId]);
 
   const paymentTypes =
     paymentTypesData?.map((pt) => ({
@@ -138,16 +151,27 @@ export default function PurchasingCheckoutForm() {
 
   useEffect(() => {
     if (cartTotal) {
-      const defaultPaymentType = paymentTypesData?.find((pt) => pt.isDefault)?.id || paymentTypesData?.find((pt) => pt.name.toLowerCase() === 'cash' || pt.name.toLowerCase() === 'tunai')?.id || "";
-
-      form.setValue("totalPurchase", cartTotal);
       form.setValue("status", status);
-      form.setValue("paymentMethodId", defaultPaymentType);
+      if (!paymentMethodId && paymentTypesData && paymentTypesData.length > 0) {
+        const defaultPaymentType =
+          paymentTypesData?.find((pt) => pt.isDefault)?.id ||
+          paymentTypesData?.find(
+            (pt) =>
+              pt.name.toLowerCase() === "cash" ||
+              pt.name.toLowerCase() === "tunai",
+          )?.id ||
+          "";
+        form.setValue("paymentMethodId", defaultPaymentType);
+      }
     } else {
       form.reset(initialValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, cartTotal, paymentTypesData, status]);
+  }, [form, cartTotal, paymentTypesData, status, paymentMethodId]);
+
+  useEffect(() => {
+    form.setValue("totalPurchase", grandTotal);
+  }, [form, grandTotal]);
 
   const onSubmit: SubmitHandler<PurchasingFormValues> = (
     data: PurchasingFormValues,
@@ -357,10 +381,18 @@ export default function PurchasingCheckoutForm() {
         <VStack className="flex-1 border-r border-gray-300">
           <ScrollView className="flex-1">
             <VStack className="flex-1">
-              <HStack className="justify-center p-6">
-                <Heading size="3xl" className="font-bold">
+              <HStack className="justify-center p-6 flex-col items-center">
+                <Text className="text-typography-600 mb-2 font-bold">
+                  Total Tagihan
+                </Text>
+                <Heading size="3xl" className="font-bold text-center">
                   {`Rp ${form.getValues("totalPurchase").toLocaleString("id-ID")}`}
                 </Heading>
+                {commission > 0 && (
+                  <Text className="text-warning-600 mt-2 font-bold">
+                    *Termasuk tambahan biaya Rp {commission.toLocaleString("id-ID")}
+                  </Text>
+                )}
               </HStack>
               <VStack space="lg" className="p-4">
                 <Controller
