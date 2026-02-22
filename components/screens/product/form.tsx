@@ -77,12 +77,12 @@ export default function ProductForm() {
           z.object({
             name: z.string().min(1, "Nama wajib diisi."),
             code: z.string().min(1, "Kode wajib diisi."),
-            netto: z.number().min(1, "Netto wajib diisi."),
+            netto: z.number().min(0.001, "Netto wajib diisi."),
             purchasePrice: z.number().min(1, "Harga Beli wajib diisi."),
             retailPrice: z.number().min(1, "Harga wajib diisi."),
             minimumPurchase: z
               .number()
-              .min(1, "Minimal Pembelian wajib diisi."),
+              .min(0.001, "Minimal Pembelian wajib diisi."),
           }),
         )
         .nullable(),
@@ -96,13 +96,13 @@ export default function ProductForm() {
         .nullable(),
       retailPrice: z.array(
         z.object({
-          minimumPurchase: z.number().min(1, "Minimal Pembelian wajib diisi."),
+          minimumPurchase: z.number().min(0.001, "Minimal Pembelian wajib diisi."),
           price: z.number().min(1, "Harga wajib diisi."),
         }),
       ),
       wholesalePrice: z.array(
         z.object({
-          minimumPurchase: z.number().min(1, "Minimal Pembelian wajib diisi."),
+          minimumPurchase: z.number().min(0.001, "Minimal Pembelian wajib diisi."),
           price: z.number().min(1, "Harga wajib diisi."),
         }),
       ),
@@ -543,10 +543,11 @@ export default function ProductForm() {
                     autoComplete="off"
                     onChangeText={(text) => {
                       onChange(Number(text) || 0);
-                      unitVariantFields.forEach((field, i) => {
+                      const currentUnitVariants = form.getValues("unitVariants") || [];
+                      currentUnitVariants.forEach((variant, i) => {
                         form.setValue(
                           `unitVariants.${i}.purchasePrice`,
-                          Number(text) * field.netto,
+                          Number(text) * variant.netto,
                         );
                       });
                     }}
@@ -802,6 +803,11 @@ export default function ProductForm() {
                                             ? { ...f, netto: text }
                                             : f,
                                         ),
+                                      );
+                                      onChange(Number(text) || 0);
+                                      form.setValue(
+                                        `unitVariants.${index}.purchasePrice`,
+                                        Number(text) * purchasePrice,
                                       );
                                     }
                                   }}
