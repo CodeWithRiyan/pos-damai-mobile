@@ -473,15 +473,23 @@ export function useShiftDetail(id: string) {
         .where(eq(schema.users.id, shift.userId))
         .limit(1);
 
+      // Get Cashdrawer Name
+      const cashDrawer = await db
+        .select({ name: schema.cashDrawers.name })
+        .from(schema.cashDrawers)
+        .where(eq(schema.cashDrawers.id, shift.cashDrawerId))
+        .limit(1);
+
       return {
         id: shift.id,
         note: shift.note || "Aman Terkendali",
         startShift: shift.startTime,
         endShift: shift.endTime,
         initialBalance: shift.initialBalance,
-        finalBalance: shift.finalBalance, // TODO: Calculate final balance automatic by system (initial + in - out)
-        actualBalance: 0, // TODO: get actualBalance user input after end shift
+        finalBalance: shift.expectedBalance || 0, // system calculation
+        actualBalance: shift.finalBalance || 0,   // user input at shift end
         cashier: user[0]?.name || "Unknown",
+        cashDrawer: cashDrawer[0]?.name || "Unknown",
         transactionHistory: history,
       };
     },

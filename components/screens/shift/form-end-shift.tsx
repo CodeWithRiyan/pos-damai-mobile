@@ -90,8 +90,7 @@ export default function EndShiftForm({
     endShiftMutation.mutate(
       {
         id: currentShift?.id || "",
-        finalBalance: currentShift?.finalBalance || 0, // TODO: buat penyesuaian, finalBalance otomatis dari system, dan actualBalance dari inputan user
-        // actualBalance: data.actualBalance,
+        finalBalance: data.actualBalance,
         note: data.note,
       },
       {
