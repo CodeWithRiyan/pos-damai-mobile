@@ -133,6 +133,7 @@ export const purchases = sqliteTable('purchases', {
   paymentType: text('paymentType').default('CASH'),
   status: text('status').default('COMPLETED'),
   dueDate: integer('dueDate', { mode: 'timestamp' }),
+  note: text('note'),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
 });
@@ -144,6 +145,7 @@ export const inventoryTransactions = sqliteTable('inventory_transactions', {
   type: text('type').notNull(),
   quantity: real('quantity').notNull(),
   status: text('status').default('COMPLETED'),
+  note: text('note'),
   inventoryBatchId: text('inventoryBatchId'),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,

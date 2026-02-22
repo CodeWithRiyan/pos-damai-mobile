@@ -13,6 +13,7 @@ export interface Purchase {
   totalAmount: number;
   paymentType: string;
   dueDate: Date | null;
+  note?: string | null;
   organizationId: string;
   status: string;
   createdBy: string | null;
@@ -28,6 +29,7 @@ export interface PurchaseItem {
   productName?: string;
   quantity: number;
   purchasePrice?: number;
+  note?: string | null;
 }
 
 export interface CreatePurchasingDTO {
@@ -153,6 +155,7 @@ export async function fetchPurchase(id: string): Promise<Purchase | null> {
         productName: product[0]?.name || "Unknown",
         quantity: item.quantity,
         purchasePrice: product[0]?.purchasePrice || 0,
+        note: item.note,
       };
     }),
   );
@@ -227,6 +230,7 @@ export function useCreatePurchasing() {
           paymentType: data.isPayable ? "DEBT" : "CASH",
           status: data.status,
           dueDate: data.dueDate,
+          note: data.note,
           organizationId: orgId,
           createdBy: userId,
           updatedBy: userId,
@@ -268,6 +272,7 @@ export function useCreatePurchasing() {
             type: "PURCHASE",
             quantity: item.quantity,
             status: data.status,
+            note: item.note || "",
             organizationId: orgId,
             createdBy: userId,
             updatedBy: userId,
