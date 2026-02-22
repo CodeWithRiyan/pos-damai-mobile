@@ -157,20 +157,26 @@ export default function TransactionCheckoutForm() {
         transactionDate: new Date(),
         status: status,
         note: data.note || "",
-        items: cart.map((item) => ({
-          product: {
-            id: item.product.id,
-          },
-          quantity: item.quantity,
-          tempSellPrice:
-            item.tempSellPrice ||
-            findSellPrice({
-              sellPrices: item.product.sellPrices,
-              type: customer?.category,
-              quantity: item.quantity,
-            }),
-          note: item.note,
-        })),
+        items: cart.map((item) => {
+          const variantData = item.variant || item.product.variantData;
+          return {
+            product: {
+              id: item.product.originalId || item.product.id,
+            },
+            variant: variantData
+              ? { id: variantData.id, name: variantData.name || variantData.label }
+              : undefined,
+            quantity: item.quantity,
+            tempSellPrice:
+              item.tempSellPrice ||
+              findSellPrice({
+                sellPrices: item.product.sellPrices,
+                type: customer?.category,
+                quantity: item.quantity,
+              }),
+            note: item.note,
+          };
+        }),
       };
 
       const result =

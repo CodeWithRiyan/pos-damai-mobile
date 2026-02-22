@@ -146,11 +146,7 @@ export default function PopupAddProduct() {
             : false,
         tempSellPrice:
           addProduct.type === "MULTIUNIT"
-            ? findSellPrice({
-                sellPrices: addProduct.sellPrices,
-                type: customer?.category,
-                quantity: variantInCart?.quantity,
-              }) * (variantInCart?.unitWeight || 1)
+            ? addProduct.sellPrices.find((p) => p.minimumPurchase === unitWeight)?.price || 0
             : variantInCart?.tempSellPrice || 0,
         addNote: variantInCart?.note ? true : false,
         note: variantInCart?.note || "",
@@ -259,11 +255,7 @@ export default function PopupAddProduct() {
                       if (addProduct?.type === "MULTIUNIT") {
                         form.setValue(
                           "tempSellPrice",
-                          findSellPrice({
-                            sellPrices: addProduct?.sellPrices || [],
-                            type: customer?.category,
-                            quantity: currentQuantity - 1,
-                          }) * unitWeight,
+                          addProduct?.sellPrices?.find((p) => p.minimumPurchase === unitWeight)?.price || 0
                         );
                       }
                     }
@@ -295,11 +287,7 @@ export default function PopupAddProduct() {
                             if (addProduct?.type === "MULTIUNIT") {
                               form.setValue(
                                 "tempSellPrice",
-                                findSellPrice({
-                                  sellPrices: addProduct?.sellPrices || [],
-                                  type: customer?.category,
-                                  quantity: Number(text) || 0,
-                                }),
+                                addProduct?.sellPrices?.find((p) => p.minimumPurchase === unitWeight)?.price || 0
                               );
                             }
                           }}
@@ -320,11 +308,7 @@ export default function PopupAddProduct() {
                     if (addProduct?.type === "MULTIUNIT") {
                       form.setValue(
                         "tempSellPrice",
-                        findSellPrice({
-                          sellPrices: addProduct?.sellPrices || [],
-                          type: customer?.category,
-                          quantity: currentQuantity + 1,
-                        }) * unitWeight,
+                        addProduct?.sellPrices?.find((p) => p.minimumPurchase === unitWeight)?.price || 0
                       );
                     }
                   }}
@@ -365,11 +349,7 @@ export default function PopupAddProduct() {
                             form.setValue("isTempSellPrice", true);
                             form.setValue(
                               "tempSellPrice",
-                              findSellPrice({
-                                sellPrices: addProduct?.sellPrices || [],
-                                type: customer?.category,
-                                quantity: quantity || 0,
-                              }) * numValue,
+                              addProduct?.sellPrices?.find((p) => p.minimumPurchase === numValue)?.price || 0
                             );
 
                             onBlur();
