@@ -605,13 +605,18 @@ export default function PurchasingCheckoutForm() {
           <VStack className="flex-1">
             <ScrollView className="flex-1">
               <VStack className="flex-1">
-                <HStack className="justify-center p-6">
+                <HStack className="justify-center p-6 flex-col items-center">
                   <Heading size="3xl" className="font-bold">
                     Rp{" "}
                     {totalPaid
                       ? parseFloat(totalPaid).toLocaleString("id-ID")
                       : "0"}
                   </Heading>
+                  {Number(totalPaid) > form.getValues("totalPurchase") && !form.getValues("isPayable") && (
+                    <Text className="text-success-500 font-bold mt-2">
+                      Kembalian: Rp {(Number(totalPaid) - form.getValues("totalPurchase")).toLocaleString("id-ID")}
+                    </Text>
+                  )}
                 </HStack>
                 <InputVirtualKeyboard
                   nominal={totalPaid}
