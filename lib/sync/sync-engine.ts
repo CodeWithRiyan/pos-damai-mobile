@@ -74,6 +74,8 @@ export class SyncEngine {
         transactions: schema.inventoryTransactions, // Added (Backend 'transactions' -> Local 'inventoryTransactions')
         purchaseReturns: schema.purchaseReturns,
         purchaseReturnItems: schema.purchaseReturnItems,
+        transactionReturns: schema.transactionReturns,
+        transactionReturnItems: schema.transactionReturnItems,
         stockOpnames: schema.stockOpnames,
         stockOpnameItems: schema.stockOpnameItems,
         paymentMethods: schema.paymentTypes,
@@ -195,6 +197,7 @@ export class SyncEngine {
     const dirtyPurchases = await db.select().from(schema.purchases).where(eq(schema.purchases._dirty, true));
     const dirtyTransactions = await db.select().from(schema.inventoryTransactions).where(eq(schema.inventoryTransactions._dirty, true));
     const dirtyReturns = await db.select().from(schema.purchaseReturns).where(eq(schema.purchaseReturns._dirty, true));
+    const dirtyTransactionReturns = await db.select().from(schema.transactionReturns).where(eq(schema.transactionReturns._dirty, true));
     const dirtyStockOpnames = await db.select().from(schema.stockOpnames).where(eq(schema.stockOpnames._dirty, true));
 
     const dirtyPayables = await db.select().from(schema.payables).where(eq(schema.payables._dirty, true));
@@ -209,7 +212,7 @@ export class SyncEngine {
 
     const totalDirty = dirtyCategories.length + dirtyBrands.length + allProductsToPush.length + 
                        dirtyCustomers.length + dirtyPaymentTypes.length + dirtyPurchases.length + dirtyTransactions.length +
-                       dirtyReturns.length + dirtyStockOpnames.length + 
+                       dirtyReturns.length + dirtyTransactionReturns.length + dirtyStockOpnames.length + 
                        dirtyPayables.length + dirtyPayableRealizations.length + 
                        dirtyReceivables.length + dirtyReceivableRealizations.length +
                        dirtyFinances.length + dirtyShifts.length + dirtyCashDrawers.length + dirtySalesTransactions.length;
@@ -225,6 +228,11 @@ export class SyncEngine {
     const returnIds = dirtyReturns.map(r => r.id);
     const returnItems = returnIds.length > 0 
       ? await db.select().from(schema.purchaseReturnItems).where(inArray(schema.purchaseReturnItems.purchaseReturnId, returnIds))
+      : [];
+
+    const transactionReturnIds = dirtyTransactionReturns.map(r => r.id);
+    const transactionReturnItems = transactionReturnIds.length > 0
+      ? await db.select().from(schema.transactionReturnItems).where(inArray(schema.transactionReturnItems.transactionReturnId, transactionReturnIds))
       : [];
 
     // Fetch ALL items for stock opnames we are pushing
@@ -286,6 +294,18 @@ export class SyncEngine {
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
         deletedAt: deletedAt ? deletedAt.toISOString() : null,
         items: returnItems.filter(i => i.purchaseReturnId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
+          ...iRest,
+          createdAt: createdAt ? createdAt.toISOString() : undefined,
+          updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+          deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        })),
+      })),
+      transactionReturns: dirtyTransactionReturns.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
+        ...rest,
+        createdAt: createdAt ? createdAt.toISOString() : undefined,
+        updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        items: transactionReturnItems.filter(i => i.transactionReturnId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
           ...iRest,
           createdAt: createdAt ? createdAt.toISOString() : undefined,
           updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
@@ -438,6 +458,25 @@ export class SyncEngine {
               _syncedAt: new Date() 
             })
             .where(eq(schema.purchaseReturnItems.purchaseReturnId, res.local_ref_id)); 
+        }
+
+        for (const res of (results.transactionReturns || [])) {
+          await tx.update(schema.transactionReturns)
+            .set({ 
+              _dirty: false, 
+              _syncedAt: new Date(), 
+              id: res.server_id 
+            })
+            .where(eq(schema.transactionReturns.local_ref_id, res.local_ref_id));
+            
+          // Also mark items for this return as synced and update FK
+          await tx.update(schema.transactionReturnItems)
+            .set({ 
+              transactionReturnId: res.server_id,
+              _dirty: false, 
+              _syncedAt: new Date() 
+            })
+            .where(eq(schema.transactionReturnItems.transactionReturnId, res.local_ref_id)); 
         }
 
         for (const res of (results.stockOpnames || [])) {
