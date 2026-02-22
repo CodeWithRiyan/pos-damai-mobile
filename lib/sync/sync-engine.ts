@@ -241,6 +241,12 @@ export class SyncEngine {
       ? await db.select().from(schema.stockOpnameItems).where(inArray(schema.stockOpnameItems.stockOpnameId, opnameIds))
       : [];
 
+    // Fetch ALL items for sales transactions we are pushing
+    const salesTxIds = dirtySalesTransactions.map(t => t.id);
+    const salesTxItems = salesTxIds.length > 0
+      ? await db.select().from(schema.transactionItems).where(inArray(schema.transactionItems.transactionId, salesTxIds))
+      : [];
+
     // Fetch ALL prices and variants for all products we are pushing
     const productIdsToPush = allProductsToPush.map(p => p.id);
     const allPrices = await db.select().from(schema.productPrices).where(inArray(schema.productPrices.productId, productIdsToPush));
@@ -371,6 +377,12 @@ export class SyncEngine {
         createdAt: createdAt ? createdAt.toISOString() : undefined,
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
         deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        items: salesTxItems.filter(i => i.transactionId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
+          ...iRest,
+          createdAt: createdAt ? createdAt.toISOString() : undefined,
+          updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+          deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        })),
       })),
     };
 
@@ -554,6 +566,15 @@ export class SyncEngine {
           await tx.update(schema.transactions)
             .set({ _dirty: false, _syncedAt: new Date(), id: res.server_id })
             .where(eq(schema.transactions.local_ref_id, res.local_ref_id));
+            
+          // Also check items
+          await tx.update(schema.transactionItems)
+            .set({ 
+              transactionId: res.server_id,
+              _dirty: false, 
+              _syncedAt: new Date() 
+            })
+            .where(eq(schema.transactionItems.transactionId, res.local_ref_id)); 
         }
       });
       

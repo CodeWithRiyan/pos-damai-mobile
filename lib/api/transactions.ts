@@ -311,6 +311,61 @@ export function useCreateTransaction() {
             });
           }
         }
+
+        // 3. Calculate and Add Customer Points (if applicable)
+        if (data.customerId && data.status === "COMPLETED") {
+          let isNewOrDraft = true;
+          if (data.id) {
+            const existingTx = await tx
+              .select({ status: schema.transactions.status })
+              .from(schema.transactions)
+              .where(eq(schema.transactions.id, data.id))
+              .limit(1);
+            if (existingTx.length > 0 && existingTx[0].status === "COMPLETED") {
+              isNewOrDraft = false;
+            }
+          }
+
+          if (isNewOrDraft) {
+            const customerResult = await tx
+              .select({ id: schema.customers.id, category: schema.customers.category, points: schema.customers.points })
+              .from(schema.customers)
+              .where(eq(schema.customers.id, data.customerId))
+              .limit(1);
+
+            if (customerResult.length > 0) {
+              const customer = customerResult[0];
+              let earnedPoints = 0;
+
+              for (const item of data.items) {
+                const productCategoryResult = await tx
+                  .select({ 
+                    retailPoint: schema.categories.retailPoint, 
+                    wholesalePoint: schema.categories.wholesalePoint 
+                  })
+                  .from(schema.products)
+                  .leftJoin(schema.categories, eq(schema.products.categoryId, schema.categories.id))
+                  .where(eq(schema.products.id, item.product.id))
+                  .limit(1);
+
+                if (productCategoryResult.length > 0) {
+                  const categoryPoints = customer.category === 'WHOLESALE' 
+                    ? productCategoryResult[0].wholesalePoint
+                    : productCategoryResult[0].retailPoint;
+                  
+                  earnedPoints += (categoryPoints || 0) * item.quantity;
+                }
+              }
+
+              if (earnedPoints > 0) {
+                const currentPoints = customer.points || 0;
+                await tx.update(schema.customers)
+                  .set({ points: currentPoints + earnedPoints, _dirty: true })
+                  .where(eq(schema.customers.id, customer.id));
+              }
+            }
+          }
+        }
       });
 
       return { id: transactionId, localRefId, ...data };
