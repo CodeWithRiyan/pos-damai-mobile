@@ -21,6 +21,12 @@ export interface Customer {
   updatedAt: Date | null;
 }
 
+export interface CustomerWithStats extends Customer {
+  totalTransactions: number;
+  totalOmset: number;
+  totalKeuntungan: number;
+}
+
 export interface CreateCustomerDTO {
   name: string;
   category?: CustomerCategory;
@@ -51,7 +57,52 @@ export function useCustomers() {
           eq(schema.customers.organizationId, orgId),
           isNull(schema.customers.deletedAt)
         ));
-      return result as Customer[];
+
+      const customersWithStats = await Promise.all(
+        result.map(async (c) => {
+          const txs = await db
+            .select()
+            .from(schema.transactions)
+            .where(
+              and(
+                eq(schema.transactions.customerId, c.id),
+                eq(schema.transactions.status, 'COMPLETED')
+              )
+            );
+
+          const totalTransactions = txs.length;
+          const totalOmset = txs.reduce((sum, tx) => sum + tx.totalAmount, 0);
+          let totalKeuntungan = 0;
+
+          if (totalTransactions > 0) {
+            for (const tx of txs) {
+              const items = await db
+                .select()
+                .from(schema.transactionItems)
+                .where(eq(schema.transactionItems.transactionId, tx.id));
+
+              for (const item of items) {
+                const prod = await db
+                  .select({ purchasePrice: schema.products.purchasePrice })
+                  .from(schema.products)
+                  .where(eq(schema.products.id, item.productId))
+                  .limit(1);
+                const purchasePrice = prod[0]?.purchasePrice || 0;
+                totalKeuntungan += (item.sellPrice - purchasePrice) * item.quantity;
+              }
+            }
+          }
+
+          return {
+            ...c,
+            totalTransactions,
+            totalOmset,
+            totalKeuntungan,
+          };
+        })
+      );
+      
+      return customersWithStats as CustomerWithStats[];
     },
     enabled: !!orgId,
   });
@@ -67,7 +118,50 @@ export function useCustomer(id: string) {
         .from(schema.customers)
         .where(eq(schema.customers.id, id))
         .limit(1);
-      return result[0] as Customer | undefined;
+      
+      if (result.length === 0) return undefined;
+      
+      const c = result[0];
+
+      const txs = await db
+        .select()
+        .from(schema.transactions)
+        .where(
+          and(
+            eq(schema.transactions.customerId, c.id),
+            eq(schema.transactions.status, 'COMPLETED')
+          )
+        );
+
+      const totalTransactions = txs.length;
+      const totalOmset = txs.reduce((sum, tx) => sum + tx.totalAmount, 0);
+      let totalKeuntungan = 0;
+
+      if (totalTransactions > 0) {
+        for (const tx of txs) {
+          const items = await db
+            .select()
+            .from(schema.transactionItems)
+            .where(eq(schema.transactionItems.transactionId, tx.id));
+
+          for (const item of items) {
+            const prod = await db
+              .select({ purchasePrice: schema.products.purchasePrice })
+              .from(schema.products)
+              .where(eq(schema.products.id, item.productId))
+              .limit(1);
+            const purchasePrice = prod[0]?.purchasePrice || 0;
+            totalKeuntungan += (item.sellPrice - purchasePrice) * item.quantity;
+          }
+        }
+      }
+
+      return {
+        ...c,
+        totalTransactions,
+        totalOmset,
+        totalKeuntungan,
+      } as CustomerWithStats;
     },
     enabled: !!id,
   });
