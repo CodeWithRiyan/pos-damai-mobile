@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, isNull } from "drizzle-orm";
 
 export interface Finance {
   id: string;
@@ -35,7 +35,12 @@ export function useFinances() {
       const results = await db
         .select()
         .from(schema.finances)
-        .where(eq(schema.finances.organizationId, orgId))
+        .where(
+          and(
+            eq(schema.finances.organizationId, orgId),
+            isNull(schema.finances.deletedAt)
+          )
+        )
         .orderBy(desc(schema.finances.transactionDate));
       return results as unknown as Finance[];
     },
@@ -71,7 +76,12 @@ export function useCreateFinance() {
 
       const now = new Date();
       const financeId = data.id || `fin_${Date.now()}`;
-      const localRefId = data.local_ref_id || `L-FIN-${Date.now()}`;
+      
+      const existing = data.id 
+        ? await db.select({ r: schema.finances.local_ref_id }).from(schema.finances).where(eq(schema.finances.id, data.id)).limit(1)
+        : [];
+      
+      const localRefId = existing.length > 0 ? existing[0].r : (data.local_ref_id || `L-FIN-${Date.now()}`);
 
       const profile = useAuthStore.getState().profile;
       const userId = profile?.id || null;
