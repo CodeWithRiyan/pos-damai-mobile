@@ -76,7 +76,7 @@ export default function PopupAddProduct() {
         currentProductInCart?.product.type !== "MULTIUNIT"
       ) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           message: "Harga sementara tidak boleh kurang dari harga beli",
           path: ["tempSellPrice"],
         });

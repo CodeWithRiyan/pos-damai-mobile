@@ -51,7 +51,7 @@ const transactionSchema = z
       parseFloat(data.totalPaid || "0") < data.totalPurchase
     ) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "Total pembayaran tidak boleh kurang dari total pembelian",
         path: ["totalPaid"],
       });

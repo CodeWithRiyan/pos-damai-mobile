@@ -60,14 +60,14 @@ const purchasingSchema = z
   .superRefine((data, ctx) => {
     if (data.transactionDate === null) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "Tanggal transaksi harus diisi",
         path: ["transactionDate"],
       });
     }
     if (data.isPayable && data.dueDate === null) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "Tanggal jatuh tempo harus diisi",
         path: ["dueDate"],
       });

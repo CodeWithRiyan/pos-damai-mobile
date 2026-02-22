@@ -115,14 +115,14 @@ export default function ProductForm() {
       if (data.type === "MULTIUNIT") {
         if (!data.unit) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             message: "Satuan wajib diisi.",
             path: ["unit"],
           });
         }
         if (!data.unitVariants || data.unitVariants.length === 0) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             message: "Varian Unit wajib diisi.",
             path: ["unitVariants"],
           });
@@ -131,7 +131,7 @@ export default function ProductForm() {
         data.unitVariants?.forEach((variant, i) => {
           if (variant.retailPrice < variant.purchasePrice) {
             ctx.addIssue({
-              code: z.ZodIssueCode.custom,
+              code: "custom",
               message: "Harga Retail tidak boleh kurang dari harga beli",
               path: [`unitVariants.${i}.retailPrice`],
             });
@@ -143,43 +143,45 @@ export default function ProductForm() {
       if (data.type === "VARIANTS") {
         if (!data.variants || data.variants.length === 0) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             message: "Varian Produk wajib diisi.",
             path: ["variants"],
           });
         }
       }
 
-      // Validasi retail price wajib diisi jika bukan MULTIUNIT
-      if (data.type !== "MULTIUNIT" && data.retailPrice.length === 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Harga Retail wajib diisi.",
-          path: ["retailPrice"],
+      if (data.type !== "MULTIUNIT") {
+        // Validasi retail price wajib diisi jika bukan MULTIUNIT
+        if (data.retailPrice.length === 0) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Harga Retail wajib diisi.",
+            path: ["retailPrice"],
+          });
+        }
+
+        // Validasi harga retail tidak boleh kurang dari harga beli
+        data.retailPrice.forEach((dataRetail, i) => {
+          if (dataRetail.price < data.purchasePrice) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Harga Retail tidak boleh kurang dari harga beli",
+              path: [`retailPrice.${i}.price`],
+            });
+          }
+        });
+
+        // Validasi harga grosir tidak boleh kurang dari harga beli
+        data.wholesalePrice.forEach((dataWholesale, i) => {
+          if (dataWholesale.price < data.purchasePrice) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Harga Grosir tidak boleh kurang dari harga beli",
+              path: [`wholesalePrice.${i}.price`],
+            });
+          }
         });
       }
-
-      // Validasi harga retail tidak boleh kurang dari harga beli
-      data.retailPrice.forEach((dataRetail, i) => {
-        if (dataRetail.price < data.purchasePrice) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Harga Retail tidak boleh kurang dari harga beli",
-            path: [`retailPrice.${i}.price`],
-          });
-        }
-      });
-
-      // Validasi harga grosir tidak boleh kurang dari harga beli
-      data.wholesalePrice.forEach((dataWholesale, i) => {
-        if (dataWholesale.price < data.purchasePrice) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Harga Grosir tidak boleh kurang dari harga beli",
-            path: [`wholesalePrice.${i}.price`],
-          });
-        }
-      });
     });
 
   type ProductFormValues = z.infer<typeof productSchema>;
@@ -314,7 +316,19 @@ export default function ProductForm() {
         purchasePrice: product.purchasePrice,
         stock: product.stock,
         minimumStock: product.minimumStock,
-        variants: product.variants,
+        variants: product.type === "VARIANTS" ? product.variants : null,
+        unitVariants: product.type === "MULTIUNIT" ? product.variants?.map((v) => {
+          const matchingPrice = product.sellPrices.find(p => p.label === v.name);
+          const nettoVal = matchingPrice?.minimumPurchase || 1;
+          return {
+            name: v.name,
+            code: v.code,
+            netto: nettoVal,
+            purchasePrice: product.purchasePrice * nettoVal, 
+            retailPrice: matchingPrice?.price || 0,
+            minimumPurchase: nettoVal
+          };
+        }) : null,
         retailPrice: product.sellPrices.filter((r: any) => r.type === "RETAIL"),
         wholesalePrice: product.sellPrices.filter(
           (r: any) => r.type === "WHOLESALE",
@@ -346,7 +360,12 @@ export default function ProductForm() {
   const onSubmit: SubmitHandler<ProductFormValues> = (
     data: ProductFormValues,
   ) => {
-    const prices = [
+    const prices = data.type === "MULTIUNIT" ? (data.unitVariants || []).map((uv) => ({
+      type: "RETAIL" as const,
+      label: uv.name,
+      price: uv.retailPrice,
+      minimumPurchase: uv.minimumPurchase,
+    })) : [
       ...data.retailPrice.map((p) => ({
         ...p,
         type: "RETAIL" as const,
@@ -358,6 +377,11 @@ export default function ProductForm() {
         label: "Grosir",
       })),
     ];
+    
+    const variantsPayload = data.type === "MULTIUNIT" ? (data.unitVariants || []).map((uv) => ({
+      name: uv.name,
+      code: uv.code,
+    })) : (data.variants || []);
 
     if (productId && product) {
       const updateData: UpdateProductDTO = {
@@ -365,7 +389,7 @@ export default function ProductForm() {
         type: data.type as any,
         id: product.id,
         prices,
-        variants: data.variants || [],
+        variants: variantsPayload,
       };
       updateMutation.mutate(updateData, {
         onSuccess: () => {
@@ -389,7 +413,7 @@ export default function ProductForm() {
         ...data,
         type: data.type as any,
         prices,
-        variants: data.variants || [],
+        variants: variantsPayload,
       };
       createMutation.mutate(createData, {
         onSuccess: () => {
