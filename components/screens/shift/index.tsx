@@ -1,13 +1,14 @@
 import CurrentShift from "@/components/screens/shift/current";
 import CurrentFormShift from "@/components/screens/shift/current-form";
 import HistoryShift from "@/components/screens/shift/history";
+import { Spinner, Text, VStack } from "@/components/ui";
 import { useCurrentShift } from "@/lib/api/shifts";
 import { useLocalSearchParams } from "expo-router";
-import { VStack, Spinner, Text } from "@/components/ui";
 
 export default function TabContentShift() {
   const { data: currentShift, isLoading } = useCurrentShift();
   const { tab } = useLocalSearchParams();
+  console.log("[TabContentShift] tab:", currentShift);
 
   if (isLoading) {
     return (

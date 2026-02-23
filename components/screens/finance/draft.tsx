@@ -1,4 +1,5 @@
 import Header from "@/components/header";
+import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
   Box,
   Heading,
@@ -9,32 +10,57 @@ import {
   Text,
   VStack,
 } from "@/components/ui";
-import { useFinances, useDeleteFinance } from "@/lib/api/finances";
+import { useDeleteFinance, useFinances } from "@/lib/api/finances";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
 import { Trash2 } from "lucide-react-native";
 import { ScrollView } from "react-native";
 
 export default function FinanceDraft() {
+  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
-  const { data: finances, isLoading } = useFinances();
-  const { mutate: deleteFinance } = useDeleteFinance();
+  const { data: finances, isLoading: isLoadingFinances } = useFinances();
+  const { mutate: deleteFinance, isPending: isPendingDelete } =
+    useDeleteFinance();
+  const isLoading = isLoadingFinances || isPendingDelete;
 
   // Filter only DRAFT status
   const drafts = finances?.filter((f) => f.status === "DRAFT") || [];
 
   const handleContinueDraft = async (financeId: string) => {
-    // For now, we just navigate to Finance screen. 
+    // For now, we just navigate to Finance screen.
     // Usually we would pre-fill a store, but Finance doesn't have a large cart yet.
     // However, for consistency, we could pass the ID.
     router.replace({
       pathname: "/(main)/finance",
-      params: { draftId: financeId }
+      params: { draftId: financeId },
     });
   };
 
   const handleDeleteDraft = async (financeId: string) => {
-    deleteFinance(financeId);
+    showPopUpConfirm({
+      title: "HAPUS DRAFT",
+      icon: "warning",
+      description: (
+        <Text className="text-slate-500">
+          {`Apakah Anda yakin ingin menghapus draft`}
+          <Text className="font-bold text-slate-900">{financeId}</Text>
+          {`? Tindakan ini tidak dapat dibatalkan.`}
+        </Text>
+      ),
+      showClose: true,
+      okText: "HAPUS",
+      closeText: "BATAL",
+      okVariant: "destructive",
+      onOk: () => {
+        deleteFinance(financeId, {
+          onSuccess: () => {
+            hidePopUpConfirm();
+          },
+        });
+      },
+      loading: isLoading,
+    });
   };
 
   if (isLoading) {
@@ -99,8 +125,12 @@ export default function FinanceDraft() {
                           <Text className="text-typography-400 text-xs">
                             Tipe
                           </Text>
-                          <Text className={`font-bold ${draft.type === "INCOME" ? "text-success-500" : "text-error-500"}`}>
-                            {draft.type === "INCOME" ? "Pemasukan" : "Pengeluaran"}
+                          <Text
+                            className={`font-bold ${draft.type === "INCOME" ? "text-success-500" : "text-error-500"}`}
+                          >
+                            {draft.type === "INCOME"
+                              ? "Pemasukan"
+                              : "Pengeluaran"}
                           </Text>
                         </VStack>
                       </HStack>

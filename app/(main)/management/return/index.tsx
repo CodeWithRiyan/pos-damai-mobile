@@ -21,7 +21,7 @@ export default function ReturnScreen() {
     },
     {
       label: "Transaksi Penjualan",
-      href: "/management/return/sales",
+      href: "/management/return/transaction",
       icon: "Plain",
     },
   ];
