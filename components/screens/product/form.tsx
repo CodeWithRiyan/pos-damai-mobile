@@ -80,9 +80,6 @@ export default function ProductForm() {
             netto: z.number().min(0.001, "Netto wajib diisi."),
             purchasePrice: z.number().min(1, "Harga Beli wajib diisi."),
             retailPrice: z.number().min(1, "Harga wajib diisi."),
-            minimumPurchase: z
-              .number()
-              .min(0.001, "Minimal Pembelian wajib diisi."),
           }),
         )
         .nullable(),
@@ -345,18 +342,23 @@ export default function ProductForm() {
         stock: product.stock,
         minimumStock: product.minimumStock,
         variants: product.type === "VARIANTS" ? product.variants : null,
-        unitVariants: product.type === "MULTIUNIT" ? product.variants?.map((v) => {
-          const matchingPrice = product.sellPrices.find(p => p.label === v.name);
-          const nettoVal = matchingPrice?.minimumPurchase || 1;
-          return {
-            name: v.name,
-            code: v.code,
-            netto: nettoVal,
-            purchasePrice: product.purchasePrice * nettoVal, 
-            retailPrice: matchingPrice?.price || 0,
-            minimumPurchase: nettoVal
-          };
-        }) : null,
+        unitVariants:
+          product.type === "MULTIUNIT"
+            ? product.variants?.map((v) => {
+                const matchingPrice = product.sellPrices.find(
+                  (p) => p.label === v.name,
+                );
+                const nettoVal = matchingPrice?.minimumPurchase || 1;
+                return {
+                  name: v.name,
+                  code: v.code,
+                  netto: nettoVal,
+                  purchasePrice: product.purchasePrice * nettoVal,
+                  retailPrice: matchingPrice?.price || 0,
+                  minimumPurchase: nettoVal,
+                };
+              })
+            : null,
         retailPrice: product.sellPrices.filter((r: any) => r.type === "RETAIL"),
         wholesalePrice: product.sellPrices.filter(
           (r: any) => r.type === "WHOLESALE",
@@ -388,28 +390,34 @@ export default function ProductForm() {
   const onSubmit: SubmitHandler<ProductFormValues> = (
     data: ProductFormValues,
   ) => {
-    const prices = data.type === "MULTIUNIT" ? (data.unitVariants || []).map((uv) => ({
-      type: "RETAIL" as const,
-      label: uv.name,
-      price: uv.retailPrice,
-      minimumPurchase: uv.minimumPurchase,
-    })) : [
-      ...data.retailPrice.map((p) => ({
-        ...p,
-        type: "RETAIL" as const,
-        label: "Retail",
-      })),
-      ...data.wholesalePrice.map((p) => ({
-        ...p,
-        type: "WHOLESALE" as const,
-        label: "Grosir",
-      })),
-    ];
-    
-    const variantsPayload = data.type === "MULTIUNIT" ? (data.unitVariants || []).map((uv) => ({
-      name: uv.name,
-      code: uv.code,
-    })) : (data.variants || []);
+    const prices =
+      data.type === "MULTIUNIT"
+        ? (data.unitVariants || []).map((uv) => ({
+            type: "RETAIL" as const,
+            label: uv.name,
+            price: uv.retailPrice,
+            minimumPurchase: 1, // untuk unitVariants, minimal pembelian static senilai 1
+          }))
+        : [
+            ...data.retailPrice.map((p) => ({
+              ...p,
+              type: "RETAIL" as const,
+              label: "Retail",
+            })),
+            ...data.wholesalePrice.map((p) => ({
+              ...p,
+              type: "WHOLESALE" as const,
+              label: "Grosir",
+            })),
+          ];
+
+    const variantsPayload =
+      data.type === "MULTIUNIT"
+        ? (data.unitVariants || []).map((uv) => ({
+            name: uv.name,
+            code: uv.code,
+          }))
+        : data.variants || [];
 
     if (productId && product) {
       const updateData: UpdateProductDTO = {
@@ -571,7 +579,8 @@ export default function ProductForm() {
                     autoComplete="off"
                     onChangeText={(text) => {
                       onChange(Number(text) || 0);
-                      const currentUnitVariants = form.getValues("unitVariants") || [];
+                      const currentUnitVariants =
+                        form.getValues("unitVariants") || [];
                       currentUnitVariants.forEach((variant, i) => {
                         form.setValue(
                           `unitVariants.${i}.purchasePrice`,
@@ -952,50 +961,6 @@ export default function ProductForm() {
                         }}
                       >
                         <Controller
-                          name={`unitVariants.${index}.minimumPurchase`}
-                          control={form.control}
-                          render={({
-                            field: { onChange, onBlur, value },
-                            fieldState: { error },
-                          }) => (
-                            <FormControl
-                              isRequired
-                              isInvalid={!!error}
-                              className="flex-1"
-                            >
-                              <FormControlLabel>
-                                <FormControlLabelText>
-                                  Minimal Pembelian
-                                </FormControlLabelText>
-                              </FormControlLabel>
-                              <Input>
-                                <InputField
-                                  value={value?.toString() || ""}
-                                  onChangeText={(text) =>
-                                    onChange(Number(text) || 0)
-                                  }
-                                  onBlur={onBlur}
-                                  placeholder="1"
-                                  keyboardType="numeric"
-                                />
-                              </Input>
-                              {error && (
-                                <FormControlError>
-                                  <FormControlErrorText>
-                                    {error.message}
-                                  </FormControlErrorText>
-                                </FormControlError>
-                              )}
-                            </FormControl>
-                          )}
-                        />
-                      </GridItem>
-                      <GridItem
-                        _extra={{
-                          className: "col-span-1",
-                        }}
-                      >
-                        <Controller
                           name={`unitVariants.${index}.retailPrice`}
                           control={form.control}
                           render={({
@@ -1057,7 +1022,6 @@ export default function ProductForm() {
                       unitVariantAppend({
                         name: "",
                         code: "",
-                        minimumPurchase: 0,
                         netto: 0,
                         purchasePrice: 0,
                         retailPrice: 0,
@@ -1589,7 +1553,10 @@ export default function ProductForm() {
           className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
           onPress={form.handleSubmit(onSubmit, (errors) => {
-            console.error("[PRODUCT_FORM] Validation Errors: ", JSON.stringify(errors, null, 2));
+            console.error(
+              "[PRODUCT_FORM] Validation Errors: ",
+              JSON.stringify(errors, null, 2),
+            );
           })}
         >
           <Text size="sm" className="text-typography-0 font-bold">
