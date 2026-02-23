@@ -1,6 +1,5 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import { Input, InputField, InputIcon, InputSlot } from "@/components/ui";
 import { Badge, BadgeText } from "@/components/ui/badge";
 import { Box } from "@/components/ui/box";
@@ -27,12 +26,11 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { debounce } from "lodash";
 import { SearchIcon } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
-import { ScrollView } from "react-native";
+import { Alert, ScrollView } from "react-native";
 import ProductFilter from "./filter";
 import ProductNotification from "./notification";
 
 export default function ProductList() {
-  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
 
@@ -112,51 +110,40 @@ export default function ProductList() {
 
   const handleDeletePress = () => {
     const productIds = selectedItems?.map((m) => m.id) || [];
-
-    showPopUpConfirm({
-      title: "HAPUS PRODUK",
-      icon: "warning",
-      description: (
-        <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus `}
-          <Text className="font-bold text-slate-900">{productIds?.length}</Text>
-          {` produk? Tindakan ini tidak dapat dibatalkan.`}
-        </Text>
-      ),
-      showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
-      onOk: () => confirmDelete(productIds),
-      loading: deleteMutation.isPending,
-    });
-  };
-
-  const confirmDelete = async (productIds: string[]) => {
     if (!productIds.length) return;
 
-    deleteMutation.mutate(
-      { ids: productIds },
-      {
-        onSuccess: () => {
-          setSelectedItems(null);
-          hidePopUpConfirm();
-          refetch();
-
-          toast.show({
-            placement: "top",
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Produk berhasil dihapus</ToastTitle>
-              </Toast>
-            ),
-          });
+    Alert.alert(
+      "HAPUS PRODUK",
+      `Apakah Anda yakin ingin menghapus ${productIds.length} produk? Tindakan ini tidak dapat dibatalkan.`,
+      [
+        { text: "BATAL", style: "cancel" },
+        {
+          text: "HAPUS",
+          style: "destructive",
+          onPress: () => {
+            console.log(`[LIST DELETE] Deleting ids: ${JSON.stringify(productIds)}`);
+            deleteMutation.mutate(
+              { ids: productIds },
+              {
+                onSuccess: () => {
+                  setSelectedItems(null);
+                  toast.show({
+                    placement: "top",
+                    render: ({ id }) => (
+                      <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                        <ToastTitle>Produk berhasil dihapus</ToastTitle>
+                      </Toast>
+                    ),
+                  });
+                },
+                onError: (error) => {
+                  showErrorToast(error);
+                },
+              },
+            );
+          },
         },
-        onError: (error) => {
-          showErrorToast(error);
-          hidePopUpConfirm();
-        },
-      },
+      ]
     );
   };
 
@@ -290,7 +277,7 @@ export default function ProductList() {
                       handlePress(product);
                     } else {
                       router.navigate(
-                        `/(main)/management/product-category-brand/product/detail/${product.id}` as any,
+                        `/(main)/management/product-category-brand/product/detail/${encodeURIComponent(product.id)}` as any,
                       );
                       setSelectedItems(null);
                     }

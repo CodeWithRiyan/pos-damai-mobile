@@ -96,14 +96,14 @@ export default function ProductForm() {
         .nullable(),
       retailPrice: z.array(
         z.object({
-          minimumPurchase: z.number().min(0.001, "Minimal Pembelian wajib diisi."),
-          price: z.number().min(1, "Harga wajib diisi."),
+          minimumPurchase: z.number().min(0, "Minimal Pembelian wajib diisi."),
+          price: z.number().min(0, "Harga wajib diisi."),
         }),
       ),
       wholesalePrice: z.array(
         z.object({
-          minimumPurchase: z.number().min(0.001, "Minimal Pembelian wajib diisi."),
-          price: z.number().min(1, "Harga wajib diisi."),
+          minimumPurchase: z.number().min(0, "Minimal Pembelian wajib diisi."),
+          price: z.number().min(0, "Harga wajib diisi."),
         }),
       ),
       discountId: z.string().optional().nullable(),
@@ -160,8 +160,22 @@ export default function ProductForm() {
           });
         }
 
-        // Validasi harga retail tidak boleh kurang dari harga beli
+        // Validasi detail harga retail
         data.retailPrice.forEach((dataRetail, i) => {
+          if (dataRetail.minimumPurchase < 0.001) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Minimal Pembelian wajib diisi.",
+              path: [`retailPrice.${i}.minimumPurchase`],
+            });
+          }
+          if (dataRetail.price < 1) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Harga wajib diisi.",
+              path: [`retailPrice.${i}.price`],
+            });
+          }
           if (dataRetail.price < data.purchasePrice) {
             ctx.addIssue({
               code: "custom",
@@ -171,8 +185,22 @@ export default function ProductForm() {
           }
         });
 
-        // Validasi harga grosir tidak boleh kurang dari harga beli
+        // Validasi detail harga grosir
         data.wholesalePrice.forEach((dataWholesale, i) => {
+          if (dataWholesale.minimumPurchase < 0.001) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Minimal Pembelian wajib diisi.",
+              path: [`wholesalePrice.${i}.minimumPurchase`],
+            });
+          }
+          if (dataWholesale.price < 1) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Harga wajib diisi.",
+              path: [`wholesalePrice.${i}.price`],
+            });
+          }
           if (dataWholesale.price < data.purchasePrice) {
             ctx.addIssue({
               code: "custom",
@@ -1560,7 +1588,9 @@ export default function ProductForm() {
         <Pressable
           className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
-          onPress={form.handleSubmit(onSubmit)}
+          onPress={form.handleSubmit(onSubmit, (errors) => {
+            console.error("[PRODUCT_FORM] Validation Errors: ", JSON.stringify(errors, null, 2));
+          })}
         >
           <Text size="sm" className="text-typography-0 font-bold">
             {isLoading ? "MENYIMPAN..." : "SIMPAN"}

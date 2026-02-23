@@ -149,7 +149,12 @@ export function useProducts(params: ProductParams | void) {
           const variants = await db
             .select()
             .from(schema.productVariants)
-            .where(eq(schema.productVariants.productId, product.id));
+            .where(
+              and(
+                eq(schema.productVariants.productId, product.id),
+                isNull(schema.productVariants.deletedAt)
+              )
+            );
 
           // Calculate stock from inventory transactions (only COMPLETED)
           const transactions = await db
@@ -194,8 +199,8 @@ export function useProducts(params: ProductParams | void) {
         const items = [];
         const hasVariants = product.variants && product.variants.length > 0;
 
-        if (product.type === "DEFAULT" || product.type === "MULTIUNIT") {
-          // Parent product is always added for DEFAULT and MULTIUNIT
+        if (product.type === "DEFAULT") {
+          // Parent product is always added for DEFAULT
           items.push({
             ...product,
             isVariant: false,
@@ -209,9 +214,11 @@ export function useProducts(params: ProductParams | void) {
           hasVariants
         ) {
           product.variants.forEach((variant) => {
+            const compositeId = `${product.id}-${variant.id}`;
+            console.log(`[FLATTEN] Built variant entry: id=${compositeId}, name=${product.name} - ${variant.name}, variantId=${variant.id}`);
             const variantProduct = {
               ...product,
-              id: `${product.id}-${variant.id}`, // Unique ID for list rendering
+              id: compositeId, // Unique ID for list rendering
               originalId: product.id, // Keep reference to original product ID
               name: `${product.name} - ${variant.name}`, // Override name for display
               code: variant.code || product.code, // Use variant code if available
@@ -223,8 +230,8 @@ export function useProducts(params: ProductParams | void) {
           });
         }
 
-        // Fallback: If type is VARIANTS but it has no variants yet, still show the parent
-        if (product.type === "VARIANTS" && !hasVariants) {
+        // Fallback: If type is VARIANTS or MULTIUNIT but it has no variants yet, still show the parent
+        if ((product.type === "VARIANTS" || product.type === "MULTIUNIT") && !hasVariants) {
           items.push({
             ...product,
             isVariant: false,
@@ -374,6 +381,10 @@ export function useProduct(id: string) {
   return useQuery({
     queryKey: ["products", id],
     queryFn: async () => {
+      // If the ID contains a dash, it's a flattened variant (e.g. prod_...-var_...)
+      const baseProductId = id.includes("-var_") ? id.substring(0, id.indexOf("-var_")) : id;
+      console.log(`[useProduct] id="${id}", baseProductId="${baseProductId}"`);
+
       const productResult = await db
         .select({
           product: schema.products,
@@ -391,20 +402,26 @@ export function useProduct(id: string) {
           schema.discounts,
           eq(schema.products.discountId, schema.discounts.id),
         )
-        .where(eq(schema.products.id, id))
+        .where(eq(schema.products.id, baseProductId))
         .limit(1);
 
+      console.log(`[useProduct] productResult.length=${productResult.length}`);
       if (productResult.length === 0) return undefined;
 
       const { product, category, brand, discount } = productResult[0];
       const prices = await db
         .select()
         .from(schema.productPrices)
-        .where(eq(schema.productPrices.productId, id));
+        .where(eq(schema.productPrices.productId, baseProductId));
       const variants = await db
         .select()
         .from(schema.productVariants)
-        .where(eq(schema.productVariants.productId, id));
+        .where(
+          and(
+            eq(schema.productVariants.productId, baseProductId),
+            isNull(schema.productVariants.deletedAt)
+          )
+        );
 
       // Calculate stock from inventory transactions (only COMPLETED)
       const transactions = await db
@@ -412,7 +429,7 @@ export function useProduct(id: string) {
         .from(schema.inventoryTransactions)
         .where(
           and(
-            eq(schema.inventoryTransactions.productId, id),
+            eq(schema.inventoryTransactions.productId, baseProductId),
             eq(schema.inventoryTransactions.status, "COMPLETED"),
           ),
         );
@@ -430,10 +447,21 @@ export function useProduct(id: string) {
         })),
       });
 
+      // If looking at a specific variant wrapper, inject its data context onto the product obj
+      let activeVariantData = undefined;
+      if (id.includes("-var_")) {
+        const variantIdStr = id.substring(id.indexOf("-") + 1);
+        activeVariantData = variants.find(v => v.id === variantIdStr);
+      }
+
       return {
         ...product,
+        // Optional override to mimic flattened product structure
+        name: activeVariantData ? `${product.name} - ${activeVariantData.name}` : product.name,
+        code: activeVariantData?.code || product.barcode,
+        isVariant: !!activeVariantData,
+        variantData: activeVariantData,
         stock: totalStock,
-        code: product.barcode,
         sellPrices: prices,
         variants,
         discountId: product.discountId,
@@ -650,25 +678,53 @@ export function useDeleteProduct() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      console.log(`[DELETE] mutationFn called with id: "${id}"`);
       const now = new Date();
 
       const userId = useAuthStore.getState().profile?.id;
 
-      await db
-        .update(schema.products)
-        .set({
-          deletedAt: now,
-          updatedBy: userId,
-          updatedAt: now,
-          _dirty: true,
-        })
-        .where(eq(schema.products.id, id));
+      await db.transaction(async (tx) => {
+        // If the ID contains '-var_', it's a flattened variant (e.g. prod_...-var_...)
+        // Must use indexOf("-var_") specifically, NOT just indexOf("-"),
+        // because the productId prefix itself also contains dashes.
+        const varSeparatorIndex = id.indexOf("-var_");
+        console.log(`[DELETE] varSeparatorIndex=${varSeparatorIndex}`);
+        if (varSeparatorIndex !== -1) {
+          // Extract only the variant portion (after the "-" separator)
+          const variantIdStr = id.substring(varSeparatorIndex + 1); // e.g. "var_xxx"
+          console.log(`[DELETE] Targeting variant id: "${variantIdStr}"`);
+
+          // Verify it exists first
+          const existing = await tx.select().from(schema.productVariants).where(eq(schema.productVariants.id, variantIdStr));
+          console.log(`[DELETE] Found matching variant rows: ${existing.length}`, JSON.stringify(existing.map(r => ({ id: r.id, name: r.name, deletedAt: r.deletedAt }))));
+
+          const result = await tx
+            .update(schema.productVariants)
+            .set({ deletedAt: now, updatedBy: userId, updatedAt: now, _dirty: true })
+            .where(eq(schema.productVariants.id, variantIdStr));
+          console.log(`[DELETE] Variant update result:`, JSON.stringify(result));
+        } else {
+          // It's a parent product
+          console.log(`[DELETE] Targeting parent product id: "${id}"`);
+
+          // Verify it exists first
+          const existing = await tx.select().from(schema.products).where(eq(schema.products.id, id));
+          console.log(`[DELETE] Found matching product rows: ${existing.length}`, JSON.stringify(existing.map(r => ({ id: r.id, name: r.name, deletedAt: r.deletedAt }))));
+
+          const result = await tx
+            .update(schema.products)
+            .set({ deletedAt: now, updatedBy: userId, updatedAt: now, _dirty: true })
+            .where(eq(schema.products.id, id));
+          console.log(`[DELETE] Product update result:`, JSON.stringify(result));
+        }
+      });
 
       return { id };
     },
-    onSuccess: () => {
-      const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["products", orgId] });
+    onSuccess: (data) => {
+      console.log(`[DELETE] onSuccess fired for id: "${data.id}", invalidating queries...`);
+      queryClient.invalidateQueries({ queryKey: ["products"], refetchType: "all" });
+      console.log(`[DELETE] invalidateQueries called.`);
     },
   });
 }
@@ -684,21 +740,39 @@ export function useBulkDeleteProduct() {
       const userId = useAuthStore.getState().profile?.id;
 
       for (const id of data.ids) {
-        await db
-          .update(schema.products)
-          .set({
-            deletedAt: now,
-            updatedBy: userId,
-            updatedAt: now,
-            _dirty: true,
-          })
-          .where(eq(schema.products.id, id));
+        const varSeparatorIndex = id.indexOf("-var_");
+        if (varSeparatorIndex !== -1) {
+          // It's a composite variant ID (e.g. prod_xxx-var_yyy) — delete the variant row
+          const variantIdStr = id.substring(varSeparatorIndex + 1);
+          console.log(`[BULK DELETE] Deleting variant: "${variantIdStr}" from composite id: "${id}"`);
+          await db
+            .update(schema.productVariants)
+            .set({
+              deletedAt: now,
+              updatedBy: userId,
+              updatedAt: now,
+              _dirty: true,
+            })
+            .where(eq(schema.productVariants.id, variantIdStr));
+        } else {
+          // It's a parent product ID
+          console.log(`[BULK DELETE] Deleting parent product: "${id}"`);
+          await db
+            .update(schema.products)
+            .set({
+              deletedAt: now,
+              updatedBy: userId,
+              updatedAt: now,
+              _dirty: true,
+            })
+            .where(eq(schema.products.id, id));
+        }
       }
 
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["products"], refetchType: "all" });
     },
   });
 }

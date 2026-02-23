@@ -47,8 +47,13 @@ export function useDirtyCount() {
       }
 
       setDirtyCount(total);
-    } catch (error) {
-      console.error('[useDirtyCount] Failed to fetch dirty count:', error);
+    } catch (error: any) {
+      if (error?.message?.includes('no such table')) {
+        // Silently ignore because this happens during database reset when tables are dropped
+        setDirtyCount(0);
+        return;
+      }
+      console.warn('[useDirtyCount] Failed to fetch dirty count:', error);
     }
   };
 
