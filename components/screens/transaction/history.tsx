@@ -14,6 +14,7 @@ import {
 import { Box } from "@/components/ui/box";
 import { Spinner } from "@/components/ui/spinner";
 import { useTransactions } from "@/lib/api/transactions";
+import { formatDisplayRefId } from "@/lib/utils/reference";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -38,7 +39,7 @@ export default function TransactionHistory({
     allTransactions?.filter(
       (t) =>
         t.status === "COMPLETED" &&
-        ((t.local_ref_id || t.id)
+        ((formatDisplayRefId(t.local_ref_id) || t.id)
           .toLowerCase()
           .includes(searchQuery.toLowerCase()) ||
           t.customerName?.toLowerCase().includes(searchQuery.toLowerCase())),
@@ -137,7 +138,7 @@ export default function TransactionHistory({
                     </HStack>
                     <HStack className="justify-between">
                       <Text className="text-typography-400 font-bold">
-                        No: {transaction.local_ref_id || transaction.id}
+                        No: {formatDisplayRefId(transaction.local_ref_id) || transaction.id}
                       </Text>
                     </HStack>
                   </VStack>

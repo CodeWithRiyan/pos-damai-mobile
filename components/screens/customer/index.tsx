@@ -13,7 +13,7 @@ import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
 import {
-  Customer,
+  CustomerWithStats,
   useBulkDeleteCustomer,
   useCustomers,
 } from "@/lib/api/customers";
@@ -26,7 +26,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useCustomers();
-  const [selectedItems, setSelectedItems] = useState<Customer[] | null>(null);
+  const [selectedItems, setSelectedItems] = useState<CustomerWithStats[] | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -39,7 +39,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
   const deleteMutation = useBulkDeleteCustomer();
   const toast = useToast();
 
-  const handleItemPress = (item: Customer) => {
+  const handleItemPress = (item: CustomerWithStats) => {
     if (selectedItems?.some((r) => r.id === item.id)) {
       setSelectedItems(selectedItems.filter((r) => r.id !== item.id));
       return;
@@ -225,11 +225,11 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
                     </HStack>
                     <VStack className="items-end">
                       <Text className="text-brand-primary text-sm font-bold">
-                        0 Poin
+                        {item.points || 0} Poin
                       </Text>
-                      <Text className="text-xs">Total Transaksi: 0</Text>
-                      <Text className="text-xs">Total Omset: Rp 0</Text>
-                      <Text className="text-xs">Total Keuntungan: Rp 0</Text>
+                      <Text className="text-xs">Total Transaksi: {item.totalTransactions || 0}</Text>
+                      <Text className="text-xs">Total Omset: Rp {(item.totalOmset || 0).toLocaleString('id-ID')}</Text>
+                      <Text className="text-xs">Total Keuntungan: Rp {(item.totalKeuntungan || 0).toLocaleString('id-ID')}</Text>
                     </VStack>
                   </HStack>
                 </Pressable>

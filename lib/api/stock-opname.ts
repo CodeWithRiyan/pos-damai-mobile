@@ -3,6 +3,7 @@ import * as schema from '../db/schema';
 import { eq, desc, and, getTableColumns } from 'drizzle-orm';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
+import { generateLocalRefId } from '../utils/reference';
 
 export interface StockOpnameDTO {
   date: Date;
@@ -20,14 +21,16 @@ export function useCreateStockOpname() {
     mutationFn: async (data: StockOpnameDTO) => {
       const orgId = useAuthStore.getState().getOrganizationId();
       const now = new Date();
-      const opnameId = `opname_${Date.now()}`;
       const userId = useAuthStore.getState().profile?.id;
       
       let totalGain = 0;
       let totalLoss = 0;
       let hasDifference = false;
+      let opnameRefId = "";
+      const opnameId = `opname_${Date.now()}`;
 
       await db.transaction(async (tx) => {
+        opnameRefId = await generateLocalRefId(tx, schema.stockOpnames, "SO");
         // 1. Calculate financials & prepare items
         
         for (const item of data.items) {
@@ -81,7 +84,7 @@ export function useCreateStockOpname() {
             const txId = `inv_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             await tx.insert(schema.inventoryTransactions).values({
               id: txId,
-              local_ref_id: `opname_${opnameId}_${item.product.id}`,
+              local_ref_id: `${opnameRefId}_${item.product.id}`,
               productId: item.product.id,
               type: 'STOCK_OPNAME',
               quantity: difference,
@@ -99,7 +102,7 @@ export function useCreateStockOpname() {
         // 2. Create StockOpname record
         await tx.insert(schema.stockOpnames).values({
           id: opnameId,
-          local_ref_id: opnameId,
+          local_ref_id: opnameRefId,
           date: data.date,
           note: data.note,
           status: hasDifference ? 'DIFFERENCE' : 'DONE',

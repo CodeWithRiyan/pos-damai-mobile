@@ -1,7 +1,11 @@
 import { useSyncQueueStore } from "@/stores/sync-queue-store";
+import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiClient, ApiResponse, isConnectionError } from "./client";
 import { Role } from "./roles";
+import { db } from "../db";
+import * as schema from "../db/schema";
+import { eq, and } from "drizzle-orm";
 export interface User {
   id: string;
   email: string | null;
@@ -186,5 +190,122 @@ export function useBulkDeleteUser() {
         });
       }
     },
+  });
+}
+
+export interface IUserLog {
+  id: string;
+  date: Date | string | null;
+  activity: string;
+  type: string;
+}
+
+// Get user activity logs from SQLite
+export function useUserLog(userId: string) {
+  const orgId = useAuthStore((state) => state.getOrganizationId());
+
+  return useQuery({
+    queryKey: ["userLogs", orgId, userId],
+    queryFn: async () => {
+      const logs: IUserLog[] = [];
+
+      // Fetch Shifts
+      const shifts = await db
+        .select()
+        .from(schema.shifts)
+        .where(
+          and(
+            eq(schema.shifts.userId, userId),
+            eq(schema.shifts.organizationId, orgId)
+          )
+        );
+      
+      shifts.forEach((s) => {
+        if (s.startTime) {
+          logs.push({
+            id: `${s.id}_start`,
+            date: s.startTime,
+            activity: "Buka Shift",
+            type: "SHIFT",
+          });
+        }
+        if (s.endTime) {
+          logs.push({
+            id: `${s.id}_end`,
+            date: s.endTime,
+            activity: "Tutup Shift",
+            type: "SHIFT",
+          });
+        }
+      });
+
+      // Fetch Sales Transactions
+      const transactions = await db
+        .select()
+        .from(schema.transactions)
+        .where(
+          and(
+            eq(schema.transactions.createdBy, userId),
+            eq(schema.transactions.organizationId, orgId)
+          )
+        );
+      
+      transactions.forEach((t) => {
+        logs.push({
+          id: t.id,
+          date: t.transactionDate || t.createdAt,
+          activity: "Transaksi Penjualan",
+          type: "SALES",
+        });
+      });
+
+      // Fetch Purchases
+      const purchases = await db
+        .select()
+        .from(schema.purchases)
+        .where(
+          and(
+            eq(schema.purchases.createdBy, userId),
+            eq(schema.purchases.organizationId, orgId)
+          )
+        );
+      
+      purchases.forEach((p) => {
+        logs.push({
+          id: p.id,
+          date: p.createdAt,
+          activity: "Transaksi Pembelian",
+          type: "PURCHASE",
+        });
+      });
+
+      // Fetch Finances
+      const finances = await db
+        .select()
+        .from(schema.finances)
+        .where(
+          and(
+            eq(schema.finances.createdBy, userId),
+            eq(schema.finances.organizationId, orgId)
+          )
+        );
+      
+      finances.forEach((f) => {
+        logs.push({
+          id: f.id,
+          date: f.transactionDate || f.createdAt,
+          activity: f.type === "INCOME" ? "Pemasukan Kas" : "Pengeluaran Kas",
+          type: "FINANCE",
+        });
+      });
+
+      // Sort logs by date descending
+      return logs.sort((a, b) => {
+        const dateA = a.date ? new Date(a.date).getTime() : 0;
+        const dateB = b.date ? new Date(b.date).getTime() : 0;
+        return dateB - dateA;
+      });
+    },
+    enabled: !!orgId && !!userId,
   });
 }

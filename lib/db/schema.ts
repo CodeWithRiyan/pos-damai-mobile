@@ -133,6 +133,7 @@ export const purchases = sqliteTable('purchases', {
   paymentType: text('paymentType').default('CASH'),
   status: text('status').default('COMPLETED'),
   dueDate: integer('dueDate', { mode: 'timestamp' }),
+  note: text('note'),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
 });
@@ -144,6 +145,7 @@ export const inventoryTransactions = sqliteTable('inventory_transactions', {
   type: text('type').notNull(),
   quantity: real('quantity').notNull(),
   status: text('status').default('COMPLETED'),
+  note: text('note'),
   inventoryBatchId: text('inventoryBatchId'),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
@@ -269,6 +271,28 @@ export const transactionItems = sqliteTable('transaction_items', {
   quantity: real('quantity').notNull(),
   sellPrice: real('sellPrice').notNull(),
   note: text('note'),
+  organizationId: text('organizationId').notNull(),
+  ...syncColumns,
+});
+
+export const transactionReturns = sqliteTable('transaction_returns', {
+  id: text('id').primaryKey(),
+  local_ref_id: text('local_ref_id').unique(),
+  customerId: text('customerId'), // Can be null for walk-in customers
+  totalAmount: real('totalAmount').notNull(),
+  returnType: text('returnType').default('CASH'), // CASH, REPLACE, etc.
+  note: text('note').notNull(), // Required field for return reason
+  organizationId: text('organizationId').notNull(),
+  ...syncColumns,
+});
+
+export const transactionReturnItems = sqliteTable('transaction_return_items', {
+  id: text('id').primaryKey(),
+  transactionReturnId: text('transactionReturnId').notNull(),
+  productId: text('productId').notNull(),
+  variantId: text('variantId'),
+  quantity: real('quantity').notNull(),
+  sellPrice: real('sellPrice').default(0),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
 });

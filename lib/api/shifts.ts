@@ -68,6 +68,8 @@ export function useShifts() {
       // Join with cashdrawer and user names
       const shiftsWithDetails = await Promise.all(
         shiftsResult.map(async (shift) => {
+          console.log(`[useActiveShift] Shift loaded: ID=${shift.id}, userId=${shift.userId}`);
+
           const cashDrawer = await db
             .select({ name: schema.cashDrawers.name })
             .from(schema.cashDrawers)
@@ -75,10 +77,16 @@ export function useShifts() {
             .limit(1);
 
           const user = await db
-            .select({ name: schema.users.name })
+            .select({ id: schema.users.id, name: schema.users.name })
             .from(schema.users)
             .where(eq(schema.users.id, shift.userId))
             .limit(1);
+            
+          console.log(`[useActiveShift] Assigned Cashier User Query result:`, user);
+
+          // DEBUG: print all users in DB
+          const allUsers = await db.select({ id: schema.users.id, name: schema.users.name }).from(schema.users);
+          console.log(`[useActiveShift] Total users in DB: ${allUsers.length}. Sample:`, allUsers.map(u => u.name));
 
           return {
             ...shift,
@@ -285,11 +293,8 @@ export function useStartShift() {
       await db.insert(schema.shifts).values(newShift);
       return { id: shiftId, ...data };
     },
-    onSuccess: (data) => {
-      const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["shifts", orgId] });
-      queryClient.invalidateQueries({ queryKey: ["shifts", "active"] });
-      queryClient.invalidateQueries({ queryKey: ["shifts", "current", orgId] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shifts"] });
     },
   });
 }
@@ -333,12 +338,8 @@ export function useEndShift() {
 
       return { ...data };
     },
-    onSuccess: (data) => {
-      const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["shifts", orgId] });
-      queryClient.invalidateQueries({ queryKey: ["shifts", "active"] });
-      queryClient.invalidateQueries({ queryKey: ["shifts", "current", orgId] });
-      queryClient.invalidateQueries({ queryKey: ["shifts", "last"] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shifts"] });
     },
   });
 }
@@ -473,15 +474,23 @@ export function useShiftDetail(id: string) {
         .where(eq(schema.users.id, shift.userId))
         .limit(1);
 
+      // Get Cashdrawer Name
+      const cashDrawer = await db
+        .select({ name: schema.cashDrawers.name })
+        .from(schema.cashDrawers)
+        .where(eq(schema.cashDrawers.id, shift.cashDrawerId))
+        .limit(1);
+
       return {
         id: shift.id,
         note: shift.note || "Aman Terkendali",
         startShift: shift.startTime,
         endShift: shift.endTime,
         initialBalance: shift.initialBalance,
-        finalBalance: shift.finalBalance, // TODO: Calculate final balance automatic by system (initial + in - out)
-        actualBalance: 0, // TODO: get actualBalance user input after end shift
+        finalBalance: shift.expectedBalance || 0, // system calculation
+        actualBalance: shift.finalBalance || 0,   // user input at shift end
         cashier: user[0]?.name || "Unknown",
+        cashDrawer: cashDrawer[0]?.name || "Unknown",
         transactionHistory: history,
       };
     },

@@ -4,6 +4,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
 import { Supplier } from './suppliers';
+import { generateLocalRefId } from '../utils/reference';
 
 export interface PayableRealization {
   id: string;
@@ -230,12 +231,14 @@ export function useCreatePayable() {
       const orgId = useAuthStore.getState().getOrganizationId();
       const id = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
-      const local_ref_id = `L-PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const userId = useAuthStore.getState().profile?.id;
 
-      await db.insert(schema.payables).values({
-        id,
-        local_ref_id,
+      let local_ref_id = "";
+      await db.transaction(async (tx) => {
+        local_ref_id = await generateLocalRefId(tx, schema.payables, "PAY");
+        await tx.insert(schema.payables).values({
+          id,
+          local_ref_id,
         ...data,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         organizationId: orgId,
@@ -243,9 +246,9 @@ export function useCreatePayable() {
         updatedBy: userId,
         createdAt: now,
         updatedAt: now,
-        deletedAt: null,
         _dirty: true,
         _syncedAt: null,
+        });
       });
 
       return { id, local_ref_id, ...data };
@@ -264,12 +267,14 @@ export function useCreatePayableRealization() {
       const orgId = useAuthStore.getState().getOrganizationId();
       const id = `payrel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
-      const local_ref_id = `L-PAY-REL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const userId = useAuthStore.getState().profile?.id;
 
-      await db.insert(schema.payableRealizations).values({
-        id,
-        local_ref_id,
+      let local_ref_id = "";
+      await db.transaction(async (tx) => {
+        local_ref_id = await generateLocalRefId(tx, schema.payableRealizations, "PAY");
+        await tx.insert(schema.payableRealizations).values({
+          id,
+          local_ref_id,
         ...data,
         realizationDate: new Date(data.realizationDate),
         organizationId: orgId,
@@ -280,6 +285,7 @@ export function useCreatePayableRealization() {
         deletedAt: null,
         _dirty: true,
         _syncedAt: null,
+        });
       });
 
       return { id, local_ref_id, ...data };

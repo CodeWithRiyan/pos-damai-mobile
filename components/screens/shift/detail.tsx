@@ -55,8 +55,7 @@ export default function ShiftDetail() {
           </HStack>
           <HStack className="w-full flex-row justify-between">
             <Text className="text-typography-600">Cashdrawer</Text>
-            {/* TODO: replace with cashdrawer name */}
-            <Text className="font-bold">Laci 1</Text>
+            <Text className="font-bold">{detailShift?.cashDrawer}</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between">
             <Text className="text-typography-600">Shift Mulai</Text>
@@ -104,7 +103,6 @@ export default function ShiftDetail() {
         </VStack>
         <VStack space="sm" className="p-4">
           <Text className="text-typography-600">Catatan</Text>
-          {/* TODO: tambahkan catatan */}
           <Text className="font-bold">{detailShift?.note}</Text>
         </VStack>
       </ScrollView>

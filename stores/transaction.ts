@@ -57,7 +57,22 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   customer: null,
   status: "DRAFT",
   purchaseId: null,
-  setCustomer: (customer) => set({ customer }),
+  setCustomer: (customer) =>
+    set((state) => {
+      const updatedTotal = state.cart.reduce(
+        (sum, cartItem) =>
+          sum +
+          cartItem.quantity *
+            (cartItem.tempSellPrice ||
+              findSellPrice({
+                sellPrices: cartItem.product.sellPrices,
+                type: customer?.category,
+                quantity: cartItem.quantity,
+              })),
+        0,
+      );
+      return { customer, cartTotal: updatedTotal };
+    }),
   setPurchaseId: (id) => set({ purchaseId: id }),
   setStatus: (status) => {
     set({ status });

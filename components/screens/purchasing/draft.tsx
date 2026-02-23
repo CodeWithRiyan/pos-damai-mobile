@@ -9,8 +9,7 @@ import {
   Text,
   VStack,
 } from "@/components/ui";
-import type { Purchase } from "@/lib/api/purchasing";
-import { usePurchases } from "@/lib/api/purchasing";
+import { usePurchases, fetchPurchase } from "@/lib/api/purchasing";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { usePurchasingStore } from "@/stores/purchasing";
@@ -33,14 +32,7 @@ export default function PurchasingDraft() {
 
   const handleContinueDraft = async (purchaseId: string) => {
     // We need to fetch the full detail of the purchase to get items
-    const detail = await queryClient.fetchQuery<Purchase | undefined>({
-      queryKey: ["purchases", purchaseId],
-      queryFn: async () => {
-        return queryClient.ensureQueryData<Purchase | undefined>({
-          queryKey: ["purchases", purchaseId],
-        });
-      },
-    });
+    const detail = await fetchPurchase(purchaseId);
 
     if (detail && detail.items) {
       resetCart();

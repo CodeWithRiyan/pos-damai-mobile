@@ -177,19 +177,19 @@ export default function CustomerDetail() {
           <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Poin</Text>
-              <Text className="font-bold">0</Text>
+              <Text className="font-bold">{customer?.points || 0}</Text>
             </VStack>
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Total Transaksi</Text>
-              <Text className="font-bold">0</Text>
+              <Text className="font-bold">{customer?.totalTransactions || 0}</Text>
             </VStack>
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Total Omset</Text>
-              <Text className="font-bold">Rp 0</Text>
+              <Text className="font-bold">Rp {(customer?.totalOmset || 0).toLocaleString('id-ID')}</Text>
             </VStack>
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Total Keuntungan</Text>
-              <Text className="font-bold">Rp 0</Text>
+              <Text className="font-bold">Rp {(customer?.totalKeuntungan || 0).toLocaleString('id-ID')}</Text>
             </VStack>
           </Box>
         </VStack>
