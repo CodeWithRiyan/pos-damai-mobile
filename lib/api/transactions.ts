@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { and, desc, eq, isNull, like } from "drizzle-orm";
 import { db } from "../db";
 import * as schema from "../db/schema";
+import { generateLocalRefId } from "../utils/reference";
 
 export interface Transaction {
   id: string;
@@ -108,80 +109,82 @@ export function useTransactions(params: { customerId?: string } | void) {
   });
 }
 
+export async function fetchTransaction(id: string): Promise<Transaction | null> {
+  // Get transaction record
+  const transactionResult = await db
+    .select()
+    .from(schema.transactions)
+    .where(eq(schema.transactions.id, id))
+    .limit(1);
+
+  if (transactionResult.length === 0) return null;
+
+  const transaction = transactionResult[0];
+
+  // Get customer name
+  let customerName = "Walk-in Customer";
+  if (transaction.customerId) {
+    const customer = await db
+      .select({ name: schema.customers.name })
+      .from(schema.customers)
+      .where(eq(schema.customers.id, transaction.customerId))
+      .limit(1);
+    customerName = customer[0]?.name || "Unknown";
+  }
+
+  // Get payment type name
+  const paymentType = await db
+    .select({ name: schema.paymentTypes.name })
+    .from(schema.paymentTypes)
+    .where(eq(schema.paymentTypes.id, transaction.paymentTypeId))
+    .limit(1);
+
+  // Get transaction items
+  const items = await db
+    .select()
+    .from(schema.transactionItems)
+    .where(eq(schema.transactionItems.transactionId, id));
+
+  // Get product names for each item
+  const itemsWithProductNames = await Promise.all(
+    items.map(async (item) => {
+      const product = await db
+        .select({ name: schema.products.name })
+        .from(schema.products)
+        .where(eq(schema.products.id, item.productId))
+        .limit(1);
+
+      let variantName;
+      if (item.variantId) {
+        const variant = await db
+          .select({ name: schema.productVariants.name })
+          .from(schema.productVariants)
+          .where(eq(schema.productVariants.id, item.variantId))
+          .limit(1);
+        variantName = variant[0]?.name;
+      }
+
+      return {
+        ...item,
+        productName: product[0]?.name || "Unknown",
+        variantName,
+      };
+    }),
+  );
+
+  return {
+    ...transaction,
+    customerName,
+    paymentTypeName: paymentType[0]?.name || "Unknown",
+    items: itemsWithProductNames,
+  } as Transaction;
+}
+
 // Get single transaction with items
 export function useTransaction(id: string) {
   return useQuery({
     queryKey: ["transactions", id],
-    queryFn: async () => {
-      // Get transaction record
-      const transactionResult = await db
-        .select()
-        .from(schema.transactions)
-        .where(eq(schema.transactions.id, id))
-        .limit(1);
-
-      if (transactionResult.length === 0) return null;
-
-      const transaction = transactionResult[0];
-
-      // Get customer name
-      let customerName = "Walk-in Customer";
-      if (transaction.customerId) {
-        const customer = await db
-          .select({ name: schema.customers.name })
-          .from(schema.customers)
-          .where(eq(schema.customers.id, transaction.customerId))
-          .limit(1);
-        customerName = customer[0]?.name || "Unknown";
-      }
-
-      // Get payment type name
-      const paymentType = await db
-        .select({ name: schema.paymentTypes.name })
-        .from(schema.paymentTypes)
-        .where(eq(schema.paymentTypes.id, transaction.paymentTypeId))
-        .limit(1);
-
-      // Get transaction items
-      const items = await db
-        .select()
-        .from(schema.transactionItems)
-        .where(eq(schema.transactionItems.transactionId, id));
-
-      // Get product names for each item
-      const itemsWithProductNames = await Promise.all(
-        items.map(async (item) => {
-          const product = await db
-            .select({ name: schema.products.name })
-            .from(schema.products)
-            .where(eq(schema.products.id, item.productId))
-            .limit(1);
-
-          let variantName;
-          if (item.variantId) {
-            const variant = await db
-              .select({ name: schema.productVariants.name })
-              .from(schema.productVariants)
-              .where(eq(schema.productVariants.id, item.variantId))
-              .limit(1);
-            variantName = variant[0]?.name;
-          }
-
-          return {
-            ...item,
-            productName: product[0]?.name || "Unknown",
-            variantName,
-          };
-        }),
-      );
-
-      return {
-        ...transaction,
-        customerName,
-        paymentTypeName: paymentType[0]?.name || "Unknown",
-        items: itemsWithProductNames,
-      } as Transaction;
-    },
+    queryFn: () => fetchTransaction(id),
     enabled: !!id,
   });
 }
@@ -200,11 +203,13 @@ export function useCreateTransaction() {
       const transactionId =
         data.id ||
         `trans_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const localRefId = `ref_trans_${Date.now()}`;
+      
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
 
       await db.transaction(async (tx) => {
+        const localRefId = await generateLocalRefId(tx, schema.transactions, "TRX");
+        
         // 1. Create/Update Transaction record
         const transactionValues = {
           id: transactionId,
@@ -260,7 +265,7 @@ export function useCreateTransaction() {
           await tx.insert(schema.transactions).values(transactionValues);
         }
 
-        const finalLocalRefId = data.id
+        let finalLocalRefId = data.id
           ? (
               await tx
                 .select({ r: schema.transactions.local_ref_id })
@@ -269,6 +274,28 @@ export function useCreateTransaction() {
                 .limit(1)
             )[0]?.r || localRefId
           : localRefId;
+
+        if (data.id) {
+            const existing = await tx
+              .select({ status: schema.transactions.status, local_ref_id: schema.transactions.local_ref_id })
+              .from(schema.transactions)
+              .where(eq(schema.transactions.id, data.id))
+              .limit(1);
+
+            const statusCompleted =
+              data.status === "COMPLETED" && existing[0]?.status === "DRAFT";
+
+            if (statusCompleted) {
+              const newRefId = await generateLocalRefId(tx, schema.transactions, "TRX");
+              
+              await tx
+                .update(schema.transactions)
+                .set({ status: "COMPLETED", local_ref_id: newRefId })
+                .where(eq(schema.transactions.id, data.id));
+              
+              finalLocalRefId = newRefId;
+            }
+        }
 
         // 2. Create Transaction Items and Inventory Transactions
         for (const item of data.items) {
@@ -311,9 +338,64 @@ export function useCreateTransaction() {
             });
           }
         }
+
+        // 3. Calculate and Add Customer Points (if applicable)
+        if (data.customerId && data.status === "COMPLETED") {
+          let isNewOrDraft = true;
+          if (data.id) {
+            const existingTx = await tx
+              .select({ status: schema.transactions.status })
+              .from(schema.transactions)
+              .where(eq(schema.transactions.id, data.id))
+              .limit(1);
+            if (existingTx.length > 0 && existingTx[0].status === "COMPLETED") {
+              isNewOrDraft = false;
+            }
+          }
+
+          if (isNewOrDraft) {
+            const customerResult = await tx
+              .select({ id: schema.customers.id, category: schema.customers.category, points: schema.customers.points })
+              .from(schema.customers)
+              .where(eq(schema.customers.id, data.customerId))
+              .limit(1);
+
+            if (customerResult.length > 0) {
+              const customer = customerResult[0];
+              let earnedPoints = 0;
+
+              for (const item of data.items) {
+                const productCategoryResult = await tx
+                  .select({ 
+                    retailPoint: schema.categories.retailPoint, 
+                    wholesalePoint: schema.categories.wholesalePoint 
+                  })
+                  .from(schema.products)
+                  .leftJoin(schema.categories, eq(schema.products.categoryId, schema.categories.id))
+                  .where(eq(schema.products.id, item.product.id))
+                  .limit(1);
+
+                if (productCategoryResult.length > 0) {
+                  const categoryPoints = customer.category === 'WHOLESALE' 
+                    ? productCategoryResult[0].wholesalePoint
+                    : productCategoryResult[0].retailPoint;
+                  
+                  earnedPoints += (categoryPoints || 0) * item.quantity;
+                }
+              }
+
+              if (earnedPoints > 0) {
+                const currentPoints = customer.points || 0;
+                await tx.update(schema.customers)
+                  .set({ points: currentPoints + earnedPoints, _dirty: true })
+                  .where(eq(schema.customers.id, customer.id));
+              }
+            }
+          }
+        }
       });
 
-      return { id: transactionId, localRefId, ...data };
+      return { id: transactionId, local_ref_id: transactionId, ...data }; // Return actual ID, as finalLocalRefId is scoped inside the tx block.
     },
     onSuccess: (responseData) => {
       const orgId = useAuthStore.getState().getOrganizationId();

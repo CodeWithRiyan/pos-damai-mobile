@@ -2,10 +2,11 @@ import Header from "@/components/header";
 import { Box, Heading, HStack, Text, VStack } from "@/components/ui";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuthStore } from "@/stores/auth";
+import { useFinance } from "@/lib/api/finances";
+import { formatDisplayRefId } from "@/lib/utils/reference";
 import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
-import { useFinance } from "@/lib/api/finances";
 
 export default function FinanceTransactionReceipt() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -93,7 +94,7 @@ export default function FinanceTransactionReceipt() {
               </HStack>
               <HStack className="justify-between items-center mt-2">
                 <Text className="text-typography-500">
-                  Ref: {finance.local_ref_id || finance.id}
+                  Ref: {formatDisplayRefId(finance.local_ref_id) || finance.id}
                 </Text>
               </HStack>
             </VStack>

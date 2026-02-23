@@ -9,102 +9,8 @@ import classNames from "classnames";
 import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
-
-// TODO: move to service
-export interface IProductLog {
-  date: string;
-  activity:
-    | "SALES"
-    | "PURCHASE"
-    | "STOCK_OPNAME"
-    | "STORE_SUPPLIES"
-    | "SALES_RETURN"
-    | "PURCHASE_RETURN";
-  type: "IN" | "OUT";
-  quantity: number;
-}
-
-// TODO: replace with real data
-const dataLog: IProductLog[] = [
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "STOCK_OPNAME",
-    type: "IN",
-    quantity: 10,
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "STOCK_OPNAME",
-    type: "IN",
-    quantity: 10,
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "SALES",
-    type: "OUT",
-    quantity: 2,
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "PURCHASE",
-    type: "IN",
-    quantity: 5,
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "SALES_RETURN",
-    type: "IN",
-    quantity: 3,
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "PURCHASE_RETURN",
-    type: "OUT",
-    quantity: 5,
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "STOCK_OPNAME",
-    type: "IN",
-    quantity: 10,
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "STOCK_OPNAME",
-    type: "OUT",
-    quantity: 6,
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "STORE_SUPPLIES",
-    type: "OUT",
-    quantity: 1,
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "SALES",
-    type: "OUT",
-    quantity: 2,
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "PURCHASE",
-    type: "IN",
-    quantity: 5,
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "SALES_RETURN",
-    type: "IN",
-    quantity: 3,
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "PURCHASE_RETURN",
-    type: "OUT",
-    quantity: 5,
-  },
-];
+// Note: Update imports if useProductLog is missing
+import { useProductLog, IProductLog } from "@/lib/api/products";
 
 export default function ProductLog() {
   const { productId } = useLocalSearchParams<{ productId: string }>();
@@ -113,16 +19,31 @@ export default function ProductLog() {
     productId || "",
   );
 
-  const isLoading = isLoadingProduct;
+  const { data: dataLog = [], isLoading: isLoadingLogs } = useProductLog(
+    productId || "",
+  );
+
+  const isLoading = isLoadingProduct || isLoadingLogs;
 
   const activityHelper = (log: IProductLog) => {
-    if (log.activity === "STOCK_OPNAME") return "STOK OPNAME";
-    if (log.activity === "STORE_SUPPLIES") return "KEBUTUHAN TOKO";
-    if (log.activity === "SALES") return "PENJUALAN";
-    if (log.activity === "PURCHASE") return "PEMBELIAN";
-    if (log.activity === "SALES_RETURN") return "RETUR PENJUALAN";
-
-    return "RETUR PEMBELIAN";
+    switch (log.type) {
+      case "INITIAL_STOCK":
+        return "STOK AWAL";
+      case "PURCHASE":
+        return "PEMBELIAN";
+      case "SALE":
+        return "PENJUALAN";
+      case "STOCK_OPNAME":
+        return "STOK OPNAME";
+      case "SALES_RETURN":
+        return "RETUR PENJUALAN";
+      case "PURCHASE_RETURN":
+        return "RETUR PEMBELIAN";
+      case "STORE_SUPPLIES":
+        return "KEBUTUHAN TOKO";
+      default:
+        return String(log.type).replace(/_/g, " ");
+    }
   };
 
   if (isLoading) {
@@ -156,12 +77,12 @@ export default function ProductLog() {
           <VStack>
             {dataLog.map((log, i) => (
               <Pressable
-                key={i}
+                key={log.id || i}
                 className="py-3 px-8 border-b border-background-200 active:bg-gray-100"
               >
                 <Grid _extra={{ className: "grid-cols-12" }}>
                   <GridItem _extra={{ className: "col-span-5" }}>
-                    <Text>{dayjs(log.date).format("DD-MM-YYYY HH:mm:ss")}</Text>
+                    <Text>{dayjs(log.createdAt).format("DD-MM-YYYY HH:mm:ss")}</Text>
                   </GridItem>
                   <GridItem _extra={{ className: "col-span-5" }}>
                     <Text>{activityHelper(log)}</Text>
@@ -170,10 +91,10 @@ export default function ProductLog() {
                     <Text
                       className={classNames(
                         "text-success-500 font-bold",
-                        log.type === "OUT" && "text-error-500",
+                        log.quantity < 0 && "text-error-500",
                       )}
                     >
-                      {`${log.type === "IN" ? "+" : "-"} ${log.quantity}`}
+                      {`${log.quantity > 0 ? "+" : ""} ${log.quantity}`}
                     </Text>
                   </GridItem>
                 </Grid>

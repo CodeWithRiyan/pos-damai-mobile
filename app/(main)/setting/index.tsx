@@ -8,10 +8,13 @@ import { resetDb, initializeDb } from "@/lib/db";
 import * as Updates from "expo-updates";
 import { useRouter } from "expo-router";
 import React from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@/stores/auth";
 import { Alert, Pressable, ScrollView } from "react-native";
 
 export default function SettingScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const handleReset = () => {
     Alert.alert(
@@ -26,6 +29,12 @@ export default function SettingScreen() {
             try {
               await resetDb();
               await initializeDb();
+              
+              // Clear query cache from memory
+              queryClient.clear();
+              // Clear Zustand auth profile from memory
+              useAuthStore.getState().setProfile(null);
+
               // Try to reload the bundle to ensure clean state
               try {
                 await Updates.reloadAsync();

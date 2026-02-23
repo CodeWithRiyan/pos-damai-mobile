@@ -2,6 +2,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { desc, eq } from "drizzle-orm";
 import { db } from "../db";
+import { generateLocalRefId } from "../utils/reference";
 import {
   inventoryTransactions,
   purchaseReturnItems,
@@ -164,13 +165,13 @@ export const useCreatePurchaseReturn = () => {
       if (!organizationId) throw new Error("Organization ID is required");
 
       const returnId = `ret_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const localRefId = `ref_ret_${Date.now()}`;
+      
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
+      let finalLocalRefId = "";
 
       console.log("🔍 [RETURN API] Starting return creation:", {
         returnId,
-        localRefId,
         supplierId: data.supplierId,
         totalAmount: data.totalAmount,
         returnType: data.returnType,
@@ -178,10 +179,12 @@ export const useCreatePurchaseReturn = () => {
       });
 
       await db.transaction(async (tx) => {
+        finalLocalRefId = await generateLocalRefId(tx, purchaseReturns, "RTP");
+        
         // 1. Create Return Header
         await tx.insert(purchaseReturns).values({
           id: returnId,
-          local_ref_id: localRefId,
+          local_ref_id: finalLocalRefId,
           supplierId: data.supplierId,
           totalAmount: data.totalAmount,
           returnType: data.returnType,
@@ -230,7 +233,7 @@ export const useCreatePurchaseReturn = () => {
             // - ITEM return: stock change is +0 (assuming swap/replenishment)
             if (data.returnType === "CASH") {
               const txId = `itrt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-              const txRefId = `${localRefId}-${item.productId}`;
+              const txRefId = `${finalLocalRefId}-${item.productId}`;
 
               console.log(
                 "📉 [RETURN API] Creating inventory transaction for stock reduction (CASH return):",
@@ -279,7 +282,7 @@ export const useCreatePurchaseReturn = () => {
       });
 
       console.log("🎉 [RETURN API] Return creation completed successfully");
-      return { id: returnId, local_ref_id: localRefId };
+      return { id: returnId, local_ref_id: finalLocalRefId };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["purchase-returns"] });

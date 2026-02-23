@@ -21,13 +21,13 @@ import SelectModal from "@/components/ui/select/select-modal";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-import { useCreateFinance } from "@/lib/api/finances";
+import { useCreateFinance, useFinance } from "@/lib/api/finances";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { CalendarIcon } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import z from "zod";
@@ -65,6 +65,9 @@ export const expensesTypeOptions = [
 
 export default function FinanceTransaction() {
   const router = useRouter();
+  const { draftId } = useLocalSearchParams();
+  const { data: draftData } = useFinance(draftId as string);
+
   const toast = useToast();
   const [showTransactionDatePicker, setShowTransactionDatePicker] =
     useState(false);
@@ -84,6 +87,35 @@ export default function FinanceTransaction() {
     defaultValues: initialValues,
   });
 
+  useEffect(() => {
+    if (draftData && draftData.status === "DRAFT") {
+      let expType = draftData.expensesType || "";
+      let parsedNote = draftData.note || "";
+      if (expType === "EQUIPMENT") {
+        if (parsedNote.startsWith("Perlengkapan: ")) {
+          expType = "EQUIPMENT_1";
+          parsedNote = parsedNote.replace("Perlengkapan: ", "");
+        } else if (parsedNote.startsWith("Perlengkapan")) {
+          expType = "EQUIPMENT_1";
+          parsedNote = parsedNote.replace("Perlengkapan", "");
+        } else if (parsedNote.startsWith("Peralatan: ")) {
+          expType = "EQUIPMENT_2";
+          parsedNote = parsedNote.replace("Peralatan: ", "");
+        } else if (parsedNote.startsWith("Peralatan")) {
+          expType = "EQUIPMENT_2";
+          parsedNote = parsedNote.replace("Peralatan", "");
+        }
+      }
+      form.reset({
+        type: draftData.type,
+        expensesType: expType,
+        nominal: draftData.nominal,
+        transactionDate: draftData.transactionDate,
+        note: parsedNote,
+      });
+    }
+  }, [draftData, form]);
+
   const onSubmit: SubmitHandler<FinanceFormValues> = (
     data: FinanceFormValues,
   ) => {
@@ -102,6 +134,7 @@ export default function FinanceTransaction() {
     const isEquipment = data.expensesType.includes("EQUIPMENT");
     createFinance(
       {
+        id: (draftId as string) || undefined,
         ...data,
         expensesType: isEquipment ? "EQUIPMENT" : data.expensesType,
         nominal: data.nominal,

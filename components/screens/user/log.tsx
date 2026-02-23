@@ -9,58 +9,15 @@ import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
 
-// TODO: move to service
-export interface IUserLog {
-  date: string;
-  activity: string;
-}
-
-// TODO: replace with real data
-const dataLog: IUserLog[] = [
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "Create Product",
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "Update Product",
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "Delete Product",
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "Start Shift",
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "Create Transaction Sales",
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "Create Transaction Finance",
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "Create Transaction Purchase",
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "Create Transaction Finance",
-  },
-  {
-    date: "2023-02-01T00:00:00.000Z",
-    activity: "End Shift",
-  },
-];
+import { useUserLog } from "@/lib/api/users";
 
 export default function UserLog() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
 
   const { data: user, isLoading: isLoadingUser } = useUser(userId || "");
+  const { data: dataLog = [], isLoading: isLoadingLogs } = useUserLog(userId || "");
 
-  const isLoading = isLoadingUser;
+  const isLoading = isLoadingUser || isLoadingLogs;
 
   if (isLoading) {
     return (
@@ -93,7 +50,7 @@ export default function UserLog() {
           <VStack>
             {dataLog.map((log, i) => (
               <Pressable
-                key={i}
+                key={log.id || i}
                 className="py-3 px-8 border-b border-background-200 active:bg-gray-100"
               >
                 <Grid _extra={{ className: "grid-cols-2" }}>

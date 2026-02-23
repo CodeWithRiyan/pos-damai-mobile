@@ -53,7 +53,7 @@ export default function PaymentTypeForm() {
     .superRefine((data, ctx) => {
       if (data.commission > 0 && !data.minimalAmount) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           message: "Jumlah minimal pembayaran wajib diisi.",
           path: ["minimalAmount"],
         });

@@ -77,12 +77,12 @@ export default function ProductForm() {
           z.object({
             name: z.string().min(1, "Nama wajib diisi."),
             code: z.string().min(1, "Kode wajib diisi."),
-            netto: z.number().min(1, "Netto wajib diisi."),
+            netto: z.number().min(0.001, "Netto wajib diisi."),
             purchasePrice: z.number().min(1, "Harga Beli wajib diisi."),
             retailPrice: z.number().min(1, "Harga wajib diisi."),
             minimumPurchase: z
               .number()
-              .min(1, "Minimal Pembelian wajib diisi."),
+              .min(0.001, "Minimal Pembelian wajib diisi."),
           }),
         )
         .nullable(),
@@ -96,14 +96,14 @@ export default function ProductForm() {
         .nullable(),
       retailPrice: z.array(
         z.object({
-          minimumPurchase: z.number().min(1, "Minimal Pembelian wajib diisi."),
-          price: z.number().min(1, "Harga wajib diisi."),
+          minimumPurchase: z.number().min(0, "Minimal Pembelian wajib diisi."),
+          price: z.number().min(0, "Harga wajib diisi."),
         }),
       ),
       wholesalePrice: z.array(
         z.object({
-          minimumPurchase: z.number().min(1, "Minimal Pembelian wajib diisi."),
-          price: z.number().min(1, "Harga wajib diisi."),
+          minimumPurchase: z.number().min(0, "Minimal Pembelian wajib diisi."),
+          price: z.number().min(0, "Harga wajib diisi."),
         }),
       ),
       discountId: z.string().optional().nullable(),
@@ -115,14 +115,14 @@ export default function ProductForm() {
       if (data.type === "MULTIUNIT") {
         if (!data.unit) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             message: "Satuan wajib diisi.",
             path: ["unit"],
           });
         }
         if (!data.unitVariants || data.unitVariants.length === 0) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             message: "Varian Unit wajib diisi.",
             path: ["unitVariants"],
           });
@@ -131,7 +131,7 @@ export default function ProductForm() {
         data.unitVariants?.forEach((variant, i) => {
           if (variant.retailPrice < variant.purchasePrice) {
             ctx.addIssue({
-              code: z.ZodIssueCode.custom,
+              code: "custom",
               message: "Harga Retail tidak boleh kurang dari harga beli",
               path: [`unitVariants.${i}.retailPrice`],
             });
@@ -143,43 +143,73 @@ export default function ProductForm() {
       if (data.type === "VARIANTS") {
         if (!data.variants || data.variants.length === 0) {
           ctx.addIssue({
-            code: z.ZodIssueCode.custom,
+            code: "custom",
             message: "Varian Produk wajib diisi.",
             path: ["variants"],
           });
         }
       }
 
-      // Validasi retail price wajib diisi jika bukan MULTIUNIT
-      if (data.type !== "MULTIUNIT" && data.retailPrice.length === 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Harga Retail wajib diisi.",
-          path: ["retailPrice"],
+      if (data.type !== "MULTIUNIT") {
+        // Validasi retail price wajib diisi jika bukan MULTIUNIT
+        if (data.retailPrice.length === 0) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Harga Retail wajib diisi.",
+            path: ["retailPrice"],
+          });
+        }
+
+        // Validasi detail harga retail
+        data.retailPrice.forEach((dataRetail, i) => {
+          if (dataRetail.minimumPurchase < 0.001) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Minimal Pembelian wajib diisi.",
+              path: [`retailPrice.${i}.minimumPurchase`],
+            });
+          }
+          if (dataRetail.price < 1) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Harga wajib diisi.",
+              path: [`retailPrice.${i}.price`],
+            });
+          }
+          if (dataRetail.price < data.purchasePrice) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Harga Retail tidak boleh kurang dari harga beli",
+              path: [`retailPrice.${i}.price`],
+            });
+          }
+        });
+
+        // Validasi detail harga grosir
+        data.wholesalePrice.forEach((dataWholesale, i) => {
+          if (dataWholesale.minimumPurchase < 0.001) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Minimal Pembelian wajib diisi.",
+              path: [`wholesalePrice.${i}.minimumPurchase`],
+            });
+          }
+          if (dataWholesale.price < 1) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Harga wajib diisi.",
+              path: [`wholesalePrice.${i}.price`],
+            });
+          }
+          if (dataWholesale.price < data.purchasePrice) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Harga Grosir tidak boleh kurang dari harga beli",
+              path: [`wholesalePrice.${i}.price`],
+            });
+          }
         });
       }
-
-      // Validasi harga retail tidak boleh kurang dari harga beli
-      data.retailPrice.forEach((dataRetail, i) => {
-        if (dataRetail.price < data.purchasePrice) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Harga Retail tidak boleh kurang dari harga beli",
-            path: [`retailPrice.${i}.price`],
-          });
-        }
-      });
-
-      // Validasi harga grosir tidak boleh kurang dari harga beli
-      data.wholesalePrice.forEach((dataWholesale, i) => {
-        if (dataWholesale.price < data.purchasePrice) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Harga Grosir tidak boleh kurang dari harga beli",
-            path: [`wholesalePrice.${i}.price`],
-          });
-        }
-      });
     });
 
   type ProductFormValues = z.infer<typeof productSchema>;
@@ -314,7 +344,19 @@ export default function ProductForm() {
         purchasePrice: product.purchasePrice,
         stock: product.stock,
         minimumStock: product.minimumStock,
-        variants: product.variants,
+        variants: product.type === "VARIANTS" ? product.variants : null,
+        unitVariants: product.type === "MULTIUNIT" ? product.variants?.map((v) => {
+          const matchingPrice = product.sellPrices.find(p => p.label === v.name);
+          const nettoVal = matchingPrice?.minimumPurchase || 1;
+          return {
+            name: v.name,
+            code: v.code,
+            netto: nettoVal,
+            purchasePrice: product.purchasePrice * nettoVal, 
+            retailPrice: matchingPrice?.price || 0,
+            minimumPurchase: nettoVal
+          };
+        }) : null,
         retailPrice: product.sellPrices.filter((r: any) => r.type === "RETAIL"),
         wholesalePrice: product.sellPrices.filter(
           (r: any) => r.type === "WHOLESALE",
@@ -346,7 +388,12 @@ export default function ProductForm() {
   const onSubmit: SubmitHandler<ProductFormValues> = (
     data: ProductFormValues,
   ) => {
-    const prices = [
+    const prices = data.type === "MULTIUNIT" ? (data.unitVariants || []).map((uv) => ({
+      type: "RETAIL" as const,
+      label: uv.name,
+      price: uv.retailPrice,
+      minimumPurchase: uv.minimumPurchase,
+    })) : [
       ...data.retailPrice.map((p) => ({
         ...p,
         type: "RETAIL" as const,
@@ -358,6 +405,11 @@ export default function ProductForm() {
         label: "Grosir",
       })),
     ];
+    
+    const variantsPayload = data.type === "MULTIUNIT" ? (data.unitVariants || []).map((uv) => ({
+      name: uv.name,
+      code: uv.code,
+    })) : (data.variants || []);
 
     if (productId && product) {
       const updateData: UpdateProductDTO = {
@@ -365,7 +417,7 @@ export default function ProductForm() {
         type: data.type as any,
         id: product.id,
         prices,
-        variants: data.variants || [],
+        variants: variantsPayload,
       };
       updateMutation.mutate(updateData, {
         onSuccess: () => {
@@ -389,7 +441,7 @@ export default function ProductForm() {
         ...data,
         type: data.type as any,
         prices,
-        variants: data.variants || [],
+        variants: variantsPayload,
       };
       createMutation.mutate(createData, {
         onSuccess: () => {
@@ -519,10 +571,11 @@ export default function ProductForm() {
                     autoComplete="off"
                     onChangeText={(text) => {
                       onChange(Number(text) || 0);
-                      unitVariantFields.forEach((field, i) => {
+                      const currentUnitVariants = form.getValues("unitVariants") || [];
+                      currentUnitVariants.forEach((variant, i) => {
                         form.setValue(
                           `unitVariants.${i}.purchasePrice`,
-                          Number(text) * field.netto,
+                          Number(text) * variant.netto,
                         );
                       });
                     }}
@@ -778,6 +831,11 @@ export default function ProductForm() {
                                             ? { ...f, netto: text }
                                             : f,
                                         ),
+                                      );
+                                      onChange(Number(text) || 0);
+                                      form.setValue(
+                                        `unitVariants.${index}.purchasePrice`,
+                                        Number(text) * purchasePrice,
                                       );
                                     }
                                   }}
@@ -1530,7 +1588,9 @@ export default function ProductForm() {
         <Pressable
           className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
-          onPress={form.handleSubmit(onSubmit)}
+          onPress={form.handleSubmit(onSubmit, (errors) => {
+            console.error("[PRODUCT_FORM] Validation Errors: ", JSON.stringify(errors, null, 2));
+          })}
         >
           <Text size="sm" className="text-typography-0 font-bold">
             {isLoading ? "MENYIMPAN..." : "SIMPAN"}

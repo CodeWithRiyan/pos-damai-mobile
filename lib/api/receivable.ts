@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
 import { User } from './users';
 import { apiClient, ApiResponse } from './client';
+import { generateLocalRefId } from '../utils/reference';
 
 export interface ReceivableRealization {
   id: string;
@@ -271,12 +272,14 @@ export function useCreateReceivable() {
       const orgId = useAuthStore.getState().getOrganizationId();
       const id = `rec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
-      const local_ref_id = `L-REC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const userId = useAuthStore.getState().profile?.id;
 
-      await db.insert(schema.receivables).values({
-        id,
-        local_ref_id,
+      let local_ref_id = "";
+      await db.transaction(async (tx) => {
+        local_ref_id = await generateLocalRefId(tx, schema.receivables, "REC");
+        await tx.insert(schema.receivables).values({
+          id,
+          local_ref_id,
         ...data,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         organizationId: orgId,
@@ -287,6 +290,7 @@ export function useCreateReceivable() {
         deletedAt: null,
         _dirty: true,
         _syncedAt: null,
+      });
       });
 
       return { id, local_ref_id, ...data };
@@ -305,12 +309,14 @@ export function useCreateReceivableRealization() {
       const orgId = useAuthStore.getState().getOrganizationId();
       const id = `recrel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
-      const local_ref_id = `L-REC-REL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const userId = useAuthStore.getState().profile?.id;
 
-      await db.insert(schema.receivableRealizations).values({
-        id,
-        local_ref_id,
+      let local_ref_id = "";
+      await db.transaction(async (tx) => {
+        local_ref_id = await generateLocalRefId(tx, schema.receivableRealizations, "REC");
+        await tx.insert(schema.receivableRealizations).values({
+          id,
+          local_ref_id,
         ...data,
         realizationDate: new Date(data.realizationDate),
         organizationId: orgId,
@@ -321,6 +327,7 @@ export function useCreateReceivableRealization() {
         deletedAt: null,
         _dirty: true,
         _syncedAt: null,
+      });
       });
 
       return { id, local_ref_id, ...data };

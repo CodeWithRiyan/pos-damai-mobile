@@ -5,6 +5,7 @@ import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { useTransaction } from "@/lib/api/transactions";
 import { useAuthStore } from "@/stores/auth";
+import { formatDisplayRefId } from "@/lib/utils/reference";
 import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
@@ -123,7 +124,7 @@ export default function TransactionReceipt() {
               </HStack>
               <HStack className="justify-between items-center mt-1">
                 <Text className="text-typography-500">
-                  Ref: {transaction.local_ref_id || transaction.id}
+                  Ref: {formatDisplayRefId(transaction.local_ref_id) || transaction.id}
                 </Text>
               </HStack>
             </VStack>

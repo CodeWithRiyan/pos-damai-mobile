@@ -9,8 +9,7 @@ import {
   Text,
   VStack,
 } from "@/components/ui";
-import type { Transaction } from "@/lib/api/transactions";
-import { useTransactions } from "@/lib/api/transactions";
+import { useTransactions, fetchTransaction } from "@/lib/api/transactions";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { useTransactionStore } from "@/stores/transaction";
@@ -33,14 +32,7 @@ export default function TransactionDraft() {
 
   const handleContinueDraft = async (transactionId: string) => {
     // We need to fetch the full detail of the transaction to get items
-    const detail = await queryClient.fetchQuery<Transaction | undefined>({
-      queryKey: ["transactions", transactionId],
-      queryFn: async () => {
-        return queryClient.ensureQueryData<Transaction | undefined>({
-          queryKey: ["transactions", transactionId],
-        });
-      },
-    });
+    const detail = await fetchTransaction(transactionId);
 
     if (detail && detail.items) {
       resetCart();
@@ -103,7 +95,12 @@ export default function TransactionDraft() {
         }
       }
 
-      // 3. Delete transaction
+      // 3. Delete transaction items
+      await tx
+        .delete(schema.transactionItems)
+        .where(eq(schema.transactionItems.transactionId, transactionId));
+
+      // 4. Delete transaction
       await tx
         .delete(schema.transactions)
         .where(eq(schema.transactions.id, transactionId));

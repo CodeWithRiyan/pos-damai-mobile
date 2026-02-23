@@ -26,7 +26,7 @@ import { CreatePurchasingDTO, useCreatePurchasing } from "@/lib/api/purchasing";
 import { useSuppliers } from "@/lib/api/suppliers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
@@ -35,7 +35,9 @@ import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import InputVirtualKeyboard from "@/components/ui/input-virtual-keyboard";
 import SelectModal from "@/components/ui/select/select-modal";
 import { useCurrentUser } from "@/lib/api/auth";
+import { usePaymentTypes } from "@/lib/api/payment-types";
 import { usePurchasingStore } from "@/stores/purchasing";
+import { usePaymentTypeStore } from "@/stores/payment-type";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { ArrowRight, CalendarIcon, Check, PlusIcon } from "lucide-react-native";
@@ -52,19 +54,20 @@ const purchasingSchema = z
     dueDate: z.date().nullable(),
     isCashdrawer: z.boolean(),
     status: z.string(),
+    paymentMethodId: z.string().min(1, "Metode pembayaran harus dipilih"),
     note: z.string(),
   })
   .superRefine((data, ctx) => {
     if (data.transactionDate === null) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "Tanggal transaksi harus diisi",
         path: ["transactionDate"],
       });
     }
     if (data.isPayable && data.dueDate === null) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "Tanggal jatuh tempo harus diisi",
         path: ["dueDate"],
       });
@@ -80,6 +83,8 @@ export default function PurchasingCheckoutForm() {
   const { data: user } = useCurrentUser();
   const { cart, cartTotal, status, setCheckoutData, resetCart, purchaseId } =
     usePurchasingStore();
+  const { data: paymentTypesData } = usePaymentTypes();
+  const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
 
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
   const [showTransactionDatePicker, setShowTransactionDatePicker] =
@@ -94,6 +99,7 @@ export default function PurchasingCheckoutForm() {
     dueDate: null,
     isCashdrawer: false,
     status: "DRAFT",
+    paymentMethodId: "",
     note: "",
   };
 
@@ -105,8 +111,27 @@ export default function PurchasingCheckoutForm() {
   const transactionDate = form.watch("transactionDate");
   const totalPaid = form.watch("totalPaid");
   const isPayable = form.watch("isPayable");
+  const paymentMethodId = form.watch("paymentMethodId");
   const { data: suppliers = [] } = useSuppliers();
   const createMutation = useCreatePurchasing();
+
+  const { grandTotal, commission } = useMemo(() => {
+    let comm = 0;
+    const pt = paymentTypesData?.find((p) => p.id === paymentMethodId);
+    if (pt && cartTotal) {
+      comm =
+        pt.commissionType === "PERCENTAGE"
+          ? (cartTotal * pt.commission) / 100
+          : pt.commission;
+    }
+    return { commission: comm, grandTotal: cartTotal + comm };
+  }, [cartTotal, paymentTypesData, paymentMethodId]);
+
+  const paymentTypes =
+    paymentTypesData?.map((pt) => ({
+      label: pt.name,
+      value: pt.id,
+    })) || [];
 
   const toast = useToast();
 
@@ -126,13 +151,27 @@ export default function PurchasingCheckoutForm() {
 
   useEffect(() => {
     if (cartTotal) {
-      form.setValue("totalPurchase", cartTotal);
       form.setValue("status", status);
+      if (!paymentMethodId && paymentTypesData && paymentTypesData.length > 0) {
+        const defaultPaymentType =
+          paymentTypesData?.find((pt) => pt.isDefault)?.id ||
+          paymentTypesData?.find(
+            (pt) =>
+              pt.name.toLowerCase() === "cash" ||
+              pt.name.toLowerCase() === "tunai",
+          )?.id ||
+          "";
+        form.setValue("paymentMethodId", defaultPaymentType);
+      }
     } else {
       form.reset(initialValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, cartTotal]);
+  }, [form, cartTotal, paymentTypesData, status, paymentMethodId]);
+
+  useEffect(() => {
+    form.setValue("totalPurchase", grandTotal);
+  }, [form, grandTotal]);
 
   const onSubmit: SubmitHandler<PurchasingFormValues> = (
     data: PurchasingFormValues,
@@ -202,7 +241,7 @@ export default function PurchasingCheckoutForm() {
         setCheckoutData({
           ...data,
           id: responseData.id,
-          referenceNumber: responseData.localRefId || "",
+          referenceNumber: responseData.local_ref_id || "",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           createdById: user?.id || "",
@@ -342,10 +381,18 @@ export default function PurchasingCheckoutForm() {
         <VStack className="flex-1 border-r border-gray-300">
           <ScrollView className="flex-1">
             <VStack className="flex-1">
-              <HStack className="justify-center p-6">
-                <Heading size="3xl" className="font-bold">
+              <HStack className="justify-center p-6 flex-col items-center">
+                <Text className="text-typography-600 mb-2 font-bold">
+                  Total Tagihan
+                </Text>
+                <Heading size="3xl" className="font-bold text-center">
                   {`Rp ${form.getValues("totalPurchase").toLocaleString("id-ID")}`}
                 </Heading>
+                {commission > 0 && (
+                  <Text className="text-warning-600 mt-2 font-bold">
+                    *Termasuk tambahan biaya Rp {commission.toLocaleString("id-ID")}
+                  </Text>
+                )}
               </HStack>
               <VStack space="lg" className="p-4">
                 <Controller
@@ -523,6 +570,39 @@ export default function PurchasingCheckoutForm() {
                   />
                 )}
                 <Controller
+                  control={form.control}
+                  name="paymentMethodId"
+                  render={({
+                    field: { onChange, value },
+                    fieldState: { error },
+                  }) => (
+                    <FormControl isRequired isInvalid={!!error}>
+                      <HStack space="md">
+                        <SelectModal
+                          value={value}
+                          placeholder="Metode Pembayaran"
+                          options={paymentTypes}
+                          className="flex-1"
+                          onChange={onChange}
+                        />
+                        <Pressable
+                          className="size-10 rounded-full bg-primary-500 items-center justify-center"
+                          onPress={() => setPaymentTypeOpen(true, () => {})}
+                        >
+                          <Icon as={PlusIcon} color="white" />
+                        </Pressable>
+                      </HStack>
+                      {error && (
+                        <FormControlError>
+                          <FormControlErrorText>
+                            {error.message}
+                          </FormControlErrorText>
+                        </FormControlError>
+                      )}
+                    </FormControl>
+                  )}
+                />
+                <Controller
                   name="note"
                   control={form.control}
                   render={({
@@ -557,13 +637,18 @@ export default function PurchasingCheckoutForm() {
           <VStack className="flex-1">
             <ScrollView className="flex-1">
               <VStack className="flex-1">
-                <HStack className="justify-center p-6">
+                <HStack className="justify-center p-6 flex-col items-center">
                   <Heading size="3xl" className="font-bold">
                     Rp{" "}
                     {totalPaid
                       ? parseFloat(totalPaid).toLocaleString("id-ID")
                       : "0"}
                   </Heading>
+                  {Number(totalPaid) > form.getValues("totalPurchase") && !form.getValues("isPayable") && (
+                    <Text className="text-success-500 font-bold mt-2">
+                      Kembalian: Rp {(Number(totalPaid) - form.getValues("totalPurchase")).toLocaleString("id-ID")}
+                    </Text>
+                  )}
                 </HStack>
                 <InputVirtualKeyboard
                   nominal={totalPaid}

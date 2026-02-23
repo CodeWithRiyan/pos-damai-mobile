@@ -32,7 +32,11 @@ export async function resetDb() {
     }
     
     // Also clear Async Storage to remove stale auth/sync data
-    await AsyncStorage.clear();
+    try {
+      await AsyncStorage.clear();
+    } catch (e) {
+      console.warn('Silently ignored AsyncStorage clear error:', e);
+    }
     
     console.log('Database and storage reset successfully');
   } catch (error) {
