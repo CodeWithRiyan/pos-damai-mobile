@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS `purchases` (
 	`local_ref_id` text,
 	`supplierId` text NOT NULL,
 	`totalAmount` real NOT NULL,
+	`totalPaid` real DEFAULT 0,
 	`paymentType` text DEFAULT 'CASH',
 	`dueDate` integer,
 	`organizationId` text NOT NULL,

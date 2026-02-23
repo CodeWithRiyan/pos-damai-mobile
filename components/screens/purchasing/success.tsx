@@ -59,18 +59,33 @@ export default function PurchasingSuccess() {
                 )}
               </Text>
             </HStack>
-            <HStack className="w-full flex-row justify-between">
-              <Text className="text-typography-500 text-lg">Kembalian</Text>
-              <Text className="font-bold text-lg">
-                Rp{" "}
-                {checkoutData?.totalPaid && checkoutData?.totalPurchase
-                  ? (
-                      parseFloat(checkoutData.totalPaid) -
-                      checkoutData?.totalPurchase
-                    ).toLocaleString()
-                  : "0"}
-              </Text>
-            </HStack>
+            {checkoutData?.isPayable ? (
+              <HStack className="w-full flex-row justify-between">
+                <Text className="text-typography-500 text-lg">Kekurangan</Text>
+                <Text className="font-bold text-lg text-error-500">
+                  Rp{" "}
+                  {checkoutData?.totalPaid && checkoutData?.totalPurchase
+                    ? (
+                        checkoutData?.totalPurchase -
+                        parseFloat(checkoutData.totalPaid)
+                      ).toLocaleString()
+                    : "0"}
+                </Text>
+              </HStack>
+            ) : (
+              <HStack className="w-full flex-row justify-between">
+                <Text className="text-typography-500 text-lg">Kembalian</Text>
+                <Text className="font-bold text-lg">
+                  Rp{" "}
+                  {checkoutData?.totalPaid && checkoutData?.totalPurchase
+                    ? (
+                        parseFloat(checkoutData.totalPaid) -
+                        checkoutData?.totalPurchase
+                      ).toLocaleString()
+                    : "0"}
+                </Text>
+              </HStack>
+            )}
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-500 text-lg">Kasir / Admin</Text>
               <Text className="font-bold text-lg">

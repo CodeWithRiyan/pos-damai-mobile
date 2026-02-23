@@ -18,7 +18,7 @@ export default function SelectingProductList({
   selectedItems,
   onSubmit,
 }: {
-  usedFor: "brand" | "category";
+  usedFor: "brand" | "category" | "supplier";
   header: string;
   selectedItems?: ProductListItem[];
   onSubmit?: (value: ProductListItem[]) => void;
@@ -35,11 +35,13 @@ export default function SelectingProductList({
           (p) =>
             selectedItems?.some((r) => r.brandId === p.brandId) || !p.brandId,
         )
-      : products.filter(
-          (p) =>
-            selectedItems?.some((r) => r.categoryId === p.categoryId) ||
-            !p.categoryId,
-        );
+      : usedFor === "category"
+        ? products.filter(
+            (p) =>
+              selectedItems?.some((r) => r.categoryId === p.categoryId) ||
+              !p.categoryId,
+          )
+        : products;
 
   const handlePress = (item: ProductListItem) => {
     if (newSelectedItems.some((r) => r.id === item.id)) {
