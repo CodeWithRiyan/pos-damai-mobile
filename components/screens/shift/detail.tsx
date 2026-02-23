@@ -16,9 +16,11 @@ export default function ShiftDetail() {
     if (!detailShift?.transactionHistory)
       return {
         sales: 0,
-        purchases: 0,
         income: 0,
-        expenses: 0,
+        payableRealization: 0,
+        supplies: 0,
+        equipment1: 0,
+        equipment2: 0,
         finalBalance: 0,
       };
 
@@ -28,22 +30,46 @@ export default function ShiftDetail() {
 
         if (trx.type === "SALES") {
           acc.sales += trx.nominal;
-        } else if (trx.type === "PURCHASES") {
-          acc.purchases += trx.nominal;
         } else if (trx.type === "INCOME") {
           acc.income += trx.nominal;
-        } else if (trx.type === "EXPENSES") {
-          acc.expenses += trx.nominal;
+        } else if (trx.type === "PAYABLE_REALIZATION") {
+          acc.payableRealization += trx.nominal;
+        } else if (trx.type === "SUPPLIES") {
+          acc.supplies += trx.nominal;
+        } else if (
+          trx.type === "EQUIPMENT" &&
+          trx.note.includes("Perlengkapan:")
+        ) {
+          acc.equipment1 += trx.nominal;
+        } else if (
+          trx.type === "EQUIPMENT" &&
+          trx.note.includes("Peralatan:")
+        ) {
+          acc.equipment2 += trx.nominal;
         }
 
         acc.finalBalance =
-          acc.sales + acc.purchases + acc.income - acc.expenses;
+          acc.sales +
+          acc.income -
+          acc.payableRealization -
+          acc.supplies -
+          acc.equipment1 -
+          acc.equipment2;
         return acc;
       },
-      { sales: 0, purchases: 0, income: 0, expenses: 0, finalBalance: 0 },
+      {
+        sales: 0,
+        income: 0,
+        payableRealization: 0,
+        supplies: 0,
+        equipment1: 0,
+        equipment2: 0,
+        finalBalance: 0,
+      },
     );
   }, [detailShift]);
 
+  console.log("totals", totals);
   return (
     <VStack className="flex-1 bg-white">
       <Header header="DETAIL SHIFT" isGoBack />
@@ -66,20 +92,32 @@ export default function ShiftDetail() {
         </VStack>
         <VStack space="sm" className="p-4 border-b border-background-300">
           <HStack className="w-full flex-row justify-between">
-            <Text className="text-typography-600">Penjualan</Text>
+            <Text className="text-typography-600">Transaksi Penjualan</Text>
             <Text className="font-bold">{`Rp ${totals.sales.toLocaleString("id")}`}</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between">
-            <Text className="text-typography-600">Pemasukkan Lain</Text>
+            <Text className="text-typography-600">Pemasukkan</Text>
             <Text className="font-bold">{`Rp ${totals.income.toLocaleString("id")}`}</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between">
-            <Text className="text-typography-600">Pengeluaran Lain</Text>
-            <Text className="font-bold text-error-500">{`Rp ${totals.expenses.toLocaleString("id")}`}</Text>
+            <Text className="text-typography-600">Pembayaran Hutang</Text>
+            <Text className="font-bold text-error-500">{`Rp ${totals.payableRealization.toLocaleString("id")}`}</Text>
+          </HStack>
+          <HStack className="w-full flex-row justify-between">
+            <Text className="text-typography-600">Beli Barang</Text>
+            <Text className="font-bold text-error-500">{`Rp ${totals.supplies.toLocaleString("id")}`}</Text>
+          </HStack>
+          <HStack className="w-full flex-row justify-between">
+            <Text className="text-typography-600">Perlengkapan</Text>
+            <Text className="font-bold text-error-500">{`Rp ${totals.equipment1.toLocaleString("id")}`}</Text>
+          </HStack>
+          <HStack className="w-full flex-row justify-between">
+            <Text className="text-typography-600">Peralatan</Text>
+            <Text className="font-bold text-error-500">{`Rp ${totals.equipment2.toLocaleString("id")}`}</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-background-100">
             <Text className="text-typography-600">Subtotal</Text>
-            <Text className="font-bold">{`Rp ${(totals.finalBalance - (detailShift?.initialBalance || 0)).toLocaleString("id")}`}</Text>
+            <Text className="font-bold">{`Rp ${totals.finalBalance.toLocaleString("id")}`}</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between px-4">
             <HStack space="sm" className="items-center">
@@ -92,7 +130,7 @@ export default function ShiftDetail() {
             <Text className="text-typography-600 font-bold">
               Penerimaan Sistem
             </Text>
-            <Text className="font-bold">{`Rp ${(detailShift?.finalBalance || 0).toLocaleString("id")}`}</Text>
+            <Text className="font-bold">{`Rp ${((detailShift?.finalBalance || 0) + totals.finalBalance).toLocaleString("id")}`}</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-warning-100">
             <Text className="text-typography-600 font-bold">

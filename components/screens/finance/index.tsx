@@ -167,6 +167,7 @@ export default function FinanceTransaction() {
           } else {
             router.navigate("/(main)/finance/draft");
           }
+          form.reset(initialValues);
         },
         onError: (error) => {
           toast.show({

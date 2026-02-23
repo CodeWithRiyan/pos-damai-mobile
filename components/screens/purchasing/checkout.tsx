@@ -36,8 +36,8 @@ import InputVirtualKeyboard from "@/components/ui/input-virtual-keyboard";
 import SelectModal from "@/components/ui/select/select-modal";
 import { useCurrentUser } from "@/lib/api/auth";
 import { usePaymentTypes } from "@/lib/api/payment-types";
-import { usePurchasingStore } from "@/stores/purchasing";
 import { usePaymentTypeStore } from "@/stores/payment-type";
+import { usePurchasingStore } from "@/stores/purchasing";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { ArrowRight, CalendarIcon, Check, PlusIcon } from "lucide-react-native";
@@ -225,6 +225,7 @@ export default function PurchasingCheckoutForm() {
     const submissionData: CreatePurchasingDTO = {
       ...data,
       id: purchaseId || undefined,
+      totalPaid: Number(data.totalPaid),
       items: cart.map((item) => ({
         product: {
           id: item.product.id,
@@ -390,7 +391,8 @@ export default function PurchasingCheckoutForm() {
                 </Heading>
                 {commission > 0 && (
                   <Text className="text-warning-600 mt-2 font-bold">
-                    *Termasuk tambahan biaya Rp {commission.toLocaleString("id-ID")}
+                    *Termasuk tambahan biaya Rp{" "}
+                    {commission.toLocaleString("id-ID")}
                   </Text>
                 )}
               </HStack>
@@ -644,11 +646,15 @@ export default function PurchasingCheckoutForm() {
                       ? parseFloat(totalPaid).toLocaleString("id-ID")
                       : "0"}
                   </Heading>
-                  {Number(totalPaid) > form.getValues("totalPurchase") && !form.getValues("isPayable") && (
-                    <Text className="text-success-500 font-bold mt-2">
-                      Kembalian: Rp {(Number(totalPaid) - form.getValues("totalPurchase")).toLocaleString("id-ID")}
-                    </Text>
-                  )}
+                  {Number(totalPaid) > form.getValues("totalPurchase") &&
+                    !form.getValues("isPayable") && (
+                      <Text className="text-success-500 font-bold mt-2">
+                        Kembalian: Rp{" "}
+                        {(
+                          Number(totalPaid) - form.getValues("totalPurchase")
+                        ).toLocaleString("id-ID")}
+                      </Text>
+                    )}
                 </HStack>
                 <InputVirtualKeyboard
                   nominal={totalPaid}

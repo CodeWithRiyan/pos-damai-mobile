@@ -31,7 +31,14 @@ export interface ShiftTransactionHistory {
   transactionId: string | null;
   ref: string | null;
   transactionDate: Date;
-  type: "INITIAL" | "SALES" | "INCOME" | "PURCHASES" | "EXPENSES";
+  type:
+    | "INITIAL"
+    | "SALES"
+    | "INCOME"
+    | "PURCHASES"
+    | "PAYABLE_REALIZATION"
+    | "SUPPLIES"
+    | "EQUIPMENT";
   nominal: number;
   note: string;
 }
@@ -68,7 +75,9 @@ export function useShifts() {
       // Join with cashdrawer and user names
       const shiftsWithDetails = await Promise.all(
         shiftsResult.map(async (shift) => {
-          console.log(`[useActiveShift] Shift loaded: ID=${shift.id}, userId=${shift.userId}`);
+          console.log(
+            `[useActiveShift] Shift loaded: ID=${shift.id}, userId=${shift.userId}`,
+          );
 
           const cashDrawer = await db
             .select({ name: schema.cashDrawers.name })
@@ -81,12 +90,20 @@ export function useShifts() {
             .from(schema.users)
             .where(eq(schema.users.id, shift.userId))
             .limit(1);
-            
-          console.log(`[useActiveShift] Assigned Cashier User Query result:`, user);
+
+          console.log(
+            `[useActiveShift] Assigned Cashier User Query result:`,
+            user,
+          );
 
           // DEBUG: print all users in DB
-          const allUsers = await db.select({ id: schema.users.id, name: schema.users.name }).from(schema.users);
-          console.log(`[useActiveShift] Total users in DB: ${allUsers.length}. Sample:`, allUsers.map(u => u.name));
+          const allUsers = await db
+            .select({ id: schema.users.id, name: schema.users.name })
+            .from(schema.users);
+          console.log(
+            `[useActiveShift] Total users in DB: ${allUsers.length}. Sample:`,
+            allUsers.map((u) => u.name),
+          );
 
           return {
             ...shift,
@@ -452,13 +469,12 @@ export function useShiftDetail(id: string) {
           transactionId: f.id,
           ref: f.local_ref_id,
           transactionDate: f.transactionDate,
-          type: f.type as "INCOME" | "EXPENSES",
+          type:
+            f.type === "INCOME"
+              ? "INCOME"
+              : (f.expensesType as ShiftTransactionHistory["type"]),
           nominal: f.nominal,
-          note:
-            f.note ||
-            (f.type === "INCOME"
-              ? "Pemasukkan Lainnya"
-              : "Pengeluaran Lainnya"),
+          note: f.note || "",
         });
       });
 
@@ -488,7 +504,7 @@ export function useShiftDetail(id: string) {
         endShift: shift.endTime,
         initialBalance: shift.initialBalance,
         finalBalance: shift.expectedBalance || 0, // system calculation
-        actualBalance: shift.finalBalance || 0,   // user input at shift end
+        actualBalance: shift.finalBalance || 0, // user input at shift end
         cashier: user[0]?.name || "Unknown",
         cashDrawer: cashDrawer[0]?.name || "Unknown",
         transactionHistory: history,

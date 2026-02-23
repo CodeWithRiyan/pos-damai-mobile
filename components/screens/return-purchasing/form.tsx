@@ -114,6 +114,7 @@ export default function ReturnPurchasingConfirmForm() {
           `/(main)/management/return/purchasing/success/${data.id}`,
         );
         resetCart();
+        form.reset(initialValues);
       },
       onError: showErrorToast,
     });

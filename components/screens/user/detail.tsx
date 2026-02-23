@@ -98,14 +98,6 @@ export default function UserDetail() {
     showActionDrawer({
       actions: [
         {
-          label: "Log Produk",
-          icon: "ClipboardList",
-          onPress: () => {
-            router.push(`/(main)/management/role-user/user/log/${user?.id}`);
-            hideActionDrawer();
-          },
-        },
-        {
           label: "Edit",
           icon: "Pen",
           onPress: () => {
@@ -175,9 +167,14 @@ export default function UserDetail() {
       </ScrollView>
 
       <VStack space="md" className="w-full p-4">
-        <Pressable className="w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-primary-500">
+        <Pressable
+          className="w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-primary-500"
+          onPress={() => {
+            router.push(`/(main)/management/role-user/user/log/${user?.id}`);
+          }}
+        >
           <Text size="sm" className="text-brand-primary font-bold">
-            LOG AKTIFITAS
+            LOG AKTIVITAS
           </Text>
         </Pressable>
       </VStack>

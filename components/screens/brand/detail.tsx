@@ -84,7 +84,7 @@ export default function BrandDetail() {
       okText: "HAPUS",
       closeText: "BATAL",
       okVariant: "destructive",
-      onOk: () => {}, // tambahkan fungsi hapus produk dari brand
+      onOk: () => {}, // TODO: tambahkan fungsi hapus produk dari brand
       // loading: false,
     });
   };

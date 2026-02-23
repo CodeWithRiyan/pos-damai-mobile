@@ -72,7 +72,7 @@ export default function ReturnTransactionSuccess() {
               className="w-full rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-background-0 border border-primary-500 active:bg-primary-100"
               onPress={() => {
                 router.replace(
-                  `/(main)/management/return/purchasing/receipt/${id}`,
+                  `/(main)/management/return/transaction/receipt/${id}`,
                 );
               }}
             >

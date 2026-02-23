@@ -27,13 +27,13 @@ export default function PurchasingCustomerList() {
   return (
     <Box className="flex-1 bg-white">
       <Header
-        header="PILIH SUPPLIER"
+        header="PILIH PELANGGAN"
         isGoBack
         action={
           <Pressable
             className="p-6"
             onPress={() =>
-              router.push("/(main)/management/return/purchasing/history")
+              router.push("/(main)/management/return/transaction/history")
             }
           >
             <SolarIconBold name="History" size={20} color="#FDFBF9" />
@@ -78,7 +78,7 @@ export default function PurchasingCustomerList() {
                   className="px-4 py-4 border-b border-gray-200 active:bg-gray-100"
                   onPress={() => {
                     router.navigate(
-                      `/(main)/management/return/purchasing/input/${customer.id}` as any,
+                      `/(main)/management/return/transaction/input/${customer.id}` as any,
                     );
                   }}
                 >

@@ -121,7 +121,9 @@ export default function ProductList() {
           text: "HAPUS",
           style: "destructive",
           onPress: () => {
-            console.log(`[LIST DELETE] Deleting ids: ${JSON.stringify(productIds)}`);
+            console.log(
+              `[LIST DELETE] Deleting ids: ${JSON.stringify(productIds)}`,
+            );
             deleteMutation.mutate(
               { ids: productIds },
               {
@@ -130,7 +132,11 @@ export default function ProductList() {
                   toast.show({
                     placement: "top",
                     render: ({ id }) => (
-                      <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                      <Toast
+                        nativeID={`toast-${id}`}
+                        action="success"
+                        variant="solid"
+                      >
                         <ToastTitle>Produk berhasil dihapus</ToastTitle>
                       </Toast>
                     ),
@@ -143,7 +149,7 @@ export default function ProductList() {
             );
           },
         },
-      ]
+      ],
     );
   };
 
@@ -296,11 +302,13 @@ export default function ProductList() {
                         <Text size="xs" className="text-slate-500">
                           {product.code}
                         </Text>
-                        <Badge size="sm" variant="solid" action="muted">
-                          <BadgeText className="text-xs">{`Harga Beli: Rp ${(
-                            product.purchasePrice ?? 0
-                          ).toLocaleString("id-ID")}`}</BadgeText>
-                        </Badge>
+                        <HStack>
+                          <Badge size="sm" variant="solid" action="muted">
+                            <BadgeText className="text-xs">{`Harga Beli: Rp ${(
+                              product.purchasePrice ?? 0
+                            ).toLocaleString("id-ID")}`}</BadgeText>
+                          </Badge>
+                        </HStack>
                       </VStack>
                     </HStack>
                     <VStack className="items-end">

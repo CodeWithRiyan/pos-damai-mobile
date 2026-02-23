@@ -15,7 +15,6 @@ import { Pressable } from "@/components/ui/pressable";
 import { Spinner } from "@/components/ui/spinner";
 import { useProducts } from "@/lib/api/products";
 import { useReturnTransactionStore } from "@/stores/return-transaction";
-import { useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 import ReturnTransactionConfirmForm from "./form";
@@ -32,7 +31,7 @@ export default function ReturnTransactionInput() {
 
   return (
     <Box className="flex-1 bg-white">
-      <Header header="RETUR PEMBELIAN" isGoBack />
+      <Header header="RETUR TRANSAKSI PENJUALAN" isGoBack />
       <HStack className="flex-1 bg-white">
         <VStack className="flex-1 border-r border-gray-300">
           <HStack
@@ -126,8 +125,7 @@ export default function ReturnTransactionInput() {
                         </Heading>
                         <Text size="sm" className="text-slate-500">
                           {item.quantity} x Rp{" "}
-                          {item.sellPrice?.toLocaleString("id-ID")}{" "}
-                          = Rp{" "}
+                          {item.sellPrice?.toLocaleString("id-ID")} = Rp{" "}
                           {(
                             item.quantity * (item.sellPrice || 0)
                           ).toLocaleString("id-ID")}

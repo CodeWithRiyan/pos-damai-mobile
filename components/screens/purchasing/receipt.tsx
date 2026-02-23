@@ -4,8 +4,9 @@ import { Box, Heading, HStack, Pressable, Text, VStack } from "@/components/ui";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { usePurchase } from "@/lib/api/purchasing";
-import { useAuthStore } from "@/stores/auth";
 import { formatDisplayRefId } from "@/lib/utils/reference";
+import { useAuthStore } from "@/stores/auth";
+import classNames from "classnames";
 import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
@@ -102,30 +103,45 @@ export default function PurchasingReceipt() {
               )}
             </VStack>
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
-            <VStack>
+            <VStack space="xs">
               <HStack className="justify-between items-center">
+                <Text className="text-typography-500">Ref</Text>
                 <Text className="text-typography-500">
-                  {date.format("DD/MM/YYYY")}
-                </Text>
-                <Text className="text-typography-500">
-                  Admin: {profile?.name || "Admin"}
+                  {formatDisplayRefId(purchase.local_ref_id) || purchase.id}
                 </Text>
               </HStack>
               <HStack className="justify-between items-center">
+                <Text className="text-typography-500">Tanggal</Text>
                 <Text className="text-typography-500">
-                  {date.format("HH:mm:ss")}
+                  {date.format("DD/MM/YYYY HH:mm:ss")}
                 </Text>
               </HStack>
-              <HStack className="justify-between items-center mt-1">
+              <HStack className="justify-between items-center">
+                <Text className="text-typography-500">Admin</Text>
                 <Text className="text-typography-500">
-                  Supplier: {purchase.supplierName}
+                  {profile?.name || "Admin"}
                 </Text>
               </HStack>
-              <HStack className="justify-between items-center mt-1">
+              <HStack className="justify-between items-center">
+                <Text className="text-typography-500">Supplier</Text>
                 <Text className="text-typography-500">
-                  Ref: {formatDisplayRefId(purchase.local_ref_id) || purchase.id}
+                  {purchase.supplierName}
                 </Text>
               </HStack>
+              <HStack className="justify-between items-center">
+                <Text className="text-typography-500">Tipe Pembayaran</Text>
+                <Text className="text-typography-500">
+                  {purchase.paymentType === "CASH" ? "Tunai" : "Hutang"}
+                </Text>
+              </HStack>
+              {purchase.paymentType === "DEBT" && purchase.dueDate && (
+                <HStack className="justify-between items-center">
+                  <Text className="text-typography-500">Jatuh Tempo</Text>
+                  <Text className="text-typography-500">
+                    {dayjs(purchase.dueDate).format("DD/MM/YYYY")}
+                  </Text>
+                </HStack>
+              )}
             </VStack>
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack space="md">
@@ -161,25 +177,39 @@ export default function PurchasingReceipt() {
                 </Text>
               </HStack>
               <HStack className="justify-between items-center">
-                <Text className="text-typography-500">Tipe Pembayaran</Text>
-                <Text className="text-typography-500">
-                  {purchase.paymentType === "CASH" ? "Tunai" : "Hutang"}
+                <Text className="font-bold">Uang Dibayarkan</Text>
+                <Text className="font-bold">
+                  Rp {purchase.totalPaid.toLocaleString("id-ID")}
                 </Text>
               </HStack>
-              {purchase.paymentType === "DEBT" && purchase.dueDate && (
-                <HStack className="justify-between items-center">
-                  <Text className="text-typography-500">Jatuh Tempo</Text>
-                  <Text className="text-typography-500">
-                    {dayjs(purchase.dueDate).format("DD/MM/YYYY")}
-                  </Text>
-                </HStack>
-              )}
+              <HStack className="justify-between items-center">
+                <Text className="font-bold">
+                  {!!purchase.dueDate ? "Kekurangan" : "Kembalian"}
+                </Text>
+                <Text
+                  className={classNames(
+                    "font-bold",
+                    !!purchase.dueDate && "text-error-500",
+                  )}
+                >
+                  Rp{" "}
+                  {!!purchase.dueDate
+                    ? (
+                        purchase.totalAmount - purchase.totalPaid
+                      ).toLocaleString("id-ID")
+                    : (
+                        purchase.totalPaid - purchase.totalAmount
+                      ).toLocaleString("id-ID")}
+                </Text>
+              </HStack>
             </VStack>
             {purchase.note && (
               <>
                 <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
                 <VStack space="sm">
-                  <Text className="text-typography-500 font-bold">Catatan:</Text>
+                  <Text className="text-typography-500 font-bold">
+                    Catatan:
+                  </Text>
                   <Text className="text-typography-500 text-sm">
                     {purchase.note}
                   </Text>

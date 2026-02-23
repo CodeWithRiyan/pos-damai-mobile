@@ -64,7 +64,7 @@ export default function CustomerForm() {
 
   const categories = [
     { label: "Retail", value: "RETAIL" },
-    { label: "Wholesale", value: "WHOLESALE" },
+    { label: "Grosir", value: "WHOLESALE" },
   ];
 
   useEffect(() => {

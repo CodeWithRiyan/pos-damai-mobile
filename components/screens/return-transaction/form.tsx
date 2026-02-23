@@ -112,6 +112,7 @@ export default function ReturnTransactionConfirmForm() {
           `/(main)/management/return/transaction/success/${data.id}` as any,
         );
         resetCart();
+        form.reset(initialValues);
       },
       onError: showErrorToast,
     });
