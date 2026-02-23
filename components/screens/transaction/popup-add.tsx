@@ -20,19 +20,13 @@ import {
   ModalContent,
   ModalHeader,
   Pressable,
-  Radio,
-  RadioGroup,
-  RadioIcon,
-  RadioIndicator,
-  RadioLabel,
   Text,
   Textarea,
   TextareaInput,
   Toast,
   ToastTitle,
   useToast,
-  VStack,
-  CircleIcon,
+  VStack
 } from "@/components/ui";
 import { findSellPrice } from "@/lib/price";
 import { useTransactionStore } from "@/stores/transaction";
@@ -43,14 +37,8 @@ import z from "zod";
 
 export default function PopupAddProduct() {
   const toast = useToast();
-  const {
-    customer,
-    addProduct,
-    cart,
-    setAddProduct,
-    addCartItem,
-    removeCartItem,
-  } = useTransactionStore();
+  const { customer, addProduct, cart, setAddProduct, addCartItem } =
+    useTransactionStore();
 
   const [unitWeightInput, setUnitWeightInput] = useState("1");
 
@@ -61,8 +49,6 @@ export default function PopupAddProduct() {
   const addProductSchema = z
     .object({
       quantity: z.number().min(1, "Jumlah harus minimal 1"),
-      unitWeight: z.number(),
-      variantId: z.string().optional(),
       isTempSellPrice: z.boolean(),
       tempSellPrice: z.number(),
       addNote: z.boolean(),
@@ -87,8 +73,6 @@ export default function PopupAddProduct() {
 
   const initialValues: AddProductFormValues = {
     quantity: 1,
-    unitWeight: 1,
-    variantId: undefined,
     addNote: false,
     isTempSellPrice: false,
     tempSellPrice: 0,
@@ -101,7 +85,6 @@ export default function PopupAddProduct() {
   });
 
   const quantity = form.watch("quantity");
-  const unitWeight = form.watch("unitWeight");
   const isTempSellPriceChecked = form.watch("isTempSellPrice");
   const tempSellPrice = form.watch("tempSellPrice");
   const isAddNoteChecked = form.watch("addNote");
@@ -125,29 +108,17 @@ export default function PopupAddProduct() {
 
   useEffect(() => {
     if (addProduct) {
-      const defaultVariantId = addProduct.type === 'VARIANTS' && addProduct.variants.length > 0 
-        ? addProduct.variants[0].id 
-        : undefined;
-
       const variantInCart = cart.find(
-        (item) => item.product.id === addProduct.id && item.variant?.id === defaultVariantId
+        (item) => item.product.id === addProduct.id,
       );
-
-      const unitWeight = variantInCart?.unitWeight || 1;
-      setUnitWeightInput(unitWeight.toString());
 
       form.reset({
         quantity: variantInCart?.quantity || 1,
-        unitWeight: unitWeight,
-        variantId: defaultVariantId,
         isTempSellPrice:
           variantInCart?.tempSellPrice || addProduct.type === "MULTIUNIT"
             ? true
             : false,
-        tempSellPrice:
-          addProduct.type === "MULTIUNIT"
-            ? addProduct.sellPrices.find((p) => p.minimumPurchase === unitWeight)?.price || 0
-            : variantInCart?.tempSellPrice || 0,
+        tempSellPrice: variantInCart?.tempSellPrice || 0,
         addNote: variantInCart?.note ? true : false,
         note: variantInCart?.note || "",
       });
@@ -162,12 +133,9 @@ export default function PopupAddProduct() {
     data: AddProductFormValues,
   ) => {
     if (addProduct) {
-      const selectedVariant = addProduct.variants?.find(v => v.id === data.variantId);
       addCartItem({
         product: addProduct,
-        variant: selectedVariant ? { id: selectedVariant.id, name: selectedVariant.name } : undefined,
         quantity: data.quantity,
-        unitWeight: data.unitWeight,
         tempSellPrice: data.isTempSellPrice ? data.tempSellPrice : undefined,
         note: data.addNote ? data.note : undefined,
       });
@@ -214,31 +182,6 @@ export default function PopupAddProduct() {
               </HStack>
             </HStack>
             <VStack space="lg" className="px-4">
-              {addProduct?.type === "VARIANTS" && (
-                <Controller
-                  name="variantId"
-                  control={form.control}
-                  render={({ field: { onChange, value } }) => (
-                    <FormControl>
-                      <FormControlLabel>
-                        <FormControlLabelText>Pilih Varian</FormControlLabelText>
-                      </FormControlLabel>
-                      <RadioGroup value={value} onChange={onChange}>
-                        <VStack space="sm">
-                          {addProduct.variants.map((variant) => (
-                            <Radio key={variant.id} value={variant.id} size="md">
-                              <RadioIndicator>
-                                <RadioIcon as={CircleIcon} />
-                              </RadioIndicator>
-                              <RadioLabel>{variant.name}</RadioLabel>
-                            </Radio>
-                          ))}
-                        </VStack>
-                      </RadioGroup>
-                    </FormControl>
-                  )}
-                />
-              )}
               <HStack
                 space="md"
                 className="w-full justify-between items-center"
@@ -251,13 +194,6 @@ export default function PopupAddProduct() {
 
                     if (currentQuantity && currentQuantity > 0) {
                       form.setValue("quantity", currentQuantity - 1);
-
-                      if (addProduct?.type === "MULTIUNIT") {
-                        form.setValue(
-                          "tempSellPrice",
-                          addProduct?.sellPrices?.find((p) => p.minimumPurchase === unitWeight)?.price || 0
-                        );
-                      }
                     }
                   }}
                 >
@@ -283,13 +219,6 @@ export default function PopupAddProduct() {
                           autoComplete="off"
                           onChangeText={(text) => {
                             onChange(Number(text) || 0);
-
-                            if (addProduct?.type === "MULTIUNIT") {
-                              form.setValue(
-                                "tempSellPrice",
-                                addProduct?.sellPrices?.find((p) => p.minimumPurchase === unitWeight)?.price || 0
-                              );
-                            }
                           }}
                           onBlur={onBlur}
                           keyboardType="numeric"
@@ -304,13 +233,6 @@ export default function PopupAddProduct() {
                   onPress={() => {
                     const currentQuantity = quantity;
                     form.setValue("quantity", currentQuantity + 1);
-
-                    if (addProduct?.type === "MULTIUNIT") {
-                      form.setValue(
-                        "tempSellPrice",
-                        addProduct?.sellPrices?.find((p) => p.minimumPurchase === unitWeight)?.price || 0
-                      );
-                    }
                   }}
                 >
                   <Heading size="2xl" className="text-primary-500">
@@ -318,57 +240,6 @@ export default function PopupAddProduct() {
                   </Heading>
                 </Pressable>
               </HStack>
-              {addProduct?.type === "MULTIUNIT" && (
-                <Controller
-                  name="unitWeight"
-                  control={form.control}
-                  render={({
-                    field: { onChange, onBlur, value },
-                    fieldState: { error },
-                  }) => (
-                    <FormControl isInvalid={!!error}>
-                      <FormControlLabel>
-                        <FormControlLabelText>
-                          {`Berat Satuan (${addProduct?.unit})`}
-                        </FormControlLabelText>
-                      </FormControlLabel>
-                      <Input>
-                        <InputField
-                          value={unitWeightInput}
-                          autoComplete="off"
-                          onChangeText={(text) => {
-                            if (/^\d*\.?\d*$/.test(text)) {
-                              setUnitWeightInput(text);
-                            }
-                          }}
-                          onBlur={() => {
-                            const numValue = parseFloat(unitWeightInput) || 0;
-                            onChange(numValue);
-                            setUnitWeightInput(numValue.toString());
-
-                            form.setValue("isTempSellPrice", true);
-                            form.setValue(
-                              "tempSellPrice",
-                              addProduct?.sellPrices?.find((p) => p.minimumPurchase === numValue)?.price || 0
-                            );
-
-                            onBlur();
-                          }}
-                          placeholder={`Berat Satuan (${addProduct?.unit})`}
-                          keyboardType="numbers-and-punctuation"
-                        />
-                      </Input>
-                      {error && (
-                        <FormControlError>
-                          <FormControlErrorText className="text-red-500">
-                            {error.message}
-                          </FormControlErrorText>
-                        </FormControlError>
-                      )}
-                    </FormControl>
-                  )}
-                />
-              )}
               <VStack space="lg">
                 <Controller
                   name="isTempSellPrice"
@@ -388,7 +259,6 @@ export default function PopupAddProduct() {
                         onChange={(v) => {
                           onChange(v);
                           form.setValue("tempSellPrice", 0);
-                          form.setValue("unitWeight", 1);
                         }}
                         onBlur={onBlur}
                       >
@@ -527,22 +397,6 @@ export default function PopupAddProduct() {
                 </Text>
               </Pressable>
             </HStack>
-            {cart.some((s) => s.product.id === addProduct?.id) && (
-              <HStack space="md" className="w-full p-4 pt-0">
-                <Pressable
-                  className="flex-1 items-center justify-center h-12 px-4 rounded-lg border border-error-500 bg-error-500 active:bg-error-400"
-                  onPress={() => {
-                    const variantId = form.getValues("variantId");
-                    setAddProduct(null);
-                    removeCartItem(addProduct?.id || "", variantId);
-                  }}
-                >
-                  <Text size="lg" className="text-typography-0 font-bold">
-                    HAPUS
-                  </Text>
-                </Pressable>
-              </HStack>
-            )}
           </VStack>
         </ModalBody>
       </ModalContent>

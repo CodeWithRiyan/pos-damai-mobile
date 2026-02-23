@@ -7,6 +7,7 @@ import {
   HStack,
   Icon,
   Pressable,
+  Spinner,
   Text,
   Textarea,
   TextareaInput,
@@ -133,6 +134,8 @@ export default function TransactionCheckoutForm() {
   const toast = useToast();
   const createTransactionMutation = useCreateTransaction();
 
+  const isLoading = createTransactionMutation.isPending;
+
   useEffect(() => {
     if (form.formState.errors.totalPaid) {
       toast.show({
@@ -164,7 +167,10 @@ export default function TransactionCheckoutForm() {
               id: item.product.originalId || item.product.id,
             },
             variant: variantData
-              ? { id: variantData.id, name: variantData.name || variantData.label }
+              ? {
+                  id: variantData.id,
+                  name: variantData.name || variantData.label,
+                }
               : undefined,
             quantity: item.quantity,
             tempSellPrice:
@@ -223,9 +229,14 @@ export default function TransactionCheckoutForm() {
           <HStack space="md" className="pr-4">
             <Pressable
               className="size-10 items-center justify-center border-primary-500 border rounded-lg bg-primary-100 active:bg-primary-200"
+              disabled={isLoading}
               onPress={form.handleSubmit(onSubmit)}
             >
-              <Icon as={Check} size="md" color="#3d2117" />
+              {isLoading ? (
+                <Spinner size="small" color="#3d2117" />
+              ) : (
+                <Icon as={Check} size="md" color="#3d2117" />
+              )}
             </Pressable>
           </HStack>
         }
@@ -243,7 +254,8 @@ export default function TransactionCheckoutForm() {
                 </Heading>
                 {commission > 0 && (
                   <Text className="text-warning-600 mt-2 font-bold">
-                    *Termasuk tambahan biaya Rp {commission.toLocaleString("id-ID")}
+                    *Termasuk tambahan biaya Rp{" "}
+                    {commission.toLocaleString("id-ID")}
                   </Text>
                 )}
               </HStack>
@@ -325,7 +337,10 @@ export default function TransactionCheckoutForm() {
                   </Heading>
                   {Number(totalPaid) > form.getValues("totalPurchase") && (
                     <Text className="text-success-500 font-bold mt-2">
-                      Kembalian: Rp {(Number(totalPaid) - form.getValues("totalPurchase")).toLocaleString("id-ID")}
+                      Kembalian: Rp{" "}
+                      {(
+                        Number(totalPaid) - form.getValues("totalPurchase")
+                      ).toLocaleString("id-ID")}
                     </Text>
                   )}
                 </HStack>

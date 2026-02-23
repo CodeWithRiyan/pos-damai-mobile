@@ -4,8 +4,8 @@ import { Box, Heading, HStack, Pressable, Text, VStack } from "@/components/ui";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { useTransaction } from "@/lib/api/transactions";
-import { useAuthStore } from "@/stores/auth";
 import { formatDisplayRefId } from "@/lib/utils/reference";
+import { useAuthStore } from "@/stores/auth";
 import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
@@ -103,28 +103,37 @@ export default function TransactionReceipt() {
               )}
             </VStack>
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
+            <VStack space="xs">
+              <HStack className="justify-between items-center">
+                <Text className="text-typography-500">Ref</Text>
+                <Text className="text-typography-500">
+                  {formatDisplayRefId(transaction.local_ref_id) ||
+                    transaction.id}
+                </Text>
+              </HStack>
+              <HStack className="justify-between items-center">
+                <Text className="text-typography-500">Tanggal</Text>
+                <Text className="text-typography-500">
+                  {date.format("DD/MM/YYYY HH:mm:ss")}
+                </Text>
+              </HStack>
+              <HStack className="justify-between items-center">
+                <Text className="text-typography-500">Admin</Text>
+                <Text className="text-typography-500">
+                  {profile?.name || "Admin"}
+                </Text>
+              </HStack>
+              <HStack className="justify-between items-center">
+                <Text className="text-typography-500">Pelanggan</Text>
+                <Text className="text-typography-500">
+                  {transaction.customerName}
+                </Text>
+              </HStack>
+            </VStack>
             <VStack>
-              <HStack className="justify-between items-center">
-                <Text className="text-typography-500">
-                  {date.format("DD/MM/YYYY")}
-                </Text>
-                <Text className="text-typography-500">
-                  Admin: {profile?.name || "Admin"}
-                </Text>
-              </HStack>
-              <HStack className="justify-between items-center">
-                <Text className="text-typography-500">
-                  {date.format("HH:mm:ss")}
-                </Text>
-              </HStack>
               <HStack className="justify-between items-center mt-1">
                 <Text className="text-typography-500">
                   Pelanggan: {transaction.customerName}
-                </Text>
-              </HStack>
-              <HStack className="justify-between items-center mt-1">
-                <Text className="text-typography-500">
-                  Ref: {formatDisplayRefId(transaction.local_ref_id) || transaction.id}
                 </Text>
               </HStack>
             </VStack>

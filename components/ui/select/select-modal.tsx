@@ -1,4 +1,5 @@
 import { tva, VariantProps } from "@gluestack-ui/utils/nativewind-utils";
+import classNames from "classnames";
 import {
   CheckIcon,
   ChevronDown,
@@ -81,6 +82,11 @@ export default function SelectModal({
     ),
   }));
 
+  const foundOption = optionsGroup
+    ? optionsGroup.flatMap((g) => g.options).find((o) => o.value === value)
+    : options.find((o) => o.value === value);
+  const labelValue = foundOption?.label || placeholder;
+
   return (
     <>
       <Pressable
@@ -93,7 +99,7 @@ export default function SelectModal({
         })}
       >
         <Text className={!value ? "text-background-400" : undefined}>
-          {value ? options.find((o) => o.value === value)?.label : placeholder}
+          {labelValue}
         </Text>
         <Icon
           as={ChevronDown}
@@ -141,7 +147,7 @@ export default function SelectModal({
                 filteredOptions.map((option) => (
                   <Pressable
                     key={option.value}
-                    className={`w-full flex-row items-center p-4 rounded-sm data-[disabled=true]:opacity-40 data-[disabled=true]:web:pointer-events-auto data-[disabled=true]:web:cursor-not-allowed hover:bg-background-50 active:bg-background-100 data-[focus=true]:bg-background-100 web:data-[focus-visible=true]:bg-background-100 data-[checked=true]:bg-background-100${
+                    className={`w-full flex-row items-center px-6 py-2 rounded-sm data-[disabled=true]:opacity-40 data-[disabled=true]:web:pointer-events-auto data-[disabled=true]:web:cursor-not-allowed hover:bg-background-50 active:bg-background-100 data-[focus=true]:bg-background-100 web:data-[focus-visible=true]:bg-background-100 data-[checked=true]:bg-background-100${
                       option.value === value ? " bg-background-100" : ""
                     }`}
                     onPress={() => {
@@ -151,11 +157,11 @@ export default function SelectModal({
                     }}
                   >
                     <VStack className="flex-1">
-                      <Text className="flex-1 text-lg leading-5 text-typography-700 font-normal font-body text-left mx-2">
+                      <Text className="flex-1 text-md leading-5 text-typography-700 font-normal font-body text-left mx-2">
                         {option.label}
                       </Text>
                       {option.desc && (
-                        <Text className="flex-1 leading-4 text-typography-500 font-normal font-body text-left mx-2">
+                        <Text className="flex-1 text-sm leading-4 text-typography-500 font-normal font-body text-left mx-2">
                           {option.desc}
                         </Text>
                       )}
@@ -166,15 +172,20 @@ export default function SelectModal({
                   </Pressable>
                 ))
               ) : filteredOptionsGroup?.length ? (
-                filteredOptionsGroup.map((group) => (
+                filteredOptionsGroup.map((group, groupIndex) => (
                   <VStack key={group.label}>
-                    <Text className="text-lg text-typography-700 font-semibold font-body text-left mx-2">
+                    <Text
+                      className={classNames(
+                        "text-sm text-typography-700 font-bold font-body text-left p-4 pb-1",
+                        groupIndex !== 0 && "border-t border-background-300",
+                      )}
+                    >
                       {group.label}
                     </Text>
                     {group.options.map((option) => (
                       <Pressable
                         key={option.value}
-                        className={`w-full flex-row items-center p-4 rounded-sm data-[disabled=true]:opacity-40 data-[disabled=true]:web:pointer-events-auto data-[disabled=true]:web:cursor-not-allowed hover:bg-background-50 active:bg-background-100 data-[focus=true]:bg-background-100 web:data-[focus-visible=true]:bg-background-100 data-[checked=true]:bg-background-100${
+                        className={`w-full flex-row items-center px-6 py-2 rounded-sm data-[disabled=true]:opacity-40 data-[disabled=true]:web:pointer-events-auto data-[disabled=true]:web:cursor-not-allowed hover:bg-background-50 active:bg-background-100 data-[focus=true]:bg-background-100 web:data-[focus-visible=true]:bg-background-100 data-[checked=true]:bg-background-100${
                           option.value === value ? " bg-background-100" : ""
                         }`}
                         onPress={() => {
@@ -184,11 +195,11 @@ export default function SelectModal({
                         }}
                       >
                         <VStack className="flex-1">
-                          <Text className="flex-1 text-lg leading-5 text-typography-700 font-normal font-body text-left mx-2">
+                          <Text className="flex-1 text-md leading-5 text-typography-700 font-normal font-body text-left mx-2">
                             {option.label}
                           </Text>
                           {option.desc && (
-                            <Text className="flex-1 leading-4 text-typography-500 font-normal font-body text-left mx-2">
+                            <Text className="flex-1 text-sm leading-4 text-typography-500 font-normal font-body text-left mx-2">
                               {option.desc}
                             </Text>
                           )}
