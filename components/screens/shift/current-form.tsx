@@ -1,5 +1,4 @@
 import {
-  Button,
   Checkbox,
   CheckboxIcon,
   CheckboxIndicator,
@@ -14,16 +13,17 @@ import {
   Input,
   InputField,
   Pressable,
+  Spinner,
   Text,
-  VStack,
+  VStack
 } from "@/components/ui";
 import SelectModal from "@/components/ui/select/select-modal";
 import { useCashDrawers } from "@/lib/api/cashdrawers";
 import { useCurrentShift, useLastShift, useStartShift } from "@/lib/api/shifts";
 import { useCashDrawerStore } from "@/stores/cashdrawer";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckIcon, PlusIcon } from "lucide-react-native";
 import { useRouter } from "expo-router";
+import { CheckIcon, PlusIcon } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
@@ -44,11 +44,12 @@ export default function CurrentFormShift() {
   const router = useRouter();
   const [selectedCashDrawerId, setSelectedCashDrawerId] = useState<string>();
   const { data: cashDrawers, refetch: refetchCashDrawers } = useCashDrawers();
-  const startShiftMutation = useStartShift();
   const { data: lastShift } = useLastShift(selectedCashDrawerId);
-  const { isLoading } = useCurrentShift();
+  const { isLoading: isLoadingCurrentShift } = useCurrentShift();
   const { setOpen: setOpenCashDrawer, setData: setDataCashDrawer } =
     useCashDrawerStore();
+  const startShiftMutation = useStartShift();
+  const isLoading = startShiftMutation.isPending || isLoadingCurrentShift;
 
   const initialValues: ShiftFormValues = {
     cashdrawerId: "",
@@ -92,7 +93,7 @@ export default function CurrentFormShift() {
   };
 
   // Show loading state
-  if (isLoading) {
+  if (isLoadingCurrentShift) {
     return (
       <VStack className="flex-1 bg-white items-center justify-center">
         <Text>Loading...</Text>
@@ -219,16 +220,20 @@ export default function CurrentFormShift() {
           />
         </VStack>
       </ScrollView>
-      <HStack className="w-full p-4">
-        <Button
-          size="sm"
-          className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+      <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
+        <Pressable
+          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
+          disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
         >
-          <Text size="sm" className="text-typography-0 font-bold">
-            BUKA SHIFT
-          </Text>
-        </Button>
+          {isLoading ? (
+            <Spinner size="small" color="#FFFFFF" />
+          ) : (
+            <Text size="sm" className="text-typography-0 font-bold">
+              BUKA SHIFT
+            </Text>
+          )}
+        </Pressable>
       </HStack>
     </VStack>
   );

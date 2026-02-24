@@ -60,7 +60,9 @@ export default function ProductDetail() {
           text: "HAPUS",
           style: "destructive",
           onPress: () => {
-            console.log(`[DETAIL] confirmDelete ENTERED via Alert, productId="${productId}", product.id="${product?.id}"`);
+            console.log(
+              `[DETAIL] confirmDelete ENTERED via Alert, productId="${productId}", product.id="${product?.id}"`,
+            );
             deleteMutation.mutate(productId, {
               onSuccess: () => {
                 onRefetch();
@@ -68,7 +70,11 @@ export default function ProductDetail() {
                 toast.show({
                   placement: "top",
                   render: ({ id }) => (
-                    <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                    <Toast
+                      nativeID={`toast-${id}`}
+                      action="success"
+                      variant="solid"
+                    >
                       <ToastTitle>Produk berhasil dihapus</ToastTitle>
                     </Toast>
                   ),
@@ -80,7 +86,7 @@ export default function ProductDetail() {
             });
           },
         },
-      ]
+      ],
     );
   };
 
@@ -278,7 +284,7 @@ export default function ProductDetail() {
 
       <VStack space="md" className="w-full p-4">
         <Pressable
-          className="w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-brand-primary"
+          className="w-full rounded-sm h-10 flex justify-center items-center bg-background-0 border border-brand-primary"
           onPress={() => {
             router.navigate(
               `/(main)/management/product-category-brand/product/edit/${product?.id}`,

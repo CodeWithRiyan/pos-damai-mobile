@@ -338,7 +338,7 @@ export default function BrandDetail() {
 
       <VStack space="md" className="w-full p-4">
         <Pressable
-          className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           onPress={() => {
             router.navigate(
               `/(main)/management/product-category-brand/brand/select-product/${brand?.id}`,

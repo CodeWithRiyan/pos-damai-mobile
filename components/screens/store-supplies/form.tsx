@@ -8,6 +8,7 @@ import {
   ModalFooter,
   ModalHeader,
   Pressable,
+  Spinner,
   Text,
   Textarea,
   TextareaInput,
@@ -234,13 +235,17 @@ export default function StoreSuppliesConfirmForm({
               </Text>
             </Pressable>
             <Pressable
-              className="flex-1 items-center justify-center h-12 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
-              onPress={form.handleSubmit(onSubmit)}
+              className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
               disabled={isLoading}
+              onPress={form.handleSubmit(onSubmit)}
             >
-              <Text size="lg" className="text-white font-bold">
-                {isLoading ? "MENYIMPAN..." : "SIMPAN"}
-              </Text>
+              {isLoading ? (
+                <Spinner size="small" color="#FFFFFF" />
+              ) : (
+                <Text size="sm" className="text-typography-0 font-bold">
+                  SIMPAN
+                </Text>
+              )}
             </Pressable>
           </HStack>
         </ModalFooter>

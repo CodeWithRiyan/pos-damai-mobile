@@ -13,6 +13,7 @@ import {
   HStack,
   Icon,
   Pressable,
+  Spinner,
   Text,
   Textarea,
   TextareaInput,
@@ -114,6 +115,7 @@ export default function PurchasingCheckoutForm() {
   const paymentMethodId = form.watch("paymentMethodId");
   const { data: suppliers = [] } = useSuppliers();
   const createMutation = useCreatePurchasing();
+  const isLoading = createMutation.isPending;
 
   const { grandTotal, commission } = useMemo(() => {
     let comm = 0;
@@ -373,7 +375,11 @@ export default function PurchasingCheckoutForm() {
               className="size-10 items-center justify-center border-primary-500 border rounded-lg bg-primary-100 active:bg-primary-200"
               onPress={form.handleSubmit(onSubmit)}
             >
-              <Icon as={Check} size="md" color="#3d2117" />
+              {isLoading ? (
+                <Spinner size="small" color="#FFFFFF" />
+              ) : (
+                <Icon as={Check} size="md" color="#3d2117" />
+              )}
             </Pressable>
           </HStack>
         }

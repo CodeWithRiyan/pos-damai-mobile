@@ -54,7 +54,9 @@ export default function CashDrawerForm() {
   });
 
   const { refetch: refetchCashDrawers } = useCashDrawers();
-  const { refetch: refetchCashDrawer } = useCashDrawer(dataCashDrawer?.id || "");
+  const { refetch: refetchCashDrawer } = useCashDrawer(
+    dataCashDrawer?.id || "",
+  );
 
   const createMutation = useCreateCashDrawer();
   const updateMutation = useUpdateCashDrawer();
@@ -95,7 +97,9 @@ export default function CashDrawerForm() {
     });
   };
 
-  const onSubmit: SubmitHandler<CashDrawerFormValues> = (data: CashDrawerFormValues) => {
+  const onSubmit: SubmitHandler<CashDrawerFormValues> = (
+    data: CashDrawerFormValues,
+  ) => {
     if (dataCashDrawer) {
       updateMutation.mutate(
         { id: dataCashDrawer.id, ...data },
@@ -110,18 +114,21 @@ export default function CashDrawerForm() {
         },
       );
     } else {
-      createMutation.mutate({ ...data, isActive: true }, {
-        onSuccess: (newCashDrawer) => {
-          showSuccessToast("Cashdrawer berhasil ditambahkan");
-          onRefetch();
-          if (useCashDrawerStore.getState().onSuccess) {
-            useCashDrawerStore.getState().onSuccess?.(newCashDrawer);
-          }
-          form.reset(initialValues);
-          setOpen(false);
+      createMutation.mutate(
+        { ...data, isActive: true },
+        {
+          onSuccess: (newCashDrawer) => {
+            showSuccessToast("Cashdrawer berhasil ditambahkan");
+            onRefetch();
+            if (useCashDrawerStore.getState().onSuccess) {
+              useCashDrawerStore.getState().onSuccess?.(newCashDrawer);
+            }
+            form.reset(initialValues);
+            setOpen(false);
+          },
+          onError: showErrorToast,
         },
-        onError: showErrorToast,
-      });
+      );
     }
   };
 
@@ -180,7 +187,7 @@ export default function CashDrawerForm() {
         <ModalFooter className="p-4 pt-0">
           <HStack space="md">
             <Pressable
-              className="w-full flex px-4 h-9 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
+              className="w-full flex px-4 h-10 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
               onPress={form.handleSubmit(onSubmit)}
               disabled={isLoading}
             >

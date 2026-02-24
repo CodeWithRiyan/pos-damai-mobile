@@ -229,7 +229,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
               {!isReport && (
                 <HStack className="absolute -bottom-4 right-0 left-0 justify-center">
                   <Pressable
-                    className="items-center justify-center h-9 px-10 rounded-lg bg-primary-500 active:bg-primary-500/90"
+                    className="items-center justify-center h-10 px-10 rounded-lg bg-primary-500 active:bg-primary-500/90"
                     onPress={() => {
                       router.navigate(
                         `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${payableList?.map((m) => m.id).join("-")}` as any,
@@ -416,7 +416,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
       <VStack space="md" className="w-full p-4">
         {!!selectedItems?.length && !isReport && (
           <Pressable
-            className="w-full rounded-md h-9 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
+            className="w-full rounded-md h-10 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
             onPress={() => {
               router.navigate(
                 `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${selectedItems?.map((m) => m.id).join("-")}` as any,

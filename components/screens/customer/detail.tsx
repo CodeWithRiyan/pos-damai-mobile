@@ -181,15 +181,21 @@ export default function CustomerDetail() {
             </VStack>
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Total Transaksi</Text>
-              <Text className="font-bold">{customer?.totalTransactions || 0}</Text>
+              <Text className="font-bold">
+                {customer?.totalTransactions || 0}
+              </Text>
             </VStack>
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Total Omset</Text>
-              <Text className="font-bold">Rp {(customer?.totalOmset || 0).toLocaleString('id-ID')}</Text>
+              <Text className="font-bold">
+                Rp {(customer?.totalOmset || 0).toLocaleString("id-ID")}
+              </Text>
             </VStack>
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Total Keuntungan</Text>
-              <Text className="font-bold">Rp {(customer?.totalKeuntungan || 0).toLocaleString('id-ID')}</Text>
+              <Text className="font-bold">
+                Rp {(customer?.totalKeuntungan || 0).toLocaleString("id-ID")}
+              </Text>
             </VStack>
           </Box>
         </VStack>
@@ -197,7 +203,7 @@ export default function CustomerDetail() {
 
       <VStack space="md" className="w-full p-4">
         <Pressable
-          className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           onPress={() => {
             router.navigate(
               `/(main)/transaction/history?customerId=${customer?.id}`,

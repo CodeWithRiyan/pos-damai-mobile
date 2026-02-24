@@ -169,7 +169,7 @@ export default function SupplierDetail() {
       <VStack space="md" className="w-full p-4">
         <HStack space="md">
           <Pressable
-            className="flex-1 rounded-sm h-9 flex justify-center items-center bg-background-0 border border-primary-500"
+            className="flex-1 rounded-sm h-10 flex justify-center items-center bg-background-0 border border-primary-500"
             onPress={() => {
               router.push(
                 `/(main)/management/customer-supplier/supplier/purchasing/${supplierId}`,
@@ -181,7 +181,7 @@ export default function SupplierDetail() {
             </Text>
           </Pressable>
           <Pressable
-            className="flex-1 rounded-sm h-9 flex justify-center items-center bg-background-0 border border-primary-500"
+            className="flex-1 rounded-sm h-10 flex justify-center items-center bg-background-0 border border-primary-500"
             onPress={() => {
               router.push(
                 `/(main)/management/customer-supplier/supplier/payable/${supplierId}`,
@@ -194,7 +194,7 @@ export default function SupplierDetail() {
           </Pressable>
         </HStack>
         <Pressable
-          className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           onPress={() => {
             router.navigate(
               `/(main)/management/customer-supplier/supplier/select-product/${supplierId}`,
