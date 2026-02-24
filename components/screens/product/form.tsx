@@ -1,3 +1,4 @@
+import BarcodeScanner from "@/components/barcode-scanner";
 import Header from "@/components/header";
 import {
   Button,
@@ -38,8 +39,9 @@ import { useBrandStore } from "@/stores/brand";
 import { useCategoryStore } from "@/stores/category";
 import { useDiscountStore } from "@/stores/discount";
 import { zodResolver } from "@hookform/resolvers/zod";
+import classNames from "classnames";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { PlusIcon } from "lucide-react-native";
+import { PlusIcon, ScanBarcode } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   Controller,
@@ -60,6 +62,10 @@ export default function ProductForm() {
   const { id } = useLocalSearchParams();
   const isAdd = !id;
   const productId = id as string;
+
+  const [scanBarcodePosition, setScanBarcodePosition] = useState<string | null>(
+    null,
+  );
 
   const productSchema = z
     .object({
@@ -518,15 +524,37 @@ export default function ProductForm() {
                 <FormControlLabel>
                   <FormControlLabelText>Kode</FormControlLabelText>
                 </FormControlLabel>
-                <Input>
-                  <InputField
-                    value={value}
-                    autoComplete="name"
-                    placeholder="Masukkan Kode"
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                  />
-                </Input>
+                <HStack space="md">
+                  <Input className="flex-1">
+                    <InputField
+                      value={value}
+                      autoComplete="name"
+                      placeholder="Masukkan Kode"
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                    />
+                  </Input>
+                  <Pressable
+                    className={classNames(
+                      "size-10 rounded-md bg-white border border-primary-500 items-center justify-center",
+                      scanBarcodePosition === "code" && "bg-primary-500",
+                    )}
+                    onPress={() => {
+                      if (scanBarcodePosition === "code") {
+                        setScanBarcodePosition(null);
+                      } else {
+                        setScanBarcodePosition("code");
+                      }
+                    }}
+                  >
+                    <Icon
+                      as={ScanBarcode}
+                      color={
+                        scanBarcodePosition === "code" ? "#fff" : "#3d2117"
+                      }
+                    />
+                  </Pressable>
+                </HStack>
                 {error && (
                   <FormControlError>
                     <FormControlErrorText>{error.message}</FormControlErrorText>
@@ -936,14 +964,46 @@ export default function ProductForm() {
                                   Kode Varian
                                 </FormControlLabelText>
                               </FormControlLabel>
-                              <Input>
-                                <InputField
-                                  value={value}
-                                  onChangeText={onChange}
-                                  onBlur={onBlur}
-                                  placeholder="Contoh: V001"
-                                />
-                              </Input>
+                              <HStack space="md">
+                                <Input className="flex-1">
+                                  <InputField
+                                    value={value}
+                                    onChangeText={onChange}
+                                    onBlur={onBlur}
+                                    placeholder="Contoh: V001"
+                                  />
+                                </Input>
+                                <Pressable
+                                  className={classNames(
+                                    "size-10 rounded-md bg-white border border-primary-500 items-center justify-center",
+                                    scanBarcodePosition ===
+                                      `unitVariants.${index}.code` &&
+                                      "bg-primary-500",
+                                  )}
+                                  onPress={() => {
+                                    if (
+                                      scanBarcodePosition ===
+                                      `unitVariants.${index}.code`
+                                    ) {
+                                      setScanBarcodePosition(null);
+                                    } else {
+                                      setScanBarcodePosition(
+                                        `unitVariants.${index}.code`,
+                                      );
+                                    }
+                                  }}
+                                >
+                                  <Icon
+                                    as={ScanBarcode}
+                                    color={
+                                      scanBarcodePosition ===
+                                      `unitVariants.${index}.code`
+                                        ? "#fff"
+                                        : "#3d2117"
+                                    }
+                                  />
+                                </Pressable>
+                              </HStack>
                               {error && (
                                 <FormControlError>
                                   <FormControlErrorText>
@@ -1111,14 +1171,46 @@ export default function ProductForm() {
                                 Kode Varian
                               </FormControlLabelText>
                             </FormControlLabel>
-                            <Input>
-                              <InputField
-                                value={value}
-                                onChangeText={onChange}
-                                onBlur={onBlur}
-                                placeholder="Contoh: V001"
-                              />
-                            </Input>
+                            <HStack space="md">
+                              <Input className="flex-1">
+                                <InputField
+                                  value={value}
+                                  onChangeText={onChange}
+                                  onBlur={onBlur}
+                                  placeholder="Contoh: V001"
+                                />
+                              </Input>
+                              <Pressable
+                                className={classNames(
+                                  "size-10 rounded-md bg-white border border-primary-500 items-center justify-center",
+                                  scanBarcodePosition ===
+                                    `variants.${index}.code` &&
+                                    "bg-primary-500",
+                                )}
+                                onPress={() => {
+                                  if (
+                                    scanBarcodePosition ===
+                                    `variants.${index}.code`
+                                  ) {
+                                    setScanBarcodePosition(null);
+                                  } else {
+                                    setScanBarcodePosition(
+                                      `variants.${index}.code`,
+                                    );
+                                  }
+                                }}
+                              >
+                                <Icon
+                                  as={ScanBarcode}
+                                  color={
+                                    scanBarcodePosition ===
+                                    `variants.${index}.code`
+                                      ? "#fff"
+                                      : "#3d2117"
+                                  }
+                                />
+                              </Pressable>
+                            </HStack>
                             {error && (
                               <FormControlError>
                                 <FormControlErrorText>
@@ -1564,6 +1656,12 @@ export default function ProductForm() {
           </Text>
         </Pressable>
       </HStack>
+      <BarcodeScanner
+        onBarcodeScanned={(result) => {
+          if (scanBarcodePosition === null) return;
+          form.setValue(scanBarcodePosition as any, result.data);
+        }}
+      />
     </VStack>
   );
 }

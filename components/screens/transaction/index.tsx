@@ -8,6 +8,9 @@ import {
   InputSlot,
   SearchIcon,
   Text,
+  Toast,
+  ToastTitle,
+  useToast,
 } from "@/components/ui";
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
@@ -15,6 +18,7 @@ import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { VStack } from "@/components/ui/vstack";
 // import { useBulkDeleteTransaction, Transaction, useTransaction } from "@/lib/api/transaction";
+import BarcodeScanner from "@/components/barcode-scanner";
 import { Button, ButtonText } from "@/components/ui/button";
 import SelectModal from "@/components/ui/select/select-modal";
 import { Spinner } from "@/components/ui/spinner";
@@ -44,6 +48,7 @@ export default function TransactionList() {
   const { data: products } = useProducts();
   const { data: currentShift, isLoading: isLoadingShift } = useCurrentShift();
   const router = useRouter();
+  const toast = useToast();
 
   const [searchQuery, setSearchQuery] = React.useState("");
 
@@ -319,6 +324,25 @@ export default function TransactionList() {
         </VStack>
       </HStack>
       <PopupAddProduct />
+      <BarcodeScanner
+        onBarcodeScanned={(result) => {
+          const item = products?.find((item) => item.barcode === result.data);
+          if (!item) {
+            toast.show({
+              placement: "top",
+              render: ({ id }) => (
+                <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+                  <ToastTitle>
+                    {`Produk dengan barcode ${result.data} tidak ditemukan`}
+                  </ToastTitle>
+                </Toast>
+              ),
+            });
+            return;
+          }
+          setAddProduct(item || null);
+        }}
+      />
     </Box>
   );
 }
