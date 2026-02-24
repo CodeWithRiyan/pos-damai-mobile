@@ -96,32 +96,6 @@ export interface ProductParams {
 // Get all products from local SQLite (excluding soft-deleted)
 export function useProducts(params: ProductParams | void) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
-  const conditions = [
-    eq(schema.products.organizationId, orgId),
-    isNull(schema.products.deletedAt),
-  ];
-
-  if (params?.search) {
-    const searchTerm = `%${params.search}%`;
-    conditions.push(
-      or(
-        like(schema.products.name, searchTerm),
-        like(schema.products.barcode, searchTerm),
-      )!,
-    );
-  }
-
-  if (params?.brandId) {
-    conditions.push(eq(schema.products.brandId, params.brandId));
-  }
-
-  if (params?.categoryId) {
-    conditions.push(eq(schema.products.categoryId, params.categoryId));
-  }
-
-  if (params?.supplierId) {
-    conditions.push(eq(schema.products.supplierId, params.supplierId));
-  }
 
   return useQuery({
     queryKey: [
@@ -134,6 +108,34 @@ export function useProducts(params: ProductParams | void) {
       params?.supplierId,
     ],
     queryFn: async () => {
+      // Build conditions inside queryFn to avoid stale closure bug
+      const conditions = [
+        eq(schema.products.organizationId, orgId),
+        isNull(schema.products.deletedAt),
+      ];
+
+      if (params?.search) {
+        const searchTerm = `%${params.search}%`;
+        conditions.push(
+          or(
+            like(schema.products.name, searchTerm),
+            like(schema.products.barcode, searchTerm),
+          )!,
+        );
+      }
+
+      if (params?.brandId) {
+        conditions.push(eq(schema.products.brandId, params.brandId));
+      }
+
+      if (params?.categoryId) {
+        conditions.push(eq(schema.products.categoryId, params.categoryId));
+      }
+
+      if (params?.supplierId) {
+        conditions.push(eq(schema.products.supplierId, params.supplierId));
+      }
+
       const productResult = await db
         .select()
         .from(schema.products)
@@ -867,6 +869,37 @@ export function useAssignProductsToCategory() {
   });
 }
 
+// Assign products to a supplier
+export function useAssignProductsToSupplier() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { productIds: string[]; supplierId: string }) => {
+      const now = new Date();
+
+      const userId = useAuthStore.getState().profile?.id;
+
+      for (const productId of data.productIds) {
+        await db
+          .update(schema.products)
+          .set({
+            supplierId: data.supplierId,
+            updatedBy: userId,
+            updatedAt: now,
+            _dirty: true,
+          })
+          .where(eq(schema.products.id, productId));
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+    },
+  });
+}
+
 // Assign products to a brand
 export function useAssignProductsToBrand() {
   const queryClient = useQueryClient();
@@ -897,3 +930,34 @@ export function useAssignProductsToBrand() {
     },
   });
 }
+
+// Unassign products from a brand
+export function useUnassignProductsFromBrand() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { productIds: string[] }) => {
+      const now = new Date();
+      const userId = useAuthStore.getState().profile?.id;
+
+      for (const productId of data.productIds) {
+        await db
+          .update(schema.products)
+          .set({
+            brandId: null,
+            updatedBy: userId,
+            updatedAt: now,
+            _dirty: true,
+          })
+          .where(eq(schema.products.id, productId));
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["productCountsByBrand"] });
+    },
+  });
+}
+

@@ -1,10 +1,11 @@
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import {
   ProductListItem,
-  // useAssignProductsToSupplier, TODO: tambahkan ini kedalam service
+  useAssignProductsToSupplier,
   useProducts,
 } from "@/lib/api/products";
 import { useSupplier } from "@/lib/api/suppliers";
+import { getErrorMessage } from "@/lib/api/client";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import SelectingProductList from "../product/selecting-product";
 
@@ -16,7 +17,7 @@ export default function SelectProductInSupplier() {
   const { data: products } = useProducts();
   const toast = useToast();
 
-  // const assignMutation = useAssignProductsToSupplier(); TODO: tambahkan ini kedalam service
+  const assignMutation = useAssignProductsToSupplier();
 
   const handleSubmit = (selectedProducts: ProductListItem[]) => {
     if (selectedProducts.length === 0) {
@@ -33,33 +34,32 @@ export default function SelectProductInSupplier() {
 
     const productIds = selectedProducts.map((p) => p.id);
 
-    // TODO: uncomment baris dibawah ini jika sudah menambahkan useAssignProductsToSupplier kedalam service
-    // assignMutation.mutate(
-    //   { productIds, supplierId },
-    //   {
-    //     onSuccess: () => {
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={"toast-" + id} action="success" variant="solid">
-    //             <ToastTitle>{`Produk berhasil ditambahkan ke ${data?.name}`}</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //       router.back();
-    //     },
-    //     onError: (error) => {
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={"toast-" + id} action="error" variant="solid">
-    //             <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //   },
-    // );
+    assignMutation.mutate(
+      { productIds, supplierId },
+      {
+        onSuccess: () => {
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={"toast-" + id} action="success" variant="solid">
+                <ToastTitle>{`Produk berhasil ditambahkan ke ${data?.name}`}</ToastTitle>
+              </Toast>
+            ),
+          });
+          router.back();
+        },
+        onError: (error) => {
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={"toast-" + id} action="error" variant="solid">
+                <ToastTitle>{getErrorMessage(error)}</ToastTitle>
+              </Toast>
+            ),
+          });
+        },
+      },
+    );
   };
 
   return (

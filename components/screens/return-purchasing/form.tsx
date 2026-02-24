@@ -38,7 +38,10 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
 export default function ReturnPurchasingConfirmForm() {
-  const { purchaseId } = useLocalSearchParams<{ purchaseId: string }>();
+  const { purchaseId, supplierId } = useLocalSearchParams<{
+    purchaseId: string;
+    supplierId: string;
+  }>();
   const { data: purchase } = usePurchase(purchaseId || "");
   const { cart, openConfirm, setOpenConfirm, resetCart } =
     useReturnPurchasingStore();
@@ -94,7 +97,7 @@ export default function ReturnPurchasingConfirmForm() {
     );
 
     const returnData = {
-      supplierId: purchase?.supplierId || "",
+      supplierId: purchase?.supplierId || supplierId || "",
       totalAmount,
       returnType: data.returnType as "CASH" | "ITEM",
       note: data.reason, // Map 'reason' from form to 'note' in database
