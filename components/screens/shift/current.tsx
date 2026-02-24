@@ -35,15 +35,27 @@ export default function CurrentShift() {
         </VStack>
         <VStack space="sm" className="px-8 py-4">
           <HStack className="w-full flex-row justify-between">
-            <Text className="text-typography-600">Penjualan</Text>
+            <Text className="text-typography-600">Transaksi Penjualan</Text>
             <Text className="font-bold">Rp 0</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between">
-            <Text className="text-typography-600">Pemasukkan Lain</Text>
+            <Text className="text-typography-600">Pemasukkan</Text>
             <Text className="font-bold">Rp 0</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between">
-            <Text className="text-typography-600">Pengeluaran Lain</Text>
+            <Text className="text-typography-600">Pembayaran Hutang</Text>
+            <Text className="font-bold text-error-500">Rp 0</Text>
+          </HStack>
+          <HStack className="w-full flex-row justify-between">
+            <Text className="text-typography-600">Beli Barang</Text>
+            <Text className="font-bold text-error-500">Rp 0</Text>
+          </HStack>
+          <HStack className="w-full flex-row justify-between">
+            <Text className="text-typography-600">Perlengkapan</Text>
+            <Text className="font-bold text-error-500">Rp 0</Text>
+          </HStack>
+          <HStack className="w-full flex-row justify-between">
+            <Text className="text-typography-600">Peralatan</Text>
             <Text className="font-bold text-error-500">Rp 0</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-background-100">

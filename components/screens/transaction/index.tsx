@@ -8,6 +8,9 @@ import {
   InputSlot,
   SearchIcon,
   Text,
+  Toast,
+  ToastTitle,
+  useToast,
 } from "@/components/ui";
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
@@ -15,6 +18,7 @@ import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { VStack } from "@/components/ui/vstack";
 // import { useBulkDeleteTransaction, Transaction, useTransaction } from "@/lib/api/transaction";
+import BarcodeScanner from "@/components/barcode-scanner";
 import { Button, ButtonText } from "@/components/ui/button";
 import SelectModal from "@/components/ui/select/select-modal";
 import { Spinner } from "@/components/ui/spinner";
@@ -23,6 +27,7 @@ import { useProducts } from "@/lib/api/products";
 import { useCurrentShift } from "@/lib/api/shifts";
 import { findSellPrice } from "@/lib/price";
 import { useTransactionStore } from "@/stores/transaction";
+import classNames from "classnames";
 import { useRouter } from "expo-router";
 import { AlertCircle, PlusIcon } from "lucide-react-native";
 import React from "react";
@@ -30,12 +35,20 @@ import { ScrollView } from "react-native";
 import PopupAddProduct from "./popup-add";
 
 export default function TransactionList() {
-  const { cart, customer, setCustomer, setAddProduct, setStatus } =
-    useTransactionStore();
+  const [deleteItem, setDeleteItem] = React.useState<string | null>(null);
+  const {
+    cart,
+    customer,
+    setCustomer,
+    setAddProduct,
+    setStatus,
+    removeCartItem,
+  } = useTransactionStore();
   const { data: customers } = useCustomers();
   const { data: products } = useProducts();
   const { data: currentShift, isLoading: isLoadingShift } = useCurrentShift();
   const router = useRouter();
+  const toast = useToast();
 
   const [searchQuery, setSearchQuery] = React.useState("");
 
@@ -206,8 +219,15 @@ export default function TransactionList() {
               {cart?.map((item, index) => (
                 <Pressable
                   key={item.product.id}
-                  className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
+                  className="relative px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
                   onPress={() => setAddProduct(item.product)}
+                  onLongPress={() => {
+                    if (item.product.id === deleteItem) {
+                      setDeleteItem(null);
+                      return;
+                    }
+                    setDeleteItem(item.product.id);
+                  }}
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
@@ -216,7 +236,7 @@ export default function TransactionList() {
                       </Box>
                       <VStack className="flex-1">
                         <Heading size="md" className="line-clamp-2">
-                          {`${item.product.name}${item.variant ? ` - ${item.variant.name}` : ""}${item.product.type === "MULTIUNIT" ? ` (${item.unitWeight} ${item.product.unit})` : ""}`}
+                          {item.product.name}
                         </Heading>
                         <Text size="sm" className="text-slate-500">
                           {`${item.quantity} x Rp ${
@@ -251,6 +271,18 @@ export default function TransactionList() {
                       </HStack>
                     </HStack>
                   </HStack>
+                  <Pressable
+                    className={classNames(
+                      "absolute right-0 top-0 bottom-0 w-0 bg-error-500 items-center justify-center overflow-hidden transaction-all duration-300",
+                      deleteItem === item.product.id && "w-16",
+                    )}
+                    onPress={() => {
+                      removeCartItem(item.product?.id || "");
+                      setDeleteItem(null);
+                    }}
+                  >
+                    <SolarIconBold name="TrashBin2" size={20} color="white" />
+                  </Pressable>
                 </Pressable>
               ))}
             </VStack>
@@ -292,6 +324,25 @@ export default function TransactionList() {
         </VStack>
       </HStack>
       <PopupAddProduct />
+      <BarcodeScanner
+        onBarcodeScanned={(result) => {
+          const item = products?.find((item) => item.barcode === result.data);
+          if (!item) {
+            toast.show({
+              placement: "top",
+              render: ({ id }) => (
+                <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+                  <ToastTitle>
+                    {`Produk dengan barcode ${result.data} tidak ditemukan`}
+                  </ToastTitle>
+                </Toast>
+              ),
+            });
+            return;
+          }
+          setAddProduct(item || null);
+        }}
+      />
     </Box>
   );
 }

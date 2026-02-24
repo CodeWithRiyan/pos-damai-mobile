@@ -146,6 +146,7 @@ export default function PaymentTypeForm() {
             }
             onRefetch();
             setOpen(false);
+            form.reset(initialValues);
           },
           onError: showErrorToast,
         },
@@ -159,6 +160,7 @@ export default function PaymentTypeForm() {
           }
           onRefetch();
           setOpen(false);
+          form.reset(initialValues);
         },
         onError: showErrorToast,
       });

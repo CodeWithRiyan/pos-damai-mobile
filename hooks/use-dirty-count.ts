@@ -9,7 +9,6 @@ export function useDirtyCount() {
   const fetchDirtyCount = async () => {
     try {
       const tables = [
-        schema.users,
         schema.categories,
         schema.brands,
         schema.products,
@@ -23,6 +22,8 @@ export function useDirtyCount() {
         schema.inventoryTransactions,
         schema.purchaseReturns,
         schema.purchaseReturnItems,
+        schema.transactionReturns,
+        schema.transactionReturnItems,
         schema.stockOpnames,
         schema.stockOpnameItems,
         schema.payables,

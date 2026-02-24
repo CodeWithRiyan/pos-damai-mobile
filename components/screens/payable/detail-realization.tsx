@@ -17,14 +17,18 @@ import {
   SolarIconBoldDuotone,
   SolarIconLinear,
 } from "@/components/ui/solar-icon-wrapper";
-import { getErrorMessage } from "@/lib/api/client";
-import { usePayableDetail, useDeletePayable } from "@/lib/api/payable";
 import { Spinner } from "@/components/ui/spinner";
+import { getErrorMessage } from "@/lib/api/client";
+import { useDeletePayable, usePayableDetail } from "@/lib/api/payable";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
 
-export default function PayableRealizationDetail() {
+export default function PayableRealizationDetail({
+  isReport,
+}: {
+  isReport?: boolean;
+}) {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
@@ -38,7 +42,8 @@ export default function PayableRealizationDetail() {
   const deleteMutation = useDeletePayable();
 
   const payableRealizationList = payable?.realizations || [];
-  const isPayedOff = (payable?.totalRealization || 0) === (payable?.nominal || 0);
+  const isPayedOff =
+    (payable?.totalRealization || 0) === (payable?.nominal || 0);
 
   const toast = useToast();
 
@@ -84,7 +89,11 @@ export default function PayableRealizationDetail() {
         toast.show({
           placement: "top",
           render: ({ id: toastId }) => (
-            <Toast nativeID={`toast-${toastId}`} action="success" variant="solid">
+            <Toast
+              nativeID={`toast-${toastId}`}
+              action="success"
+              variant="solid"
+            >
               <ToastTitle>Hutang berhasil dihapus</ToastTitle>
             </Toast>
           ),
@@ -136,16 +145,18 @@ export default function PayableRealizationDetail() {
       <Header
         header="DETAIL REALISASI HUTANG"
         action={
-          <HStack space="sm">
-            <Pressable className="p-6" onPress={handleAction}>
-              <SolarIconBold
-                name="MenuDots"
-                size={20}
-                color="#FDFBF9"
-                style={{ transform: [{ rotate: "90deg" }] }}
-              />
-            </Pressable>
-          </HStack>
+          !isReport && (
+            <HStack space="sm">
+              <Pressable className="p-6" onPress={handleAction}>
+                <SolarIconBold
+                  name="MenuDots"
+                  size={20}
+                  color="#FDFBF9"
+                  style={{ transform: [{ rotate: "90deg" }] }}
+                />
+              </Pressable>
+            </HStack>
+          )
         }
         isGoBack
       />
@@ -160,7 +171,7 @@ export default function PayableRealizationDetail() {
                 color="#3b82f6"
               />
               <Text className="text-primary-500 font-bold">
-                {payable?.supplier?.name || 'Unknown Supplier'}
+                {payable?.supplier?.name || "Unknown Supplier"}
               </Text>
             </HStack>
             <HStack space="xs" className="items-center">
@@ -201,7 +212,7 @@ export default function PayableRealizationDetail() {
             </HStack>
           </VStack>
         </VStack>
-        
+
         <VStack>
           {payableRealizationList?.map((realization, index) => (
             <HStack key={realization.id} className="p-4">
@@ -242,22 +253,26 @@ export default function PayableRealizationDetail() {
                     }}
                   >
                     <HStack space="sm">
-                        <Text className="text-gray-500 text-sm">Catatan:</Text>
-                        <Text className="text-sm font-bold">{realization.note || '-'}</Text>
+                      <Text className="text-gray-500 text-sm">Catatan:</Text>
+                      <Text className="text-sm font-bold">
+                        {realization.note || "-"}
+                      </Text>
                     </HStack>
                   </GridItem>
-                  <GridItem _extra={{ className: "col-span-3" }}>
-                    <Pressable
-                      className="h-8 w-8 rounded-md items-center justify-center border border-background-200"
-                      onPress={() => {
-                        router.navigate(
-                          `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/edit/${realization.id}?payableIds=${payableId}` as any,
-                        );
-                      }}
-                    >
-                      <SolarIconLinear name="Pen" size={16} color="#3d2117" />
-                    </Pressable>
-                  </GridItem>
+                  {!isReport && (
+                    <GridItem _extra={{ className: "col-span-3" }}>
+                      <Pressable
+                        className="h-8 w-8 rounded-md items-center justify-center border border-background-200"
+                        onPress={() => {
+                          router.navigate(
+                            `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/edit/${realization.id}?payableIds=${payableId}` as any,
+                          );
+                        }}
+                      >
+                        <SolarIconLinear name="Pen" size={16} color="#3d2117" />
+                      </Pressable>
+                    </GridItem>
+                  )}
                 </Grid>
               </HStack>
             </HStack>
@@ -273,19 +288,19 @@ export default function PayableRealizationDetail() {
       </ScrollView>
 
       <VStack space="md" className="w-full p-4">
-        {!isPayedOff && (
-            <Pressable
+        {!isReport && !isPayedOff && (
+          <Pressable
             className="w-full rounded-md h-9 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
             onPress={() => {
-                router.navigate(
+              router.navigate(
                 `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${payableId}` as any,
-                );
+              );
             }}
-            >
+          >
             <Text size="sm" className="text-typography-0 font-bold">
-                TAMBAH PEMBAYARAN
+              TAMBAH PEMBAYARAN
             </Text>
-            </Pressable>
+          </Pressable>
         )}
       </VStack>
     </VStack>

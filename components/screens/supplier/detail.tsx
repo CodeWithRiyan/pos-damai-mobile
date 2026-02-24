@@ -167,14 +167,42 @@ export default function SupplierDetail() {
       </ScrollView>
 
       <VStack space="md" className="w-full p-4">
-        <Pressable className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500">
+        <HStack space="md">
+          <Pressable
+            className="flex-1 rounded-sm h-9 flex justify-center items-center bg-background-0 border border-primary-500"
+            onPress={() => {
+              router.push(
+                `/(main)/management/customer-supplier/supplier/purchasing/${supplierId}`,
+              );
+            }}
+          >
+            <Text size="sm" className="text-brand-primary font-bold">
+              RIWAYAT TRANSAKSI
+            </Text>
+          </Pressable>
+          <Pressable
+            className="flex-1 rounded-sm h-9 flex justify-center items-center bg-background-0 border border-primary-500"
+            onPress={() => {
+              router.push(
+                `/(main)/management/customer-supplier/supplier/payable/${supplierId}`,
+              );
+            }}
+          >
+            <Text size="sm" className="text-brand-primary font-bold">
+              RIWAYAT HUTANG
+            </Text>
+          </Pressable>
+        </HStack>
+        <Pressable
+          className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
+          onPress={() => {
+            router.navigate(
+              `/(main)/management/customer-supplier/supplier/select-product/${supplierId}`,
+            );
+          }}
+        >
           <Text size="sm" className="text-typography-0 font-bold">
-            RIWAYAT TRANSAKSI
-          </Text>
-        </Pressable>
-        <Pressable className="w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-primary-500">
-          <Text size="sm" className="text-brand-primary font-bold">
-            RIWAYAT HUTANG
+            {`TAMBAHKAN PRODUK `}
           </Text>
         </Pressable>
       </VStack>

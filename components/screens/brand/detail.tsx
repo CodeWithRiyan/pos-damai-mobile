@@ -17,7 +17,11 @@ import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { useBrand, useBrands, useDeleteBrand } from "@/lib/api/brands";
 import { getErrorMessage } from "@/lib/api/client";
-import { Product, useProductsByBrand } from "@/lib/api/products";
+import {
+  Product,
+  useProductsByBrand,
+  useUnassignProductsFromBrand,
+} from "@/lib/api/products";
 import { useBrandStore } from "@/stores/brand";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
@@ -39,6 +43,7 @@ export default function BrandDetail() {
   const { data: brand, refetch: refetchBrand } = useBrand(brandId || "");
   const { data: products } = useProductsByBrand(brandId || "");
   const deleteMutation = useDeleteBrand();
+  const unassignProductMutation = useUnassignProductsFromBrand();
   const toast = useToast();
 
   const dataProducts = useMemo(() => products || [], [products]);
@@ -84,8 +89,35 @@ export default function BrandDetail() {
       okText: "HAPUS",
       closeText: "BATAL",
       okVariant: "destructive",
-      onOk: () => {}, // tambahkan fungsi hapus produk dari brand
-      // loading: false,
+      onOk: () => {
+        unassignProductMutation.mutate(
+          { productIds },
+          {
+            onSuccess: () => {
+              hidePopUpConfirm();
+              setSelectedProducts(null);
+              onRefetch();
+              toast.show({
+                placement: "top",
+                render: ({ id }) => (
+                  <Toast
+                    nativeID={`toast-${id}`}
+                    action="success"
+                    variant="solid"
+                  >
+                    <ToastTitle>Produk berhasil dihapus dari brand</ToastTitle>
+                  </Toast>
+                ),
+              });
+            },
+            onError: (error) => {
+              showErrorToast(error);
+              hidePopUpConfirm();
+            },
+          },
+        );
+      },
+      loading: unassignProductMutation.isPending,
     });
   };
 
@@ -182,8 +214,7 @@ export default function BrandDetail() {
         onCancelSelectedItems={() => setSelectedProducts(null)}
         action={
           !!selectedProducts?.length ? (
-            // deleteProductFromBrandMutation.isPending
-            false ? (
+            unassignProductMutation.isPending ? (
               <Box className="p-6">
                 <Spinner size="small" color="#FFFFFF" />
               </Box>
@@ -208,6 +239,7 @@ export default function BrandDetail() {
         }
         isGoBack
       />
+
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack>

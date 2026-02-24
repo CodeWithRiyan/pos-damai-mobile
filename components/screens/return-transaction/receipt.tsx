@@ -18,7 +18,7 @@ export default function ReturnTransactionReceipt() {
   if (isLoading || !id) {
     return (
       <VStack className="flex-1 bg-primary-200">
-        <Header header="STRUK RETUR PEMBELIAN BARANG" isGoBack />
+        <Header header="STRUK RETUR TRANSAKSI PENJUALAN" isGoBack />
         <Box className="flex-1 justify-center items-center">
           <Spinner size="large" />
         </Box>
@@ -29,7 +29,7 @@ export default function ReturnTransactionReceipt() {
   if (!returnData) {
     return (
       <VStack className="flex-1 bg-primary-200">
-        <Header header="STRUK PENJUALAN BARANG" isGoBack />
+        <Header header="STRUK TRANSAKSI PENJUALAN" isGoBack />
         <Box className="flex-1 justify-center items-center">
           <Text>Data retur tidak ditemukan</Text>
         </Box>
@@ -42,7 +42,7 @@ export default function ReturnTransactionReceipt() {
   return (
     <VStack className="flex-1 bg-primary-200">
       <Header
-        header="STRUK RETUR PEMBELIAN BARANG"
+        header="STRUK RETUR TRANSAKSI PENJUALAN"
         isGoBack
         action={
           <Pressable
@@ -132,8 +132,8 @@ export default function ReturnTransactionReceipt() {
                     <Text className="text-typography-500 text-sm">
                       {item.quantity} x Rp{" "}
                       <Text className="text-[10px]">
-                      {(item.sellPrice || 0).toLocaleString("id-ID")}
-                    </Text>
+                        {(item.sellPrice || 0).toLocaleString("id-ID")}
+                      </Text>
                     </Text>
                   </VStack>
                   <VStack className="items-end min-w-[50px]">

@@ -1,3 +1,4 @@
+import BarcodeScanner from "@/components/barcode-scanner";
 import Header from "@/components/header";
 import {
   Button,
@@ -38,8 +39,9 @@ import { useBrandStore } from "@/stores/brand";
 import { useCategoryStore } from "@/stores/category";
 import { useDiscountStore } from "@/stores/discount";
 import { zodResolver } from "@hookform/resolvers/zod";
+import classNames from "classnames";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { PlusIcon } from "lucide-react-native";
+import { PlusIcon, ScanBarcode } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   Controller,
@@ -61,6 +63,10 @@ export default function ProductForm() {
   const isAdd = !id;
   const productId = id as string;
 
+  const [scanBarcodePosition, setScanBarcodePosition] = useState<string | null>(
+    null,
+  );
+
   const productSchema = z
     .object({
       name: z.string().min(1, "Nama wajib diisi."),
@@ -80,9 +86,6 @@ export default function ProductForm() {
             netto: z.number().min(0.001, "Netto wajib diisi."),
             purchasePrice: z.number().min(1, "Harga Beli wajib diisi."),
             retailPrice: z.number().min(1, "Harga wajib diisi."),
-            minimumPurchase: z
-              .number()
-              .min(0.001, "Minimal Pembelian wajib diisi."),
           }),
         )
         .nullable(),
@@ -345,18 +348,23 @@ export default function ProductForm() {
         stock: product.stock,
         minimumStock: product.minimumStock,
         variants: product.type === "VARIANTS" ? product.variants : null,
-        unitVariants: product.type === "MULTIUNIT" ? product.variants?.map((v) => {
-          const matchingPrice = product.sellPrices.find(p => p.label === v.name);
-          const nettoVal = matchingPrice?.minimumPurchase || 1;
-          return {
-            name: v.name,
-            code: v.code,
-            netto: nettoVal,
-            purchasePrice: product.purchasePrice * nettoVal, 
-            retailPrice: matchingPrice?.price || 0,
-            minimumPurchase: nettoVal
-          };
-        }) : null,
+        unitVariants:
+          product.type === "MULTIUNIT"
+            ? product.variants?.map((v) => {
+                const matchingPrice = product.sellPrices.find(
+                  (p) => p.label === v.name,
+                );
+                const nettoVal = matchingPrice?.minimumPurchase || 1;
+                return {
+                  name: v.name,
+                  code: v.code,
+                  netto: nettoVal,
+                  purchasePrice: product.purchasePrice * nettoVal,
+                  retailPrice: matchingPrice?.price || 0,
+                  minimumPurchase: nettoVal,
+                };
+              })
+            : null,
         retailPrice: product.sellPrices.filter((r: any) => r.type === "RETAIL"),
         wholesalePrice: product.sellPrices.filter(
           (r: any) => r.type === "WHOLESALE",
@@ -388,28 +396,34 @@ export default function ProductForm() {
   const onSubmit: SubmitHandler<ProductFormValues> = (
     data: ProductFormValues,
   ) => {
-    const prices = data.type === "MULTIUNIT" ? (data.unitVariants || []).map((uv) => ({
-      type: "RETAIL" as const,
-      label: uv.name,
-      price: uv.retailPrice,
-      minimumPurchase: uv.minimumPurchase,
-    })) : [
-      ...data.retailPrice.map((p) => ({
-        ...p,
-        type: "RETAIL" as const,
-        label: "Retail",
-      })),
-      ...data.wholesalePrice.map((p) => ({
-        ...p,
-        type: "WHOLESALE" as const,
-        label: "Grosir",
-      })),
-    ];
-    
-    const variantsPayload = data.type === "MULTIUNIT" ? (data.unitVariants || []).map((uv) => ({
-      name: uv.name,
-      code: uv.code,
-    })) : (data.variants || []);
+    const prices =
+      data.type === "MULTIUNIT"
+        ? (data.unitVariants || []).map((uv) => ({
+            type: "RETAIL" as const,
+            label: uv.name,
+            price: uv.retailPrice,
+            minimumPurchase: 1, // untuk unitVariants, minimal pembelian static senilai 1
+          }))
+        : [
+            ...data.retailPrice.map((p) => ({
+              ...p,
+              type: "RETAIL" as const,
+              label: "Retail",
+            })),
+            ...data.wholesalePrice.map((p) => ({
+              ...p,
+              type: "WHOLESALE" as const,
+              label: "Grosir",
+            })),
+          ];
+
+    const variantsPayload =
+      data.type === "MULTIUNIT"
+        ? (data.unitVariants || []).map((uv) => ({
+            name: uv.name,
+            code: uv.code,
+          }))
+        : data.variants || [];
 
     if (productId && product) {
       const updateData: UpdateProductDTO = {
@@ -510,15 +524,37 @@ export default function ProductForm() {
                 <FormControlLabel>
                   <FormControlLabelText>Kode</FormControlLabelText>
                 </FormControlLabel>
-                <Input>
-                  <InputField
-                    value={value}
-                    autoComplete="name"
-                    placeholder="Masukkan Kode"
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                  />
-                </Input>
+                <HStack space="md">
+                  <Input className="flex-1">
+                    <InputField
+                      value={value}
+                      autoComplete="name"
+                      placeholder="Masukkan Kode"
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                    />
+                  </Input>
+                  <Pressable
+                    className={classNames(
+                      "size-10 rounded-md bg-white border border-primary-500 items-center justify-center",
+                      scanBarcodePosition === "code" && "bg-primary-500",
+                    )}
+                    onPress={() => {
+                      if (scanBarcodePosition === "code") {
+                        setScanBarcodePosition(null);
+                      } else {
+                        setScanBarcodePosition("code");
+                      }
+                    }}
+                  >
+                    <Icon
+                      as={ScanBarcode}
+                      color={
+                        scanBarcodePosition === "code" ? "#fff" : "#3d2117"
+                      }
+                    />
+                  </Pressable>
+                </HStack>
                 {error && (
                   <FormControlError>
                     <FormControlErrorText>{error.message}</FormControlErrorText>
@@ -571,7 +607,8 @@ export default function ProductForm() {
                     autoComplete="off"
                     onChangeText={(text) => {
                       onChange(Number(text) || 0);
-                      const currentUnitVariants = form.getValues("unitVariants") || [];
+                      const currentUnitVariants =
+                        form.getValues("unitVariants") || [];
                       currentUnitVariants.forEach((variant, i) => {
                         form.setValue(
                           `unitVariants.${i}.purchasePrice`,
@@ -927,58 +964,46 @@ export default function ProductForm() {
                                   Kode Varian
                                 </FormControlLabelText>
                               </FormControlLabel>
-                              <Input>
-                                <InputField
-                                  value={value}
-                                  onChangeText={onChange}
-                                  onBlur={onBlur}
-                                  placeholder="Contoh: V001"
-                                />
-                              </Input>
-                              {error && (
-                                <FormControlError>
-                                  <FormControlErrorText>
-                                    {error.message}
-                                  </FormControlErrorText>
-                                </FormControlError>
-                              )}
-                            </FormControl>
-                          )}
-                        />
-                      </GridItem>
-                      <GridItem
-                        _extra={{
-                          className: "col-span-1",
-                        }}
-                      >
-                        <Controller
-                          name={`unitVariants.${index}.minimumPurchase`}
-                          control={form.control}
-                          render={({
-                            field: { onChange, onBlur, value },
-                            fieldState: { error },
-                          }) => (
-                            <FormControl
-                              isRequired
-                              isInvalid={!!error}
-                              className="flex-1"
-                            >
-                              <FormControlLabel>
-                                <FormControlLabelText>
-                                  Minimal Pembelian
-                                </FormControlLabelText>
-                              </FormControlLabel>
-                              <Input>
-                                <InputField
-                                  value={value?.toString() || ""}
-                                  onChangeText={(text) =>
-                                    onChange(Number(text) || 0)
-                                  }
-                                  onBlur={onBlur}
-                                  placeholder="1"
-                                  keyboardType="numeric"
-                                />
-                              </Input>
+                              <HStack space="md">
+                                <Input className="flex-1">
+                                  <InputField
+                                    value={value}
+                                    onChangeText={onChange}
+                                    onBlur={onBlur}
+                                    placeholder="Contoh: V001"
+                                  />
+                                </Input>
+                                <Pressable
+                                  className={classNames(
+                                    "size-10 rounded-md bg-white border border-primary-500 items-center justify-center",
+                                    scanBarcodePosition ===
+                                      `unitVariants.${index}.code` &&
+                                      "bg-primary-500",
+                                  )}
+                                  onPress={() => {
+                                    if (
+                                      scanBarcodePosition ===
+                                      `unitVariants.${index}.code`
+                                    ) {
+                                      setScanBarcodePosition(null);
+                                    } else {
+                                      setScanBarcodePosition(
+                                        `unitVariants.${index}.code`,
+                                      );
+                                    }
+                                  }}
+                                >
+                                  <Icon
+                                    as={ScanBarcode}
+                                    color={
+                                      scanBarcodePosition ===
+                                      `unitVariants.${index}.code`
+                                        ? "#fff"
+                                        : "#3d2117"
+                                    }
+                                  />
+                                </Pressable>
+                              </HStack>
                               {error && (
                                 <FormControlError>
                                   <FormControlErrorText>
@@ -1057,7 +1082,6 @@ export default function ProductForm() {
                       unitVariantAppend({
                         name: "",
                         code: "",
-                        minimumPurchase: 0,
                         netto: 0,
                         purchasePrice: 0,
                         retailPrice: 0,
@@ -1147,14 +1171,46 @@ export default function ProductForm() {
                                 Kode Varian
                               </FormControlLabelText>
                             </FormControlLabel>
-                            <Input>
-                              <InputField
-                                value={value}
-                                onChangeText={onChange}
-                                onBlur={onBlur}
-                                placeholder="Contoh: V001"
-                              />
-                            </Input>
+                            <HStack space="md">
+                              <Input className="flex-1">
+                                <InputField
+                                  value={value}
+                                  onChangeText={onChange}
+                                  onBlur={onBlur}
+                                  placeholder="Contoh: V001"
+                                />
+                              </Input>
+                              <Pressable
+                                className={classNames(
+                                  "size-10 rounded-md bg-white border border-primary-500 items-center justify-center",
+                                  scanBarcodePosition ===
+                                    `variants.${index}.code` &&
+                                    "bg-primary-500",
+                                )}
+                                onPress={() => {
+                                  if (
+                                    scanBarcodePosition ===
+                                    `variants.${index}.code`
+                                  ) {
+                                    setScanBarcodePosition(null);
+                                  } else {
+                                    setScanBarcodePosition(
+                                      `variants.${index}.code`,
+                                    );
+                                  }
+                                }}
+                              >
+                                <Icon
+                                  as={ScanBarcode}
+                                  color={
+                                    scanBarcodePosition ===
+                                    `variants.${index}.code`
+                                      ? "#fff"
+                                      : "#3d2117"
+                                  }
+                                />
+                              </Pressable>
+                            </HStack>
                             {error && (
                               <FormControlError>
                                 <FormControlErrorText>
@@ -1589,7 +1645,10 @@ export default function ProductForm() {
           className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
           onPress={form.handleSubmit(onSubmit, (errors) => {
-            console.error("[PRODUCT_FORM] Validation Errors: ", JSON.stringify(errors, null, 2));
+            console.error(
+              "[PRODUCT_FORM] Validation Errors: ",
+              JSON.stringify(errors, null, 2),
+            );
           })}
         >
           <Text size="sm" className="text-typography-0 font-bold">
@@ -1597,6 +1656,12 @@ export default function ProductForm() {
           </Text>
         </Pressable>
       </HStack>
+      <BarcodeScanner
+        onBarcodeScanned={(result) => {
+          if (scanBarcodePosition === null) return;
+          form.setValue(scanBarcodePosition as any, result.data);
+        }}
+      />
     </VStack>
   );
 }

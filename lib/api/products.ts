@@ -56,9 +56,9 @@ export interface Product {
   category?: { id: string; name: string };
   brand?: { id: string; name: string };
   discount?: { id: string; name: string };
-  isVariant?: boolean;   // Added for flattened list UI support
-  variantData?: any;     // Added for flattened list UI support
-  originalId?: string;   // Added to reference parent
+  isVariant?: boolean; // Added for flattened list UI support
+  variantData?: any; // Added for flattened list UI support
+  originalId?: string; // Added to reference parent
 }
 
 export interface CreateProductDTO {
@@ -96,32 +96,6 @@ export interface ProductParams {
 // Get all products from local SQLite (excluding soft-deleted)
 export function useProducts(params: ProductParams | void) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
-  const conditions = [
-    eq(schema.products.organizationId, orgId),
-    isNull(schema.products.deletedAt),
-  ];
-
-  if (params?.search) {
-    const searchTerm = `%${params.search}%`;
-    conditions.push(
-      or(
-        like(schema.products.name, searchTerm),
-        like(schema.products.barcode, searchTerm),
-      )!,
-    );
-  }
-
-  if (params?.brandId) {
-    conditions.push(eq(schema.products.brandId, params.brandId));
-  }
-
-  if (params?.categoryId) {
-    conditions.push(eq(schema.products.categoryId, params.categoryId));
-  }
-
-  if (params?.supplierId) {
-    conditions.push(eq(schema.products.supplierId, params.supplierId));
-  }
 
   return useQuery({
     queryKey: [
@@ -134,6 +108,34 @@ export function useProducts(params: ProductParams | void) {
       params?.supplierId,
     ],
     queryFn: async () => {
+      // Build conditions inside queryFn to avoid stale closure bug
+      const conditions = [
+        eq(schema.products.organizationId, orgId),
+        isNull(schema.products.deletedAt),
+      ];
+
+      if (params?.search) {
+        const searchTerm = `%${params.search}%`;
+        conditions.push(
+          or(
+            like(schema.products.name, searchTerm),
+            like(schema.products.barcode, searchTerm),
+          )!,
+        );
+      }
+
+      if (params?.brandId) {
+        conditions.push(eq(schema.products.brandId, params.brandId));
+      }
+
+      if (params?.categoryId) {
+        conditions.push(eq(schema.products.categoryId, params.categoryId));
+      }
+
+      if (params?.supplierId) {
+        conditions.push(eq(schema.products.supplierId, params.supplierId));
+      }
+
       const productResult = await db
         .select()
         .from(schema.products)
@@ -152,8 +154,8 @@ export function useProducts(params: ProductParams | void) {
             .where(
               and(
                 eq(schema.productVariants.productId, product.id),
-                isNull(schema.productVariants.deletedAt)
-              )
+                isNull(schema.productVariants.deletedAt),
+              ),
             );
 
           // Calculate stock from inventory transactions (only COMPLETED)
@@ -215,12 +217,14 @@ export function useProducts(params: ProductParams | void) {
         ) {
           product.variants.forEach((variant) => {
             const compositeId = `${product.id}-${variant.id}`;
-            console.log(`[FLATTEN] Built variant entry: id=${compositeId}, name=${product.name} - ${variant.name}, variantId=${variant.id}`);
+            console.log(
+              `[FLATTEN] Built variant entry: id=${compositeId}, name=${product.name} - ${variant.name}, variantId=${variant.id}`,
+            );
             const variantProduct = {
               ...product,
               id: compositeId, // Unique ID for list rendering
               originalId: product.id, // Keep reference to original product ID
-              name: `${product.name} - ${variant.name}`, // Override name for display
+              name: `${variant.name}`, // Override name for display
               code: variant.code || product.code, // Use variant code if available
               isVariant: true,
               variantData: variant,
@@ -231,7 +235,10 @@ export function useProducts(params: ProductParams | void) {
         }
 
         // Fallback: If type is VARIANTS or MULTIUNIT but it has no variants yet, still show the parent
-        if ((product.type === "VARIANTS" || product.type === "MULTIUNIT") && !hasVariants) {
+        if (
+          (product.type === "VARIANTS" || product.type === "MULTIUNIT") &&
+          !hasVariants
+        ) {
           items.push({
             ...product,
             isVariant: false,
@@ -382,7 +389,9 @@ export function useProduct(id: string) {
     queryKey: ["products", id],
     queryFn: async () => {
       // If the ID contains a dash, it's a flattened variant (e.g. prod_...-var_...)
-      const baseProductId = id.includes("-var_") ? id.substring(0, id.indexOf("-var_")) : id;
+      const baseProductId = id.includes("-var_")
+        ? id.substring(0, id.indexOf("-var_"))
+        : id;
       console.log(`[useProduct] id="${id}", baseProductId="${baseProductId}"`);
 
       const productResult = await db
@@ -419,8 +428,8 @@ export function useProduct(id: string) {
         .where(
           and(
             eq(schema.productVariants.productId, baseProductId),
-            isNull(schema.productVariants.deletedAt)
-          )
+            isNull(schema.productVariants.deletedAt),
+          ),
         );
 
       // Calculate stock from inventory transactions (only COMPLETED)
@@ -451,13 +460,15 @@ export function useProduct(id: string) {
       let activeVariantData = undefined;
       if (id.includes("-var_")) {
         const variantIdStr = id.substring(id.indexOf("-") + 1);
-        activeVariantData = variants.find(v => v.id === variantIdStr);
+        activeVariantData = variants.find((v) => v.id === variantIdStr);
       }
 
       return {
         ...product,
         // Optional override to mimic flattened product structure
-        name: activeVariantData ? `${product.name} - ${activeVariantData.name}` : product.name,
+        name: activeVariantData
+          ? `${product.name} - ${activeVariantData.name}`
+          : product.name,
         code: activeVariantData?.code || product.barcode,
         isVariant: !!activeVariantData,
         variantData: activeVariantData,
@@ -492,8 +503,8 @@ export function useProductLog(productId: string) {
           and(
             eq(schema.inventoryTransactions.organizationId, orgId),
             eq(schema.inventoryTransactions.productId, productId),
-            eq(schema.inventoryTransactions.status, "COMPLETED")
-          )
+            eq(schema.inventoryTransactions.status, "COMPLETED"),
+          ),
         )
         .orderBy(desc(schema.inventoryTransactions.createdAt));
 
@@ -695,35 +706,80 @@ export function useDeleteProduct() {
           console.log(`[DELETE] Targeting variant id: "${variantIdStr}"`);
 
           // Verify it exists first
-          const existing = await tx.select().from(schema.productVariants).where(eq(schema.productVariants.id, variantIdStr));
-          console.log(`[DELETE] Found matching variant rows: ${existing.length}`, JSON.stringify(existing.map(r => ({ id: r.id, name: r.name, deletedAt: r.deletedAt }))));
+          const existing = await tx
+            .select()
+            .from(schema.productVariants)
+            .where(eq(schema.productVariants.id, variantIdStr));
+          console.log(
+            `[DELETE] Found matching variant rows: ${existing.length}`,
+            JSON.stringify(
+              existing.map((r) => ({
+                id: r.id,
+                name: r.name,
+                deletedAt: r.deletedAt,
+              })),
+            ),
+          );
 
           const result = await tx
             .update(schema.productVariants)
-            .set({ deletedAt: now, updatedBy: userId, updatedAt: now, _dirty: true })
+            .set({
+              deletedAt: now,
+              updatedBy: userId,
+              updatedAt: now,
+              _dirty: true,
+            })
             .where(eq(schema.productVariants.id, variantIdStr));
-          console.log(`[DELETE] Variant update result:`, JSON.stringify(result));
+          console.log(
+            `[DELETE] Variant update result:`,
+            JSON.stringify(result),
+          );
         } else {
           // It's a parent product
           console.log(`[DELETE] Targeting parent product id: "${id}"`);
 
           // Verify it exists first
-          const existing = await tx.select().from(schema.products).where(eq(schema.products.id, id));
-          console.log(`[DELETE] Found matching product rows: ${existing.length}`, JSON.stringify(existing.map(r => ({ id: r.id, name: r.name, deletedAt: r.deletedAt }))));
+          const existing = await tx
+            .select()
+            .from(schema.products)
+            .where(eq(schema.products.id, id));
+          console.log(
+            `[DELETE] Found matching product rows: ${existing.length}`,
+            JSON.stringify(
+              existing.map((r) => ({
+                id: r.id,
+                name: r.name,
+                deletedAt: r.deletedAt,
+              })),
+            ),
+          );
 
           const result = await tx
             .update(schema.products)
-            .set({ deletedAt: now, updatedBy: userId, updatedAt: now, _dirty: true })
+            .set({
+              deletedAt: now,
+              updatedBy: userId,
+              updatedAt: now,
+              _dirty: true,
+            })
             .where(eq(schema.products.id, id));
-          console.log(`[DELETE] Product update result:`, JSON.stringify(result));
+          console.log(
+            `[DELETE] Product update result:`,
+            JSON.stringify(result),
+          );
         }
       });
 
       return { id };
     },
     onSuccess: (data) => {
-      console.log(`[DELETE] onSuccess fired for id: "${data.id}", invalidating queries...`);
-      queryClient.invalidateQueries({ queryKey: ["products"], refetchType: "all" });
+      console.log(
+        `[DELETE] onSuccess fired for id: "${data.id}", invalidating queries...`,
+      );
+      queryClient.invalidateQueries({
+        queryKey: ["products"],
+        refetchType: "all",
+      });
       console.log(`[DELETE] invalidateQueries called.`);
     },
   });
@@ -744,7 +800,9 @@ export function useBulkDeleteProduct() {
         if (varSeparatorIndex !== -1) {
           // It's a composite variant ID (e.g. prod_xxx-var_yyy) — delete the variant row
           const variantIdStr = id.substring(varSeparatorIndex + 1);
-          console.log(`[BULK DELETE] Deleting variant: "${variantIdStr}" from composite id: "${id}"`);
+          console.log(
+            `[BULK DELETE] Deleting variant: "${variantIdStr}" from composite id: "${id}"`,
+          );
           await db
             .update(schema.productVariants)
             .set({
@@ -772,7 +830,10 @@ export function useBulkDeleteProduct() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"], refetchType: "all" });
+      queryClient.invalidateQueries({
+        queryKey: ["products"],
+        refetchType: "all",
+      });
     },
   });
 }
@@ -808,6 +869,37 @@ export function useAssignProductsToCategory() {
   });
 }
 
+// Assign products to a supplier
+export function useAssignProductsToSupplier() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { productIds: string[]; supplierId: string }) => {
+      const now = new Date();
+
+      const userId = useAuthStore.getState().profile?.id;
+
+      for (const productId of data.productIds) {
+        await db
+          .update(schema.products)
+          .set({
+            supplierId: data.supplierId,
+            updatedBy: userId,
+            updatedAt: now,
+            _dirty: true,
+          })
+          .where(eq(schema.products.id, productId));
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+    },
+  });
+}
+
 // Assign products to a brand
 export function useAssignProductsToBrand() {
   const queryClient = useQueryClient();
@@ -838,3 +930,34 @@ export function useAssignProductsToBrand() {
     },
   });
 }
+
+// Unassign products from a brand
+export function useUnassignProductsFromBrand() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { productIds: string[] }) => {
+      const now = new Date();
+      const userId = useAuthStore.getState().profile?.id;
+
+      for (const productId of data.productIds) {
+        await db
+          .update(schema.products)
+          .set({
+            brandId: null,
+            updatedBy: userId,
+            updatedAt: now,
+            _dirty: true,
+          })
+          .where(eq(schema.products.id, productId));
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["productCountsByBrand"] });
+    },
+  });
+}
+

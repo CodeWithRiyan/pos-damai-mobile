@@ -16,7 +16,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { usePurchases } from "@/lib/api/purchasing";
 import { formatDisplayRefId } from "@/lib/utils/reference";
 import dayjs from "dayjs";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
 
 export default function PurchasingHistory({
@@ -24,9 +24,10 @@ export default function PurchasingHistory({
 }: {
   isReport?: boolean;
 }) {
+  const { supplierId } = useLocalSearchParams<{ supplierId: string }>();
   const header = isReport ? "LAPORAN PEMBELIAN" : "RIWAYAT PEMBELIAN";
   const router = useRouter();
-  const { data: allPurchases, isLoading } = usePurchases();
+  const { data: allPurchases, isLoading } = usePurchases({ supplierId });
   const purchases = allPurchases?.filter((p) => p.status === "COMPLETED") || [];
 
   if (isLoading) {
@@ -115,7 +116,9 @@ export default function PurchasingHistory({
                     </HStack>
                     <HStack className="justify-between">
                       <Text className="text-typography-400 font-bold">
-                        No: {formatDisplayRefId(purchase.local_ref_id) || purchase.id}
+                        No:{" "}
+                        {formatDisplayRefId(purchase.local_ref_id) ||
+                          purchase.id}
                       </Text>
                     </HStack>
                   </VStack>

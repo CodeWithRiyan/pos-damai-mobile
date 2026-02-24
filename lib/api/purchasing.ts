@@ -11,6 +11,7 @@ export interface Purchase {
   supplierId: string;
   supplierName?: string;
   totalAmount: number;
+  totalPaid: number;
   paymentType: string;
   dueDate: Date | null;
   note?: string | null;
@@ -36,7 +37,7 @@ export interface CreatePurchasingDTO {
   id?: string;
   supplierId: string;
   totalPurchase: number;
-  totalPaid: string;
+  totalPaid: number;
   transactionDate: Date | null;
   isPayable: boolean;
   dueDate: Date | null;
@@ -52,20 +53,24 @@ export interface CreatePurchasingDTO {
 }
 
 // Get all purchases from local SQLite
-export function usePurchases() {
+export function usePurchases(params: { supplierId?: string } | void) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
+  const conditions = [
+    eq(schema.purchases.organizationId, orgId),
+    isNull(schema.purchases.deletedAt),
+  ];
+
+  if (params?.supplierId) {
+    conditions.push(eq(schema.purchases.supplierId, params.supplierId));
+  }
+
   return useQuery({
-    queryKey: ["purchases", orgId],
+    queryKey: ["purchases", orgId, params?.supplierId],
     queryFn: async () => {
       const purchaseResult = await db
         .select()
         .from(schema.purchases)
-        .where(
-          and(
-            eq(schema.purchases.organizationId, orgId),
-            isNull(schema.purchases.deletedAt),
-          ),
-        )
+        .where(and(...conditions))
         .orderBy(desc(schema.purchases.createdAt));
 
       // Join with supplier names
@@ -189,12 +194,16 @@ export function useCreatePurchasing() {
       const purchaseId =
         data.id ||
         `purch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
 
       await db.transaction(async (tx) => {
-        const localRefId = await generateLocalRefId(tx, schema.purchases, "PUR");
+        const localRefId = await generateLocalRefId(
+          tx,
+          schema.purchases,
+          "PUR",
+        );
 
         const existingRef = data.id
           ? (
@@ -209,16 +218,20 @@ export function useCreatePurchasing() {
 
         if (data.id) {
           const existing = await tx
-              .select({ status: schema.purchases.status })
-              .from(schema.purchases)
-              .where(eq(schema.purchases.id, data.id))
-              .limit(1);
+            .select({ status: schema.purchases.status })
+            .from(schema.purchases)
+            .where(eq(schema.purchases.id, data.id))
+            .limit(1);
 
           const statusCompleted =
-             data.status === "COMPLETED" && existing[0]?.status === "DRAFT";
+            data.status === "COMPLETED" && existing[0]?.status === "DRAFT";
 
           if (statusCompleted) {
-             finalLocalRefId = await generateLocalRefId(tx, schema.purchases, "PUR");
+            finalLocalRefId = await generateLocalRefId(
+              tx,
+              schema.purchases,
+              "PUR",
+            );
           }
         }
 
@@ -227,6 +240,7 @@ export function useCreatePurchasing() {
           local_ref_id: finalLocalRefId,
           supplierId: data.supplierId,
           totalAmount: data.totalPurchase,
+          totalPaid: data.totalPaid,
           paymentType: data.isPayable ? "DEBT" : "CASH",
           status: data.status,
           dueDate: data.dueDate,
@@ -329,7 +343,7 @@ export function useCreatePurchasing() {
               payableId: payableId,
               nominal: totalPaidNum,
               realizationDate: data.transactionDate || now,
-              paymentMethodId: data.paymentMethodId || 'CASH',
+              paymentMethodId: data.paymentMethodId || "CASH",
               note: "DP Pembelian",
               organizationId: orgId,
               createdBy: userId,

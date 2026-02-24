@@ -25,10 +25,14 @@ export default function ReturnPurchasingInput() {
   const { cart, setAddProduct, setOpenConfirm } = useReturnPurchasingStore();
   const [search, setSearch] = useState<string>("");
   const { supplierId } = useLocalSearchParams<{ supplierId: string }>();
+  // TODO: perbaiki filter by supplierId didalam service useProducts
   const { data: products = [], isLoading: isLoadingProduct } = useProducts({
     supplierId,
     search,
   });
+
+  console.log("supplierId", supplierId);
+  console.log("products", products);
 
   const isLoading = isLoadingProduct;
 

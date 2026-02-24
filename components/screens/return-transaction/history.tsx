@@ -13,10 +13,10 @@ import {
 } from "@/components/ui";
 import { Spinner } from "@/components/ui/spinner";
 import { useTransactionReturns } from "@/lib/api/return-transaction";
+import { formatDisplayRefId } from "@/lib/utils/reference";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
-import { formatDisplayRefId } from "@/lib/utils/reference";
 
 export default function ReturnTransactionHistory({
   isReport,
@@ -32,8 +32,8 @@ export default function ReturnTransactionHistory({
       <Header
         header={
           isReport
-            ? "LAPORAN RETUR PEMBELIAN BARANG"
-            : "RIWAYAT RETUR PEMBELIAN BARANG"
+            ? "LAPORAN RETUR TRANSAKSI PENJUALAN"
+            : "RIWAYAT RETUR TRANSAKSI PENJUALAN"
         }
         isGoBack
       />
@@ -65,7 +65,7 @@ export default function ReturnTransactionHistory({
                 className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
                 onPress={() =>
                   router.navigate(
-                    `/(main)/management/return/purchasing/receipt/${ret.id}`,
+                    `/(main)/management/return/transaction/receipt/${ret.id}`,
                   )
                 }
               >

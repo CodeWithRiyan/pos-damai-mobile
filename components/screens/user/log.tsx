@@ -15,7 +15,9 @@ export default function UserLog() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
 
   const { data: user, isLoading: isLoadingUser } = useUser(userId || "");
-  const { data: dataLog = [], isLoading: isLoadingLogs } = useUserLog(userId || "");
+  const { data: dataLog = [], isLoading: isLoadingLogs } = useUserLog(
+    userId || "",
+  );
 
   const isLoading = isLoadingUser || isLoadingLogs;
 
@@ -30,7 +32,7 @@ export default function UserLog() {
   return (
     <VStack className="flex-1 bg-white">
       <Header
-        header={`LOG KARYAWAN ${user?.firstName.toUpperCase()}`}
+        header={`LOG AKTIVITAS ${user?.firstName.toUpperCase()}`}
         isGoBack
       />
 

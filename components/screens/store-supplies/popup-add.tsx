@@ -14,41 +14,41 @@ import {
   Text,
   VStack,
 } from "@/components/ui";
-import { useStockOpnameStore } from "@/stores/stock-opname";
+import { useStoreSuppliesStore } from "@/stores/store-supplies";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
-export default function PopupAddStockOpname() {
+export default function PopupAddStoreSupplies() {
   const { addProduct, cart, setAddProduct, addCartItem, removeCartItem } =
-    useStockOpnameStore();
+    useStoreSuppliesStore();
 
   const product = cart.find((item) => item.product.id === addProduct?.id);
 
-  const addStockOpnameSchema = z.object({
-    physicalStock: z
+  const addStoreSuppliesSchema = z.object({
+    quantity: z
       .number()
       .min(0, { message: "Stok fisik tidak boleh kurang dari 0" }),
   });
 
-  type AddStockOpnameFormValues = z.infer<typeof addStockOpnameSchema>;
+  type AddStoreSuppliesFormValues = z.infer<typeof addStoreSuppliesSchema>;
 
-  const initialValues: AddStockOpnameFormValues = {
-    physicalStock: 0,
+  const initialValues: AddStoreSuppliesFormValues = {
+    quantity: 0,
   };
 
-  const form = useForm<AddStockOpnameFormValues>({
-    resolver: zodResolver(addStockOpnameSchema),
+  const form = useForm<AddStoreSuppliesFormValues>({
+    resolver: zodResolver(addStoreSuppliesSchema),
     defaultValues: initialValues,
   });
 
-  const physicalStock = form.watch("physicalStock");
+  const quantity = form.watch("quantity");
 
   useEffect(() => {
     if (addProduct && product) {
       form.reset({
-        physicalStock: product.physicalStock || 0,
+        quantity: product.quantity || 0,
       });
     } else {
       form.reset(initialValues);
@@ -56,13 +56,13 @@ export default function PopupAddStockOpname() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, addProduct]);
 
-  const onSubmit: SubmitHandler<AddStockOpnameFormValues> = (
-    data: AddStockOpnameFormValues,
+  const onSubmit: SubmitHandler<AddStoreSuppliesFormValues> = (
+    data: AddStoreSuppliesFormValues,
   ) => {
     if (addProduct) {
       addCartItem({
         product: addProduct,
-        physicalStock: data.physicalStock,
+        quantity: data.quantity,
       });
     }
     setAddProduct(null);
@@ -109,12 +109,12 @@ export default function PopupAddStockOpname() {
               >
                 <Pressable
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
-                  disabled={physicalStock <= 0}
+                  disabled={quantity <= 0}
                   onPress={() => {
-                    const currentPhysicalStock = physicalStock;
+                    const currentQuantity = quantity;
 
-                    if (currentPhysicalStock && currentPhysicalStock > 0) {
-                      form.setValue("physicalStock", currentPhysicalStock - 1);
+                    if (currentQuantity && currentQuantity > 0) {
+                      form.setValue("quantity", currentQuantity - 1);
                     }
                   }}
                 >
@@ -123,7 +123,7 @@ export default function PopupAddStockOpname() {
                   </Heading>
                 </Pressable>
                 <Controller
-                  name="physicalStock"
+                  name="quantity"
                   control={form.control}
                   render={({
                     field: { onChange, onBlur, value },
@@ -150,9 +150,9 @@ export default function PopupAddStockOpname() {
                 <Pressable
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                   onPress={() => {
-                    const currentPhysicalStock = physicalStock;
+                    const currentQuantity = quantity;
 
-                    form.setValue("physicalStock", currentPhysicalStock + 1);
+                    form.setValue("quantity", currentQuantity + 1);
                   }}
                 >
                   <Heading size="2xl" className="text-primary-500">
