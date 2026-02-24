@@ -107,10 +107,8 @@ android {
     }
     splits {
         abi {
-            reset()
-            enable true
+            enable false
             universalApk true
-            include "arm64-v8a", "armeabi-v7a"
         }
     }
     buildTypes {
