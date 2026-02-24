@@ -13,6 +13,7 @@ import {
   Input,
   InputField,
   Pressable,
+  Spinner,
   Switch,
   Text,
   Toast,
@@ -1642,7 +1643,7 @@ export default function ProductForm() {
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
-          className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
           onPress={form.handleSubmit(onSubmit, (errors) => {
             console.error(
@@ -1651,9 +1652,13 @@ export default function ProductForm() {
             );
           })}
         >
-          <Text size="sm" className="text-typography-0 font-bold">
-            {isLoading ? "MENYIMPAN..." : "SIMPAN"}
-          </Text>
+          {isLoading ? (
+            <Spinner size="small" color="#FFFFFF" />
+          ) : (
+            <Text size="sm" className="text-typography-0 font-bold">
+              SIMPAN
+            </Text>
+          )}
         </Pressable>
       </HStack>
       <BarcodeScanner

@@ -19,8 +19,8 @@ import {
   SolarIconBoldDuotone,
   SolarIconLinear,
 } from "@/components/ui/solar-icon-wrapper";
-import { useReceivableByUser, Receivable } from "@/lib/api/receivable";
 import { Spinner } from "@/components/ui/spinner";
+import { Receivable, useReceivableByUser } from "@/lib/api/receivable";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -118,14 +118,16 @@ export default function ReceivableDetail() {
                     color="#3b82f6"
                   />
                   <Text className="text-typography-500 text-sm">
-                    {receivable?.user?.firstName || receivable?.user?.username || 'Unknown User'}
+                    {receivable?.user?.firstName ||
+                      receivable?.user?.username ||
+                      "Unknown User"}
                   </Text>
                 </HStack>
                 <VStack className="mt-2">
-                    <Text className="text-typography-500 text-sm">
+                  <Text className="text-typography-500 text-sm">
                     Total Belum Lunas
-                    </Text>
-                    <Text className="text-error-500 font-bold">{`Rp ${receivableList?.reduce((acc, curr) => acc + (curr.nominal - curr.totalRealization), 0).toLocaleString("id-ID")}`}</Text>
+                  </Text>
+                  <Text className="text-error-500 font-bold">{`Rp ${receivableList?.reduce((acc, curr) => acc + (curr.nominal - curr.totalRealization), 0).toLocaleString("id-ID")}`}</Text>
                 </VStack>
               </VStack>
               <VStack className="flex-1 items-end">
@@ -134,14 +136,15 @@ export default function ReceivableDetail() {
                 </Text>
                 <Text className="text-error-500 font-bold">
                   {
-                    receivableList?.filter((f) => f.totalRealization !== f.nominal)
-                      .length
+                    receivableList?.filter(
+                      (f) => f.totalRealization !== f.nominal,
+                    ).length
                   }
                 </Text>
               </VStack>
               <HStack className="absolute -bottom-4 right-0 left-0 justify-center">
                 <Pressable
-                  className="items-center justify-center h-9 px-10 rounded-lg bg-primary-500 active:bg-primary-500/90"
+                  className="items-center justify-center h-10 px-10 rounded-lg bg-primary-500 active:bg-primary-500/90"
                   onPress={() => {
                     router.navigate(
                       `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${receivableList?.map((m) => m.id).join("-")}` as any,
@@ -325,7 +328,7 @@ export default function ReceivableDetail() {
       <VStack space="md" className="w-full p-4">
         {!!selectedItems?.length ? (
           <Pressable
-            className="w-full rounded-md h-9 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
+            className="w-full rounded-md h-10 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
             onPress={() => {
               router.navigate(
                 `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${selectedItems?.map((m) => m.id).join("-")}` as any,
@@ -339,10 +342,12 @@ export default function ReceivableDetail() {
             </Text>
           </Pressable>
         ) : (
-          <Pressable 
-            className="w-full rounded-sm h-9 flex justify-center items-center bg-error-50 border border-error-500"
+          <Pressable
+            className="w-full rounded-sm h-10 flex justify-center items-center bg-error-50 border border-error-500"
             onPress={() => {
-                router.navigate(`/(main)/management/payable-receivable/receivable/add` as any);
+              router.navigate(
+                `/(main)/management/payable-receivable/receivable/add` as any,
+              );
             }}
           >
             <Text size="sm" className="text-error-500 font-bold">

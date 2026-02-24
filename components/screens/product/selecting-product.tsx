@@ -1,7 +1,11 @@
 import Header from "@/components/header";
-import { Checkbox, CheckboxIcon, CheckboxIndicator } from "@/components/ui";
+import {
+  Checkbox,
+  CheckboxIcon,
+  CheckboxIndicator,
+  Spinner,
+} from "@/components/ui";
 import { Box } from "@/components/ui/box";
-import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
@@ -16,11 +20,13 @@ export default function SelectingProductList({
   usedFor,
   header,
   selectedItems,
+  isLoading,
   onSubmit,
 }: {
   usedFor: "brand" | "category" | "supplier";
   header: string;
   selectedItems?: ProductListItem[];
+  isLoading?: boolean;
   onSubmit?: (value: ProductListItem[]) => void;
 }) {
   const [newSelectedItems, setNewSelectedItems] = useState<ProductListItem[]>(
@@ -125,13 +131,19 @@ export default function SelectingProductList({
             </VStack>
           </ScrollView>
           <HStack className="w-full p-4">
-            <Button
-              size="sm"
-              className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+            <Pressable
+              className="w-full flex px-4 h-10 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
               onPress={() => onSubmit?.(newSelectedItems || [])}
+              disabled={isLoading}
             >
-              <ButtonText className="text-white">SIMPAN</ButtonText>
-            </Button>
+              {isLoading ? (
+                <Spinner size="small" color="#FFFFFF" />
+              ) : (
+                <Text size="sm" className="text-typography-0 font-bold">
+                  SIMPAN
+                </Text>
+              )}
+            </Pressable>
           </HStack>
         </VStack>
       </Box>

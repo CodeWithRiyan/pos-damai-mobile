@@ -9,6 +9,7 @@ import {
   Input,
   InputField,
   InputSlot,
+  Spinner,
   Text,
   Textarea,
   TextareaInput,
@@ -72,7 +73,8 @@ export default function FinanceTransaction() {
   const [showTransactionDatePicker, setShowTransactionDatePicker] =
     useState(false);
 
-  const { mutate: createFinance, isPending } = useCreateFinance();
+  const createMutation = useCreateFinance();
+  const isLoading = createMutation.isPending;
 
   const initialValues: FinanceFormValues = {
     type: "INCOME",
@@ -132,7 +134,7 @@ export default function FinanceTransaction() {
     status: "DRAFT" | "COMPLETED",
   ) => {
     const isEquipment = data.expensesType.includes("EQUIPMENT");
-    createFinance(
+    createMutation.mutate(
       {
         id: (draftId as string) || undefined,
         ...data,
@@ -422,22 +424,30 @@ export default function FinanceTransaction() {
                 <Pressable
                   className="flex-1 flex-row items-center justify-center h-12 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90 disabled:opacity-50"
                   onPress={form.handleSubmit(onSubmit)}
-                  disabled={isPending}
+                  disabled={isLoading}
                 >
-                  <Text size="lg" className="text-white font-bold">
-                    {isPending ? "MEMPROSES..." : "SIMPAN"}
-                  </Text>
+                  {isLoading ? (
+                    <Spinner size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text size="sm" className="text-typography-0 font-bold">
+                      SIMPAN
+                    </Text>
+                  )}
                 </Pressable>
                 <Pressable
                   className="items-center justify-center size-12 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300 disabled:opacity-50"
                   onPress={onSaveDraft}
-                  disabled={isPending}
+                  disabled={isLoading}
                 >
-                  <SolarIconBold
-                    name="ClipboardAdd"
-                    size={28}
-                    color="#3d2117"
-                  />
+                  {isLoading ? (
+                    <Spinner size="small" color="#FFFFFF" />
+                  ) : (
+                    <SolarIconBold
+                      name="ClipboardAdd"
+                      size={28}
+                      color="#3d2117"
+                    />
+                  )}
                 </Pressable>
               </HStack>
             </VStack>

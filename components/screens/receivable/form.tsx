@@ -11,6 +11,7 @@ import {
   InputField,
   InputSlot,
   Pressable,
+  Spinner,
   Text,
   Textarea,
   TextareaInput,
@@ -21,12 +22,12 @@ import {
 } from "@/components/ui";
 import SelectModal from "@/components/ui/select/select-modal";
 import { getErrorMessage } from "@/lib/api/client";
-import { useUsers } from "@/lib/api/users";
 import {
   useCreateReceivable,
   useReceivableDetail,
   useUpdateReceivable,
 } from "@/lib/api/receivable";
+import { useUsers } from "@/lib/api/users";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
@@ -108,25 +109,32 @@ export default function ReceivableForm() {
     data: ReceivableFormValues,
   ) => {
     if (isAdd) {
-        createMutation.mutate({
-            ...data,
-            dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
-        }, {
-            onSuccess: () => {
-                toast.show({
-                    placement: "top",
-                    render: ({ id }) => (
-                      <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                        <ToastTitle>Piutang berhasil disimpan</ToastTitle>
-                      </Toast>
-                    ),
-                  });
-                router.back();
-            },
-            onError: (error) => {
-                showErrorToast(error);
-            }
-        });
+      createMutation.mutate(
+        {
+          ...data,
+          dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
+        },
+        {
+          onSuccess: () => {
+            toast.show({
+              placement: "top",
+              render: ({ id }) => (
+                <Toast
+                  nativeID={`toast-${id}`}
+                  action="success"
+                  variant="solid"
+                >
+                  <ToastTitle>Piutang berhasil disimpan</ToastTitle>
+                </Toast>
+              ),
+            });
+            router.back();
+          },
+          onError: (error) => {
+            showErrorToast(error);
+          },
+        },
+      );
     } else {
       updateMutation.mutate(
         {
@@ -139,7 +147,11 @@ export default function ReceivableForm() {
             toast.show({
               placement: "top",
               render: ({ id }) => (
-                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <Toast
+                  nativeID={`toast-${id}`}
+                  action="success"
+                  variant="solid"
+                >
                   <ToastTitle>Piutang berhasil diupdate</ToastTitle>
                 </Toast>
               ),
@@ -297,13 +309,17 @@ export default function ReceivableForm() {
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
-          className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
         >
-          <Text size="sm" className="text-typography-0 font-bold">
-            {isLoading ? "MENYIMPAN..." : "SIMPAN"}
-          </Text>
+          {isLoading ? (
+            <Spinner size="small" color="#FFFFFF" />
+          ) : (
+            <Text size="sm" className="text-typography-0 font-bold">
+              SIMPAN
+            </Text>
+          )}
         </Pressable>
       </HStack>
     </VStack>

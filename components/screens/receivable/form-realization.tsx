@@ -15,6 +15,7 @@ import {
   InputField,
   InputSlot,
   Pressable,
+  Spinner,
   Text,
   Textarea,
   TextareaInput,
@@ -23,12 +24,13 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
+import SelectModal from "@/components/ui/select/select-modal";
 import { getErrorMessage } from "@/lib/api/client";
+import { usePaymentTypes } from "@/lib/api/payment-types";
 import {
   useCreateReceivableRealization,
   useReceivableDetail,
 } from "@/lib/api/receivable";
-import SelectModal from "@/components/ui/select/select-modal";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -39,7 +41,6 @@ import { useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
-import { usePaymentTypes } from "@/lib/api/payment-types";
 
 export default function ReceivableRealizationForm() {
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
@@ -54,15 +55,19 @@ export default function ReceivableRealizationForm() {
 
   // Fetch receivable details to get remaining balance
   const { data: receivableDetail } = useReceivableDetail(receivableId);
-  
+
   const totalReceivable = receivableDetail?.nominal || 0;
   const totalRealization = receivableDetail?.totalRealization || 0;
   const remainingBalance = totalReceivable - totalRealization;
 
   const receivableRealizationSchema = z.object({
-    nominal: z.number()
+    nominal: z
+      .number()
       .min(1, "Nominal wajib diisi.")
-      .max(remainingBalance, `Nominal tidak boleh melebihi sisa piutang (Rp ${remainingBalance.toLocaleString('id-ID')})`),
+      .max(
+        remainingBalance,
+        `Nominal tidak boleh melebihi sisa piutang (Rp ${remainingBalance.toLocaleString("id-ID")})`,
+      ),
     payOff: z.boolean(),
     realizationDate: z.date(),
     paymentTypeId: z.string().min(1, "Metode pembayaran harus dipilih"),
@@ -113,37 +118,44 @@ export default function ReceivableRealizationForm() {
   const onSubmit: SubmitHandler<ReceivableRealizationFormValues> = async (
     data: ReceivableRealizationFormValues,
   ) => {
-      if (receivableIds.length === 1) {
-          createMutation.mutate({
-              receivableId: receivableIds[0],
-              nominal: data.nominal,
-              paymentMethodId: data.paymentTypeId,
-              realizationDate: data.realizationDate.toISOString(),
-              note: data.note,
-          }, {
-              onSuccess: () => {
-                toast.show({
-                    placement: "top",
-                    render: ({ id }) => (
-                      <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                        <ToastTitle>Penerimaan berhasil disimpan</ToastTitle>
-                      </Toast>
-                    ),
-                  });
-                router.back();
-              },
-              onError: (error) => showErrorToast(error)
-          });
-      } else {
-          toast.show({
+    if (receivableIds.length === 1) {
+      createMutation.mutate(
+        {
+          receivableId: receivableIds[0],
+          nominal: data.nominal,
+          paymentMethodId: data.paymentTypeId,
+          realizationDate: data.realizationDate.toISOString(),
+          note: data.note,
+        },
+        {
+          onSuccess: () => {
+            toast.show({
               placement: "top",
               render: ({ id }) => (
-                <Toast nativeID={`toast-${id}`} action="info" variant="solid">
-                  <ToastTitle>Bulk receipt logic coming soon</ToastTitle>
+                <Toast
+                  nativeID={`toast-${id}`}
+                  action="success"
+                  variant="solid"
+                >
+                  <ToastTitle>Penerimaan berhasil disimpan</ToastTitle>
                 </Toast>
               ),
             });
-      }
+            router.back();
+          },
+          onError: (error) => showErrorToast(error),
+        },
+      );
+    } else {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="info" variant="solid">
+            <ToastTitle>Bulk receipt logic coming soon</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
   };
 
   return (
@@ -284,7 +296,10 @@ export default function ReceivableRealizationForm() {
                   <SelectModal
                     value={value}
                     placeholder="Pilih Metode Pembayaran"
-                    options={paymentMethods.map(pm => ({ label: pm.name, value: pm.id }))}
+                    options={paymentMethods.map((pm) => ({
+                      label: pm.name,
+                      value: pm.id,
+                    }))}
                     className="flex-1"
                     onChange={onChange}
                   />
@@ -335,13 +350,17 @@ export default function ReceivableRealizationForm() {
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
-          className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
         >
-          <Text size="sm" className="text-typography-0 font-bold">
-            {isLoading ? "MENYIMPAN..." : "SIMPAN"}
-          </Text>
+          {isLoading ? (
+            <Spinner size="small" color="#FFFFFF" />
+          ) : (
+            <Text size="sm" className="text-typography-0 font-bold">
+              SIMPAN
+            </Text>
+          )}
         </Pressable>
       </HStack>
     </VStack>

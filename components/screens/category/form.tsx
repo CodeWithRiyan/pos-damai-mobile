@@ -266,7 +266,7 @@ export default function CategoryForm() {
         <ModalFooter className="p-4 pt-0">
           <HStack space="md">
             <Pressable
-              className="w-full flex px-4 h-9 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
+              className="w-full flex px-4 h-10 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
               onPress={form.handleSubmit(onSubmit)}
               disabled={isLoading}
             >

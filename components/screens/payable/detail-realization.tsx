@@ -290,7 +290,7 @@ export default function PayableRealizationDetail({
       <VStack space="md" className="w-full p-4">
         {!isReport && !isPayedOff && (
           <Pressable
-            className="w-full rounded-md h-9 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
+            className="w-full rounded-md h-10 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
             onPress={() => {
               router.navigate(
                 `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${payableId}` as any,
