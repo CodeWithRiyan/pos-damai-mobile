@@ -147,7 +147,6 @@ export default function StoreSuppliesInput() {
         </VStack>
       </HStack>
       <PopupAddStoreSupplies />
-      <PopupAddStoreSupplies />
       <StoreSuppliesConfirmForm date={date} />
     </Box>
   );

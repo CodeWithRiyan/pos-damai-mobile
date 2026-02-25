@@ -8,6 +8,7 @@ export type TransactionPrefix =
   | "RTP" // Retur Pembelian (purchase_returns)
   | "FIN" // Keuangan (finances)
   | "SO"  // Stock Opname (stock_opnames)
+  | "SSP" // Store Supplies (store_supplies)
   | "PAY" // Hutang (payables / payable_realizations)
   | "REC"; // Piutang (receivables / receivable_realizations)
 

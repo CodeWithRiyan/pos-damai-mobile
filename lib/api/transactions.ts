@@ -12,6 +12,7 @@ export interface Transaction {
   customerName?: string;
   totalAmount: number;
   totalPaid: number;
+  commission?: number;
   paymentTypeId: string;
   paymentTypeName?: string;
   transactionDate: Date;
@@ -42,6 +43,7 @@ export interface CreateTransactionDTO {
   customerId?: string;
   totalAmount: number;
   totalPaid: number;
+  commission?: number;
   paymentTypeId: string;
   transactionDate: Date;
   status: string;
@@ -216,7 +218,8 @@ export function useCreateTransaction() {
           local_ref_id: localRefId,
           customerId: data.customerId || null,
           totalAmount: data.totalAmount,
-          totalPaid: data.totalPaid,
+          totalPaid: Number(data.totalPaid) || 0,
+          commission: data.commission || 0,
           paymentTypeId: data.paymentTypeId,
           transactionDate: data.transactionDate,
           status: data.status,

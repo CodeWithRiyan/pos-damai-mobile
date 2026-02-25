@@ -16,6 +16,9 @@ import m0011 from './0011_add_userid_to_finances.sql';
 import m0012 from './0012_lethal_longshot.sql';
 import m0013 from './0013_ambitious_firebird.sql';
 import m0014 from './0014_oval_rogue.sql';
+import m0015 from './0015_new_zombie.sql';
+import m0016 from './0016_late_dakota_north.sql';
+import m0017 from './0017_loud_viper.sql';
 
   export default {
     journal,
@@ -34,7 +37,10 @@ m0010,
 m0011,
 m0012,
 m0013,
-m0014
+m0014,
+m0015,
+m0016,
+m0017
     }
   }
   

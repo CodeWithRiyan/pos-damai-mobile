@@ -9,6 +9,7 @@ import {
   Input,
   InputField,
   Pressable,
+  Spinner,
   Text,
   Toast,
   ToastTitle,
@@ -20,9 +21,9 @@ import {
   CreateSupplierDTO,
   UpdateSupplierDTO,
   useCreateSupplier,
-  useUpdateSupplier,
   useSupplier,
   useSuppliers,
+  useUpdateSupplier,
 } from "@/lib/api/suppliers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -30,7 +31,6 @@ import { useEffect } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
-
 
 export default function SupplierForm() {
   const router = useRouter();
@@ -58,7 +58,9 @@ export default function SupplierForm() {
   });
 
   const { refetch: refetchSuppliers } = useSuppliers();
-  const { data: supplier, refetch: refetchSupplier } = useSupplier(supplierId || "");
+  const { data: supplier, refetch: refetchSupplier } = useSupplier(
+    supplierId || "",
+  );
 
   const createMutation = useCreateSupplier();
   const updateMutation = useUpdateSupplier();
@@ -106,7 +108,7 @@ export default function SupplierForm() {
   };
 
   const onSubmit: SubmitHandler<SupplierFormValues> = (
-    data: SupplierFormValues
+    data: SupplierFormValues,
   ) => {
     if (supplierId && supplier) {
       const updateData: UpdateSupplierDTO = {
@@ -247,13 +249,17 @@ export default function SupplierForm() {
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
-          className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
         >
-          <Text size="sm" className="text-typography-0 font-bold">
-            {isLoading ? "MENYIMPAN..." : "SIMPAN"}
-          </Text>
+          {isLoading ? (
+            <Spinner size="small" color="#FFFFFF" />
+          ) : (
+            <Text size="sm" className="text-typography-0 font-bold">
+              SIMPAN
+            </Text>
+          )}
         </Pressable>
       </HStack>
     </VStack>

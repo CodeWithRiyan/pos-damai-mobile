@@ -8,6 +8,7 @@ import {
   ModalFooter,
   ModalHeader,
   Pressable,
+  Spinner,
   Text,
   Textarea,
   TextareaInput,
@@ -21,24 +22,27 @@ import {
 } from "@/components/ui/form-control";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-import { useCreateStockOpname } from "@/lib/api/stock-opname";
 import { getErrorMessage } from "@/lib/api/client";
+import { useCreateStockOpname } from "@/lib/api/stock-opname";
+import { db } from "@/lib/db";
+import * as schema from "@/lib/db/schema";
 import { useStockOpnameStore } from "@/stores/stock-opname";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { and, eq } from "drizzle-orm";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
-import { db } from "@/lib/db";
-import * as schema from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
 
 interface StockOpnameConfirmFormProps {
   date: Date;
 }
 
-export default function StockOpnameConfirmForm({ date }: StockOpnameConfirmFormProps) {
-  const { openConfirm, setOpenConfirm, resetCart, cart } = useStockOpnameStore();
+export default function StockOpnameConfirmForm({
+  date,
+}: StockOpnameConfirmFormProps) {
+  const { openConfirm, setOpenConfirm, resetCart, cart } =
+    useStockOpnameStore();
   const router = useRouter();
   const toast = useToast();
   const [summary, setSummary] = useState({ totalGain: 0, totalLoss: 0 });
@@ -59,6 +63,7 @@ export default function StockOpnameConfirmForm({ date }: StockOpnameConfirmFormP
   });
 
   const createMutation = useCreateStockOpname();
+  const isLoading = createMutation.isPending;
 
   useEffect(() => {
     const calculateSummary = async () => {
@@ -72,11 +77,14 @@ export default function StockOpnameConfirmForm({ date }: StockOpnameConfirmFormP
           .where(
             and(
               eq(schema.inventoryTransactions.productId, item.product.id),
-              eq(schema.inventoryTransactions.status, "COMPLETED")
-            )
+              eq(schema.inventoryTransactions.status, "COMPLETED"),
+            ),
           );
 
-        const currentStock = transactions.reduce((sum, t) => sum + t.quantity, 0);
+        const currentStock = transactions.reduce(
+          (sum, t) => sum + t.quantity,
+          0,
+        );
         const difference = item.physicalStock - currentStock;
         const purchasePrice = item.product.purchasePrice || 0;
         const impact = difference * purchasePrice;
@@ -166,16 +174,22 @@ export default function StockOpnameConfirmForm({ date }: StockOpnameConfirmFormP
           <VStack space="lg" className="p-4">
             <VStack space="sm" className="bg-background-50 p-3 rounded-lg">
               <HStack className="justify-between">
-                 <Text className="text-slate-500">Tanggal:</Text>
-                 <Text className="font-bold">{date.toLocaleDateString('id-ID')}</Text>
+                <Text className="text-slate-500">Tanggal:</Text>
+                <Text className="font-bold">
+                  {date.toLocaleDateString("id-ID")}
+                </Text>
               </HStack>
               <HStack className="justify-between">
-                 <Text className="text-slate-500">Total Kelebihan (Gain):</Text>
-                 <Text className="font-bold text-success-600">{formatMoney(summary.totalGain)}</Text>
+                <Text className="text-slate-500">Total Kelebihan (Gain):</Text>
+                <Text className="font-bold text-success-600">
+                  {formatMoney(summary.totalGain)}
+                </Text>
               </HStack>
               <HStack className="justify-between">
-                 <Text className="text-slate-500">Total Kekurangan (Loss):</Text>
-                 <Text className="font-bold text-error-600">{formatMoney(summary.totalLoss)}</Text>
+                <Text className="text-slate-500">Total Kekurangan (Loss):</Text>
+                <Text className="font-bold text-error-600">
+                  {formatMoney(summary.totalLoss)}
+                </Text>
               </HStack>
             </VStack>
 
@@ -210,7 +224,7 @@ export default function StockOpnameConfirmForm({ date }: StockOpnameConfirmFormP
               )}
             />
             <Text className="text-typography-400 font-bold">
-              1. Pastikan Anda / Karyawan Anda tidak melakukan transaksi apapun,
+              Pastikan Anda / Karyawan Anda tidak melakukan transaksi apapun,
               karena proses ini akan mempengaruhi riwayat stok barang anda!
             </Text>
             <Text className="font-bold">
@@ -231,13 +245,17 @@ export default function StockOpnameConfirmForm({ date }: StockOpnameConfirmFormP
               </Text>
             </Pressable>
             <Pressable
-              className="flex-1 items-center justify-center h-12 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
+              className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
+              disabled={isLoading}
               onPress={form.handleSubmit(onSubmit)}
-              disabled={createMutation.isPending}
             >
-               <Text size="lg" className="text-white font-bold">
-                {createMutation.isPending ? "MENYIMPAN..." : "SIMPAN"}
-              </Text>
+              {isLoading ? (
+                <Spinner size="small" color="#FFFFFF" />
+              ) : (
+                <Text size="sm" className="text-typography-0 font-bold">
+                  SIMPAN
+                </Text>
+              )}
             </Pressable>
           </HStack>
         </ModalFooter>

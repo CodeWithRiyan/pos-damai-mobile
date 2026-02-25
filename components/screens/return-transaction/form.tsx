@@ -8,6 +8,7 @@ import {
   ModalFooter,
   ModalHeader,
   Pressable,
+  Spinner,
   Text,
   Textarea,
   TextareaInput,
@@ -43,6 +44,7 @@ export default function ReturnTransactionConfirmForm() {
   const router = useRouter();
   const toast = useToast();
   const createMutation = useCreateTransactionReturn();
+  const isLoading = createMutation.isPending;
 
   const returnPurchaseSchema = z.object({
     reason: z.string().min(1, "Alasan wajib diisi."),
@@ -236,11 +238,16 @@ export default function ReturnTransactionConfirmForm() {
             </Pressable>
             <Pressable
               className="flex-1 items-center justify-center h-12 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
+              disabled={isLoading}
               onPress={form.handleSubmit(onSubmit)}
             >
-              <Text size="lg" className="text-white font-bold">
-                SIMPAN
-              </Text>
+              {isLoading ? (
+                <Spinner size="small" color="#FFFFFF" />
+              ) : (
+                <Text size="sm" className="text-typography-0 font-bold">
+                  SIMPAN
+                </Text>
+              )}
             </Pressable>
           </HStack>
         </ModalFooter>

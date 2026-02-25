@@ -18,6 +18,7 @@ export default function SelectProductInBrand() {
   const toast = useToast();
 
   const assignMutation = useAssignProductsToBrand();
+  const isLoading = assignMutation.isPending;
 
   const handleSubmit = (selectedProducts: ProductListItem[]) => {
     if (selectedProducts.length === 0) {
@@ -68,6 +69,7 @@ export default function SelectProductInBrand() {
       header={`TAMBAH PRODUK KE ${data?.name?.toUpperCase() ?? "BRAND"}`}
       selectedItems={products?.filter((p) => p.brandId?.includes(brandId))}
       onSubmit={handleSubmit}
+      isLoading={isLoading}
     />
   );
 }

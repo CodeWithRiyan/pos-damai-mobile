@@ -17,6 +17,7 @@ export default function SelectProductInCategory() {
   const { data, refetch } = useCategory(categoryId);
   const { data: products } = useProducts();
   const assignMutation = useAssignProductsToCategory();
+  const isLoading = assignMutation.isPending;
 
   const handleSubmit = (selectedProducts: ProductListItem[]) => {
     if (selectedProducts.length === 0) {
@@ -69,6 +70,7 @@ export default function SelectProductInCategory() {
       usedFor="category"
       header={`TAMBAH PRODUK KE ${data?.name?.toUpperCase() ?? "KATEGORI"}`}
       selectedItems={products?.filter((p) => p.categoryId.includes(categoryId))}
+      isLoading={isLoading}
       onSubmit={handleSubmit}
     />
   );

@@ -9,12 +9,13 @@ import {
   Input,
   InputField,
   Pressable,
+  Spinner,
   Switch,
   Text,
   Toast,
   ToastTitle,
   useToast,
-  VStack
+  VStack,
 } from "@/components/ui";
 import { getErrorMessage } from "@/lib/api/client";
 import {
@@ -132,7 +133,7 @@ export default function RoleForm() {
           onError: (error) => {
             showErrorToast(error);
           },
-        }
+        },
       );
     } else {
       createMutation.mutate(data, {
@@ -165,7 +166,7 @@ export default function RoleForm() {
       acc[module].push(permission);
       return acc;
     },
-    {}
+    {},
   );
 
   return (
@@ -279,7 +280,7 @@ export default function RoleForm() {
                                     onToggle={() => {
                                       const newValue = isChecked
                                         ? value.filter(
-                                            (id) => id !== permission.id
+                                            (id) => id !== permission.id,
                                           )
                                         : [...value, permission.id];
                                       onChange(newValue);
@@ -290,7 +291,7 @@ export default function RoleForm() {
                             })}
                           </VStack>
                         </VStack>
-                      )
+                      ),
                     )}
                   </>
                 )}
@@ -308,13 +309,17 @@ export default function RoleForm() {
 
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
-          className="w-full rounded-sm h-9 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
         >
-          <Text size="sm" className="text-typography-0 font-bold">
-            {isLoading ? "MENYIMPAN..." : "SIMPAN"}
-          </Text>
+          {isLoading ? (
+            <Spinner size="small" color="#FFFFFF" />
+          ) : (
+            <Text size="sm" className="text-typography-0 font-bold">
+              SIMPAN
+            </Text>
+          )}
         </Pressable>
       </HStack>
     </VStack>

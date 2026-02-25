@@ -29,7 +29,7 @@ export default function PopupAddStoreSupplies() {
   const addStoreSuppliesSchema = z.object({
     quantity: z
       .number()
-      .min(0, { message: "Stok fisik tidak boleh kurang dari 0" }),
+      .min(0, { message: "Jumlah tidak boleh kurang dari 0" }),
   });
 
   type AddStoreSuppliesFormValues = z.infer<typeof addStoreSuppliesSchema>;
@@ -74,7 +74,7 @@ export default function PopupAddStoreSupplies() {
       <ModalContent className="p-0 max-h-[90%]">
         <ModalHeader className="p-4 border-b border-background-300">
           <Heading size="md" className="text-center flex-1">
-            STOK FISIK
+            JUMLAH DIAMBIL
           </Heading>
         </ModalHeader>
         <ModalBody className="m-0">

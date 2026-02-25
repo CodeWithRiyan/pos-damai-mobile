@@ -17,9 +17,9 @@ import {
   SolarIconBoldDuotone,
   SolarIconLinear,
 } from "@/components/ui/solar-icon-wrapper";
-import { getErrorMessage } from "@/lib/api/client";
-import { useReceivableDetail, useDeleteReceivable } from "@/lib/api/receivable";
 import { Spinner } from "@/components/ui/spinner";
+import { getErrorMessage } from "@/lib/api/client";
+import { useDeleteReceivable, useReceivableDetail } from "@/lib/api/receivable";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
@@ -38,7 +38,8 @@ export default function ReceivableRealizationDetail() {
   const deleteMutation = useDeleteReceivable();
 
   const receivableRealizationList = receivable?.realizations || [];
-  const isPayedOff = (receivable?.totalRealization || 0) === (receivable?.nominal || 0);
+  const isPayedOff =
+    (receivable?.totalRealization || 0) === (receivable?.nominal || 0);
 
   const toast = useToast();
 
@@ -84,7 +85,11 @@ export default function ReceivableRealizationDetail() {
         toast.show({
           placement: "top",
           render: ({ id: toastId }) => (
-            <Toast nativeID={`toast-${toastId}`} action="success" variant="solid">
+            <Toast
+              nativeID={`toast-${toastId}`}
+              action="success"
+              variant="solid"
+            >
               <ToastTitle>Piutang berhasil dihapus</ToastTitle>
             </Toast>
           ),
@@ -160,7 +165,7 @@ export default function ReceivableRealizationDetail() {
                 color="#3b82f6"
               />
               <Text className="text-primary-500 font-bold">
-                {receivable?.user?.firstName || 'Unknown User'}
+                {receivable?.user?.firstName || "Unknown User"}
               </Text>
             </HStack>
             <HStack space="xs" className="items-center">
@@ -194,14 +199,15 @@ export default function ReceivableRealizationDetail() {
                 <Text className="text-gray-500 text-sm">Belum Diterima</Text>
                 <Text className="text-sm font-bold">
                   {`Rp ${(
-                    (receivable?.nominal || 0) - (receivable?.totalRealization || 0)
+                    (receivable?.nominal || 0) -
+                    (receivable?.totalRealization || 0)
                   ).toLocaleString("id-ID")}`}
                 </Text>
               </VStack>
             </HStack>
           </VStack>
         </VStack>
-        
+
         <VStack>
           {receivableRealizationList?.map((realization, index) => (
             <HStack key={realization.id} className="p-4">
@@ -242,8 +248,10 @@ export default function ReceivableRealizationDetail() {
                     }}
                   >
                     <HStack space="sm">
-                        <Text className="text-gray-500 text-sm">Catatan:</Text>
-                        <Text className="text-sm font-bold">{realization.note || '-'}</Text>
+                      <Text className="text-gray-500 text-sm">Catatan:</Text>
+                      <Text className="text-sm font-bold">
+                        {realization.note || "-"}
+                      </Text>
                     </HStack>
                   </GridItem>
                   <GridItem _extra={{ className: "col-span-3" }}>
@@ -274,18 +282,18 @@ export default function ReceivableRealizationDetail() {
 
       <VStack space="md" className="w-full p-4">
         {!isPayedOff && (
-            <Pressable
-            className="w-full rounded-md h-9 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
+          <Pressable
+            className="w-full rounded-md h-10 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
             onPress={() => {
-                router.navigate(
+              router.navigate(
                 `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${receivableId}` as any,
-                );
+              );
             }}
-            >
+          >
             <Text size="sm" className="text-typography-0 font-bold">
-                TAMBAH PENERIMAAN
+              TAMBAH PENERIMAAN
             </Text>
-            </Pressable>
+          </Pressable>
         )}
       </VStack>
     </VStack>

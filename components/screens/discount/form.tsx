@@ -26,7 +26,12 @@ import { Spinner } from "@/components/ui/spinner";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
-import { useCreateDiscount, useUpdateDiscount, useDiscounts, useDiscount } from "@/lib/api/discounts";
+import {
+  useCreateDiscount,
+  useDiscount,
+  useDiscounts,
+  useUpdateDiscount,
+} from "@/lib/api/discounts";
 import { useDiscountStore } from "@/stores/discount";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -118,7 +123,7 @@ export default function DiscountForm() {
   };
 
   const onSubmit: SubmitHandler<DiscountFormValues> = (
-    data: DiscountFormValues
+    data: DiscountFormValues,
   ) => {
     if (dataDiscount) {
       updateMutation.mutate(
@@ -133,7 +138,7 @@ export default function DiscountForm() {
           onError: (error: any) => {
             showErrorToast(error);
           },
-        }
+        },
       );
     } else {
       createMutation.mutate(data, {
@@ -392,7 +397,7 @@ export default function DiscountForm() {
         <ModalFooter>
           <HStack space="md">
             <Pressable
-              className="w-full flex px-4 h-9 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
+              className="w-full flex px-4 h-10 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
               onPress={form.handleSubmit(onSubmit)}
               disabled={isLoading}
             >

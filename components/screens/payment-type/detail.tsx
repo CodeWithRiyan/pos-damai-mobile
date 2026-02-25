@@ -164,7 +164,7 @@ export default function PaymentTypeDetail() {
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Komisi</Text>
               <Text className="font-bold">
-                {paymentType?.commissionType === 'FLAT'
+                {paymentType?.commissionType === "FLAT"
                   ? `Rp ${paymentType?.commission?.toLocaleString("id-ID") || "-"}`
                   : `${paymentType?.commission || "-"}%`}
               </Text>
@@ -181,7 +181,7 @@ export default function PaymentTypeDetail() {
       <VStack space="md" className="w-full p-4">
         <Pressable
           className={classNames(
-            "w-full rounded-sm h-9 flex justify-center items-center bg-background-0 border border-brand-primary",
+            "w-full rounded-sm h-10 flex justify-center items-center bg-background-0 border border-brand-primary",
             !paymentType?.isDefault && "bg-brand-primary",
           )}
           disabled={paymentType?.isDefault || setDefaultMutation.isPending}
@@ -192,7 +192,11 @@ export default function PaymentTypeDetail() {
                   toast.show({
                     placement: "top",
                     render: ({ id }) => (
-                      <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                      <Toast
+                        nativeID={`toast-${id}`}
+                        action="success"
+                        variant="solid"
+                      >
                         <ToastTitle>Berhasil diatur sebagai default</ToastTitle>
                       </Toast>
                     ),
@@ -211,7 +215,9 @@ export default function PaymentTypeDetail() {
               !paymentType?.isDefault && "text-white",
             )}
           >
-            {paymentType?.isDefault ? "DEFAULT PEMBAYARAN" : "JADIKAN DEFAULT PEMBAYARAN"}
+            {paymentType?.isDefault
+              ? "DEFAULT PEMBAYARAN"
+              : "JADIKAN DEFAULT PEMBAYARAN"}
           </Text>
         </Pressable>
       </VStack>

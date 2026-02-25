@@ -2,60 +2,16 @@ import Header from "@/components/header";
 import { Box, HStack, Spinner, Text, VStack } from "@/components/ui";
 import { Grid, GridItem } from "@/components/ui/grid";
 import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { useLocalSearchParams } from "expo-router";
-import { useState } from "react";
 import { ScrollView } from "react-native";
-// import { useStoreSuppliesDetail } from "@/lib/api/store-supplies";
+import { useStoreSupply } from "@/lib/api/store-supplies";
 import dayjs from "dayjs";
-
-// TODO: hapus dummy jika integrasi sudah selesai
-const refetch = async () => {};
-const isLoading = false;
-const storeSupplies = {
-  items: [
-    {
-      productName: "Beras",
-      productUnit: "kg",
-      createdBy: "12345",
-      updatedBy: "12345",
-      _dirty: true,
-      _syncedAt: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      deletedAt: new Date(),
-      id: "1",
-      storeSuppliesId: "1",
-      productId: "1",
-      quantity: 2,
-      purchasePrice: 15000,
-      organizationId: "1",
-    },
-  ],
-  createdBy: "12345",
-  updatedBy: "12345",
-  _dirty: true,
-  _syncedAt: new Date(),
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  deletedAt: new Date(),
-  id: "1",
-  local_ref_id: "1",
-  date: new Date(),
-  note: "catatan",
-  status: "COMPLETED",
-  totalAmount: 0,
-  organizationId: "1",
-};
 
 export default function StoreSuppliesDetail() {
   const { id } = useLocalSearchParams();
   const storeSuppliesId = id as string;
 
-  const [showActionsheet, setShowActionsheet] = useState<boolean>(false);
-
-  // TODO: uncomment jika sudah dibuatkan servicenya
-  // const { data: storeSupplies, isLoading, refetch } = useStoreSuppliesDetail(storeSuppliesId);
+  const { data: storeSupplies, isLoading } = useStoreSupply(storeSuppliesId);
 
   const formatMoney = (amount: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -87,14 +43,6 @@ export default function StoreSuppliesDetail() {
         header="DETAIL KEBUTUHAN TOKO"
         action={
           <HStack space="sm">
-            <Pressable className="p-6" onPress={() => setShowActionsheet(true)}>
-              <SolarIconBold
-                name="MenuDots"
-                size={20}
-                color="#FDFBF9"
-                style={{ transform: [{ rotate: "90deg" }] }}
-              />
-            </Pressable>
           </HStack>
         }
         isGoBack
@@ -119,7 +67,12 @@ export default function StoreSuppliesDetail() {
           <VStack className="w-1/2 pr-4">
             <Text className="text-gray-500">Total Pengurangan Modal</Text>
             <Text className="font-bold text-error-500">
-              {formatMoney(storeSupplies.totalAmount || 0)}
+              {formatMoney(
+                storeSupplies.items?.reduce(
+                  (sum, item) => sum + (item.usage || 0) * (item.purchasePrice || 0),
+                  0,
+                ) || 0,
+              )}
             </Text>
           </VStack>
         </Box>
@@ -138,15 +91,18 @@ export default function StoreSuppliesDetail() {
                     {item.productName || "-"}
                   </Text>
                 </GridItem>
-
                 <GridItem _extra={{ className: "col-span-1" }}>
-                  <Text className="text-gray-500">Jumlah Dibutuhkan</Text>
-                  <Text className="font-bold">{item.quantity}</Text>
+                  <Text className="text-gray-500">Stok Sistem</Text>
+                  <Text className="font-bold">{item.quantitySystem}</Text>
+                </GridItem>
+                <GridItem _extra={{ className: "col-span-1" }}>
+                  <Text className="text-gray-500">Jumlah Diambil</Text>
+                  <Text className="font-bold">{item.usage}</Text>
                 </GridItem>
                 <GridItem _extra={{ className: "col-span-1" }}>
                   <Text className="text-gray-500">Pengurangan Modal</Text>
                   <Text className="font-bold text-error-500">
-                    {formatMoney(Math.abs(item.purchasePrice * item.quantity))}
+                    {formatMoney((item.purchasePrice || 0) * (item.usage || 0))}
                   </Text>
                 </GridItem>
               </Grid>

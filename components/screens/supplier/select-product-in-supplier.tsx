@@ -1,11 +1,11 @@
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
+import { getErrorMessage } from "@/lib/api/client";
 import {
   ProductListItem,
   useAssignProductsToSupplier,
   useProducts,
 } from "@/lib/api/products";
 import { useSupplier } from "@/lib/api/suppliers";
-import { getErrorMessage } from "@/lib/api/client";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import SelectingProductList from "../product/selecting-product";
 
@@ -18,6 +18,7 @@ export default function SelectProductInSupplier() {
   const toast = useToast();
 
   const assignMutation = useAssignProductsToSupplier();
+  const isLoading = assignMutation.isPending;
 
   const handleSubmit = (selectedProducts: ProductListItem[]) => {
     if (selectedProducts.length === 0) {
@@ -69,6 +70,7 @@ export default function SelectProductInSupplier() {
       selectedItems={products?.filter((p) =>
         p.supplierId?.includes(supplierId),
       )}
+      isLoading={isLoading}
       onSubmit={handleSubmit}
     />
   );

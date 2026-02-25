@@ -107,6 +107,9 @@ export class SyncEngine {
         finances: schema.finances,
         shifts: schema.shifts,
         cashDrawers: schema.cashDrawers,
+        storeSupplies: schema.storeSupplies,
+        storeSupplyItems: schema.storeSupplyItems,
+        salesTransactions: schema.transactions,
         users: schema.users,
       };
 
@@ -230,18 +233,21 @@ export class SyncEngine {
     const dirtyShifts = await db.select().from(schema.shifts).where(eq(schema.shifts._dirty, true));
     const dirtyCashDrawers = await db.select().from(schema.cashDrawers).where(eq(schema.cashDrawers._dirty, true));
     const dirtySalesTransactions = await db.select().from(schema.transactions).where(eq(schema.transactions._dirty, true));
+    const dirtyStoreSupplies = await db.select().from(schema.storeSupplies).where(eq(schema.storeSupplies._dirty, true));
 
     // Also consider transactions whose items are dirty
     const dirtyReturnItems = await db.select().from(schema.purchaseReturnItems).where(eq(schema.purchaseReturnItems._dirty, true));
     const dirtyTxReturnItems = await db.select().from(schema.transactionReturnItems).where(eq(schema.transactionReturnItems._dirty, true));
     const dirtyOpnameItems = await db.select().from(schema.stockOpnameItems).where(eq(schema.stockOpnameItems._dirty, true));
     const dirtySalesTxItems = await db.select().from(schema.transactionItems).where(eq(schema.transactionItems._dirty, true));
+    const dirtyStoreSupplyItems = await db.select().from(schema.storeSupplyItems).where(eq(schema.storeSupplyItems._dirty, true));
 
     // Get unique parent IDs for dirty items
     const extraReturnIds = [...new Set(dirtyReturnItems.map(i => i.purchaseReturnId))];
     const extraTxReturnIds = [...new Set(dirtyTxReturnItems.map(i => i.transactionReturnId))];
     const extraOpnameIds = [...new Set(dirtyOpnameItems.map(i => i.stockOpnameId))];
     const extraSalesTxIds = [...new Set(dirtySalesTxItems.map(i => i.transactionId))];
+    const extraStoreSupplyIds = [...new Set(dirtyStoreSupplyItems.map(i => i.storeSupplyId))];
 
     // Fetch parent records if missing
     let allReturns = [...dirtyReturns];
@@ -276,12 +282,21 @@ export class SyncEngine {
       allSalesTransactions = [...allSalesTransactions, ...extraSalesTx];
     }
 
+    let allStoreSupplies = [...dirtyStoreSupplies];
+    const existingStoreSupplyIds = new Set(dirtyStoreSupplies.map(s => s.id));
+    const missingStoreSupplyIds = extraStoreSupplyIds.filter(id => !existingStoreSupplyIds.has(id));
+    if (missingStoreSupplyIds.length > 0) {
+      const extraStoreSupplies = await db.select().from(schema.storeSupplies).where(inArray(schema.storeSupplies.id, missingStoreSupplyIds));
+      allStoreSupplies = [...allStoreSupplies, ...extraStoreSupplies];
+    }
+
     const totalDirty = dirtyCategories.length + dirtyBrands.length + allProductsToPush.length + 
                        dirtyCustomers.length + dirtySuppliers.length + dirtyDiscounts.length + dirtyPaymentTypes.length + dirtyPurchases.length + dirtyTransactions.length +
                        allReturns.length + allTxReturns.length + allOpnames.length + 
                        dirtyPayables.length + dirtyPayableRealizations.length + 
                        dirtyReceivables.length + dirtyReceivableRealizations.length +
-                       dirtyFinances.length + dirtyShifts.length + dirtyCashDrawers.length + allSalesTransactions.length;
+                       dirtyFinances.length + dirtyShifts.length + dirtyCashDrawers.length + allSalesTransactions.length +
+                       allStoreSupplies.length;
 
     if (totalDirty === 0) {
       console.log('[Sync] No dirty records to push');
@@ -312,6 +327,13 @@ export class SyncEngine {
     const salesTxItems = salesTxIds.length > 0
       ? await db.select().from(schema.transactionItems).where(inArray(schema.transactionItems.transactionId, salesTxIds))
       : [];
+
+    // Fetch ALL items for store supplies we are pushing
+    const storeSupplyIdList = allStoreSupplies.map(s => s.id);
+    const storeSupplyItems = storeSupplyIdList.length > 0
+      ? await db.select().from(schema.storeSupplyItems).where(inArray(schema.storeSupplyItems.storeSupplyId, storeSupplyIdList))
+      : [];
+
 
     // Fetch ALL prices and variants for all products we are pushing
     const productIdsToPush = allProductsToPush.map(p => p.id);
@@ -357,10 +379,11 @@ export class SyncEngine {
         ...rest,
         deletedAt: deletedAt ? deletedAt.toISOString() : null,
       })),
-      purchases: dirtyPurchases.map(({ _dirty, _syncedAt, dueDate, createdAt, updatedAt, deletedAt, ...rest }) => ({
+      purchases: dirtyPurchases.map(({ _dirty, _syncedAt, dueDate, createdAt, updatedAt, deletedAt, totalAmount, totalPaid, commission, ...rest }) => ({
         ...rest,
-        totalAmount: typeof rest.totalAmount === 'number' ? rest.totalAmount : Number(rest.totalAmount) || 0,
-        totalPaid: typeof rest.totalPaid === 'number' ? rest.totalPaid : Number(rest.totalPaid) || 0,
+        totalAmount: typeof totalAmount === 'number' ? totalAmount : Number(totalAmount) || 0,
+        totalPaid: typeof totalPaid === 'number' ? totalPaid : Number(totalPaid) || 0,
+        commission: typeof commission === 'number' ? commission : Number(commission) || 0,
         dueDate: dueDate ? dueDate.toISOString() : null,
         createdAt: createdAt ? createdAt.toISOString() : undefined,
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
@@ -463,10 +486,11 @@ export class SyncEngine {
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
         deletedAt: deletedAt ? deletedAt.toISOString() : null,
       })),
-      salesTransactions: allSalesTransactions.map(({ _dirty, _syncedAt, transactionDate, createdAt, updatedAt, deletedAt, ...rest }) => ({
+      salesTransactions: allSalesTransactions.map(({ _dirty, _syncedAt, transactionDate, createdAt, updatedAt, deletedAt, totalAmount, totalPaid, commission, ...rest }) => ({
         ...rest,
-        totalAmount: typeof rest.totalAmount === 'number' ? rest.totalAmount : Number(rest.totalAmount) || 0,
-        totalPaid: typeof rest.totalPaid === 'number' ? rest.totalPaid : Number(rest.totalPaid) || 0,
+        totalAmount: typeof totalAmount === 'number' ? totalAmount : Number(totalAmount) || 0,
+        totalPaid: typeof totalPaid === 'number' ? totalPaid : Number(totalPaid) || 0,
+        commission: typeof commission === 'number' ? commission : Number(commission) || 0,
         transactionDate: transactionDate ? transactionDate.toISOString() : undefined,
         createdAt: createdAt ? createdAt.toISOString() : undefined,
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
@@ -475,6 +499,23 @@ export class SyncEngine {
           ...iRest,
           quantity: typeof iRest.quantity === 'number' ? iRest.quantity : Number(iRest.quantity) || 0,
           sellPrice: typeof iRest.sellPrice === 'number' ? iRest.sellPrice : Number(iRest.sellPrice) || 0,
+          createdAt: createdAt ? createdAt.toISOString() : undefined,
+          updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+          deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        })),
+      })),
+      storeSupplies: allStoreSupplies.map(({ _dirty, _syncedAt, date, createdAt, updatedAt, deletedAt, ...rest }) => ({
+        ...rest,
+        date: date.toISOString(),
+        createdAt: createdAt ? createdAt.toISOString() : undefined,
+        updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        items: storeSupplyItems.filter(i => i.storeSupplyId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
+          ...iRest,
+          quantitySystem: typeof iRest.quantitySystem === 'number' ? iRest.quantitySystem : Number(iRest.quantitySystem) || 0,
+          quantityPhysical: typeof iRest.quantityPhysical === 'number' ? iRest.quantityPhysical : Number(iRest.quantityPhysical) || 0,
+          usage: typeof iRest.usage === 'number' ? iRest.usage : Number(iRest.usage) || 0,
+          purchasePrice: typeof iRest.purchasePrice === 'number' ? iRest.purchasePrice : Number(iRest.purchasePrice) || 0,
           createdAt: createdAt ? createdAt.toISOString() : undefined,
           updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
           deletedAt: deletedAt ? deletedAt.toISOString() : null,
@@ -686,6 +727,22 @@ export class SyncEngine {
             })
             .where(eq(schema.transactionItems.transactionId, res.id)); 
         }
+
+        for (const res of (results.storeSupplies || [])) {
+          await tx.update(schema.storeSupplies)
+            .set({ _dirty: false, _syncedAt: new Date(), id: res.server_id })
+            .where(eq(schema.storeSupplies.id, res.id));
+            
+          // Also mark items for this supply as synced and update FK
+          await tx.update(schema.storeSupplyItems)
+            .set({ 
+              storeSupplyId: res.server_id,
+              _dirty: false, 
+              _syncedAt: new Date() 
+            })
+            .where(eq(schema.storeSupplyItems.storeSupplyId, res.id)); 
+        }
+
       });
       
       console.log('[Sync] Push completed and local records updated');
