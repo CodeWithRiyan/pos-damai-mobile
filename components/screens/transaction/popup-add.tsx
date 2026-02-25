@@ -205,35 +205,38 @@ export default function PopupAddProduct() {
               </HStack>
             </HStack>
             <VStack space="lg" className="px-4">
-              {addProduct?.type === "MULTIUNIT" && (
-                <Controller
-                  name="variantUnitId"
-                  control={form.control}
-                  render={({ field: { onChange, value } }) => (
-                    <FormControl>
-                      <FormControlLabel>
-                        <FormControlLabelText>Pilih Unit</FormControlLabelText>
-                      </FormControlLabel>
-                      <RadioGroup value={value || ""} onChange={onChange}>
-                        <VStack space="sm">
-                          {variantUnitOptions.map((variant: any) => (
-                            <Radio
-                              key={variant.value}
-                              value={variant.value}
-                              size="md"
-                            >
-                              <RadioIndicator>
-                                <RadioIcon as={CircleIcon} />
-                              </RadioIndicator>
-                              <RadioLabel>{variant.label}</RadioLabel>
-                            </Radio>
-                          ))}
-                        </VStack>
-                      </RadioGroup>
-                    </FormControl>
-                  )}
-                />
-              )}
+              {addProduct?.type === "MULTIUNIT" &&
+                customer?.category !== "WHOLESALE" && (
+                  <Controller
+                    name="variantUnitId"
+                    control={form.control}
+                    render={({ field: { onChange, value } }) => (
+                      <FormControl>
+                        <FormControlLabel>
+                          <FormControlLabelText>
+                            Pilih Unit
+                          </FormControlLabelText>
+                        </FormControlLabel>
+                        <RadioGroup value={value || ""} onChange={onChange}>
+                          <VStack space="sm">
+                            {variantUnitOptions.map((variant: any) => (
+                              <Radio
+                                key={variant.value}
+                                value={variant.value}
+                                size="md"
+                              >
+                                <RadioIndicator>
+                                  <RadioIcon as={CircleIcon} />
+                                </RadioIndicator>
+                                <RadioLabel>{variant.label}</RadioLabel>
+                              </Radio>
+                            ))}
+                          </VStack>
+                        </RadioGroup>
+                      </FormControl>
+                    )}
+                  />
+                )}
               <HStack
                 space="md"
                 className="w-full justify-between items-center"
