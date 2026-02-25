@@ -430,7 +430,7 @@ export default function ProductForm() {
         ? (data.unitVariants || []).map((uv) => ({
             name: uv.name,
             code: uv.code,
-            netto: uv.netto, // TODO: tes apakah netto benar-benar sudah tersimpan ke dalam db
+            netto: uv.netto,
           }))
         : data.variants || [];
 

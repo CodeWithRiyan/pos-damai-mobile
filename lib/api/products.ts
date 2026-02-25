@@ -27,7 +27,7 @@ export interface ProductVariant {
   id: string;
   name: string;
   code: string;
-  netto?: number; // TODO: tambahkan netto ke dalam schema
+  netto?: number | null;
 }
 
 export interface Product {
@@ -623,11 +623,10 @@ export function useCreateProduct() {
           }
         }
 
-        // TODO: simpan netto ke dalam db
         if (variants && variants.length > 0) {
           for (const variant of variants) {
             await tx.insert(schema.productVariants).values({
-              id: `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              id: (variant as any).id || `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               ...variant,
               productId: id,
               organizationId: orgId,
@@ -715,14 +714,13 @@ export function useUpdateProduct() {
           }
         }
 
-        // TODO: simpan netto ke dalam db
         if (variants) {
           await tx
             .delete(schema.productVariants)
             .where(eq(schema.productVariants.productId, id));
           for (const variant of variants) {
             await tx.insert(schema.productVariants).values({
-              id: `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              id: (variant as any).id || `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               ...variant,
               productId: id,
               organizationId: orgId,
