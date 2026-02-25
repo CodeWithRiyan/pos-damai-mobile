@@ -128,10 +128,11 @@ export default function PurchasingReceipt() {
                   {purchase.supplierName}
                 </Text>
               </HStack>
-               <HStack className="justify-between items-center">
+              <HStack className="justify-between items-center">
                 <Text className="text-typography-500">Metode Pembayaran</Text>
                 <Text className="text-typography-500">
-                  {purchase.paymentTypeName || (purchase.paymentType === "CASH" ? "Tunai" : "Hutang")}
+                  {purchase.paymentTypeName ||
+                    (purchase.paymentType === "CASH" ? "Tunai" : "Hutang")}
                 </Text>
               </HStack>
               {purchase.paymentType === "DEBT" && purchase.dueDate && (
@@ -171,19 +172,27 @@ export default function PurchasingReceipt() {
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack space="sm">
               <HStack className="justify-between items-center">
-                <Text className="font-bold">Total</Text>
+                <Text className="font-bold">Subtotal</Text>
                 <Text className="font-bold">
-                  Rp {purchase.totalAmount.toLocaleString("id-ID")}
+                  {`Rp ${(purchase.totalAmount - (purchase.commission || 0)).toLocaleString("id-ID")}`}
                 </Text>
               </HStack>
               {purchase.commission ? (
                 <HStack className="justify-between items-center">
-                  <Text className="text-typography-500">Biaya Layanan/Admin</Text>
+                  <Text className="text-typography-500">
+                    Biaya Layanan/Admin
+                  </Text>
                   <Text className="text-typography-500">
                     Rp {purchase.commission.toLocaleString("id-ID")}
                   </Text>
                 </HStack>
               ) : null}
+              <HStack className="justify-between items-center">
+                <Text className="font-bold">Total Tagihan</Text>
+                <Text className="font-bold">
+                  Rp {purchase.totalAmount.toLocaleString("id-ID")}
+                </Text>
+              </HStack>
               <HStack className="justify-between items-center">
                 <Text className="font-bold">Uang Dibayarkan</Text>
                 <Text className="font-bold">

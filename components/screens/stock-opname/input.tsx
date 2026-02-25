@@ -15,17 +15,19 @@ import { VStack } from "@/components/ui/vstack";
 // import { useBulkDeleteStockOpname, StockOpname, useStockOpname } from "@/lib/api/purchasing";
 import { useProducts } from "@/lib/api/products";
 import { useStockOpnameStore } from "@/stores/stock-opname";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import dayjs from "dayjs";
+import { Calendar } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 import StockOpnameConfirmForm from "./form";
 import PopupAddStockOpname from "./popup-add";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import dayjs from "dayjs";
-import { Calendar } from "lucide-react-native";
 
 export default function StockOpnameInput() {
   const { cart, setAddProduct, setOpenConfirm } = useStockOpnameStore();
-  const { data: products } = useProducts();
+  const { data: products } = useProducts({
+    forceParentMultiUnit: true,
+  });
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
 

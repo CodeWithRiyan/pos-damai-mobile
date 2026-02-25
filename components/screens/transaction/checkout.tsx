@@ -97,6 +97,7 @@ export default function TransactionCheckoutForm() {
 
   const totalPaid = form.watch("totalPaid");
   const paymentTypeId = form.watch("paymentTypeId");
+  const totalPurchase = form.watch("totalPurchase");
 
   const { grandTotal, commission } = useMemo(() => {
     let comm = 0;
@@ -251,7 +252,7 @@ export default function TransactionCheckoutForm() {
                   Total Tagihan
                 </Text>
                 <Heading size="3xl" className="font-bold text-center">
-                  {`Rp ${form.getValues("totalPurchase").toLocaleString("id-ID")}`}
+                  {`Rp ${totalPurchase.toLocaleString("id-ID")}`}
                 </Heading>
                 {commission > 0 && (
                   <Text className="text-warning-600 mt-2 font-bold">
@@ -275,7 +276,9 @@ export default function TransactionCheckoutForm() {
                           placeholder="Metode Pembayaran"
                           options={paymentTypes}
                           className="flex-1"
-                          onChange={onChange}
+                          onChange={(v) => {
+                            onChange(v);
+                          }}
                         />
                         <Pressable
                           className="size-10 rounded-full bg-primary-500 items-center justify-center"
