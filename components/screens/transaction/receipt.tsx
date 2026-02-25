@@ -129,6 +129,13 @@ export default function TransactionReceipt() {
                   {transaction.customerName}
                 </Text>
               </HStack>
+
+              <HStack className="justify-between items-center">
+                <Text className="text-typography-500">Metode Pembayaran</Text>
+                <Text className="text-typography-500">
+                  {transaction.paymentTypeName}
+                </Text>
+              </HStack>
             </VStack>
             <VStack>
               <HStack className="justify-between items-center mt-1">
@@ -163,25 +170,39 @@ export default function TransactionReceipt() {
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack space="sm">
               <HStack className="justify-between items-center">
-                <Text className="font-bold">Total</Text>
+                <Text className="font-bold">Subtotal</Text>
                 <Text className="font-bold">
-                  Rp {transaction.totalAmount.toLocaleString("id-ID")}
-                </Text>
-              </HStack>
-              <HStack className="justify-between items-center">
-                <Text className="text-typography-500">Metode Pembayaran</Text>
-                <Text className="text-typography-500">
-                  {transaction.paymentTypeName}
+                  {`Rp ${(transaction.totalAmount - (transaction.commission || 0)).toLocaleString("id-ID")}`}
                 </Text>
               </HStack>
               {transaction.commission ? (
                 <HStack className="justify-between items-center">
-                  <Text className="text-typography-500">Biaya Layanan/Admin</Text>
+                  <Text className="text-typography-500">
+                    Biaya Layanan/Admin
+                  </Text>
                   <Text className="text-typography-500">
                     Rp {transaction.commission.toLocaleString("id-ID")}
                   </Text>
                 </HStack>
               ) : null}
+              <HStack className="justify-between items-center">
+                <Text className="font-bold">Total Tagihan</Text>
+                <Text className="font-bold">
+                  Rp {transaction.totalAmount.toLocaleString("id-ID")}
+                </Text>
+              </HStack>
+              <HStack className="justify-between items-center">
+                <Text className="font-bold">Uang Dibayarkan</Text>
+                <Text className="font-bold">
+                  Rp {transaction.totalPaid.toLocaleString("id-ID")}
+                </Text>
+              </HStack>
+              <HStack className="justify-between items-center">
+                <Text className="font-bold">Kembalian</Text>
+                <Text className="font-bold">
+                  {`Rp ${(transaction.totalPaid - transaction.totalAmount).toLocaleString("id-ID")}`}
+                </Text>
+              </HStack>
             </VStack>
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack className="items-center py-2">
