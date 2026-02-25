@@ -1,13 +1,12 @@
 import { Customer } from "@/lib/api/customers";
-import { Product } from "@/lib/api/products";
+import { Product, ProductVariant } from "@/lib/api/products";
 import { findSellPrice } from "@/lib/price";
 import { create } from "zustand";
 
 interface CartItem {
   product: Product;
-  variant?: { id: string; name: string };
+  variant?: ProductVariant;
   quantity: number;
-  unitWeight?: number;
   tempSellPrice?: number;
   note?: string;
 }
@@ -33,6 +32,7 @@ type TransactionCheckoutResponse = {
 
 interface TransactionState {
   addProduct: Product | null;
+  addProductVariantId: string | null;
   cart: CartItem[];
   cartTotal: number;
   checkoutData: TransactionCheckoutResponse | null;
@@ -42,7 +42,7 @@ interface TransactionState {
   setCustomer: (customer: Customer | null) => void;
   setPurchaseId: (id: string | null) => void;
   setStatus: (status: "DRAFT" | "COMPLETED") => void;
-  setAddProduct: (state: Product | null) => void;
+  setAddProduct: (state: Product | null, variantId?: string) => void;
   setCheckoutData: (state: TransactionCheckoutResponse | null) => void;
   addCartItem: (item: CartItem) => void;
   removeCartItem: (productId: string, variantId?: string) => void;
@@ -51,6 +51,7 @@ interface TransactionState {
 
 export const useTransactionStore = create<TransactionState>((set) => ({
   addProduct: null,
+  addProductVariantId: null,
   cart: [],
   cartTotal: 0,
   checkoutData: null,
@@ -68,6 +69,7 @@ export const useTransactionStore = create<TransactionState>((set) => ({
                 sellPrices: cartItem.product.sellPrices,
                 type: customer?.category,
                 quantity: cartItem.quantity,
+                unitVariant: cartItem.variant,
               })),
         0,
       );
@@ -77,7 +79,8 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   setStatus: (status) => {
     set({ status });
   },
-  setAddProduct: (state) => set({ addProduct: state }),
+  setAddProduct: (state, variantId) =>
+    set({ addProduct: state, addProductVariantId: variantId }),
   setCheckoutData: (state) => set({ checkoutData: state }),
   addCartItem: (item) =>
     set((state) => {
@@ -109,6 +112,7 @@ export const useTransactionStore = create<TransactionState>((set) => ({
                 sellPrices: cartItem.product.sellPrices,
                 type: state.customer?.category,
                 quantity: cartItem.quantity,
+                unitVariant: cartItem.variant,
               })),
         0,
       );
@@ -118,8 +122,11 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   removeCartItem: (productId, variantId) =>
     set((state) => {
       const updatedCart = state.cart?.filter(
-        (cartItem) => 
-          !(cartItem.product.id === productId && cartItem.variant?.id === variantId)
+        (cartItem) =>
+          !(
+            cartItem.product.id === productId &&
+            cartItem.variant?.id === variantId
+          ),
       );
 
       const total = updatedCart.reduce(
@@ -131,6 +138,7 @@ export const useTransactionStore = create<TransactionState>((set) => ({
                 sellPrices: cartItem.product.sellPrices,
                 type: state.customer?.category,
                 quantity: cartItem.quantity,
+                unitVariant: cartItem.variant,
               })),
         0,
       );

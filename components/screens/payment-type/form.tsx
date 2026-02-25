@@ -144,9 +144,9 @@ export default function PaymentTypeForm() {
             if (usePaymentTypeStore.getState().onSuccess) {
               usePaymentTypeStore.getState().onSuccess!(updatedData as any);
             }
+            form.reset(initialValues);
             onRefetch();
             setOpen(false);
-            form.reset(initialValues);
           },
           onError: showErrorToast,
         },
@@ -158,9 +158,9 @@ export default function PaymentTypeForm() {
           if (usePaymentTypeStore.getState().onSuccess) {
             usePaymentTypeStore.getState().onSuccess!(newData);
           }
+          form.reset(initialValues);
           onRefetch();
           setOpen(false);
-          form.reset(initialValues);
         },
         onError: showErrorToast,
       });

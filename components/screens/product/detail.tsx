@@ -31,6 +31,17 @@ export default function ProductDetail() {
   const deleteMutation = useDeleteProduct();
   const toast = useToast();
 
+  const unitSuffixHelper = (unit?: string | null) => {
+    switch (unit) {
+      case "KILOGRAM":
+        return "kg";
+      case "LITER":
+        return "liter";
+      default:
+        return "";
+    }
+  };
+
   const onRefetch = () => {
     refetchProducts();
     refetchProduct();
@@ -254,10 +265,13 @@ export default function ProductDetail() {
                   <Text className="font-bold pb-2">Harga Retail</Text>
                   {product?.sellPrices
                     .filter((f) => f.type === "RETAIL")
+                    .sort((a, b) => b.price - a.price)
                     ?.map((price, index) => (
                       <Text key={index}>{`${
-                        price.minimumPurchase
-                      }@ Rp ${price.price.toLocaleString("id-ID")}`}</Text>
+                        product.type === "MULTIUNIT"
+                          ? `${product.variants.find((f) => f.name === price.label)?.netto || 0} ${unitSuffixHelper(product.unit)}`
+                          : `${price.minimumPurchase}@`
+                      } Rp ${price.price.toLocaleString("id-ID")}`}</Text>
                     ))}
                 </GridItem>
                 {!!product?.sellPrices.filter((f) => f.type === "WHOLESALE")
@@ -266,7 +280,7 @@ export default function ProductDetail() {
                     _extra={{ className: "col-span-1" }}
                     className="items-center"
                   >
-                    <Text className="font-bold pb-2">Harga Grosir</Text>
+                    <Text className="font-bold pb-2">{`Harga Grosir${product.type === "MULTIUNIT" ? ` (1 ${unitSuffixHelper(product.unit)})` : ""}`}</Text>
                     {product?.sellPrices
                       .filter((f) => f.type === "WHOLESALE")
                       ?.map((price, index) => (

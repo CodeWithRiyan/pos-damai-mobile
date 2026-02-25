@@ -399,12 +399,19 @@ export default function ProductForm() {
   ) => {
     const prices =
       data.type === "MULTIUNIT"
-        ? (data.unitVariants || []).map((uv) => ({
-            type: "RETAIL" as const,
-            label: uv.name,
-            price: uv.retailPrice,
-            minimumPurchase: 1, // untuk unitVariants, minimal pembelian static senilai 1
-          }))
+        ? [
+            ...(data.unitVariants || []).map((uv) => ({
+              type: "RETAIL" as const,
+              label: uv.name,
+              price: uv.retailPrice,
+              minimumPurchase: 1,
+            })),
+            ...data.wholesalePrice.map((p) => ({
+              ...p,
+              type: "WHOLESALE" as const,
+              label: "Grosir",
+            })),
+          ]
         : [
             ...data.retailPrice.map((p) => ({
               ...p,
@@ -423,6 +430,7 @@ export default function ProductForm() {
         ? (data.unitVariants || []).map((uv) => ({
             name: uv.name,
             code: uv.code,
+            netto: uv.netto, // TODO: tes apakah netto benar-benar sudah tersimpan ke dalam db
           }))
         : data.variants || [];
 

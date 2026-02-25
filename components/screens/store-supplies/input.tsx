@@ -25,7 +25,9 @@ import PopupAddStoreSupplies from "./popup-add";
 
 export default function StoreSuppliesInput() {
   const { cart, setAddProduct, setOpenConfirm } = useStoreSuppliesStore();
-  const { data: products } = useProducts();
+  const { data: products } = useProducts({
+    forceParentMultiUnit: true,
+  });
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
 
