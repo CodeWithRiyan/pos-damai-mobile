@@ -132,6 +132,8 @@ export const purchases = sqliteTable("purchases", {
   totalAmount: real("totalAmount").notNull(),
   totalPaid: real("totalPaid").default(0),
   paymentType: text("paymentType").default("CASH"),
+  paymentTypeId: text("paymentTypeId"),
+  commission: real("commission").default(0),
   status: text("status").default("COMPLETED"),
   dueDate: integer("dueDate", { mode: "timestamp" }),
   note: text("note"),
@@ -256,6 +258,7 @@ export const transactions = sqliteTable("transactions", {
   customerId: text("customerId"),
   totalAmount: real("totalAmount").notNull(),
   totalPaid: real("totalPaid").notNull(),
+  commission: real("commission").default(0),
   paymentTypeId: text("paymentTypeId").notNull(),
   transactionDate: integer("transactionDate", { mode: "timestamp" }).notNull(),
   status: text("status").default("COMPLETED"), // 'DRAFT' | 'COMPLETED'
@@ -343,3 +346,26 @@ export const shifts = sqliteTable("shifts", {
   organizationId: text("organizationId").notNull(),
   ...syncColumns,
 });
+
+export const storeSupplies = sqliteTable("store_supplies", {
+  id: text("id").primaryKey(),
+  local_ref_id: text("local_ref_id").unique(),
+  date: integer("date", { mode: "timestamp" }).notNull(),
+  note: text("note"),
+  status: text("status").default("COMPLETED"),
+  organizationId: text("organizationId").notNull(),
+  ...syncColumns,
+});
+
+export const storeSupplyItems = sqliteTable("store_supply_items", {
+  id: text("id").primaryKey(),
+  storeSupplyId: text("storeSupplyId").notNull(),
+  productId: text("productId").notNull(),
+  quantitySystem: real("quantitySystem").notNull(),
+  quantityPhysical: real("quantityPhysical").notNull(),
+  usage: real("usage").notNull(),
+  purchasePrice: real("purchasePrice").default(0),
+  organizationId: text("organizationId").notNull(),
+  ...syncColumns,
+});
+

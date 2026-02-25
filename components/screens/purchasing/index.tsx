@@ -40,6 +40,7 @@ export default function PurchasingList() {
   const { data: products } = useProducts({
     supplierId,
     showByStock: stockFilter,
+    forceParent: true,
   });
   const router = useRouter();
 

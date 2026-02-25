@@ -228,6 +228,8 @@ export default function PurchasingCheckoutForm() {
       ...data,
       id: purchaseId || undefined,
       totalPaid: Number(data.totalPaid),
+      commission: commission,
+      totalPurchase: grandTotal,
       items: cart.map((item) => ({
         product: {
           id: item.product.id,

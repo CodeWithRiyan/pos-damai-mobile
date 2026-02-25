@@ -45,7 +45,8 @@ export default function TransactionList() {
     removeCartItem,
   } = useTransactionStore();
   const { data: customers } = useCustomers();
-  const { data: products } = useProducts();
+  const { data: products } = useProducts({ forceParentMultiUnit: true });
+  console.log("products", products);
   const { data: currentShift, isLoading: isLoadingShift } = useCurrentShift();
   const router = useRouter();
   const toast = useToast();

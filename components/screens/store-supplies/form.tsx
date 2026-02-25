@@ -22,15 +22,12 @@ import {
 } from "@/components/ui/form-control";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-// import { useCreateStoreSupplies } from "@/lib/api/store-supplies";
+import { useCreateStoreSupply } from "@/lib/api/store-supplies";
 import { getErrorMessage } from "@/lib/api/client";
-import { db } from "@/lib/db";
-import * as schema from "@/lib/db/schema";
 import { useStoreSuppliesStore } from "@/stores/store-supplies";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { and, eq } from "drizzle-orm";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
@@ -45,62 +42,24 @@ export default function StoreSuppliesConfirmForm({
     useStoreSuppliesStore();
   const router = useRouter();
   const toast = useToast();
-  const [summary, setSummary] = useState({ totalGain: 0, totalLoss: 0 });
 
-  const stockOpnameSchema = z.object({
+  const storeSupplySchema = z.object({
     note: z.string(),
   });
 
-  type StoreSuppliesFormValues = z.infer<typeof stockOpnameSchema>;
+  type StoreSuppliesFormValues = z.infer<typeof storeSupplySchema>;
 
   const initialValues: StoreSuppliesFormValues = {
     note: "",
   };
 
   const form = useForm<StoreSuppliesFormValues>({
-    resolver: zodResolver(stockOpnameSchema),
+    resolver: zodResolver(storeSupplySchema),
     defaultValues: initialValues,
   });
 
-  // TODO: uncomment jika sudah dibuatkan servicenya
-  // const createMutation = useCreateStoreSupplies();
-  const isLoading = false; //createMutation.isPending;
-
-  useEffect(() => {
-    const calculateSummary = async () => {
-      let gain = 0;
-      let loss = 0;
-
-      for (const item of cart) {
-        const transactions = await db
-          .select()
-          .from(schema.inventoryTransactions)
-          .where(
-            and(
-              eq(schema.inventoryTransactions.productId, item.product.id),
-              eq(schema.inventoryTransactions.status, "COMPLETED"),
-            ),
-          );
-
-        const currentStock = transactions.reduce(
-          (sum, t) => sum + t.quantity,
-          0,
-        );
-        const difference = item.quantity - currentStock;
-        const purchasePrice = item.product.purchasePrice || 0;
-        const impact = difference * purchasePrice;
-
-        if (impact > 0) gain += impact;
-        if (impact < 0) loss += Math.abs(impact);
-      }
-
-      setSummary({ totalGain: gain, totalLoss: loss });
-    };
-
-    if (openConfirm && cart.length > 0) {
-      void calculateSummary();
-    }
-  }, [openConfirm, cart]);
+  const createMutation = useCreateStoreSupply();
+  const isLoading = createMutation.isPending;
 
   const showSuccessToast = (message: string) => {
     toast.show({
@@ -130,31 +89,23 @@ export default function StoreSuppliesConfirmForm({
     const submissionData = {
       date: date,
       note: data.note,
-      items: (cart || []).map((item: any) => ({
+      items: (cart || []).map((item) => ({
         product: { id: item.product.id, name: item.product.name },
-        physicalStock: item.physicalStock,
+        quantity: item.quantity,
       })),
     };
 
-    // TODO: uncomment jika sudah dibuatkan servicenya
-    // createMutation.mutate(submissionData, {
-    //   onSuccess: () => {
-    //     showSuccessToast("Kebutuhan Toko berhasil disimpan");
-    //     setOpenConfirm(false);
-    //     resetCart();
-    //     router.back();
-    //   },
-    //   onError: showErrorToast,
-    // });
+    createMutation.mutate(submissionData, {
+      onSuccess: () => {
+        showSuccessToast("Kebutuhan Toko berhasil disimpan");
+        setOpenConfirm(false);
+        resetCart();
+        router.back();
+      },
+      onError: showErrorToast,
+    });
   };
 
-  const formatMoney = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
 
   return (
     <Modal

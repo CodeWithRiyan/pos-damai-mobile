@@ -155,7 +155,8 @@ export default function TransactionCheckoutForm() {
     try {
       const submissionData = {
         totalAmount: grandTotal,
-        totalPaid: parseFloat(data.totalPaid),
+        totalPaid: parseFloat(data.totalPaid || "0") || 0,
+        commission: commission,
         paymentTypeId: data.paymentTypeId,
         transactionDate: new Date(),
         status: status,

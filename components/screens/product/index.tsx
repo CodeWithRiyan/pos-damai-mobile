@@ -49,6 +49,7 @@ export default function ProductList() {
     showByStock: stockFilter,
     brandId,
     categoryId,
+    forceParent: true,
   });
   const [selectedItems, setSelectedItems] = useState<Product[] | null>(null);
 

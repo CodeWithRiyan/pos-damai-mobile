@@ -13,6 +13,9 @@ export interface Purchase {
   totalAmount: number;
   totalPaid: number;
   paymentType: string;
+  paymentTypeName?: string;
+  paymentTypeId: string | null;
+  commission: number;
   dueDate: Date | null;
   note?: string | null;
   organizationId: string;
@@ -43,7 +46,8 @@ export interface CreatePurchasingDTO {
   dueDate: Date | null;
   status: string;
   note: string;
-  paymentMethodId?: string;
+  paymentMethodId: string;
+  commission?: number;
   items: {
     product: { id: string; purchasePrice: number };
     newPurchasePrice: number;
@@ -107,6 +111,13 @@ export async function fetchPurchase(id: string): Promise<Purchase | null> {
 
   const purchase = purchaseResult[0];
 
+  // Get payment type name
+  const paymentType = await db
+    .select({ name: schema.paymentTypes.name })
+    .from(schema.paymentTypes)
+    .where(eq(schema.paymentTypes.id, purchase.paymentTypeId || ""))
+    .limit(1);
+
   // Get supplier name
   const supplier = await db
     .select({ name: schema.suppliers.name })
@@ -114,7 +125,7 @@ export async function fetchPurchase(id: string): Promise<Purchase | null> {
     .where(eq(schema.suppliers.id, purchase.supplierId))
     .limit(1);
 
-  // Get related inventory transactions (items)
+  // Get transaction items
   // Transactions are created with local_ref_id pattern: {purchaseLocalRefId}_{productId}
   const purchaseRef = purchase.local_ref_id;
   if (!purchaseRef) {
@@ -168,6 +179,7 @@ export async function fetchPurchase(id: string): Promise<Purchase | null> {
   return {
     ...purchase,
     supplierName: supplier[0]?.name || "Unknown",
+    paymentTypeName: paymentType[0]?.name || (purchase.paymentType === "CASH" ? "Tunai" : "Hutang"),
     items: itemsWithProductNames,
   } as Purchase;
 }
@@ -242,6 +254,8 @@ export function useCreatePurchasing() {
           totalAmount: data.totalPurchase,
           totalPaid: data.totalPaid,
           paymentType: data.isPayable ? "DEBT" : "CASH",
+          paymentTypeId: data.paymentMethodId,
+          commission: data.commission || 0,
           status: data.status,
           dueDate: data.dueDate,
           note: data.note,
@@ -296,20 +310,38 @@ export function useCreatePurchasing() {
             _syncedAt: null,
           });
 
-          // 3. Update Product purchasePrice if it changed AND status is COMPLETED
-          if (
-            data.status === "COMPLETED" &&
-            item.newPurchasePrice !== item.product.purchasePrice
-          ) {
-            await tx
-              .update(schema.products)
-              .set({
-                purchasePrice: item.newPurchasePrice,
-                updatedBy: userId,
-                updatedAt: now,
-                _dirty: true,
+          // 3. Update Product purchasePrice and link supplierId if status is COMPLETED
+          if (data.status === "COMPLETED") {
+            const [dbProduct] = await tx
+              .select({
+                purchasePrice: schema.products.purchasePrice,
+                supplierId: schema.products.supplierId,
               })
-              .where(eq(schema.products.id, item.product.id));
+              .from(schema.products)
+              .where(eq(schema.products.id, item.product.id))
+              .limit(1);
+
+            if (dbProduct) {
+              const updates: any = {};
+              if (item.newPurchasePrice !== dbProduct.purchasePrice) {
+                updates.purchasePrice = item.newPurchasePrice;
+              }
+              if (!dbProduct.supplierId) {
+                updates.supplierId = data.supplierId;
+              }
+
+              if (Object.keys(updates).length > 0) {
+                await tx
+                  .update(schema.products)
+                  .set({
+                    ...updates,
+                    updatedBy: userId,
+                    updatedAt: now,
+                    _dirty: true,
+                  })
+                  .where(eq(schema.products.id, item.product.id));
+              }
+            }
           }
         }
 
