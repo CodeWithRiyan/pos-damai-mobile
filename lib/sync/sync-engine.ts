@@ -358,6 +358,7 @@ export class SyncEngine {
         })),
         variants: allVariants.filter(v => v.productId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...vRest }) => ({
           ...vRest,
+          netto: typeof vRest.netto === 'number' ? vRest.netto : Number(vRest.netto) || 1,
           deletedAt: deletedAt ? deletedAt.toISOString() : null,
         })),
       })),
