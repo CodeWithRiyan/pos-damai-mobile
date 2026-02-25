@@ -1,0 +1,1 @@
+ALTER TABLE `transactions` ADD `commission` real DEFAULT 0;

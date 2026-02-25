@@ -7,88 +7,12 @@ import { Pressable } from "@/components/ui/pressable";
 import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
-// import { useStoreSupplies } from "@/lib/api/store-supplies";
+import { useStoreSupplies } from "@/lib/api/store-supplies";
 import { useStoreSuppliesStore } from "@/stores/store-supplies";
 import dayjs from "dayjs";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { RefreshControl, ScrollView } from "react-native";
-
-// TODO: hapus dummy jika integrasi sudah selesai
-interface StoreSupplies {
-  items: {
-    productName: string | null;
-    productUnit: string | null;
-    createdBy: string | null;
-    updatedBy: string | null;
-    _dirty: boolean | null;
-    _syncedAt: Date | null;
-    createdAt: Date | null;
-    updatedAt: Date | null;
-    deletedAt: Date | null;
-    id: string;
-    storeSuppliesId: string;
-    productId: string;
-    quantity: number;
-    purchasePrice: number | null;
-    organizationId: string;
-  }[];
-  createdBy: string | null;
-  updatedBy: string | null;
-  _dirty: boolean | null;
-  _syncedAt: Date | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-  deletedAt: Date | null;
-  id: string;
-  local_ref_id: string | null;
-  date: Date;
-  note: string | null;
-  status: string | null;
-  totalAmount: number | null;
-  organizationId: string;
-}
-
-// TODO: hapus dummy jika integrasi sudah selesai
-const refetch = async () => {};
-const isLoading = false;
-const storeSupplies: StoreSupplies[] = [
-  {
-    items: [
-      {
-        productName: "Beras",
-        productUnit: "kg",
-        createdBy: "12345",
-        updatedBy: "12345",
-        _dirty: true,
-        _syncedAt: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: new Date(),
-        id: "1",
-        storeSuppliesId: "1",
-        productId: "1",
-        quantity: 2,
-        purchasePrice: 15000,
-        organizationId: "1",
-      },
-    ],
-    createdBy: "12345",
-    updatedBy: "12345",
-    _dirty: true,
-    _syncedAt: new Date(),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deletedAt: new Date(),
-    id: "1",
-    local_ref_id: "1",
-    date: new Date(),
-    note: "catatan",
-    status: "COMPLETED",
-    totalAmount: 0,
-    organizationId: "1",
-  },
-];
 
 export default function StoreSuppliesList({
   isReport,
@@ -97,7 +21,7 @@ export default function StoreSuppliesList({
 }) {
   const { cart } = useStoreSuppliesStore();
   const router = useRouter();
-  // const { data: storeSupplies, isLoading, refetch } = useStoreSupplies();
+  const { data: storeSupplies, isLoading, refetch } = useStoreSupplies();
 
   useFocusEffect(
     useCallback(() => {

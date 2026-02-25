@@ -128,10 +128,10 @@ export default function PurchasingReceipt() {
                   {purchase.supplierName}
                 </Text>
               </HStack>
-              <HStack className="justify-between items-center">
-                <Text className="text-typography-500">Tipe Pembayaran</Text>
+               <HStack className="justify-between items-center">
+                <Text className="text-typography-500">Metode Pembayaran</Text>
                 <Text className="text-typography-500">
-                  {purchase.paymentType === "CASH" ? "Tunai" : "Hutang"}
+                  {purchase.paymentTypeName || (purchase.paymentType === "CASH" ? "Tunai" : "Hutang")}
                 </Text>
               </HStack>
               {purchase.paymentType === "DEBT" && purchase.dueDate && (
@@ -176,6 +176,14 @@ export default function PurchasingReceipt() {
                   Rp {purchase.totalAmount.toLocaleString("id-ID")}
                 </Text>
               </HStack>
+              {purchase.commission ? (
+                <HStack className="justify-between items-center">
+                  <Text className="text-typography-500">Biaya Layanan/Admin</Text>
+                  <Text className="text-typography-500">
+                    Rp {purchase.commission.toLocaleString("id-ID")}
+                  </Text>
+                </HStack>
+              ) : null}
               <HStack className="justify-between items-center">
                 <Text className="font-bold">Uang Dibayarkan</Text>
                 <Text className="font-bold">

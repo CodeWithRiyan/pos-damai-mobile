@@ -9,6 +9,7 @@
     "start:sit": "EXPO_PUBLIC_API_URL=https://api-sit-pos-damai.riyansolusi.com npx expo start -c",
     "start:demo": "EXPO_PUBLIC_API_URL=https://api-demo-pos-damai.riyansolusi.com npx expo start -c",
     "start:prod": "EXPO_PUBLIC_API_URL=https://api-pos-damai.riyansolusi.com npx expo start -c",
+    "generate": "drizzle-kit generate",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",

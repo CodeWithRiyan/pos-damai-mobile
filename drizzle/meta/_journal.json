@@ -106,6 +106,27 @@
       "when": 1771761977005,
       "tag": "0014_oval_rogue",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1771972628423,
+      "tag": "0015_new_zombie",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1771980872616,
+      "tag": "0016_late_dakota_north",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1771981898706,
+      "tag": "0017_loud_viper",
+      "breakpoints": true
     }
   ]
 }

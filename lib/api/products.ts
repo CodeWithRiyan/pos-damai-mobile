@@ -91,6 +91,8 @@ export interface ProductParams {
   brandId?: string;
   categoryId?: string;
   supplierId?: string;
+  forceParent?: boolean;
+  forceParentMultiUnit?: boolean;
 }
 
 // Get all products from local SQLite (excluding soft-deleted)
@@ -106,6 +108,8 @@ export function useProducts(params: ProductParams | void) {
       params?.brandId,
       params?.categoryId,
       params?.supplierId,
+      params?.forceParent,
+      params?.forceParentMultiUnit,
     ],
     queryFn: async () => {
       // Build conditions inside queryFn to avoid stale closure bug
@@ -196,8 +200,27 @@ export function useProducts(params: ProductParams | void) {
         }),
       );
 
-      // Flatten the products based on their type
       const flattenedProducts = productsWithPrices.flatMap((product) => {
+        if (product.type === "MULTIUNIT" && params?.forceParentMultiUnit) {
+          return [
+            {
+              ...product,
+              isVariant: false,
+              variantData: undefined,
+            },
+          ];
+        }
+
+        if (params?.forceParent) {
+          return [
+            {
+              ...product,
+              isVariant: false,
+              variantData: undefined,
+            },
+          ];
+        }
+
         const items = [];
         const hasVariants = product.variants && product.variants.length > 0;
 

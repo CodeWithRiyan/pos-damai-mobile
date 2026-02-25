@@ -174,6 +174,14 @@ export default function TransactionReceipt() {
                   {transaction.paymentTypeName}
                 </Text>
               </HStack>
+              {transaction.commission ? (
+                <HStack className="justify-between items-center">
+                  <Text className="text-typography-500">Biaya Layanan/Admin</Text>
+                  <Text className="text-typography-500">
+                    Rp {transaction.commission.toLocaleString("id-ID")}
+                  </Text>
+                </HStack>
+              ) : null}
             </VStack>
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack className="items-center py-2">
