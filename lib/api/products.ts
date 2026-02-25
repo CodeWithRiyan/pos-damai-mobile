@@ -239,8 +239,8 @@ export function useProducts(params: ProductParams | void) {
             ...product,
             sellPrices: product.sellPrices.map((p) => ({
               ...p,
-              type: "RETAIL",
-              minimumPurchase: 1,
+              type: p.type as ProductPrice["type"],
+              minimumPurchase: p.minimumPurchase || 0,
             })),
             minimumStock: product.minimumStock || 0,
             type: product.type as Product["type"],
@@ -277,8 +277,8 @@ export function useProducts(params: ProductParams | void) {
               purchasePrice: product.purchasePrice || 0,
               sellPrices: product.sellPrices.map((p) => ({
                 ...p,
-                type: "RETAIL",
-                minimumPurchase: 1,
+                type: p.type as ProductPrice["type"],
+                minimumPurchase: p.minimumPurchase || 0,
               })),
             };
             // Note: In an ideal world we'd also adjust stock per variant if tracked
@@ -302,8 +302,8 @@ export function useProducts(params: ProductParams | void) {
             purchasePrice: product.purchasePrice || 0,
             sellPrices: product.sellPrices.map((p) => ({
               ...p,
-              type: "RETAIL",
-              minimumPurchase: 1,
+              type: p.type as ProductPrice["type"],
+              minimumPurchase: p.minimumPurchase || 0,
             })),
           });
         }

@@ -169,6 +169,14 @@ export default function TransactionList() {
                 const productInChart = cart?.find(
                   (f) => f.product.id === product.id,
                 );
+                console.log(
+                  product.name,
+                  product.sellPrices.map((p) => ({
+                    type: p.type,
+                    minimumPurchase: p.minimumPurchase,
+                    price: p.price,
+                  })),
+                );
                 return (
                   <Pressable
                     key={index}
