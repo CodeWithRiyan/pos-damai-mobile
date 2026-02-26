@@ -350,6 +350,7 @@ export default function TransactionCheckoutForm() {
                 </HStack>
                 <InputVirtualKeyboard
                   nominal={totalPaid}
+                  totalAmount={grandTotal.toString()}
                   onChange={(value) => form.setValue("totalPaid", value)}
                 />
               </VStack>
