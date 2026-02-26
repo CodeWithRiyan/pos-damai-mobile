@@ -27,6 +27,7 @@ export interface ProductVariant {
   id: string;
   name: string;
   code: string;
+  netto?: number | null;
 }
 
 export interface Product {
@@ -207,7 +208,11 @@ export function useProducts(params: ProductParams | void) {
               ...product,
               isVariant: false,
               variantData: undefined,
-            },
+              purchasePrice: product.purchasePrice ?? 0,
+              minimumStock: product.minimumStock ?? 0,
+              isActive: !!product.isActive,
+              isFavorite: !!product.isFavorite,
+            } as Product,
           ];
         }
 
@@ -217,17 +222,31 @@ export function useProducts(params: ProductParams | void) {
               ...product,
               isVariant: false,
               variantData: undefined,
-            },
+              purchasePrice: product.purchasePrice ?? 0,
+              minimumStock: product.minimumStock ?? 0,
+              isActive: !!product.isActive,
+              isFavorite: !!product.isFavorite,
+            } as Product,
           ];
         }
 
-        const items = [];
+        const items: Product[] = [];
         const hasVariants = product.variants && product.variants.length > 0;
 
         if (product.type === "DEFAULT") {
           // Parent product is always added for DEFAULT
           items.push({
             ...product,
+            sellPrices: product.sellPrices.map((p) => ({
+              ...p,
+              type: p.type as ProductPrice["type"],
+              minimumPurchase: p.minimumPurchase || 0,
+            })),
+            minimumStock: product.minimumStock || 0,
+            type: product.type as Product["type"],
+            isActive: !!product.isActive,
+            isFavorite: !!product.isFavorite,
+            purchasePrice: product.purchasePrice || 0,
             isVariant: false,
             variantData: undefined,
           });
@@ -243,7 +262,7 @@ export function useProducts(params: ProductParams | void) {
             console.log(
               `[FLATTEN] Built variant entry: id=${compositeId}, name=${product.name} - ${variant.name}, variantId=${variant.id}`,
             );
-            const variantProduct = {
+            const variantProduct: Product = {
               ...product,
               id: compositeId, // Unique ID for list rendering
               originalId: product.id, // Keep reference to original product ID
@@ -251,6 +270,16 @@ export function useProducts(params: ProductParams | void) {
               code: variant.code || product.code, // Use variant code if available
               isVariant: true,
               variantData: variant,
+              type: product.type as Product["type"],
+              isActive: !!product.isActive,
+              isFavorite: !!product.isFavorite,
+              minimumStock: product.minimumStock || 0,
+              purchasePrice: product.purchasePrice || 0,
+              sellPrices: product.sellPrices.map((p) => ({
+                ...p,
+                type: p.type as ProductPrice["type"],
+                minimumPurchase: p.minimumPurchase || 0,
+              })),
             };
             // Note: In an ideal world we'd also adjust stock per variant if tracked
             items.push(variantProduct);
@@ -266,6 +295,16 @@ export function useProducts(params: ProductParams | void) {
             ...product,
             isVariant: false,
             variantData: undefined,
+            type: product.type as Product["type"],
+            isActive: !!product.isActive,
+            isFavorite: !!product.isFavorite,
+            minimumStock: product.minimumStock || 0,
+            purchasePrice: product.purchasePrice || 0,
+            sellPrices: product.sellPrices.map((p) => ({
+              ...p,
+              type: p.type as ProductPrice["type"],
+              minimumPurchase: p.minimumPurchase || 0,
+            })),
           });
         }
 
@@ -587,7 +626,7 @@ export function useCreateProduct() {
         if (variants && variants.length > 0) {
           for (const variant of variants) {
             await tx.insert(schema.productVariants).values({
-              id: `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              id: (variant as any).id || `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               ...variant,
               productId: id,
               organizationId: orgId,
@@ -681,7 +720,7 @@ export function useUpdateProduct() {
             .where(eq(schema.productVariants.productId, id));
           for (const variant of variants) {
             await tx.insert(schema.productVariants).values({
-              id: `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              id: (variant as any).id || `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               ...variant,
               productId: id,
               organizationId: orgId,
@@ -983,4 +1022,3 @@ export function useUnassignProductsFromBrand() {
     },
   });
 }
-

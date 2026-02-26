@@ -2,10 +2,10 @@ import Header from "@/components/header";
 import { Box, HStack, Spinner, Text, VStack } from "@/components/ui";
 import { Grid, GridItem } from "@/components/ui/grid";
 import { Pressable } from "@/components/ui/pressable";
-import { useLocalSearchParams } from "expo-router";
-import { ScrollView } from "react-native";
 import { useStoreSupply } from "@/lib/api/store-supplies";
 import dayjs from "dayjs";
+import { useLocalSearchParams } from "expo-router";
+import { ScrollView } from "react-native";
 
 export default function StoreSuppliesDetail() {
   const { id } = useLocalSearchParams();
@@ -41,10 +41,7 @@ export default function StoreSuppliesDetail() {
     <VStack className="flex-1 bg-white">
       <Header
         header="DETAIL KEBUTUHAN TOKO"
-        action={
-          <HStack space="sm">
-          </HStack>
-        }
+        action={<HStack space="sm"></HStack>}
         isGoBack
       />
 
@@ -69,7 +66,8 @@ export default function StoreSuppliesDetail() {
             <Text className="font-bold text-error-500">
               {formatMoney(
                 storeSupplies.items?.reduce(
-                  (sum, item) => sum + (item.usage || 0) * (item.purchasePrice || 0),
+                  (sum, item) =>
+                    sum + (item.usage || 0) * (item.purchasePrice || 0),
                   0,
                 ) || 0,
               )}
@@ -98,6 +96,12 @@ export default function StoreSuppliesDetail() {
                 <GridItem _extra={{ className: "col-span-1" }}>
                   <Text className="text-gray-500">Jumlah Diambil</Text>
                   <Text className="font-bold">{item.usage}</Text>
+                </GridItem>
+                <GridItem _extra={{ className: "col-span-1" }}>
+                  <Text className="text-gray-500">Stok Saat Ini</Text>
+                  <Text className="font-bold">
+                    {item.quantitySystem - item.usage}
+                  </Text>
                 </GridItem>
                 <GridItem _extra={{ className: "col-span-1" }}>
                   <Text className="text-gray-500">Pengurangan Modal</Text>

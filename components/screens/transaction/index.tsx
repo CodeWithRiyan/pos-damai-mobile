@@ -43,10 +43,10 @@ export default function TransactionList() {
     setAddProduct,
     setStatus,
     removeCartItem,
+    resetCart,
   } = useTransactionStore();
   const { data: customers } = useCustomers();
   const { data: products } = useProducts({ forceParentMultiUnit: true });
-  console.log("products", products);
   const { data: currentShift, isLoading: isLoadingShift } = useCurrentShift();
   const router = useRouter();
   const toast = useToast();
@@ -143,6 +143,7 @@ export default function TransactionList() {
                   setCustomer(
                     customers?.find((customer) => customer.id === v) || null,
                   );
+                  resetCart();
                 } else {
                   setCustomer(null);
                 }
@@ -170,6 +171,13 @@ export default function TransactionList() {
                 const productInChart = cart?.find(
                   (f) => f.product.id === product.id,
                 );
+                console.log(
+                  product.name,
+                  product.variants.map((p) => ({
+                    name: p.name,
+                    netto: p.netto,
+                  })),
+                );
                 return (
                   <Pressable
                     key={index}
@@ -188,16 +196,25 @@ export default function TransactionList() {
                             {product.name}
                           </Heading>
                           <Text size="sm" className="text-slate-500">
-                            {`Rp ${product.sellPrices[0].price.toLocaleString(
-                              "id-ID",
-                            )}`}
+                            {`Rp ${findSellPrice({
+                              sellPrices: product.sellPrices,
+                              type: customer?.category,
+                              quantity: 1,
+                            }).toLocaleString("id-ID")}`}
                           </Text>
                         </VStack>
                         <HStack space="sm">
                           <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
                             <Text className="font-bold">
-                              {(productInChart?.quantity || 0) *
-                                (productInChart?.unitWeight || 0)}
+                              {product.type !== "MULTIUNIT"
+                                ? productInChart?.quantity || 0
+                                : cart
+                                    ?.filter((f) => f.product.id === product.id)
+                                    .map(
+                                      (m) =>
+                                        m.quantity * (m.variant?.netto || 1),
+                                    )
+                                    .reduce((prev, curr) => prev + curr, 0)}
                             </Text>
                           </Box>
                           <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
@@ -219,15 +236,24 @@ export default function TransactionList() {
             <VStack className="flex-1">
               {cart?.map((item, index) => (
                 <Pressable
-                  key={item.product.id}
+                  key={index}
                   className="relative px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                  onPress={() => setAddProduct(item.product)}
+                  onPress={() => {
+                    setAddProduct(item.product, item.variant?.id);
+                    setDeleteItem(null);
+                  }}
                   onLongPress={() => {
-                    if (item.product.id === deleteItem) {
+                    const newDeleteItem =
+                      item.product.type === "MULTIUNIT" &&
+                      customer?.category !== "WHOLESALE"
+                        ? item.variant?.id || ""
+                        : item.product.id;
+
+                    if (deleteItem === newDeleteItem) {
                       setDeleteItem(null);
                       return;
                     }
-                    setDeleteItem(item.product.id);
+                    setDeleteItem(newDeleteItem);
                   }}
                 >
                   <HStack className="justify-between items-center">
@@ -237,7 +263,7 @@ export default function TransactionList() {
                       </Box>
                       <VStack className="flex-1">
                         <Heading size="md" className="line-clamp-2">
-                          {item.product.name}
+                          {item.variant ? item.variant.name : item.product.name}
                         </Heading>
                         <Text size="sm" className="text-slate-500">
                           {`${item.quantity} x Rp ${
@@ -247,6 +273,7 @@ export default function TransactionList() {
                                   sellPrices: item.product.sellPrices,
                                   type: customer?.category,
                                   quantity: item.quantity,
+                                  unitVariant: item.variant,
                                 }).toLocaleString("id-ID")
                           } = Rp ${(item.tempSellPrice
                             ? item.tempSellPrice * item.quantity
@@ -254,6 +281,7 @@ export default function TransactionList() {
                                 sellPrices: item.product.sellPrices,
                                 type: customer?.category,
                                 quantity: item.quantity,
+                                unitVariant: item.variant,
                               }) * item.quantity
                           ).toLocaleString("id-ID")}`}
                         </Text>
@@ -265,9 +293,7 @@ export default function TransactionList() {
                       </VStack>
                       <HStack space="sm">
                         <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
-                          <Text className="font-bold">
-                            {item.quantity * (item.unitWeight || 1)}
-                          </Text>
+                          <Text className="font-bold">{item.quantity}</Text>
                         </Box>
                       </HStack>
                     </HStack>
@@ -275,10 +301,20 @@ export default function TransactionList() {
                   <Pressable
                     className={classNames(
                       "absolute right-0 top-0 bottom-0 w-0 bg-error-500 items-center justify-center overflow-hidden transaction-all duration-300",
-                      deleteItem === item.product.id && "w-16",
+                      item.product.type !== "MULTIUNIT" &&
+                        deleteItem === item.product.id &&
+                        "w-16",
+                      item.product.type === "MULTIUNIT" &&
+                        customer?.category !== "WHOLESALE" &&
+                        deleteItem === item.variant?.id &&
+                        "w-16",
+                      item.product.type === "MULTIUNIT" &&
+                        customer?.category === "WHOLESALE" &&
+                        deleteItem === item.product?.id &&
+                        "w-16",
                     )}
                     onPress={() => {
-                      removeCartItem(item.product?.id || "");
+                      removeCartItem(item.product?.id || "", item.variant?.id);
                       setDeleteItem(null);
                     }}
                   >

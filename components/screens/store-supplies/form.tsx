@@ -22,8 +22,8 @@ import {
 } from "@/components/ui/form-control";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-import { useCreateStoreSupply } from "@/lib/api/store-supplies";
 import { getErrorMessage } from "@/lib/api/client";
+import { useCreateStoreSupply } from "@/lib/api/store-supplies";
 import { useStoreSuppliesStore } from "@/stores/store-supplies";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
@@ -106,7 +106,6 @@ export default function StoreSuppliesConfirmForm({
     });
   };
 
-
   return (
     <Modal
       isOpen={openConfirm}
@@ -186,14 +185,14 @@ export default function StoreSuppliesConfirmForm({
               </Text>
             </Pressable>
             <Pressable
-              className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
+              className="flex-1 items-center justify-center h-12 px-4 rounded-lg bg-primary-500 border border-primary-500"
               disabled={isLoading}
               onPress={form.handleSubmit(onSubmit)}
             >
               {isLoading ? (
                 <Spinner size="small" color="#FFFFFF" />
               ) : (
-                <Text size="sm" className="text-typography-0 font-bold">
+                <Text size="lg" className="text-typography-0 font-bold">
                   SIMPAN
                 </Text>
               )}

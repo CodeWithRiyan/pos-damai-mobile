@@ -77,13 +77,13 @@ export default function StockOpnameDetail() {
             <Text className="font-bold">{stockOpname.note || "-"}</Text>
           </VStack>
           <VStack className="w-1/2 pr-4">
-            <Text className="text-gray-500">Total Gain</Text>
+            <Text className="text-gray-500">Total Keuntungan</Text>
             <Text className="font-bold text-success-600">
               {formatMoney(stockOpname.totalGain || 0)}
             </Text>
           </VStack>
           <VStack className="w-1/2 pr-4">
-            <Text className="text-gray-500">Total Loss</Text>
+            <Text className="text-gray-500">Total Kerugian</Text>
             <Text className="font-bold text-error-600">
               {formatMoney(stockOpname.totalLoss || 0)}
             </Text>
@@ -112,7 +112,9 @@ export default function StockOpnameDetail() {
                   </Text>
                 </GridItem>
                 <GridItem _extra={{ className: "col-span-1" }}>
-                  <Text className="text-gray-500">Stok Fisik</Text>
+                  <Text className="text-gray-500">
+                    Stok Fisik (Stok Saat Ini)
+                  </Text>
                   <Text className="font-bold">
                     {item.quantityPhysical} {item.productUnit}
                   </Text>

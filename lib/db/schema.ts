@@ -99,6 +99,7 @@ export const productVariants = sqliteTable("product_variants", {
   code: text("code").notNull(),
   productId: text("productId").notNull(),
   organizationId: text("organizationId").notNull(),
+  netto: real("netto").default(1),
   ...syncColumns,
 });
 

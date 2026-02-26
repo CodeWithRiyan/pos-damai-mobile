@@ -245,14 +245,14 @@ export default function StockOpnameConfirmForm({
               </Text>
             </Pressable>
             <Pressable
-              className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
+              className="flex-1 items-center justify-center h-12 px-4 rounded-lg bg-primary-500 border border-primary-500"
               disabled={isLoading}
               onPress={form.handleSubmit(onSubmit)}
             >
               {isLoading ? (
                 <Spinner size="small" color="#FFFFFF" />
               ) : (
-                <Text size="sm" className="text-typography-0 font-bold">
+                <Text size="lg" className="text-typography-0 font-bold">
                   SIMPAN
                 </Text>
               )}
