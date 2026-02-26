@@ -43,6 +43,7 @@ export default function TransactionList() {
     setAddProduct,
     setStatus,
     removeCartItem,
+    resetCart,
   } = useTransactionStore();
   const { data: customers } = useCustomers();
   const { data: products } = useProducts({ forceParentMultiUnit: true });
@@ -142,6 +143,7 @@ export default function TransactionList() {
                   setCustomer(
                     customers?.find((customer) => customer.id === v) || null,
                   );
+                  resetCart();
                 } else {
                   setCustomer(null);
                 }
@@ -171,10 +173,9 @@ export default function TransactionList() {
                 );
                 console.log(
                   product.name,
-                  product.sellPrices.map((p) => ({
-                    type: p.type,
-                    minimumPurchase: p.minimumPurchase,
-                    price: p.price,
+                  product.variants.map((p) => ({
+                    name: p.name,
+                    netto: p.netto,
                   })),
                 );
                 return (
@@ -205,7 +206,15 @@ export default function TransactionList() {
                         <HStack space="sm">
                           <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
                             <Text className="font-bold">
-                              {productInChart?.quantity || 0}
+                              {product.type !== "MULTIUNIT"
+                                ? productInChart?.quantity || 0
+                                : cart
+                                    ?.filter((f) => f.product.id === product.id)
+                                    .map(
+                                      (m) =>
+                                        m.quantity * (m.variant?.netto || 1),
+                                    )
+                                    .reduce((prev, curr) => prev + curr, 0)}
                             </Text>
                           </Box>
                           <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
@@ -229,10 +238,14 @@ export default function TransactionList() {
                 <Pressable
                   key={index}
                   className="relative px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                  onPress={() => setAddProduct(item.product, item.variant?.id)}
+                  onPress={() => {
+                    setAddProduct(item.product, item.variant?.id);
+                    setDeleteItem(null);
+                  }}
                   onLongPress={() => {
                     const newDeleteItem =
-                      item.product.type === "MULTIUNIT"
+                      item.product.type === "MULTIUNIT" &&
+                      customer?.category !== "WHOLESALE"
                         ? item.variant?.id || ""
                         : item.product.id;
 
@@ -288,11 +301,17 @@ export default function TransactionList() {
                   <Pressable
                     className={classNames(
                       "absolute right-0 top-0 bottom-0 w-0 bg-error-500 items-center justify-center overflow-hidden transaction-all duration-300",
-                      (item.product.type !== "MULTIUNIT" &&
-                        deleteItem === item.product.id) ||
-                        (item.product.type === "MULTIUNIT" &&
-                          deleteItem === item.variant?.id &&
-                          "w-16"),
+                      item.product.type !== "MULTIUNIT" &&
+                        deleteItem === item.product.id &&
+                        "w-16",
+                      item.product.type === "MULTIUNIT" &&
+                        customer?.category !== "WHOLESALE" &&
+                        deleteItem === item.variant?.id &&
+                        "w-16",
+                      item.product.type === "MULTIUNIT" &&
+                        customer?.category === "WHOLESALE" &&
+                        deleteItem === item.product?.id &&
+                        "w-16",
                     )}
                     onPress={() => {
                       removeCartItem(item.product?.id || "", item.variant?.id);
