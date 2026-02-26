@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { and, desc, eq, isNull, like } from "drizzle-orm";
 import { db } from "../db";
 import * as schema from "../db/schema";
+import { getDiscountedPrice, isDiscountActive } from "../price";
 import { generateLocalRefId } from "../utils/reference";
 
 export interface Transaction {
@@ -49,10 +50,11 @@ export interface CreateTransactionDTO {
   status: string;
   note: string;
   items: {
-    product: { id: string };
+    product: { id: string; discount?: { nominal: number; type: "FLAT" | "PERCENTAGE"; startDate: Date; endDate: Date } };
     variant?: { id: string; name: string };
     quantity: number;
     tempSellPrice: number;
+    isManualPrice?: boolean;
     note?: string;
   }[];
 }
@@ -302,24 +304,54 @@ export function useCreateTransaction() {
 
         // 2. Create Transaction Items and Inventory Transactions
         for (const item of data.items) {
-          // Create transaction item
-          const itemId = `trans_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          await tx.insert(schema.transactionItems).values({
-            id: itemId,
-            transactionId: transactionId,
-            productId: item.product.id,
-            variantId: item.variant?.id || null,
-            quantity: item.quantity,
-            sellPrice: item.tempSellPrice,
-            note: item.note || null,
-            organizationId: orgId,
-            createdBy: userId,
-            updatedBy: userId,
-            createdAt: now,
-            updatedAt: now,
-            _dirty: true,
-            _syncedAt: null,
-          });
+          const discount = item.product.discount;
+          const unitPrice = item.tempSellPrice || 0;
+          const isManual = !!item.isManualPrice;
+          const hasDiscount = !isManual && isDiscountActive(discount);
+
+          // We split the item into two entries if it has a discount and quantity > 0
+          // Entry 1: 1 quantity with discounted price
+          // Entry 2: quantity - 1 with regular price (if quantity > 1)
+          
+          const itemsToCreate = [];
+          if (hasDiscount && item.quantity > 0) {
+            const discountedPrice = getDiscountedPrice(unitPrice, discount);
+            itemsToCreate.push({
+              qty: 1,
+              price: discountedPrice,
+            });
+            if (item.quantity > 1) {
+              itemsToCreate.push({
+                qty: item.quantity - 1,
+                price: unitPrice,
+              });
+            }
+          } else {
+            itemsToCreate.push({
+              qty: item.quantity,
+              price: unitPrice,
+            });
+          }
+
+          for (const subItem of itemsToCreate) {
+            const itemId = `trans_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            await tx.insert(schema.transactionItems).values({
+              id: itemId,
+              transactionId: transactionId,
+              productId: item.product.id,
+              variantId: item.variant?.id || null,
+              quantity: subItem.qty,
+              sellPrice: subItem.price,
+              note: item.note || null,
+              organizationId: orgId,
+              createdBy: userId,
+              updatedBy: userId,
+              createdAt: now,
+              updatedAt: now,
+              _dirty: true,
+              _syncedAt: null,
+            });
+          }
 
           // Create inventory transaction (negative quantity for sales)
           if (data.status === "COMPLETED") {
@@ -329,7 +361,7 @@ export function useCreateTransaction() {
               local_ref_id: `${finalLocalRefId}_${item.product.id}`,
               productId: item.product.id,
               type: "SALE",
-              quantity: -item.quantity, // Negative for sales
+              quantity: -item.quantity, // Negative for sales, total quantity remains same for stock
               status: "COMPLETED",
               organizationId: orgId,
               createdBy: userId,

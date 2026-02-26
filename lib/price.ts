@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { ProductPrice, ProductVariant } from "./api/products";
 
 export const findSellPrice = ({
@@ -41,4 +42,49 @@ export const findSellPrice = ({
     .sort((a, b) => a.minimumPurchase - b.minimumPurchase)[0];
 
   return basePrice?.price ?? sellPrices[0]?.price ?? 0;
+};
+
+export const isDiscountActive = (discount?: { startDate: Date | string; endDate: Date | string }) => {
+  if (!discount) return false;
+  const now = dayjs();
+  const start = dayjs(discount.startDate).startOf('day');
+  const end = dayjs(discount.endDate).endOf('day');
+  
+  return (now.isAfter(start) || now.isSame(start)) && (now.isBefore(end) || now.isSame(end));
+};
+
+export const getDiscountedPrice = (unitPrice: number, discount?: { nominal: number; type: "FLAT" | "PERCENTAGE" }) => {
+  if (!discount) return unitPrice;
+  if (discount.type === "FLAT") {
+    return Math.max(0, unitPrice - discount.nominal);
+  } else {
+    return Math.max(0, unitPrice * (1 - discount.nominal / 100));
+  }
+};
+
+export const calculateLineItemTotal = ({
+  quantity,
+  unitPrice,
+  discount,
+  isManualPrice = false,
+}: {
+  quantity: number;
+  unitPrice: number;
+  discount?: { nominal: number; type: "FLAT" | "PERCENTAGE"; startDate: Date | string; endDate: Date | string };
+  isManualPrice?: boolean;
+}) => {
+  if (quantity <= 0) return 0;
+
+  // Skip auto-discount if price was manually overridden
+  if (isManualPrice) {
+    return quantity * unitPrice;
+  }
+
+  if (isDiscountActive(discount)) {
+    const discountedPrice = getDiscountedPrice(unitPrice, discount);
+    // 1st unit discounted, remaining at regular price
+    return discountedPrice + (quantity - 1) * unitPrice;
+  }
+
+  return quantity * unitPrice;
 };

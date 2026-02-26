@@ -137,18 +137,16 @@ export default function TransactionCheckoutForm() {
 
   const isLoading = createTransactionMutation.isPending;
 
-  useEffect(() => {
-    if (form.formState.errors.totalPaid) {
-      toast.show({
-        placement: "top",
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{form.formState.errors.totalPaid?.message}</ToastTitle>
-          </Toast>
-        ),
-      });
-    }
-  }, [form.formState.errors.totalPaid, toast]);
+  const showValidationError = (message?: string) => {
+    toast.show({
+      placement: "top",
+      render: ({ id }) => (
+        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+          <ToastTitle>{message || "Terjadi kesalahan validasi"}</ToastTitle>
+        </Toast>
+      ),
+    });
+  };
 
   const onSubmit: SubmitHandler<TransactionFormValues> = async (
     data: TransactionFormValues,
@@ -167,6 +165,7 @@ export default function TransactionCheckoutForm() {
           return {
             product: {
               id: item.product.originalId || item.product.id,
+              discount: item.product.discount,
             },
             variant: variantData
               ? {
@@ -182,6 +181,7 @@ export default function TransactionCheckoutForm() {
                 type: customer?.category,
                 quantity: item.quantity,
               }),
+            isManualPrice: !!item.tempSellPrice,
             note: item.note,
           };
         }),
@@ -232,7 +232,10 @@ export default function TransactionCheckoutForm() {
             <Pressable
               className="size-10 items-center justify-center border-primary-500 border rounded-lg bg-primary-100 active:bg-primary-200"
               disabled={isLoading}
-              onPress={form.handleSubmit(onSubmit)}
+              onPress={form.handleSubmit(onSubmit, (errors) => {
+                if (errors.totalPaid) showValidationError(errors.totalPaid.message);
+                else if (errors.paymentTypeId) showValidationError(errors.paymentTypeId.message);
+              })}
             >
               {isLoading ? (
                 <Spinner size="small" color="#3d2117" />

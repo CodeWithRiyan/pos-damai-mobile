@@ -114,22 +114,19 @@ export default function PopupAddProduct() {
   const isAddNoteChecked = form.watch("addNote");
   const variantUnitId = form.watch("variantUnitId");
 
-  useEffect(() => {
-    if (form.formState.errors.quantity) {
-      toast.show({
-        placement: "top",
-        render: ({ id }) => {
-          const toastId = "toast-" + id;
-          return (
-            <Toast nativeID={toastId} action="error" variant="solid">
-              <ToastTitle>{form.formState.errors.quantity?.message}</ToastTitle>
-            </Toast>
-          );
-        },
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.formState.errors.quantity]);
+  const showValidationError = (message?: string) => {
+    toast.show({
+      placement: "top",
+      render: ({ id }) => {
+        const toastId = "toast-" + id;
+        return (
+          <Toast nativeID={toastId} action="error" variant="solid">
+            <ToastTitle>{message || "Terjadi kesalahan"}</ToastTitle>
+          </Toast>
+        );
+      },
+    });
+  };
 
   useEffect(() => {
     if (currentProductInCart) {
@@ -461,7 +458,11 @@ export default function PopupAddProduct() {
               </Pressable>
               <Pressable
                 className="flex-1 items-center justify-center h-12 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
-                onPress={form.handleSubmit(onSubmit)}
+                onPress={form.handleSubmit(onSubmit, (errors) => {
+                  if (errors.quantity) showValidationError(errors.quantity.message);
+                  else if (errors.tempSellPrice)
+                    showValidationError(errors.tempSellPrice.message);
+                })}
               >
                 <Text size="lg" className="text-white font-bold">
                   SIMPAN
