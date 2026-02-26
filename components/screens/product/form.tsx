@@ -338,6 +338,7 @@ export default function ProductForm() {
 
   useEffect(() => {
     if (productId && product) {
+      console.log("[ProductForm] Product data:", product.variants);
       form.reset({
         name: product.name,
         code: product.code || "",
@@ -355,14 +356,14 @@ export default function ProductForm() {
                 const matchingPrice = product.sellPrices.find(
                   (p) => p.label === v.name,
                 );
-                const nettoVal = matchingPrice?.minimumPurchase || 1;
+
                 return {
                   name: v.name,
                   code: v.code,
-                  netto: nettoVal,
-                  purchasePrice: product.purchasePrice * nettoVal,
+                  netto: v.netto || 0,
+                  purchasePrice: product.purchasePrice * (v.netto || 0),
                   retailPrice: matchingPrice?.price || 0,
-                  minimumPurchase: nettoVal,
+                  minimumPurchase: matchingPrice?.minimumPurchase || 0,
                 };
               })
             : null,
@@ -606,7 +607,12 @@ export default function ProductForm() {
               field: { onChange, onBlur, value },
               fieldState: { error },
             }) => (
-              <FormControl isRequired isInvalid={!!error}>
+              <FormControl
+                isRequired
+                isInvalid={!!error}
+                isReadOnly={!isAdd}
+                isDisabled={!isAdd}
+              >
                 <FormControlLabel>
                   <FormControlLabelText>Harga Beli</FormControlLabelText>
                 </FormControlLabel>
@@ -630,6 +636,11 @@ export default function ProductForm() {
                     keyboardType="numeric"
                   />
                 </Input>
+                {!isAdd && (
+                  <Text size="xs" className="text-gray-500 mt-1">
+                    Harga Beli hanya bisa diubah melalui Pembelian Barang
+                  </Text>
+                )}
                 {error && (
                   <FormControlError>
                     <FormControlErrorText className="text-red-500">

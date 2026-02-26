@@ -51,11 +51,16 @@ export default function PopupAddProduct() {
     setAddProduct,
     addCartItem,
   } = useTransactionStore();
-  console.log("[PopupAddProduct] addProduct:", JSON.stringify(addProduct));
 
-  const currentProductInCart = cart.find(
-    (item) => item.product.id === addProduct?.id,
-  );
+  const currentProductInCart = addProductVariantId
+    ? cart.find(
+        (item) =>
+          item.product.id === addProduct?.id &&
+          item.variant?.id === addProductVariantId,
+      )
+    : !addProductVariantId && addProduct?.type !== "MULTIUNIT"
+      ? cart.find((item) => item.product.id === addProduct?.id)
+      : undefined;
 
   const variantUnitOptions =
     addProduct?.variants.map((item) => ({
@@ -127,28 +132,42 @@ export default function PopupAddProduct() {
   }, [form.formState.errors.quantity]);
 
   useEffect(() => {
-    if (addProduct) {
-      const productInCart = cart.find(
-        (item) => item.product.id === addProduct.id,
-      );
-
+    if (currentProductInCart) {
       form.reset({
-        quantity: productInCart?.quantity || 1,
-        isTempSellPrice: !!productInCart?.tempSellPrice,
-        tempSellPrice: productInCart?.tempSellPrice || 0,
-        addNote: !!productInCart?.note,
-        note: productInCart?.note || "",
+        quantity: currentProductInCart?.quantity || 1,
+        isTempSellPrice: !!currentProductInCart?.tempSellPrice,
+        tempSellPrice: currentProductInCart?.tempSellPrice || 0,
+        addNote: !!currentProductInCart?.note,
+        note: currentProductInCart?.note || "",
         variantUnitId: addProductVariantId || null,
       });
     } else {
       form.reset(initialValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, addProduct]);
+  }, [form, currentProductInCart, addProductVariantId]);
 
   const onSubmit: SubmitHandler<AddProductFormValues> = (
     data: AddProductFormValues,
   ) => {
+    if (
+      addProduct?.type === "MULTIUNIT" &&
+      !!(customer?.category !== "WHOLESALE") &&
+      !data.variantUnitId
+    ) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => {
+          const toastId = "toast-" + id;
+          return (
+            <Toast nativeID={toastId} action="error" variant="solid">
+              <ToastTitle>Unit belum dipilih</ToastTitle>
+            </Toast>
+          );
+        },
+      });
+      return;
+    }
     if (addProduct) {
       addCartItem({
         product: addProduct,
