@@ -362,10 +362,22 @@ export class SyncEngine {
           deletedAt: deletedAt ? deletedAt.toISOString() : null,
         })),
       })),
-      customers: dirtyCustomers.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
+      customers: dirtyCustomers.map(({ 
+        _dirty, 
+        _syncedAt, 
+        createdAt, 
+        updatedAt, 
+        deletedAt, 
+        points,
+        totalTransactions,
+        totalRevenue,
+        totalProfit,
+        ...rest 
+      }) => ({
         ...rest,
         deletedAt: deletedAt ? deletedAt.toISOString() : null,
       })),
+
       suppliers: dirtySuppliers.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
         ...rest,
         deletedAt: deletedAt ? deletedAt.toISOString() : null,

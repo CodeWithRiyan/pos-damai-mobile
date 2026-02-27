@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { and, desc, eq, isNull, like } from "drizzle-orm";
 import { db } from "../db";
 import * as schema from "../db/schema";
+import { getDiscountedPrice, isDiscountActive } from "../price";
 import { generateLocalRefId } from "../utils/reference";
 
 export interface Transaction {
@@ -49,10 +50,11 @@ export interface CreateTransactionDTO {
   status: string;
   note: string;
   items: {
-    product: { id: string };
-    variant?: { id: string; name: string };
+    product: { id: string; discount?: { nominal: number; type: "FLAT" | "PERCENTAGE"; startDate: Date; endDate: Date } };
+    variant?: { id: string; name: string; netto?: number | null };
     quantity: number;
     tempSellPrice: number;
+    isManualPrice?: boolean;
     note?: string;
   }[];
 }
@@ -108,6 +110,127 @@ export function useTransactions(params: { customerId?: string } | void) {
       return transactionsWithDetails as Transaction[];
     },
     enabled: !!orgId,
+  });
+}
+
+// Get all products purchased by a specific customer
+export function usePurchasedProducts(customerId: string) {
+  const orgId = useAuthStore((state) => state.getOrganizationId());
+
+  return useQuery({
+    queryKey: ["purchased-products", orgId, customerId],
+    queryFn: async () => {
+      if (!customerId || !orgId) return [];
+
+      // 1. Get all product IDs from transaction items for this customer
+      const purchasedItems = await db
+        .select({
+          productId: schema.transactionItems.productId,
+          variantId: schema.transactionItems.variantId,
+        })
+        .from(schema.transactionItems)
+        .innerJoin(
+          schema.transactions,
+          eq(schema.transactionItems.transactionId, schema.transactions.id),
+        )
+        .where(
+          and(
+            eq(schema.transactions.customerId, customerId),
+            eq(schema.transactions.organizationId, orgId),
+            isNull(schema.transactions.deletedAt),
+          ),
+        );
+
+      if (purchasedItems.length === 0) return [];
+
+      // Use a set to get unique product IDs
+      const productIds = Array.from(new Set(purchasedItems.map(item => item.productId)));
+
+      // 2. Fetch full product details for these IDs
+      // We'll reuse the logic from useProducts but filtered by IDs
+      const productResult = await db
+        .select({
+          product: schema.products,
+          discount: schema.discounts,
+        })
+        .from(schema.products)
+        .leftJoin(schema.discounts, eq(schema.products.discountId, schema.discounts.id))
+        .where(
+          and(
+            eq(schema.products.organizationId, orgId),
+            isNull(schema.products.deletedAt),
+            // Drizzle doesn't have a direct "in Array" helper that works easily with large arrays in all versions, 
+            // but we can use multiple or conditions or just filter in JS if the list is small.
+            // For POS, customer's unique products usually aren't thousands.
+          )
+        );
+
+      // Filter in memory for simplicity and to match the schema
+      const filteredResult = productResult.filter(r => productIds.includes(r.product.id));
+
+      const productsWithDetails = await Promise.all(
+        filteredResult.map(async ({ product, discount }) => {
+          const prices = await db
+            .select()
+            .from(schema.productPrices)
+            .where(eq(schema.productPrices.productId, product.id));
+
+          const variants = await db
+            .select()
+            .from(schema.productVariants)
+            .where(
+              and(
+                eq(schema.productVariants.productId, product.id),
+                isNull(schema.productVariants.deletedAt),
+              ),
+            );
+
+          // Calculate stock
+          const transactions = await db
+            .select()
+            .from(schema.inventoryTransactions)
+            .where(
+              and(
+                eq(schema.inventoryTransactions.productId, product.id),
+                eq(schema.inventoryTransactions.status, "COMPLETED"),
+              ),
+            );
+
+          const totalStock = transactions.reduce(
+            (sum, tx) => sum + tx.quantity,
+            0,
+          );
+
+          return {
+            ...product,
+            purchasePrice: product.purchasePrice ?? 0,
+            minimumStock: product.minimumStock ?? 0,
+            isActive: !!product.isActive,
+            isFavorite: !!product.isFavorite,
+            type: (product.type || "DEFAULT") as "DEFAULT" | "MULTIUNIT" | "VARIANTS",
+            code: product.barcode,
+            sellPrices: prices.map(p => ({
+              ...p,
+              minimumPurchase: p.minimumPurchase ?? 0,
+              type: p.type as "RETAIL" | "WHOLESALE",
+            })),
+            variants: variants,
+            stock: totalStock,
+            discount: discount ? {
+              id: discount.id,
+              name: discount.name,
+              nominal: discount.nominal,
+              type: discount.type as 'FLAT' | 'PERCENTAGE',
+              startDate: discount.startDate,
+              endDate: discount.endDate,
+            } : undefined,
+          };
+        }),
+      );
+
+      return productsWithDetails;
+    },
+    enabled: !!orgId && !!customerId,
   });
 }
 
@@ -302,34 +425,66 @@ export function useCreateTransaction() {
 
         // 2. Create Transaction Items and Inventory Transactions
         for (const item of data.items) {
-          // Create transaction item
-          const itemId = `trans_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          await tx.insert(schema.transactionItems).values({
-            id: itemId,
-            transactionId: transactionId,
-            productId: item.product.id,
-            variantId: item.variant?.id || null,
-            quantity: item.quantity,
-            sellPrice: item.tempSellPrice,
-            note: item.note || null,
-            organizationId: orgId,
-            createdBy: userId,
-            updatedBy: userId,
-            createdAt: now,
-            updatedAt: now,
-            _dirty: true,
-            _syncedAt: null,
-          });
+          const discount = item.product.discount;
+          const unitPrice = item.tempSellPrice || 0;
+          const isManual = !!item.isManualPrice;
+          const hasDiscount = !isManual && isDiscountActive(discount);
+
+          // We split the item into two entries if it has a discount and quantity > 0
+          // Entry 1: 1 quantity with discounted price
+          // Entry 2: quantity - 1 with regular price (if quantity > 1)
+          
+          const itemsToCreate = [];
+          if (hasDiscount && item.quantity > 0) {
+            const discountedPrice = getDiscountedPrice(unitPrice, discount);
+            itemsToCreate.push({
+              qty: 1,
+              price: discountedPrice,
+            });
+            if (item.quantity > 1) {
+              itemsToCreate.push({
+                qty: item.quantity - 1,
+                price: unitPrice,
+              });
+            }
+          } else {
+            itemsToCreate.push({
+              qty: item.quantity,
+              price: unitPrice,
+            });
+          }
+
+          for (const subItem of itemsToCreate) {
+            const itemId = `trans_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            await tx.insert(schema.transactionItems).values({
+              id: itemId,
+              transactionId: transactionId,
+              productId: item.product.id,
+              variantId: item.variant?.id || null,
+              quantity: subItem.qty,
+              sellPrice: subItem.price,
+              note: item.note || null,
+              organizationId: orgId,
+              createdBy: userId,
+              updatedBy: userId,
+              createdAt: now,
+              updatedAt: now,
+              _dirty: true,
+              _syncedAt: null,
+            });
+          }
 
           // Create inventory transaction (negative quantity for sales)
           if (data.status === "COMPLETED") {
             const invTxId = `inv_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const variantNetto = item.variant?.netto || 1;
             await tx.insert(schema.inventoryTransactions).values({
               id: invTxId,
-              local_ref_id: `${finalLocalRefId}_${item.product.id}`,
+              local_ref_id: `${finalLocalRefId}_${item.product.id}_${item.variant?.id || "base"}`,
               productId: item.product.id,
+              variantId: item.variant?.id || null,
               type: "SALE",
-              quantity: -item.quantity, // Negative for sales
+              quantity: -item.quantity * variantNetto,
               status: "COMPLETED",
               organizationId: orgId,
               createdBy: userId,
@@ -358,7 +513,7 @@ export function useCreateTransaction() {
 
           if (isNewOrDraft) {
             const customerResult = await tx
-              .select({ id: schema.customers.id, category: schema.customers.category, points: schema.customers.points })
+              .select()
               .from(schema.customers)
               .where(eq(schema.customers.id, data.customerId))
               .limit(1);
@@ -366,33 +521,53 @@ export function useCreateTransaction() {
             if (customerResult.length > 0) {
               const customer = customerResult[0];
               let earnedPoints = 0;
+              let totalPurchaseCost = 0;
 
               for (const item of data.items) {
-                const productCategoryResult = await tx
-                  .select({ 
-                    retailPoint: schema.categories.retailPoint, 
-                    wholesalePoint: schema.categories.wholesalePoint 
+                const productWithCategory = await tx
+                  .select({
+                    retailPoint: schema.categories.retailPoint,
+                    wholesalePoint: schema.categories.wholesalePoint,
+                    purchasePrice: schema.products.purchasePrice,
                   })
                   .from(schema.products)
-                  .leftJoin(schema.categories, eq(schema.products.categoryId, schema.categories.id))
+                  .leftJoin(
+                    schema.categories,
+                    eq(schema.products.categoryId, schema.categories.id),
+                  )
                   .where(eq(schema.products.id, item.product.id))
                   .limit(1);
 
-                if (productCategoryResult.length > 0) {
-                  const categoryPoints = customer.category === 'WHOLESALE' 
-                    ? productCategoryResult[0].wholesalePoint
-                    : productCategoryResult[0].retailPoint;
-                  
+                if (productWithCategory.length > 0) {
+                  const p = productWithCategory[0];
+
+                  // Points
+                  const categoryPoints =
+                    customer.category === "WHOLESALE"
+                      ? p.wholesalePoint
+                      : p.retailPoint;
                   earnedPoints += (categoryPoints || 0) * item.quantity;
+
+                  // Purchase Cost
+                  const purchasePrice = p.purchasePrice || 0;
+                  totalPurchaseCost += purchasePrice * item.quantity;
                 }
               }
 
-              if (earnedPoints > 0) {
-                const currentPoints = customer.points || 0;
-                await tx.update(schema.customers)
-                  .set({ points: currentPoints + earnedPoints, _dirty: true })
-                  .where(eq(schema.customers.id, customer.id));
-              }
+              const transactionProfit = data.totalAmount - totalPurchaseCost;
+
+              await tx
+                .update(schema.customers)
+                .set({
+                  points: (customer.points || 0) + earnedPoints,
+                  totalTransactions: (customer.totalTransactions || 0) + 1,
+                  totalRevenue: (customer.totalRevenue || 0) + data.totalAmount,
+                  totalProfit: (customer.totalProfit || 0) + transactionProfit,
+                  _dirty: true,
+                })
+
+                .where(eq(schema.customers.id, customer.id));
+
             }
           }
         }
@@ -407,7 +582,14 @@ export function useCreateTransaction() {
       queryClient.invalidateQueries({
         queryKey: ["transactions", responseData.id],
       });
+      queryClient.invalidateQueries({ queryKey: ["customers", orgId] });
+      if (responseData.customerId) {
+        queryClient.invalidateQueries({
+          queryKey: ["customers", responseData.customerId],
+        });
+      }
     },
+
   });
 }
 

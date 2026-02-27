@@ -13,19 +13,19 @@ import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
 import { Spinner } from "@/components/ui/spinner";
-import { useProducts } from "@/lib/api/products";
+import { usePurchasedProducts } from "@/lib/api/transactions";
 import { useReturnTransactionStore } from "@/stores/return-transaction";
+import { useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
 import ReturnTransactionConfirmForm from "./form";
 import PopupAddProduct from "./popup-add";
 
 export default function ReturnTransactionInput() {
+  const { customerId } = useLocalSearchParams<{ customerId: string }>();
   const { cart, setAddProduct, setOpenConfirm } = useReturnTransactionStore();
   const [search, setSearch] = useState<string>("");
-  const { data: products = [], isLoading: isLoadingProduct } = useProducts({
-    search,
-  });
+  const { data: products = [], isLoading: isLoadingProduct } = usePurchasedProducts(customerId!);
 
   const isLoading = isLoadingProduct;
 
@@ -61,7 +61,14 @@ export default function ReturnTransactionInput() {
                   </Text>
                 </VStack>
               ) : (
-                products.map((item, index) => {
+                products
+                  .filter(
+                    (p) =>
+                      !search ||
+                      p.name.toLowerCase().includes(search.toLowerCase()) ||
+                      p.barcode?.toLowerCase().includes(search.toLowerCase()),
+                  )
+                  .map((item, index) => {
                   return (
                     <Pressable
                       key={index}
