@@ -228,8 +228,9 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
                         {item.points || 0} Poin
                       </Text>
                       <Text className="text-xs">Total Transaksi: {item.totalTransactions || 0}</Text>
-                      <Text className="text-xs">Total Omset: Rp {(item.totalOmset || 0).toLocaleString('id-ID')}</Text>
-                      <Text className="text-xs">Total Keuntungan: Rp {(item.totalKeuntungan || 0).toLocaleString('id-ID')}</Text>
+                      <Text className="text-xs">Total Omset: Rp {(item.totalRevenue || 0).toLocaleString('id-ID')}</Text>
+                      <Text className="text-xs">Total Keuntungan: Rp {(item.totalProfit || 0).toLocaleString('id-ID')}</Text>
+
                     </VStack>
                   </HStack>
                 </Pressable>

@@ -14,18 +14,18 @@ export interface Customer {
   phone: string | null;
   address: string | null;
   points: number;
+  totalTransactions: number;
+  totalRevenue: number;
+  totalProfit: number;
   organizationId: string | null;
+
   createdBy: string | null;
   updatedBy: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
 }
 
-export interface CustomerWithStats extends Customer {
-  totalTransactions: number;
-  totalOmset: number;
-  totalKeuntungan: number;
-}
+export type CustomerWithStats = Customer;
 
 export interface CreateCustomerDTO {
   name: string;
@@ -58,51 +58,7 @@ export function useCustomers() {
           isNull(schema.customers.deletedAt)
         ));
 
-      const customersWithStats = await Promise.all(
-        result.map(async (c) => {
-          const txs = await db
-            .select()
-            .from(schema.transactions)
-            .where(
-              and(
-                eq(schema.transactions.customerId, c.id),
-                eq(schema.transactions.status, 'COMPLETED')
-              )
-            );
-
-          const totalTransactions = txs.length;
-          const totalOmset = txs.reduce((sum, tx) => sum + tx.totalAmount, 0);
-          let totalKeuntungan = 0;
-
-          if (totalTransactions > 0) {
-            for (const tx of txs) {
-              const items = await db
-                .select()
-                .from(schema.transactionItems)
-                .where(eq(schema.transactionItems.transactionId, tx.id));
-
-              for (const item of items) {
-                const prod = await db
-                  .select({ purchasePrice: schema.products.purchasePrice })
-                  .from(schema.products)
-                  .where(eq(schema.products.id, item.productId))
-                  .limit(1);
-                const purchasePrice = prod[0]?.purchasePrice || 0;
-                totalKeuntungan += (item.sellPrice - purchasePrice) * item.quantity;
-              }
-            }
-          }
-
-          return {
-            ...c,
-            totalTransactions,
-            totalOmset,
-            totalKeuntungan,
-          };
-        })
-      );
-      
-      return customersWithStats as CustomerWithStats[];
+      return result as CustomerWithStats[];
     },
     enabled: !!orgId,
   });
@@ -121,47 +77,7 @@ export function useCustomer(id: string) {
       
       if (result.length === 0) return undefined;
       
-      const c = result[0];
-
-      const txs = await db
-        .select()
-        .from(schema.transactions)
-        .where(
-          and(
-            eq(schema.transactions.customerId, c.id),
-            eq(schema.transactions.status, 'COMPLETED')
-          )
-        );
-
-      const totalTransactions = txs.length;
-      const totalOmset = txs.reduce((sum, tx) => sum + tx.totalAmount, 0);
-      let totalKeuntungan = 0;
-
-      if (totalTransactions > 0) {
-        for (const tx of txs) {
-          const items = await db
-            .select()
-            .from(schema.transactionItems)
-            .where(eq(schema.transactionItems.transactionId, tx.id));
-
-          for (const item of items) {
-            const prod = await db
-              .select({ purchasePrice: schema.products.purchasePrice })
-              .from(schema.products)
-              .where(eq(schema.products.id, item.productId))
-              .limit(1);
-            const purchasePrice = prod[0]?.purchasePrice || 0;
-            totalKeuntungan += (item.sellPrice - purchasePrice) * item.quantity;
-          }
-        }
-      }
-
-      return {
-        ...c,
-        totalTransactions,
-        totalOmset,
-        totalKeuntungan,
-      } as CustomerWithStats;
+      return result[0] as CustomerWithStats;
     },
     enabled: !!id,
   });
@@ -187,7 +103,11 @@ export function useCreateCustomer() {
         phone: data.phone ?? null,
         address: data.address ?? null,
         points: 0,
+        totalTransactions: 0,
+        totalRevenue: 0,
+        totalProfit: 0,
         organizationId: orgId,
+
         createdBy: userId,
         updatedBy: userId,
         createdAt: now,

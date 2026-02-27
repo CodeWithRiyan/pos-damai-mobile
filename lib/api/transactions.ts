@@ -390,7 +390,7 @@ export function useCreateTransaction() {
 
           if (isNewOrDraft) {
             const customerResult = await tx
-              .select({ id: schema.customers.id, category: schema.customers.category, points: schema.customers.points })
+              .select()
               .from(schema.customers)
               .where(eq(schema.customers.id, data.customerId))
               .limit(1);
@@ -398,33 +398,53 @@ export function useCreateTransaction() {
             if (customerResult.length > 0) {
               const customer = customerResult[0];
               let earnedPoints = 0;
+              let totalPurchaseCost = 0;
 
               for (const item of data.items) {
-                const productCategoryResult = await tx
-                  .select({ 
-                    retailPoint: schema.categories.retailPoint, 
-                    wholesalePoint: schema.categories.wholesalePoint 
+                const productWithCategory = await tx
+                  .select({
+                    retailPoint: schema.categories.retailPoint,
+                    wholesalePoint: schema.categories.wholesalePoint,
+                    purchasePrice: schema.products.purchasePrice,
                   })
                   .from(schema.products)
-                  .leftJoin(schema.categories, eq(schema.products.categoryId, schema.categories.id))
+                  .leftJoin(
+                    schema.categories,
+                    eq(schema.products.categoryId, schema.categories.id),
+                  )
                   .where(eq(schema.products.id, item.product.id))
                   .limit(1);
 
-                if (productCategoryResult.length > 0) {
-                  const categoryPoints = customer.category === 'WHOLESALE' 
-                    ? productCategoryResult[0].wholesalePoint
-                    : productCategoryResult[0].retailPoint;
-                  
+                if (productWithCategory.length > 0) {
+                  const p = productWithCategory[0];
+
+                  // Points
+                  const categoryPoints =
+                    customer.category === "WHOLESALE"
+                      ? p.wholesalePoint
+                      : p.retailPoint;
                   earnedPoints += (categoryPoints || 0) * item.quantity;
+
+                  // Purchase Cost
+                  const purchasePrice = p.purchasePrice || 0;
+                  totalPurchaseCost += purchasePrice * item.quantity;
                 }
               }
 
-              if (earnedPoints > 0) {
-                const currentPoints = customer.points || 0;
-                await tx.update(schema.customers)
-                  .set({ points: currentPoints + earnedPoints, _dirty: true })
-                  .where(eq(schema.customers.id, customer.id));
-              }
+              const transactionProfit = data.totalAmount - totalPurchaseCost;
+
+              await tx
+                .update(schema.customers)
+                .set({
+                  points: (customer.points || 0) + earnedPoints,
+                  totalTransactions: (customer.totalTransactions || 0) + 1,
+                  totalRevenue: (customer.totalRevenue || 0) + data.totalAmount,
+                  totalProfit: (customer.totalProfit || 0) + transactionProfit,
+                  _dirty: true,
+                })
+
+                .where(eq(schema.customers.id, customer.id));
+
             }
           }
         }
@@ -439,7 +459,14 @@ export function useCreateTransaction() {
       queryClient.invalidateQueries({
         queryKey: ["transactions", responseData.id],
       });
+      queryClient.invalidateQueries({ queryKey: ["customers", orgId] });
+      if (responseData.customerId) {
+        queryClient.invalidateQueries({
+          queryKey: ["customers", responseData.customerId],
+        });
+      }
     },
+
   });
 }
 

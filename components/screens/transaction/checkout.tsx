@@ -157,10 +157,12 @@ export default function TransactionCheckoutForm() {
         totalPaid: parseFloat(data.totalPaid || "0") || 0,
         commission: commission,
         paymentTypeId: data.paymentTypeId,
+        customerId: customer?.id || "",
         transactionDate: new Date(),
         status: status,
         note: data.note || "",
         items: cart.map((item) => {
+
           const variantData = item.variant || item.product.variantData;
           return {
             product: {
