@@ -150,6 +150,7 @@ export const inventoryTransactions = sqliteTable("inventory_transactions", {
   id: text("id").primaryKey(), // local UUID if offline
   local_ref_id: text("local_ref_id").unique(),
   productId: text("productId").notNull(),
+  variantId: text("variantId"),
   type: text("type").notNull(),
   quantity: real("quantity").notNull(),
   status: text("status").default("COMPLETED"),
@@ -196,6 +197,7 @@ export const stockOpnameItems = sqliteTable("stock_opname_items", {
   id: text("id").primaryKey(),
   stockOpnameId: text("stockOpnameId").notNull(),
   productId: text("productId").notNull(),
+  variantId: text("variantId"),
   quantitySystem: real("quantitySystem").notNull(),
   quantityPhysical: real("quantityPhysical").notNull(),
   difference: real("difference").notNull(),
@@ -366,6 +368,7 @@ export const storeSupplyItems = sqliteTable("store_supply_items", {
   id: text("id").primaryKey(),
   storeSupplyId: text("storeSupplyId").notNull(),
   productId: text("productId").notNull(),
+  variantId: text("variantId"),
   quantitySystem: real("quantitySystem").notNull(),
   quantityPhysical: real("quantityPhysical").notNull(),
   usage: real("usage").notNull(),

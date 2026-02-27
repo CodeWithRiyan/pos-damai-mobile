@@ -51,7 +51,7 @@ export interface CreateTransactionDTO {
   note: string;
   items: {
     product: { id: string; discount?: { nominal: number; type: "FLAT" | "PERCENTAGE"; startDate: Date; endDate: Date } };
-    variant?: { id: string; name: string };
+    variant?: { id: string; name: string; netto?: number | null };
     quantity: number;
     tempSellPrice: number;
     isManualPrice?: boolean;
@@ -477,12 +477,14 @@ export function useCreateTransaction() {
           // Create inventory transaction (negative quantity for sales)
           if (data.status === "COMPLETED") {
             const invTxId = `inv_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const variantNetto = item.variant?.netto || 1;
             await tx.insert(schema.inventoryTransactions).values({
               id: invTxId,
-              local_ref_id: `${finalLocalRefId}_${item.product.id}`,
+              local_ref_id: `${finalLocalRefId}_${item.product.id}_${item.variant?.id || "base"}`,
               productId: item.product.id,
+              variantId: item.variant?.id || null,
               type: "SALE",
-              quantity: -item.quantity, // Negative for sales, total quantity remains same for stock
+              quantity: -item.quantity * variantNetto,
               status: "COMPLETED",
               organizationId: orgId,
               createdBy: userId,
