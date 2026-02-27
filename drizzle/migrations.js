@@ -21,6 +21,7 @@ import m0016 from './0016_late_dakota_north.sql';
 import m0017 from './0017_loud_viper.sql';
 import m0018 from './0018_eminent_patch.sql';
 import m0019 from './0019_mushy_northstar.sql';
+import m0020 from './0020_real_robin_chapel.sql';
 
   export default {
     journal,
@@ -44,7 +45,8 @@ m0015,
 m0016,
 m0017,
 m0018,
-m0019
+m0019,
+m0020
     }
   }
   

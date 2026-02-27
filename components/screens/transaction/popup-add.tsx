@@ -71,7 +71,7 @@ export default function PopupAddProduct() {
   const addProductSchema = z
     .object({
       variantUnitId: z.string().nullable(),
-      quantity: z.number().min(1, "Jumlah harus minimal 1"),
+      quantity: z.number().min(0.001, "Jumlah harus minimal 0.001"),
       isTempSellPrice: z.boolean(),
       tempSellPrice: z.number(),
       addNote: z.boolean(),

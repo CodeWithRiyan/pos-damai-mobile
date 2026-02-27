@@ -21,12 +21,17 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
 export default function PopupAddStockOpname() {
-  const { addProduct, cart, setAddProduct, addCartItem, removeCartItem } =
+  const { addProduct, addProductVariantId, cart, setAddProduct, addCartItem, removeCartItem } =
     useStockOpnameStore();
 
-  const product = cart.find((item) => item.product.id === addProduct?.id);
+  const product = cart.find(
+    (item) => 
+      item.product.id === addProduct?.id && 
+      item.variant?.id === addProductVariantId
+  );
 
   const addStockOpnameSchema = z.object({
+    variantUnitId: z.string().nullable(),
     physicalStock: z
       .number()
       .min(0, { message: "Stok fisik tidak boleh kurang dari 0" }),
@@ -35,6 +40,7 @@ export default function PopupAddStockOpname() {
   type AddStockOpnameFormValues = z.infer<typeof addStockOpnameSchema>;
 
   const initialValues: AddStockOpnameFormValues = {
+    variantUnitId: null,
     physicalStock: 0,
   };
 
@@ -49,9 +55,13 @@ export default function PopupAddStockOpname() {
     if (addProduct && product) {
       form.reset({
         physicalStock: product.physicalStock || 0,
+        variantUnitId: product.variant?.id || null,
       });
     } else {
-      form.reset(initialValues);
+      form.reset({
+        ...initialValues,
+        variantUnitId: addProductVariantId || null,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, addProduct]);
@@ -62,6 +72,7 @@ export default function PopupAddStockOpname() {
     if (addProduct) {
       addCartItem({
         product: addProduct,
+        variant: addProduct.variants.find((v) => v.id === data.variantUnitId),
         physicalStock: data.physicalStock,
       });
     }
@@ -138,8 +149,14 @@ export default function PopupAddStockOpname() {
                         <InputField
                           value={value.toString()}
                           autoComplete="off"
-                          onChangeText={(text) => onChange(Number(text) || 0)}
-                          onBlur={onBlur}
+                          onChangeText={(text: string) => {
+                            const val = text.replace(",", ".");
+                            onChange(val);
+                          }}
+                          onBlur={() => {
+                            onChange(Number(value) || 0);
+                            onBlur();
+                          }}
                           keyboardType="numeric"
                           className="text-4xl text-center font-bold border-none"
                         />
@@ -165,7 +182,7 @@ export default function PopupAddStockOpname() {
               <Pressable
                 className="flex-1 items-center justify-center h-12 px-4 rounded-lg border border-error-500 bg-error-100 active:bg-error-200"
                 onPress={() => {
-                  removeCartItem(addProduct?.id || "");
+                  removeCartItem(addProduct?.id || "", addProductVariantId || undefined);
                   setAddProduct(null);
                 }}
               >
