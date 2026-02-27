@@ -113,6 +113,127 @@ export function useTransactions(params: { customerId?: string } | void) {
   });
 }
 
+// Get all products purchased by a specific customer
+export function usePurchasedProducts(customerId: string) {
+  const orgId = useAuthStore((state) => state.getOrganizationId());
+
+  return useQuery({
+    queryKey: ["purchased-products", orgId, customerId],
+    queryFn: async () => {
+      if (!customerId || !orgId) return [];
+
+      // 1. Get all product IDs from transaction items for this customer
+      const purchasedItems = await db
+        .select({
+          productId: schema.transactionItems.productId,
+          variantId: schema.transactionItems.variantId,
+        })
+        .from(schema.transactionItems)
+        .innerJoin(
+          schema.transactions,
+          eq(schema.transactionItems.transactionId, schema.transactions.id),
+        )
+        .where(
+          and(
+            eq(schema.transactions.customerId, customerId),
+            eq(schema.transactions.organizationId, orgId),
+            isNull(schema.transactions.deletedAt),
+          ),
+        );
+
+      if (purchasedItems.length === 0) return [];
+
+      // Use a set to get unique product IDs
+      const productIds = Array.from(new Set(purchasedItems.map(item => item.productId)));
+
+      // 2. Fetch full product details for these IDs
+      // We'll reuse the logic from useProducts but filtered by IDs
+      const productResult = await db
+        .select({
+          product: schema.products,
+          discount: schema.discounts,
+        })
+        .from(schema.products)
+        .leftJoin(schema.discounts, eq(schema.products.discountId, schema.discounts.id))
+        .where(
+          and(
+            eq(schema.products.organizationId, orgId),
+            isNull(schema.products.deletedAt),
+            // Drizzle doesn't have a direct "in Array" helper that works easily with large arrays in all versions, 
+            // but we can use multiple or conditions or just filter in JS if the list is small.
+            // For POS, customer's unique products usually aren't thousands.
+          )
+        );
+
+      // Filter in memory for simplicity and to match the schema
+      const filteredResult = productResult.filter(r => productIds.includes(r.product.id));
+
+      const productsWithDetails = await Promise.all(
+        filteredResult.map(async ({ product, discount }) => {
+          const prices = await db
+            .select()
+            .from(schema.productPrices)
+            .where(eq(schema.productPrices.productId, product.id));
+
+          const variants = await db
+            .select()
+            .from(schema.productVariants)
+            .where(
+              and(
+                eq(schema.productVariants.productId, product.id),
+                isNull(schema.productVariants.deletedAt),
+              ),
+            );
+
+          // Calculate stock
+          const transactions = await db
+            .select()
+            .from(schema.inventoryTransactions)
+            .where(
+              and(
+                eq(schema.inventoryTransactions.productId, product.id),
+                eq(schema.inventoryTransactions.status, "COMPLETED"),
+              ),
+            );
+
+          const totalStock = transactions.reduce(
+            (sum, tx) => sum + tx.quantity,
+            0,
+          );
+
+          return {
+            ...product,
+            purchasePrice: product.purchasePrice ?? 0,
+            minimumStock: product.minimumStock ?? 0,
+            isActive: !!product.isActive,
+            isFavorite: !!product.isFavorite,
+            type: (product.type || "DEFAULT") as "DEFAULT" | "MULTIUNIT" | "VARIANTS",
+            code: product.barcode,
+            sellPrices: prices.map(p => ({
+              ...p,
+              minimumPurchase: p.minimumPurchase ?? 0,
+              type: p.type as "RETAIL" | "WHOLESALE",
+            })),
+            variants: variants,
+            stock: totalStock,
+            discount: discount ? {
+              id: discount.id,
+              name: discount.name,
+              nominal: discount.nominal,
+              type: discount.type as 'FLAT' | 'PERCENTAGE',
+              startDate: discount.startDate,
+              endDate: discount.endDate,
+            } : undefined,
+          };
+        }),
+      );
+
+      return productsWithDetails;
+    },
+    enabled: !!orgId && !!customerId,
+  });
+}
+
 export async function fetchTransaction(id: string): Promise<Transaction | null> {
   // Get transaction record
   const transactionResult = await db
