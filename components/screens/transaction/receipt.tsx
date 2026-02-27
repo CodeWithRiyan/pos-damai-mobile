@@ -163,11 +163,6 @@ export default function TransactionReceipt() {
                 });
 
                 return Object.values(groupedItemsMap).map((group) => {
-                  const hasMultiplePrices = transaction.items?.some(i => 
-                    i.productId === group.productId && 
-                    i.variantId === group.variantId && 
-                    i.sellPrice !== group.sellPrice
-                  );
                   
                   // Regular price is the max price in this group (undiscounted)
                   const regularPrice = Math.max(...(transaction.items

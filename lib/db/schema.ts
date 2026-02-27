@@ -122,6 +122,10 @@ export const customers = sqliteTable("customers", {
   phone: text("phone"),
   address: text("address"),
   points: real("points").default(0),
+  totalTransactions: integer("totalTransactions").default(0),
+  totalRevenue: real("totalRevenue").default(0),
+  totalProfit: real("totalProfit").default(0),
+
   organizationId: text("organizationId"),
   ...syncColumns,
 });

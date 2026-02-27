@@ -188,15 +188,16 @@ export default function CustomerDetail() {
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Total Omset</Text>
               <Text className="font-bold">
-                Rp {(customer?.totalOmset || 0).toLocaleString("id-ID")}
+                Rp {(customer?.totalRevenue || 0).toLocaleString("id-ID")}
               </Text>
             </VStack>
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Total Keuntungan</Text>
               <Text className="font-bold">
-                Rp {(customer?.totalKeuntungan || 0).toLocaleString("id-ID")}
+                Rp {(customer?.totalProfit || 0).toLocaleString("id-ID")}
               </Text>
             </VStack>
+
           </Box>
         </VStack>
       </ScrollView>
