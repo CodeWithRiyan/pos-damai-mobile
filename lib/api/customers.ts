@@ -45,18 +45,24 @@ export interface UpdateCustomerDTO {
 }
 
 // Get all customers from local SQLite (excluding soft-deleted)
-export function useCustomers() {
+export function useCustomers(params: { category?: CustomerCategory } | void) {
   const orgId = useAuthStore(state => state.getOrganizationId());
   return useQuery({
-    queryKey: ['customers', orgId],
+    queryKey: ['customers', orgId, params?.category],
     queryFn: async () => {
+      const conditions = [
+        eq(schema.customers.organizationId, orgId),
+        isNull(schema.customers.deletedAt)
+      ];
+
+      if (params?.category) {
+        conditions.push(eq(schema.customers.category, params.category));
+      }
+
       const result = await db
         .select()
         .from(schema.customers)
-        .where(and(
-          eq(schema.customers.organizationId, orgId),
-          isNull(schema.customers.deletedAt)
-        ));
+        .where(and(...conditions));
 
       return result as CustomerWithStats[];
     },
