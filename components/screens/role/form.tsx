@@ -29,6 +29,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect } from "react";
+import { usePermission } from "@/hooks/use-permission";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import z from "zod";
@@ -62,6 +63,9 @@ export default function RoleForm() {
   const { refetch: refetchRoles } = useRoles();
   const { data: permissions = [], isLoading: isLoadingPermissions } =
     usePermissions();
+
+  const { hasPermission } = usePermission();
+  const canSave = isAdd ? hasPermission("roles:create") : hasPermission("roles:update");
 
   const createMutation = useCreateRole();
   const updateMutation = useUpdateRole();
@@ -309,16 +313,25 @@ export default function RoleForm() {
 
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
-          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
-          disabled={isLoading}
+          className={`w-full rounded-sm h-10 flex justify-center items-center ${
+            !canSave || isLoading ? "bg-slate-300 border-slate-300" : "bg-primary-500 border-primary-500"
+          }`}
+          disabled={!canSave || isLoading}
           onPress={form.handleSubmit(onSubmit)}
         >
           {isLoading ? (
             <Spinner size="small" color="#FFFFFF" />
           ) : (
-            <Text size="sm" className="text-typography-0 font-bold">
-              SIMPAN
-            </Text>
+            <VStack className="items-center">
+              <Text size="sm" className="text-typography-0 font-bold">
+                SIMPAN
+              </Text>
+              {!canSave && (
+                <Text size="xs" className="text-typography-0 italic">
+                  (Tidak ada izin)
+                </Text>
+              )}
+            </VStack>
           )}
         </Pressable>
       </HStack>
