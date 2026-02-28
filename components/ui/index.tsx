@@ -1,5 +1,6 @@
 export * from "./actionsheet";
 export * from "./alert-dialog";
+export * from "./badge";
 export * from "./box";
 export * from "./button";
 export * from "./center";
@@ -12,6 +13,7 @@ export * from "./icon";
 export * from "./input";
 export * from "./modal";
 export * from "./pressable";
+export * from "./radio";
 export * from "./select";
 export * from "./spinner";
 export * from "./switch";
@@ -19,5 +21,4 @@ export * from "./text";
 export * from "./textarea";
 export * from "./toast";
 export * from "./vstack";
-export * from "./radio";
 

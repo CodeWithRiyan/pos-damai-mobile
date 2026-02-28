@@ -114,7 +114,7 @@ export default function ReturnPurchasingReceipt() {
               </HStack>
               <HStack className="justify-between items-center mt-1">
                 <Text className="text-typography-500">
-                  Pelanggan: {returnData.supplierName}
+                  Supplier: {returnData.supplierName}
                 </Text>
               </HStack>
               <HStack className="justify-between items-center mt-1">
