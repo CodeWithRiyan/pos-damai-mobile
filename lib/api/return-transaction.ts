@@ -214,19 +214,39 @@ export const useCreateTransactionReturn = () => {
               updatedAt: now,
             });
 
-            // 2b. Add stock via transaction only if returnType is CASH (barang kembali)
-            if (data.returnType === "CASH") {
-              const txId = `invrt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-              const txRefId = `${finalLocalRefId}-${item.productId}`;
+            // 2b. Add stock via transaction
+            const txIdIn = `invrt_in_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const txRefIdIn = `${finalLocalRefId}-${item.productId}-in`;
 
-              if (!item.productId) continue;
+            if (!item.productId) continue;
+
+            // Leg 1: Item comes back (Stock IN)
+            await tx.insert(inventoryTransactions).values({
+              id: txIdIn,
+              local_ref_id: txRefIdIn,
+              productId: item.productId,
+              type: "RETURN_SALE",
+              quantity: item.quantity, // Positive for returned sales
+              status: "COMPLETED",
+              organizationId,
+              createdBy: userId,
+              updatedBy: userId,
+              _dirty: true,
+              createdAt: now,
+              updatedAt: now,
+            });
+
+            // Leg 2: Replacement item goes out (Stock OUT) - only for ITEM return
+            if (data.returnType === "ITEM") {
+              const txIdOut = `invrt_out_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+              const txRefIdOut = `${finalLocalRefId}-${item.productId}-out`;
 
               await tx.insert(inventoryTransactions).values({
-                id: txId,
-                local_ref_id: txRefId,
+                id: txIdOut,
+                local_ref_id: txRefIdOut,
                 productId: item.productId,
-                type: "RETURN_SALE",
-                quantity: item.quantity, // Positive for returned sales
+                type: "SALE",
+                quantity: -item.quantity, // Negative for replacement item
                 status: "COMPLETED",
                 organizationId,
                 createdBy: userId,

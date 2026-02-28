@@ -24,7 +24,7 @@ import { getErrorMessage } from "@/lib/api/client";
 import { Product, useProductsByCategory } from "@/lib/api/products";
 import { useCategoryStore } from "@/stores/category";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function CategoryDetail() {
@@ -46,6 +46,12 @@ export default function CategoryDetail() {
   const { data: products = [] } = useProductsByCategory(categoryId || "");
   const deleteMutation = useDeleteCategory();
   const toast = useToast();
+
+  const totalModal = useMemo(() => {
+    return products.reduce((acc, curr) => {
+      return acc + (curr.purchasePrice || 0) * (curr.stock || 0);
+    }, 0);
+  }, [products]);
 
   const onRefetch = () => {
     refetchCategorys();
@@ -228,7 +234,9 @@ export default function CategoryDetail() {
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Nilai Modal</Text>
-              <Text className="font-bold">Rp 0</Text>
+              <Text className="font-bold">
+                Rp {totalModal.toLocaleString("id-ID")}
+              </Text>
             </HStack>
           </Box>
           <Box className="pr-4">
