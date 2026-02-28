@@ -27,6 +27,7 @@ export default function StockOpnameInput() {
   const { cart, setAddProduct, setOpenConfirm } = useStockOpnameStore();
   const { data: products } = useProducts({
     forceParentMultiUnit: true,
+    forceParent: true,
   });
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);

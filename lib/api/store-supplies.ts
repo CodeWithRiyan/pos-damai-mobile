@@ -1,6 +1,6 @@
 import { db } from '../db';
 import * as schema from '../db/schema';
-import { eq, desc, and, getTableColumns, inArray } from 'drizzle-orm';
+import { eq, desc, and, getTableColumns } from 'drizzle-orm';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
 import { generateLocalRefId } from '../utils/reference';
@@ -10,6 +10,7 @@ export interface StoreSupplyDTO {
   note: string;
   items: {
     product: { id: string; name: string };
+    variant?: { id: string; name: string; netto?: number | null };
     quantity: number;
   }[];
 }
@@ -50,20 +51,22 @@ export function useCreateStoreSupply() {
           const purchasePrice = product?.purchasePrice || 0;
           
           // Usage is now direct input quantity
-          const usage = item.quantity;
-          const physicalStock = Math.max(0, currentStock - usage);
-          const difference = -usage;
+          const variantNetto = item.variant?.netto || 1;
+          const usageInBaseUnit = item.quantity * variantNetto;
+          const physicalStock = Math.max(0, currentStock - usageInBaseUnit);
+          const difference = -usageInBaseUnit;
 
-          const supplyItemId = `supply_item_${Date.now()}_${item.product.id}`;
+          const supplyItemId = `supply_item_${Date.now()}_${item.product.id}_${item.variant?.id || "base"}`;
           
           // Insert Supply Item
           await tx.insert(schema.storeSupplyItems).values({
             id: supplyItemId,
             storeSupplyId: supplyId,
             productId: item.product.id,
+            variantId: item.variant?.id || null,
             quantitySystem: currentStock,
             quantityPhysical: physicalStock,
-            usage: usage,
+            usage: item.quantity,
             purchasePrice: purchasePrice,
             organizationId: orgId,
             createdBy: userId,
@@ -78,8 +81,9 @@ export function useCreateStoreSupply() {
             const txId = `inv_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             await tx.insert(schema.inventoryTransactions).values({
               id: txId,
-              local_ref_id: `${supplyRefId}_${item.product.id}`,
+              local_ref_id: `${supplyRefId}_${item.product.id}_${item.variant?.id || "base"}`,
               productId: item.product.id,
+              variantId: item.variant?.id || null,
               type: 'STORE_SUPPLY',
               quantity: difference,
               organizationId: orgId,
@@ -143,15 +147,17 @@ export function useStoreSupply(id: string) {
 
       if (!supply) return null;
 
-      // Get Items with Products
+      // Get Items with Products & Variants
       const items = await db
         .select({
           ...getTableColumns(schema.storeSupplyItems),
           productName: schema.products.name,
           productUnit: schema.products.unit,
+          variantName: schema.productVariants.name,
         })
         .from(schema.storeSupplyItems)
         .leftJoin(schema.products, eq(schema.storeSupplyItems.productId, schema.products.id))
+        .leftJoin(schema.productVariants, eq(schema.storeSupplyItems.variantId, schema.productVariants.id))
         .where(eq(schema.storeSupplyItems.storeSupplyId, id));
 
       return { ...supply, items };

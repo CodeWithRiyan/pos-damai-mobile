@@ -21,12 +21,17 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
 export default function PopupAddStoreSupplies() {
-  const { addProduct, cart, setAddProduct, addCartItem, removeCartItem } =
+  const { addProduct, addProductVariantId, cart, setAddProduct, addCartItem, removeCartItem } =
     useStoreSuppliesStore();
 
-  const product = cart.find((item) => item.product.id === addProduct?.id);
+  const product = cart.find(
+    (item) => 
+      item.product.id === addProduct?.id && 
+      item.variant?.id === addProductVariantId
+  );
 
   const addStoreSuppliesSchema = z.object({
+    variantUnitId: z.string().nullable(),
     quantity: z
       .number()
       .min(0, { message: "Jumlah tidak boleh kurang dari 0" }),
@@ -35,6 +40,7 @@ export default function PopupAddStoreSupplies() {
   type AddStoreSuppliesFormValues = z.infer<typeof addStoreSuppliesSchema>;
 
   const initialValues: AddStoreSuppliesFormValues = {
+    variantUnitId: null,
     quantity: 0,
   };
 
@@ -49,9 +55,13 @@ export default function PopupAddStoreSupplies() {
     if (addProduct && product) {
       form.reset({
         quantity: product.quantity || 0,
+        variantUnitId: product.variant?.id || null,
       });
     } else {
-      form.reset(initialValues);
+      form.reset({
+        ...initialValues,
+        variantUnitId: addProductVariantId || null,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, addProduct]);
@@ -62,6 +72,7 @@ export default function PopupAddStoreSupplies() {
     if (addProduct) {
       addCartItem({
         product: addProduct,
+        variant: addProduct.variants.find((v) => v.id === data.variantUnitId),
         quantity: data.quantity,
       });
     }
@@ -138,8 +149,14 @@ export default function PopupAddStoreSupplies() {
                         <InputField
                           value={value.toString()}
                           autoComplete="off"
-                          onChangeText={(text) => onChange(Number(text) || 0)}
-                          onBlur={onBlur}
+                          onChangeText={(text: string) => {
+                            const val = text.replace(",", ".");
+                            onChange(val);
+                          }}
+                          onBlur={() => {
+                            onChange(Number(value) || 0);
+                            onBlur();
+                          }}
                           keyboardType="numeric"
                           className="text-4xl text-center font-bold border-none"
                         />
@@ -165,7 +182,7 @@ export default function PopupAddStoreSupplies() {
               <Pressable
                 className="flex-1 items-center justify-center h-12 px-4 rounded-lg border border-error-500 bg-error-100 active:bg-error-200"
                 onPress={() => {
-                  removeCartItem(addProduct?.id || "");
+                  removeCartItem(addProduct?.id || "", addProductVariantId || undefined);
                   setAddProduct(null);
                 }}
               >

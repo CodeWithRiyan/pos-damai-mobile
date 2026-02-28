@@ -36,10 +36,13 @@ export default function ProductLog() {
       case "STOCK_OPNAME":
         return "STOK OPNAME";
       case "SALES_RETURN":
+      case "RETURN_SALE":
         return "RETUR PENJUALAN";
       case "PURCHASE_RETURN":
+      case "RETURN_PURCHASE":
         return "RETUR PEMBELIAN";
       case "STORE_SUPPLIES":
+      case "STORE_SUPPLY":
         return "KEBUTUHAN TOKO";
       default:
         return String(log.type).replace(/_/g, " ");

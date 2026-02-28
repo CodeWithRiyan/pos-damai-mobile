@@ -383,7 +383,7 @@ export function useShiftDetail(id: string) {
       const end = shift.endTime || new Date();
 
       // 2. Fetch all related transactions in time range
-      const [sales, purchases, finances] = await Promise.all([
+      const [sales, finances] = await Promise.all([
         // Sales
         db
           .select()
@@ -394,18 +394,6 @@ export function useShiftDetail(id: string) {
               gte(schema.transactions.transactionDate, start),
               lte(schema.transactions.transactionDate, end),
               isNull(schema.transactions.deletedAt),
-            ),
-          ),
-        // Purchases
-        db
-          .select()
-          .from(schema.purchases)
-          .where(
-            and(
-              eq(schema.purchases.organizationId, orgId),
-              gte(schema.purchases.createdAt, start),
-              lte(schema.purchases.createdAt, end),
-              isNull(schema.purchases.deletedAt),
             ),
           ),
         // Finances (Income/Expenses)
@@ -446,19 +434,6 @@ export function useShiftDetail(id: string) {
           type: "SALES",
           nominal: s.totalPaid || s.totalAmount,
           note: `Transaksi Penjualan (${s.local_ref_id || s.id})`,
-        });
-      });
-
-      // Purchases
-      purchases.forEach((p) => {
-        history.push({
-          id: p.id,
-          transactionId: p.id,
-          ref: p.local_ref_id,
-          transactionDate: p.createdAt!,
-          type: "PURCHASES",
-          nominal: p.totalAmount,
-          note: `Transaksi Pembelian (${p.local_ref_id || p.id})`,
         });
       });
 

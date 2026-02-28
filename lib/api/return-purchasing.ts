@@ -227,40 +227,45 @@ export const useCreatePurchaseReturn = () => {
             });
             console.log("✅ [RETURN API] Item saved");
 
-            // 2b. Reduce stock via transaction only if returnType is CASH
-            // Per business process:
-            // - CASH return: stock decreases (-quantity)
-            // - ITEM return: stock change is +0 (assuming swap/replenishment)
-            if (data.returnType === "CASH") {
-              const txId = `itrt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-              const txRefId = `${finalLocalRefId}-${item.productId}`;
+            // 2b. Reduce stock via transaction
+            const txIdOut = `itrt_out_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const txRefIdOut = `${finalLocalRefId}-${item.productId}-out`;
 
-              console.log(
-                "📉 [RETURN API] Creating inventory transaction for stock reduction (CASH return):",
-                {
-                  id: txId,
-                  local_ref_id: txRefId,
-                  productId: item.productId,
-                  type: "RETURN_PURCHASE",
-                  quantity: -item.quantity,
-                  status: "COMPLETED",
-                },
+            if (!item.productId) {
+              console.error(
+                "❌ [RETURN API] Product ID is missing for item!",
+                item,
               );
+              continue;
+            }
 
-              if (!item.productId) {
-                console.error(
-                  "❌ [RETURN API] Product ID is missing for item!",
-                  item,
-                );
-                continue;
-              }
+            // Leg 1: Item goes back to supplier (Stock OUT)
+            await tx.insert(inventoryTransactions).values({
+              id: txIdOut,
+              local_ref_id: txRefIdOut,
+              productId: item.productId,
+              type: "RETURN_PURCHASE",
+              quantity: -item.quantity,
+              status: "COMPLETED",
+              organizationId,
+              createdBy: userId,
+              updatedBy: userId,
+              _dirty: true,
+              createdAt: now,
+              updatedAt: now,
+            });
+
+            // Leg 2: Replacement item received (Stock IN) - only for ITEM return
+            if (data.returnType === "ITEM") {
+              const txIdIn = `itrt_in_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+              const txRefIdIn = `${finalLocalRefId}-${item.productId}-in`;
 
               await tx.insert(inventoryTransactions).values({
-                id: txId,
-                local_ref_id: txRefId,
+                id: txIdIn,
+                local_ref_id: txRefIdIn,
                 productId: item.productId,
-                type: "RETURN_PURCHASE",
-                quantity: -item.quantity,
+                type: "PURCHASE",
+                quantity: item.quantity,
                 status: "COMPLETED",
                 organizationId,
                 createdBy: userId,
@@ -269,13 +274,6 @@ export const useCreatePurchaseReturn = () => {
                 createdAt: now,
                 updatedAt: now,
               });
-              console.log(
-                `✅ [RETURN API] Inventory transaction created for product ${item.productId} - stock reduced by ${item.quantity}`,
-              );
-            } else {
-              console.log(
-                `ℹ️ [RETURN API] Skipping inventory transaction for product ${item.productId} (returnType is ITEM, net stock change +0)`,
-              );
             }
           }
         }

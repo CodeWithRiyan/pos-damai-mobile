@@ -10,6 +10,7 @@ export interface StockOpnameDTO {
   note: string;
   items: {
     product: { id: string; name: string };
+    variant?: { id: string; name: string; netto?: number | null };
     physicalStock: number;
   }[];
 }
@@ -44,7 +45,10 @@ export function useCreateStockOpname() {
             ));
 
           const currentStock = transactions.reduce((sum, t) => sum + t.quantity, 0);
-          const difference = item.physicalStock - currentStock;
+          
+          const variantNetto = item.variant?.netto || 1;
+          const physicalInBaseUnit = item.physicalStock * variantNetto;
+          const difference = physicalInBaseUnit - currentStock;
           
           // Get product purchase price
           const [product] = await tx
@@ -59,13 +63,14 @@ export function useCreateStockOpname() {
           if (difference < 0) totalLoss += Math.abs(financialImpact);
           if (difference !== 0) hasDifference = true;
 
-          const opnameItemId = `opname_item_${Date.now()}_${item.product.id}`;
+          const opnameItemId = `opname_item_${Date.now()}_${item.product.id}_${item.variant?.id || "base"}`;
           
           // Insert Opname Item
           await tx.insert(schema.stockOpnameItems).values({
             id: opnameItemId,
             stockOpnameId: opnameId,
             productId: item.product.id,
+            variantId: item.variant?.id || null,
             quantitySystem: currentStock,
             quantityPhysical: item.physicalStock,
             difference,
@@ -84,8 +89,9 @@ export function useCreateStockOpname() {
             const txId = `inv_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             await tx.insert(schema.inventoryTransactions).values({
               id: txId,
-              local_ref_id: `${opnameRefId}_${item.product.id}`,
+              local_ref_id: `${opnameRefId}_${item.product.id}_${item.variant?.id || "base"}`,
               productId: item.product.id,
+              variantId: item.variant?.id || null,
               type: 'STOCK_OPNAME',
               quantity: difference,
               organizationId: orgId,
@@ -151,15 +157,17 @@ export function useStockOpname(id: string) {
 
       if (!opname) return null;
 
-      // Get Items with Products
+      // Get Items with Products & Variants
       const items = await db
         .select({
           ...getTableColumns(schema.stockOpnameItems),
           productName: schema.products.name,
           productUnit: schema.products.unit,
+          variantName: schema.productVariants.name,
         })
         .from(schema.stockOpnameItems)
         .leftJoin(schema.products, eq(schema.stockOpnameItems.productId, schema.products.id))
+        .leftJoin(schema.productVariants, eq(schema.stockOpnameItems.variantId, schema.productVariants.id))
         .where(eq(schema.stockOpnameItems.stockOpnameId, id));
 
       return { ...opname, items };
