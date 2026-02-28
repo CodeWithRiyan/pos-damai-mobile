@@ -33,7 +33,9 @@ export default function SelectingProductList({
     selectedItems || [],
   );
 
-  const { data } = useProducts();
+  const { data } = useProducts({
+    forceParent: true,
+  });
   const products = data || [];
   const filteredProduct =
     usedFor === "brand"

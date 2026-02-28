@@ -36,6 +36,7 @@ import {
   useProducts,
   useUpdateProduct,
 } from "@/lib/api/products";
+import { unitSuffixHelper } from "@/lib/unit";
 import { useBrandStore } from "@/stores/brand";
 import { useCategoryStore } from "@/stores/category";
 import { useDiscountStore } from "@/stores/discount";
@@ -82,7 +83,6 @@ export default function ProductForm() {
       unitVariants: z
         .array(
           z.object({
-            name: z.string().min(1, "Nama wajib diisi."),
             code: z.string().min(1, "Kode wajib diisi."),
             netto: z.number().min(0.001, "Netto wajib diisi."),
             purchasePrice: z.number().min(1, "Harga Beli wajib diisi."),
@@ -138,6 +138,17 @@ export default function ProductForm() {
               code: "custom",
               message: "Harga Retail tidak boleh kurang dari harga beli",
               path: [`unitVariants.${i}.retailPrice`],
+            });
+          }
+          // Cek duplikat: apakah nilai netto ini muncul lebih dari sekali
+          const nettoValues = data.unitVariants?.map((v) => v.netto) ?? [];
+          const isDuplicate =
+            nettoValues.filter((n) => n === variant.netto).length > 1;
+          if (isDuplicate) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Netto tidak boleh ada yang sama",
+              path: [`unitVariants.${i}.netto`],
             });
           }
         });
@@ -228,7 +239,14 @@ export default function ProductForm() {
     purchasePrice: 0,
     stock: 0,
     minimumStock: 0,
-    unitVariants: null,
+    unitVariants: [
+      {
+        code: "",
+        netto: 1,
+        purchasePrice: 0,
+        retailPrice: 0,
+      },
+    ],
     variants: null,
     retailPrice: [
       {
@@ -358,7 +376,6 @@ export default function ProductForm() {
                 );
 
                 return {
-                  name: v.name,
                   code: v.code,
                   netto: v.netto || 0,
                   purchasePrice: product.purchasePrice * (v.netto || 0),
@@ -401,38 +418,52 @@ export default function ProductForm() {
     const prices =
       data.type === "MULTIUNIT"
         ? [
-            ...(data.unitVariants || []).map((uv) => ({
-              type: "RETAIL" as const,
-              label: uv.name,
-              price: uv.retailPrice,
-              minimumPurchase: 1,
-            })),
-            ...data.wholesalePrice.map((p) => ({
-              ...p,
-              type: "WHOLESALE" as const,
-              label: "Grosir",
-            })),
+            ...(data.unitVariants || [])
+              .sort((a, b) => b.retailPrice - a.retailPrice)
+              .map((uv) => ({
+                type: "RETAIL" as const,
+                label: `${uv.netto} ${unitSuffixHelper(data.unit)}`,
+                price: uv.retailPrice,
+                minimumPurchase: 1,
+              })),
+            ...data.wholesalePrice
+              .sort((a, b) => a.price - b.price)
+              .map((p) => ({
+                ...p,
+                type: "WHOLESALE" as const,
+                label: "Grosir",
+              })),
           ]
         : [
-            ...data.retailPrice.map((p) => ({
-              ...p,
-              type: "RETAIL" as const,
-              label: "Retail",
-            })),
-            ...data.wholesalePrice.map((p) => ({
-              ...p,
-              type: "WHOLESALE" as const,
-              label: "Grosir",
-            })),
+            ...data.retailPrice
+              .sort((a, b) => b.price - a.price)
+              .map((p) => ({
+                ...p,
+                type: "RETAIL" as const,
+                label: "Retail",
+              })),
+            ...data.wholesalePrice
+              .sort((a, b) => b.price - a.price)
+              .map((p) => ({
+                ...p,
+                type: "WHOLESALE" as const,
+                label: "Grosir",
+              })),
           ];
 
     const variantsPayload =
       data.type === "MULTIUNIT"
-        ? (data.unitVariants || []).map((uv) => ({
-            name: uv.name,
-            code: uv.code,
-            netto: uv.netto,
-          }))
+        ? (data.unitVariants || [])
+            .sort((a, b) => {
+              if (a.netto === 1) return -1; // a selalu di atas jika netto = 1
+              if (b.netto === 1) return 1; // b selalu di atas jika netto = 1
+              return b.netto - a.netto; // sisanya descending (5, 0.25, dst)
+            })
+            .map((uv) => ({
+              name: `${uv.netto} ${unitSuffixHelper(data.unit)}`,
+              code: uv.code,
+              netto: uv.netto,
+            }))
         : data.variants || [];
 
     if (productId && product) {
@@ -810,49 +841,8 @@ export default function ProductForm() {
                     <Grid
                       key={field.id}
                       className="p-4 border border-primary-300 rounded-md gap-4"
-                      _extra={{ className: "grid-cols-3" }}
+                      _extra={{ className: "grid-cols-2" }}
                     >
-                      <GridItem
-                        _extra={{
-                          className: "col-span-1",
-                        }}
-                      >
-                        <Controller
-                          name={`unitVariants.${index}.name`}
-                          control={form.control}
-                          render={({
-                            field: { onChange, onBlur, value },
-                            fieldState: { error },
-                          }) => (
-                            <FormControl
-                              isRequired
-                              isInvalid={!!error}
-                              className="flex-1"
-                            >
-                              <FormControlLabel>
-                                <FormControlLabelText>
-                                  Nama Varian Unit
-                                </FormControlLabelText>
-                              </FormControlLabel>
-                              <Input>
-                                <InputField
-                                  value={value}
-                                  onChangeText={onChange}
-                                  onBlur={onBlur}
-                                  placeholder="Contoh: Merah, Biru"
-                                />
-                              </Input>
-                              {error && (
-                                <FormControlError>
-                                  <FormControlErrorText>
-                                    {error.message}
-                                  </FormControlErrorText>
-                                </FormControlError>
-                              )}
-                            </FormControl>
-                          )}
-                        />
-                      </GridItem>
                       <GridItem
                         _extra={{
                           className: "col-span-1",
@@ -868,6 +858,7 @@ export default function ProductForm() {
                             <FormControl
                               isRequired
                               isInvalid={!!error}
+                              isDisabled={!index}
                               className="flex-1"
                             >
                               <FormControlLabel>
@@ -1100,7 +1091,6 @@ export default function ProductForm() {
                     onPress={() => {
                       const newIndex = unitVariantFields.length;
                       unitVariantAppend({
-                        name: "",
                         code: "",
                         netto: 0,
                         purchasePrice: 0,

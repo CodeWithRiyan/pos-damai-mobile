@@ -162,10 +162,7 @@ export default function FinanceTransaction() {
           });
 
           if (status === "COMPLETED") {
-            router.replace({
-              pathname: "/(main)/finance/success",
-              params: { id: responseData.id },
-            });
+            router.replace(`/(main)/finance/receipt/${responseData.id}`);
           } else {
             router.navigate("/(main)/finance/draft");
           }

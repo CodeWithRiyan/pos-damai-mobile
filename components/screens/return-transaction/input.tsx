@@ -25,7 +25,8 @@ export default function ReturnTransactionInput() {
   const { customerId } = useLocalSearchParams<{ customerId: string }>();
   const { cart, setAddProduct, setOpenConfirm } = useReturnTransactionStore();
   const [search, setSearch] = useState<string>("");
-  const { data: products = [], isLoading: isLoadingProduct } = usePurchasedProducts(customerId!);
+  const { data: products = [], isLoading: isLoadingProduct } =
+    usePurchasedProducts(customerId!);
 
   const isLoading = isLoadingProduct;
 
@@ -69,45 +70,45 @@ export default function ReturnTransactionInput() {
                       p.barcode?.toLowerCase().includes(search.toLowerCase()),
                   )
                   .map((item, index) => {
-                  return (
-                    <Pressable
-                      key={index}
-                      className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                      onPress={() => setAddProduct(item)}
-                    >
-                      <HStack className="justify-between items-center">
-                        <HStack space="md" className="items-center">
-                          <Box className="size-16 rounded-lg bg-primary-200 items-center justify-center">
-                            <Heading className="text-primary-500 font-bold">
-                              {item.name?.charAt(0).toUpperCase() || "?"}
-                            </Heading>
-                          </Box>
-                          <VStack className="flex-1">
-                            <Heading size="sm" className="line-clamp-2">
-                              {item.name || "Unknown"}
-                            </Heading>
-                            <Text size="xs" className="text-slate-500">
-                              {`Rp ${item.sellPrices?.[0]?.price?.toLocaleString("id-ID") || 0}`}
-                            </Text>
-                          </VStack>
-                          <HStack space="sm">
-                            <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
-                              <Text className="font-bold">
-                                {cart?.find((f) => f.product.id === item.id)
-                                  ?.quantity || 0}
-                              </Text>
+                    return (
+                      <Pressable
+                        key={index}
+                        className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
+                        onPress={() => setAddProduct(item)}
+                      >
+                        <HStack className="justify-between items-center">
+                          <HStack space="md" className="items-center">
+                            <Box className="size-16 rounded-lg bg-primary-200 items-center justify-center">
+                              <Heading className="text-primary-500 font-bold">
+                                {item.name?.charAt(0).toUpperCase() || "?"}
+                              </Heading>
                             </Box>
-                            <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
-                              <Text className="text-typography-0 font-bold">
-                                {item.stock}
+                            <VStack className="flex-1">
+                              <Heading size="sm" className="line-clamp-2">
+                                {item.name || "Unknown"}
+                              </Heading>
+                              <Text size="xs" className="text-slate-500">
+                                {`Rp ${item.sellPrices?.[0]?.price?.toLocaleString("id-ID") || 0}`}
                               </Text>
-                            </Box>
+                            </VStack>
+                            <HStack space="sm">
+                              <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
+                                <Text className="font-bold">
+                                  {cart?.find((f) => f.product.id === item.id)
+                                    ?.quantity || 0}
+                                </Text>
+                              </Box>
+                              <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
+                                <Text className="text-typography-0 font-bold">
+                                  {item.stock}
+                                </Text>
+                              </Box>
+                            </HStack>
                           </HStack>
                         </HStack>
-                      </HStack>
-                    </Pressable>
-                  );
-                })
+                      </Pressable>
+                    );
+                  })
               )}
             </VStack>
           </ScrollView>

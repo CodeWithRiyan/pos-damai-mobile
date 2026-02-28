@@ -26,6 +26,7 @@ export default function ReturnPurchasingInput() {
   const [search, setSearch] = useState<string>("");
   const { supplierId } = useLocalSearchParams<{ supplierId: string }>();
   const { data: products = [], isLoading: isLoadingProduct } = useProducts({
+    forceParent: true,
     supplierId,
     search,
   });
