@@ -1,3 +1,4 @@
+import { useAuthStore } from "@/stores/auth";
 import { Box } from "@/components/ui/box";
 import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
@@ -5,10 +6,11 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import useBreakpoint from "@/hooks/use-breakpoint";
-import { useCurrentUser, useLogout } from "@/lib/api/auth";
+import { useLogout } from "@/lib/api/auth";
 import { useSidebarStore } from "@/stores/sidebar";
 import { Link, LinkProps, usePathname, useRouter } from "expo-router";
-import React from "react";
+import React, { useMemo } from "react";
+import { usePermission } from "@/hooks/use-permission";
 import { CloseIcon, Icon } from "./ui";
 import {
   Drawer,
@@ -27,11 +29,12 @@ import {
 export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { data: user } = useCurrentUser();
-  const role = user?.roles?.[0];
+  const { profile } = useAuthStore(); // Assuming useAuthStore is where profile is
+  const role = profile?.roles?.[0];
   const { mutate: logout } = useLogout();
   const { showDrawer, setShowDrawer } = useSidebarStore((state) => state);
   const { sm } = useBreakpoint();
+  const { hasPermission, hasAnyPermission } = usePermission();
 
   const handleLogout = () => {
     logout(undefined, {
@@ -42,20 +45,72 @@ export function Sidebar() {
     });
   };
 
-  const menuItems: {
-    label: string;
-    icon: SolarIconBoldDuotoneProps["name"];
-    href: LinkProps["href"];
-  }[] = [
-    { label: "Dashboard", icon: "Widget5", href: "/" },
-    { label: "Manajemen", icon: "Database", href: "/management" },
-    { label: "Pembelian Barang", icon: "Cart3", href: "/purchasing" },
-    { label: "Transaksi Penjualan", icon: "Plain", href: "/transaction" },
-    { label: "Keuangan", icon: "WalletMoney", href: "/finance" },
-    { label: "Shift", icon: "WatchSquareMinimalistic", href: "/shift/current" },
-    { label: "Laporan", icon: "PieChart2", href: "/report" },
-    { label: "Pengaturan", icon: "Settings", href: "/setting" },
-  ];
+  const menuItems = useMemo(() => {
+    const items: {
+      label: string;
+      icon: SolarIconBoldDuotoneProps["name"];
+      href: LinkProps["href"];
+      requiredPermission?: string | string[];
+    }[] = [
+      { label: "Dashboard", icon: "Widget5", href: "/" },
+      {
+        label: "Manajemen",
+        icon: "Database",
+        href: "/management",
+        requiredPermission: [
+          "products:read",
+          "categories:read",
+          "brands:read",
+          "customers:read",
+          "suppliers:read",
+          "roles:read",
+          "users:read",
+          "payables:read",
+          "receivables:read",
+          "inventory:read",
+        ],
+      },
+      {
+        label: "Pembelian Barang",
+        icon: "Cart3",
+        href: "/purchasing",
+        requiredPermission: "purchases:read",
+      },
+      {
+        label: "Transaksi Penjualan",
+        icon: "Plain",
+        href: "/transaction",
+        requiredPermission: "transactions:read",
+      },
+      {
+        label: "Keuangan",
+        icon: "WalletMoney",
+        href: "/finance",
+        requiredPermission: "finances:read",
+      },
+      {
+        label: "Shift",
+        icon: "WatchSquareMinimalistic",
+        href: "/shift/current",
+        requiredPermission: "shifts:read",
+      },
+      {
+        label: "Laporan",
+        icon: "PieChart2",
+        href: "/report",
+        requiredPermission: "reports:read",
+      },
+      { label: "Pengaturan", icon: "Settings", href: "/setting" },
+    ];
+
+    return items.filter((item) => {
+      if (!item.requiredPermission) return true;
+      if (Array.isArray(item.requiredPermission)) {
+        return hasAnyPermission(item.requiredPermission);
+      }
+      return hasPermission(item.requiredPermission);
+    });
+  }, [hasPermission, hasAnyPermission]);
 
   return (
     <>
@@ -89,7 +144,7 @@ export function Sidebar() {
                 </Box>
                 <VStack>
                   <Text size="sm" className="font-bold truncate">
-                    {user?.name || user?.id || "Unknown User"}
+                    {profile?.name || profile?.id || "Unknown User"}
                   </Text>
                   <Text size="xs" className="text-slate-500 truncate">
                     {role?.name || "No Role"}

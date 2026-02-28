@@ -17,14 +17,10 @@ export class SyncEngine {
       // apiClient already has the token interceptor
       console.log('!!!! SYNC STARTING - STEP 1');
       const profileResponse = await apiClient.get('/auth/profile');
-      console.log('!!!! PROFILE RAW DATA:', JSON.stringify(profileResponse?.data));
       
       const body = profileResponse?.data;
       const dataPayload = body?.data;
       const currentUser = dataPayload?.user;
-
-      console.log('!!!! USER OBJECT TYPE:', typeof currentUser);
-      console.log('!!!! USER OBJECT:', JSON.stringify(currentUser));
 
       if (!currentUser) {
         throw new Error('User object missing from profile response');
@@ -181,6 +177,9 @@ export class SyncEngine {
       return { success: true };
 
     } catch (error: any) {
+      if (error.response) {
+        console.error('[Sync] Engine error (Response):', JSON.stringify(error.response.data, null, 2));
+      }
       console.error('[Sync] Engine error:', error.message);
       throw error;
     }
@@ -392,29 +391,33 @@ export class SyncEngine {
         ...rest,
         deletedAt: deletedAt ? deletedAt.toISOString() : null,
       })),
-      purchases: dirtyPurchases.map(({ _dirty, _syncedAt, dueDate, createdAt, updatedAt, deletedAt, totalAmount, totalPaid, commission, ...rest }) => ({
+      purchases: dirtyPurchases.map(({ _dirty, _syncedAt, dueDate, createdAt, updatedAt, deletedAt, totalAmount, totalPaid, commission, paymentTypeId, ...rest }) => ({
         ...rest,
+        paymentMethodId: paymentTypeId || undefined,
         totalAmount: typeof totalAmount === 'number' ? totalAmount : Number(totalAmount) || 0,
         totalPaid: typeof totalPaid === 'number' ? totalPaid : Number(totalPaid) || 0,
         commission: typeof commission === 'number' ? commission : Number(commission) || 0,
-        dueDate: dueDate ? dueDate.toISOString() : null,
+        dueDate: dueDate ? dueDate.toISOString() : undefined,
         createdAt: createdAt ? createdAt.toISOString() : undefined,
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
-        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
       })),
       transactions: dirtyTransactions.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
         ...rest,
+        variantId: rest.variantId || undefined,
+        inventoryBatchId: rest.inventoryBatchId || undefined,
+        note: rest.note || undefined,
         quantity: typeof rest.quantity === 'number' ? rest.quantity : Number(rest.quantity) || 0,
         createdAt: createdAt ? createdAt.toISOString() : undefined,
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
-        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
       })),
       purchaseReturns: allReturns.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
         ...rest,
         totalAmount: typeof rest.totalAmount === 'number' ? rest.totalAmount : Number(rest.totalAmount) || 0,
         createdAt: createdAt ? createdAt.toISOString() : undefined,
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
-        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
         items: returnItems.filter(i => i.purchaseReturnId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
           ...iRest,
           quantity: typeof iRest.quantity === 'number' ? iRest.quantity : Number(iRest.quantity) || 0,
@@ -429,7 +432,7 @@ export class SyncEngine {
         totalAmount: typeof rest.totalAmount === 'number' ? rest.totalAmount : Number(rest.totalAmount) || 0,
         createdAt: createdAt ? createdAt.toISOString() : undefined,
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
-        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
         items: transactionReturnItems.filter(i => i.transactionReturnId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
           ...iRest,
           quantity: typeof iRest.quantity === 'number' ? iRest.quantity : Number(iRest.quantity) || 0,
@@ -445,7 +448,7 @@ export class SyncEngine {
         totalLoss: typeof rest.totalLoss === 'number' ? rest.totalLoss : Number(rest.totalLoss) || 0,
         createdAt: createdAt ? createdAt.toISOString() : undefined,
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
-        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
         items: opnameItems.filter(i => i.stockOpnameId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
           ...iRest,
           quantitySystem: typeof iRest.quantitySystem === 'number' ? iRest.quantitySystem : Number(iRest.quantitySystem) || 0,
@@ -483,7 +486,7 @@ export class SyncEngine {
         transactionDate: transactionDate ? transactionDate.toISOString() : undefined,
         createdAt: createdAt ? createdAt.toISOString() : undefined,
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
-        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
       })),
       shifts: dirtyShifts.map(({ _dirty, _syncedAt, startTime, endTime, createdAt, updatedAt, deletedAt, ...rest }) => ({
         ...rest,
@@ -491,30 +494,34 @@ export class SyncEngine {
         endTime: endTime ? endTime.toISOString() : undefined,
         createdAt: createdAt ? createdAt.toISOString() : undefined,
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
-        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
       })),
       cashDrawers: dirtyCashDrawers.map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
         ...rest,
         createdAt: createdAt ? createdAt.toISOString() : undefined,
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
-        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
       })),
       salesTransactions: allSalesTransactions.map(({ _dirty, _syncedAt, transactionDate, createdAt, updatedAt, deletedAt, totalAmount, totalPaid, commission, ...rest }) => ({
         ...rest,
+        customerId: rest.customerId || undefined,
+        note: rest.note || undefined,
         totalAmount: typeof totalAmount === 'number' ? totalAmount : Number(totalAmount) || 0,
         totalPaid: typeof totalPaid === 'number' ? totalPaid : Number(totalPaid) || 0,
         commission: typeof commission === 'number' ? commission : Number(commission) || 0,
         transactionDate: transactionDate ? transactionDate.toISOString() : undefined,
         createdAt: createdAt ? createdAt.toISOString() : undefined,
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
-        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
         items: salesTxItems.filter(i => i.transactionId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
           ...iRest,
+          variantId: iRest.variantId || undefined,
+          note: iRest.note || undefined,
           quantity: typeof iRest.quantity === 'number' ? iRest.quantity : Number(iRest.quantity) || 0,
           sellPrice: typeof iRest.sellPrice === 'number' ? iRest.sellPrice : Number(iRest.sellPrice) || 0,
           createdAt: createdAt ? createdAt.toISOString() : undefined,
           updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
-          deletedAt: deletedAt ? deletedAt.toISOString() : null,
+          deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
         })),
       })),
       storeSupplies: allStoreSupplies.map(({ _dirty, _syncedAt, date, createdAt, updatedAt, deletedAt, ...rest }) => ({
@@ -522,7 +529,7 @@ export class SyncEngine {
         date: date.toISOString(),
         createdAt: createdAt ? createdAt.toISOString() : undefined,
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
-        deletedAt: deletedAt ? deletedAt.toISOString() : null,
+        deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
         items: storeSupplyItems.filter(i => i.storeSupplyId === rest.id).map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
           ...iRest,
           quantitySystem: typeof iRest.quantitySystem === 'number' ? iRest.quantitySystem : Number(iRest.quantitySystem) || 0,

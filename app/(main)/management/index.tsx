@@ -7,46 +7,71 @@ import {
 } from "@/components/ui/solar-icon-wrapper";
 import { Link } from "expo-router";
 import { ScrollView } from "react-native";
+import { usePermission } from "@/hooks/use-permission";
+import React, { useMemo } from "react";
 
 export default function ManagementScreen() {
-  const managementItems: {
-    label: string;
-    href: string;
-    icon: SolarIconLinearProps["name"];
-  }[] = [
-    {
-      label: "Produk, Kategori dan Brand",
-      href: "/management/product-category-brand",
-      icon: "Box",
-    },
-    // { label: "Diskon", href: "/management/discount", icon: "TicketSale" },
-    {
-      label: "Pelanggan dan Supplier",
-      href: "/management/customer-supplier",
-      icon: "Card2",
-    },
-    {
-      label: "Hutang dan Piutang",
-      href: "/management/payable-receivable",
-      icon: "NotebookBookmark",
-    },
-    {
-      label: "Perubahan Stock",
-      href: "/management/stock-changes",
-      icon: "ArchiveCheck",
-    },
-    { label: "Retur", href: "/management/return", icon: "History" },
-    {
-      label: "Jenis Pembayaran",
-      href: "/management/payment-type",
-      icon: "Banknote2",
-    },
-    {
-      label: "Karyawan dan Role",
-      href: "/management/role-user",
-      icon: "UsersGroupTwoRounded",
-    },
-  ];
+  const { hasPermission, hasAnyPermission } = usePermission();
+
+  const managementItems = useMemo(() => {
+    const items: {
+      label: string;
+      href: string;
+      icon: SolarIconLinearProps["name"];
+      requiredPermission?: string | string[];
+    }[] = [
+      {
+        label: "Produk, Kategori dan Brand",
+        href: "/management/product-category-brand",
+        icon: "Box",
+        requiredPermission: ["products:read", "categories:read", "brands:read"],
+      },
+      {
+        label: "Pelanggan dan Supplier",
+        href: "/management/customer-supplier",
+        icon: "Card2",
+        requiredPermission: ["customers:read", "suppliers:read"],
+      },
+      {
+        label: "Hutang dan Piutang",
+        href: "/management/payable-receivable",
+        icon: "NotebookBookmark",
+        requiredPermission: ["payables:read", "receivables:read"],
+      },
+      {
+        label: "Perubahan Stock",
+        href: "/management/stock-changes",
+        icon: "ArchiveCheck",
+        requiredPermission: "inventory:read",
+      },
+      {
+        label: "Retur",
+        href: "/management/return",
+        icon: "History",
+        requiredPermission: "returns:read",
+      },
+      {
+        label: "Jenis Pembayaran",
+        href: "/management/payment-type",
+        icon: "Banknote2",
+        requiredPermission: "payment-types:read",
+      },
+      {
+        label: "Karyawan dan Role",
+        href: "/management/role-user",
+        icon: "UsersGroupTwoRounded",
+        requiredPermission: ["users:read", "roles:read"],
+      },
+    ];
+
+    return items.filter((item) => {
+      if (!item.requiredPermission) return true;
+      if (Array.isArray(item.requiredPermission)) {
+        return hasAnyPermission(item.requiredPermission);
+      }
+      return hasPermission(item.requiredPermission);
+    });
+  }, [hasPermission, hasAnyPermission]);
 
   return (
     <Box className="flex-1 bg-white">
