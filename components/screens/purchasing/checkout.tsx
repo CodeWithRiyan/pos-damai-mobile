@@ -263,9 +263,7 @@ export default function PurchasingCheckoutForm() {
           resetCart();
           setCheckoutData(null);
         } else {
-          router.replace(
-            `/(main)/purchasing/success/${responseData.id}` as any,
-          );
+          router.replace(`/(main)/purchasing/receipt/${responseData.id}`);
           if (!!changedProductPrice.length) {
             showPopUpConfirm({
               title: `ADA PERUBAHAN HARGA BELI`,
@@ -319,51 +317,6 @@ export default function PurchasingCheckoutForm() {
         showErrorToast(error);
       },
     });
-
-    // if (purchasingId && purchasing) {
-    //   const updateData: UpdatePurchasingDTO = {
-    //     ...data,
-    //     id: purchasing.id,
-    //     password: purchasing.password || undefined,
-    //   };
-    //   updateMutation.mutate(updateData, {
-    //     onSuccess: () => {
-    //       onRefetch();
-    //       handleCancel();
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //             <ToastTitle>Transaksi pembelian barang berhasil</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //     onError: (error) => {
-    //       showErrorToast(error);
-    //     },
-    //   });
-    // } else {
-    //   const { isActive, ...restData } = data;
-    //   const createData: CreatePurchasingDTO = restData;
-    //   createMutation.mutate(createData, {
-    //     onSuccess: () => {
-    //       onRefetch();
-    //       handleCancel();
-    //       toast.show({
-    //         placement: "top",
-    //         render: ({ id }) => (
-    //           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-    //             <ToastTitle>Transaksi pembelian barang berhasil</ToastTitle>
-    //           </Toast>
-    //         ),
-    //       });
-    //     },
-    //     onError: (error) => {
-    //       showErrorToast(error);
-    //     },
-    //   });
-    // }
   };
 
   return (
@@ -666,6 +619,7 @@ export default function PurchasingCheckoutForm() {
                 </HStack>
                 <InputVirtualKeyboard
                   nominal={totalPaid}
+                  totalAmount={grandTotal.toString()}
                   onChange={(value) => form.setValue("totalPaid", value)}
                 />
               </VStack>

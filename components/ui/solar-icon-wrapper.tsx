@@ -2,6 +2,7 @@ import type { IconProps } from "@solar-icons/react-native";
 import * as BoldIcons from "@solar-icons/react-native/Bold";
 import * as BoldDuotoneIcons from "@solar-icons/react-native/BoldDuotone";
 import * as LinearIcons from "@solar-icons/react-native/Linear";
+import * as OutlineIcons from "@solar-icons/react-native/Outline";
 import React from "react";
 
 export interface SolarIconBoldProps extends IconProps {
@@ -14,6 +15,10 @@ export interface SolarIconBoldDuotoneProps extends IconProps {
 
 export interface SolarIconLinearProps extends IconProps {
   name: keyof typeof LinearIcons;
+}
+
+export interface SolarIconOutlineProps extends IconProps {
+  name: keyof typeof OutlineIcons;
 }
 
 export const SolarIconBold = ({ name, ...props }: SolarIconBoldProps) => {
@@ -31,5 +36,10 @@ export const SolarIconBoldDuotone = ({
 
 export const SolarIconLinear = ({ name, ...props }: SolarIconLinearProps) => {
   const IconComponent = LinearIcons[name];
+  return <IconComponent {...props} />;
+};
+
+export const SolarIconOutline = ({ name, ...props }: SolarIconOutlineProps) => {
+  const IconComponent = OutlineIcons[name];
   return <IconComponent {...props} />;
 };

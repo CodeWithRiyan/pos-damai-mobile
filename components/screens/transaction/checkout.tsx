@@ -162,8 +162,7 @@ export default function TransactionCheckoutForm() {
         status: status,
         note: data.note || "",
         items: cart.map((item) => {
-
-          const variantData = item.variant || item.product.variantData;
+          const variantData = item.variant;
           return {
             product: {
               id: item.product.originalId || item.product.id,
@@ -172,7 +171,7 @@ export default function TransactionCheckoutForm() {
             variant: variantData
               ? {
                   id: variantData.id,
-                  name: variantData.name || variantData.label,
+                  name: variantData.name,
                 }
               : undefined,
             quantity: item.quantity,
@@ -182,6 +181,7 @@ export default function TransactionCheckoutForm() {
                 sellPrices: item.product.sellPrices,
                 type: customer?.category,
                 quantity: item.quantity,
+                unitVariant: item.variant,
               }),
             isManualPrice: !!item.tempSellPrice,
             note: item.note,
@@ -213,9 +213,9 @@ export default function TransactionCheckoutForm() {
         });
 
         if (status === "DRAFT") {
-          router.replace("/(main)/transaction");
+          router.push("/(main)/transaction");
         } else {
-          router.replace("/(main)/transaction/success");
+          router.replace(`/(main)/transaction/receipt/${result.id}`);
         }
         resetCart();
       }
@@ -235,8 +235,10 @@ export default function TransactionCheckoutForm() {
               className="size-10 items-center justify-center border-primary-500 border rounded-lg bg-primary-100 active:bg-primary-200"
               disabled={isLoading}
               onPress={form.handleSubmit(onSubmit, (errors) => {
-                if (errors.totalPaid) showValidationError(errors.totalPaid.message);
-                else if (errors.paymentTypeId) showValidationError(errors.paymentTypeId.message);
+                if (errors.totalPaid)
+                  showValidationError(errors.totalPaid.message);
+                else if (errors.paymentTypeId)
+                  showValidationError(errors.paymentTypeId.message);
               })}
             >
               {isLoading ? (
@@ -355,6 +357,7 @@ export default function TransactionCheckoutForm() {
                 </HStack>
                 <InputVirtualKeyboard
                   nominal={totalPaid}
+                  totalAmount={grandTotal.toString()}
                   onChange={(value) => form.setValue("totalPaid", value)}
                 />
               </VStack>

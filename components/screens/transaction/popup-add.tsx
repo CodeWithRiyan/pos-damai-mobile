@@ -95,7 +95,8 @@ export default function PopupAddProduct() {
   type AddProductFormValues = z.infer<typeof addProductSchema>;
 
   const initialValues: AddProductFormValues = {
-    variantUnitId: null,
+    variantUnitId:
+      addProduct?.variants.find((item) => item.netto === 1)?.id || "",
     quantity: 1,
     addNote: false,
     isTempSellPrice: false,
@@ -136,13 +137,20 @@ export default function PopupAddProduct() {
         tempSellPrice: currentProductInCart?.tempSellPrice || 0,
         addNote: !!currentProductInCart?.note,
         note: currentProductInCart?.note || "",
-        variantUnitId: addProductVariantId || null,
+        variantUnitId:
+          addProductVariantId ||
+          addProduct?.variants.find((item) => item.netto === 1)?.id ||
+          null,
       });
+      console.log(
+        "variantUnitId",
+        addProduct?.variants.find((item) => item.netto === 1)?.id,
+      );
     } else {
       form.reset(initialValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, currentProductInCart, addProductVariantId]);
+  }, [form, currentProductInCart, addProductVariantId, addProduct]);
 
   const onSubmit: SubmitHandler<AddProductFormValues> = (
     data: AddProductFormValues,
@@ -459,7 +467,8 @@ export default function PopupAddProduct() {
               <Pressable
                 className="flex-1 items-center justify-center h-12 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
                 onPress={form.handleSubmit(onSubmit, (errors) => {
-                  if (errors.quantity) showValidationError(errors.quantity.message);
+                  if (errors.quantity)
+                    showValidationError(errors.quantity.message);
                   else if (errors.tempSellPrice)
                     showValidationError(errors.tempSellPrice.message);
                 })}

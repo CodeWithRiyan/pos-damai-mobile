@@ -26,7 +26,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { debounce } from "lodash";
 import { SearchIcon } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
-import { Alert, ScrollView } from "react-native";
+import { Alert, RefreshControl, ScrollView } from "react-native";
 import ProductFilter from "./filter";
 import ProductNotification from "./notification";
 
@@ -71,6 +71,13 @@ export default function ProductList() {
       refetch();
     }, [refetch]),
   );
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
   const products = data || [];
 
@@ -269,7 +276,12 @@ export default function ProductList() {
               />
             </Input>
           </HStack>
-          <ScrollView className="flex-1">
+          <ScrollView
+            className="flex-1"
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          >
             <VStack>
               {products?.map((product) => (
                 <Pressable

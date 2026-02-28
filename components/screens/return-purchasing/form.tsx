@@ -116,7 +116,7 @@ export default function ReturnPurchasingConfirmForm() {
         showSuccessToast("Retur berhasil disimpan");
         setOpenConfirm(false);
         router.navigate(
-          `/(main)/management/return/purchasing/success/${data.id}`,
+          `/(main)/management/return/purchasing/receipt/${data.id}`,
         );
         resetCart();
         form.reset(initialValues);

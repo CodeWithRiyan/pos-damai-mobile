@@ -15,11 +15,17 @@ import {
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
+import {
+  SolarIconBold,
+  SolarIconOutline,
+} from "@/components/ui/solar-icon-wrapper";
 import { VStack } from "@/components/ui/vstack";
 // import { useBulkDeleteTransaction, Transaction, useTransaction } from "@/lib/api/transaction";
 import BarcodeScanner from "@/components/barcode-scanner";
 import { Button, ButtonText } from "@/components/ui/button";
+import { Grid, GridItem } from "@/components/ui/grid";
+import GridProductLayout from "@/components/ui/layout/grid-product-layout";
+import ListProductLayout from "@/components/ui/layout/list-product-layout";
 import SelectModal from "@/components/ui/select/select-modal";
 import { Spinner } from "@/components/ui/spinner";
 import { useCustomers } from "@/lib/api/customers";
@@ -31,7 +37,7 @@ import classNames from "classnames";
 import { useRouter } from "expo-router";
 import { AlertCircle, PlusIcon } from "lucide-react-native";
 import React from "react";
-import { ScrollView } from "react-native";
+import { LayoutChangeEvent, ScrollView } from "react-native";
 import PopupAddProduct from "./popup-add";
 
 export default function TransactionList() {
@@ -50,8 +56,16 @@ export default function TransactionList() {
   const { data: currentShift, isLoading: isLoadingShift } = useCurrentShift();
   const router = useRouter();
   const toast = useToast();
-
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [layout, setLayout] = React.useState<"list" | "grid">("list");
+
+  const [deviceWidth, setDeviceWidth] = React.useState<number>(0);
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    const { width } = event.nativeEvent.layout;
+    setDeviceWidth(width);
+    console.log("Device width:", width);
+  };
 
   const optionsGroupCustomers =
     ["WHOLESALE", "RETAIL"].map((category) => ({
@@ -100,9 +114,10 @@ export default function TransactionList() {
       </Box>
     );
   }
+  console.log("deviceWidth: ", deviceWidth);
 
   return (
-    <Box className="flex-1 bg-white">
+    <Box className="flex-1 bg-white" onLayout={handleLayout}>
       <Header
         header="TRANSAKSI PENJUALAN"
         action={
@@ -164,71 +179,95 @@ export default function TransactionList() {
                 onChangeText={setSearchQuery}
               />
             </Input>
+            <Pressable
+              className="relative size-10 items-center justify-center text-typography-500"
+              onPress={() => setLayout(layout === "grid" ? "list" : "grid")}
+            >
+              <SolarIconOutline
+                name={layout === "grid" ? "Widget" : "Server"}
+                size={20}
+                color="#6b7280"
+              />
+            </Pressable>
           </HStack>
           <ScrollView className="flex-1">
-            <VStack className="flex-1">
-              {filteredProducts?.map((product, index) => {
-                const productInChart = cart?.find(
-                  (f) => f.product.id === product.id,
-                );
-                console.log(
-                  product.name,
-                  product.variants.map((p) => ({
-                    name: p.name,
-                    netto: p.netto,
-                  })),
-                );
-                return (
-                  <Pressable
-                    key={index}
-                    className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                    onPress={() => setAddProduct(product)}
-                  >
-                    <HStack className="justify-between items-center">
-                      <HStack space="md" className="items-center">
-                        <Box className="size-16 rounded-lg bg-primary-200 items-center justify-center">
-                          <Heading className="text-primary-500 font-bold">
-                            {product.name.charAt(0).toUpperCase()}
-                          </Heading>
-                        </Box>
-                        <VStack className="flex-1">
-                          <Heading size="md" className="line-clamp-2">
-                            {product.name}
-                          </Heading>
-                          <Text size="sm" className="text-slate-500">
-                            {`Rp ${findSellPrice({
-                              sellPrices: product.sellPrices,
-                              type: customer?.category,
-                              quantity: 1,
-                            }).toLocaleString("id-ID")}`}
-                          </Text>
-                        </VStack>
-                        <HStack space="sm">
-                          <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
-                            <Text className="font-bold">
-                              {product.type !== "MULTIUNIT"
-                                ? productInChart?.quantity || 0
-                                : cart
-                                    ?.filter((f) => f.product.id === product.id)
-                                    .map(
-                                      (m) =>
-                                        m.quantity * (m.variant?.netto || 1),
-                                    )
-                                    .reduce((prev, curr) => prev + curr, 0)}
-                            </Text>
-                          </Box>
-                          <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
-                            <Text className="text-typography-0 font-bold">
-                              {product.stock}
-                            </Text>
-                          </Box>
-                        </HStack>
-                      </HStack>
-                    </HStack>
-                  </Pressable>
-                );
-              })}
-            </VStack>
+            {layout === "grid" && (
+              <Grid
+                _extra={{
+                  className:
+                    deviceWidth < 600
+                      ? "grid-cols-2"
+                      : deviceWidth < 1080
+                        ? "grid-cols-3"
+                        : "grid-cols-4",
+                }}
+                gap={16}
+                className="flex-1 p-4"
+              >
+                {filteredProducts?.map((product, index) => {
+                  const productInChart = cart?.find(
+                    (f) => f.product.id === product.id,
+                  );
+
+                  return (
+                    <GridItem key={index} _extra={{ className: "col-span-1" }}>
+                      <GridProductLayout
+                        name={product.name}
+                        price={findSellPrice({
+                          sellPrices: product.sellPrices,
+                          type: customer?.category,
+                          quantity: 1,
+                        })}
+                        quantityInCart={
+                          product.type !== "MULTIUNIT"
+                            ? productInChart?.quantity || 0
+                            : cart
+                                ?.filter((f) => f.product.id === product.id)
+                                .map(
+                                  (m) => m.quantity * (m.variant?.netto || 1),
+                                )
+                                .reduce((prev, curr) => prev + curr, 0)
+                        }
+                        stock={product.stock}
+                        minStock={product.minimumStock}
+                        onPressProduct={() => setAddProduct(product)}
+                      />
+                    </GridItem>
+                  );
+                })}
+              </Grid>
+            )}
+            {layout === "list" && (
+              <VStack className="flex-1">
+                {filteredProducts?.map((product, index) => {
+                  const productInChart = cart?.find(
+                    (f) => f.product.id === product.id,
+                  );
+
+                  return (
+                    <ListProductLayout
+                      key={index}
+                      name={product.name}
+                      price={findSellPrice({
+                        sellPrices: product.sellPrices,
+                        type: customer?.category,
+                        quantity: 1,
+                      })}
+                      quantityInCart={
+                        product.type !== "MULTIUNIT"
+                          ? productInChart?.quantity || 0
+                          : cart
+                              ?.filter((f) => f.product.id === product.id)
+                              .map((m) => m.quantity * (m.variant?.netto || 1))
+                              .reduce((prev, curr) => prev + curr, 0)
+                      }
+                      stock={product.stock}
+                      onPressProduct={() => setAddProduct(product)}
+                    />
+                  );
+                })}
+              </VStack>
+            )}
           </ScrollView>
         </VStack>
         <VStack space="lg" className="flex-1">
@@ -263,7 +302,11 @@ export default function TransactionList() {
                       </Box>
                       <VStack className="flex-1">
                         <Heading size="md" className="line-clamp-2">
-                          {item.variant ? item.variant.name : item.product.name}
+                          {item.variant && item.product.type === "MULTIUNIT"
+                            ? `${item.product.name} - ${item.variant.name}`
+                            : item.variant && item.product.type === "VARIANTS"
+                              ? item.variant.name
+                              : item.product.name}
                         </Heading>
                         <Text size="sm" className="text-slate-500">
                           {`${item.quantity} x Rp ${

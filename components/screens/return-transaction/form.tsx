@@ -111,7 +111,7 @@ export default function ReturnTransactionConfirmForm() {
         showSuccessToast("Retur berhasil disimpan");
         setOpenConfirm(false);
         router.navigate(
-          `/(main)/management/return/transaction/success/${data.id}` as any,
+          `/(main)/management/return/transaction/receipt/${data.id}`,
         );
         resetCart();
         form.reset(initialValues);

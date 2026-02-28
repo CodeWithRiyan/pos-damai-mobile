@@ -14,8 +14,10 @@ import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { getErrorMessage } from "@/lib/api/client";
 import { useDeleteProduct, useProduct, useProducts } from "@/lib/api/products";
+import { unitSuffixHelper } from "@/lib/unit";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Alert, ScrollView } from "react-native";
+import { useCallback, useState } from "react";
+import { Alert, RefreshControl, ScrollView } from "react-native";
 
 export default function ProductDetail() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -31,21 +33,18 @@ export default function ProductDetail() {
   const deleteMutation = useDeleteProduct();
   const toast = useToast();
 
-  const unitSuffixHelper = (unit?: string | null) => {
-    switch (unit) {
-      case "KILOGRAM":
-        return "kg";
-      case "LITER":
-        return "liter";
-      default:
-        return "";
-    }
-  };
-
   const onRefetch = () => {
     refetchProducts();
     refetchProduct();
   };
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetchProducts();
+    await refetchProduct();
+    setRefreshing(false);
+  }, [refetchProducts, refetchProduct]);
 
   const showErrorToast = (error: unknown) => {
     toast.show({
@@ -156,7 +155,13 @@ export default function ProductDetail() {
         isGoBack
       />
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <VStack>
           <VStack className="w-full p-4 border-b border-background-300">
             <Text size="xl" className="font-bold">
