@@ -83,10 +83,10 @@ export default function ProductForm() {
       unitVariants: z
         .array(
           z.object({
-            code: z.string().min(1, "Kode wajib diisi."),
+            code: z.string(),
             netto: z.number().min(0.001, "Netto wajib diisi."),
-            purchasePrice: z.number().min(1, "Harga Beli wajib diisi."),
-            retailPrice: z.number().min(1, "Harga wajib diisi."),
+            purchasePrice: z.number(),
+            retailPrice: z.number(),
           }),
         )
         .nullable(),
@@ -133,6 +133,20 @@ export default function ProductForm() {
         }
         // Validasi harga retail unit variant tidak boleh kurang dari harga beli
         data.unitVariants?.forEach((variant, i) => {
+          if (!variant.code) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Kode wajib diisi",
+              path: [`unitVariants.${i}.code`],
+            });
+          }
+          if (!variant.retailPrice) {
+            ctx.addIssue({
+              code: "custom",
+              message: "Harga Retail wajib diisi",
+              path: [`unitVariants.${i}.retailPrice`],
+            });
+          }
           if (variant.retailPrice < variant.purchasePrice) {
             ctx.addIssue({
               code: "custom",
@@ -356,7 +370,6 @@ export default function ProductForm() {
 
   useEffect(() => {
     if (productId && product) {
-      console.log("[ProductForm] Product data:", product.variants);
       form.reset({
         name: product.name,
         code: product.code || "",

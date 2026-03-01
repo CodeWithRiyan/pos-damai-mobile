@@ -375,7 +375,7 @@ export default function ProductList() {
               className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
               onPress={handleAdd}
             >
-              <ButtonText className="text-white">TAMBAH PRODUK</ButtonText>
+              <ButtonText className="text-white">{`TAMBAH PRODUK `}</ButtonText>
             </Button>
           </HStack>
         </VStack>
