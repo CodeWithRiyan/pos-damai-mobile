@@ -106,6 +106,7 @@ export class SyncEngine {
         storeSupplies: schema.storeSupplies,
         storeSupplyItems: schema.storeSupplyItems,
         salesTransactions: schema.transactions,
+        transactionItems: schema.transactionItems,
         users: schema.users,
       };
 

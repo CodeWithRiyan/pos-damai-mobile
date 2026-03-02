@@ -172,6 +172,7 @@ export default function TransactionCheckoutForm() {
               ? {
                   id: variantData.id,
                   name: variantData.name,
+                  netto: variantData.netto,
                 }
               : undefined,
             quantity: item.quantity,
