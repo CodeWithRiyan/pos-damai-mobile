@@ -437,13 +437,19 @@ export function useCreateTransaction() {
           const itemsToCreate = [];
           if (hasDiscount && item.quantity > 0) {
             const discountedPrice = getDiscountedPrice(unitPrice, discount);
+            
+            // If quantity >= 1, 1 unit is discounted, rest is regular
+            // If quantity < 1, the entire fraction is discounted
+            const discountedQty = Math.min(1, item.quantity);
+            
             itemsToCreate.push({
-              qty: 1,
+              qty: discountedQty,
               price: discountedPrice,
             });
-            if (item.quantity > 1) {
+            
+            if (item.quantity > discountedQty) {
               itemsToCreate.push({
-                qty: item.quantity - 1,
+                qty: item.quantity - discountedQty,
                 price: unitPrice,
               });
             }
@@ -546,11 +552,13 @@ export function useCreateTransaction() {
                     customer.category === "WHOLESALE"
                       ? p.wholesalePoint
                       : p.retailPoint;
-                  earnedPoints += (categoryPoints || 0) * item.quantity;
+                  
+                  const variantNetto = item.variant?.netto || 1;
+                  earnedPoints += (categoryPoints || 0) * (item.quantity * variantNetto);
 
                   // Purchase Cost
                   const purchasePrice = p.purchasePrice || 0;
-                  totalPurchaseCost += purchasePrice * item.quantity;
+                  totalPurchaseCost += (purchasePrice * variantNetto) * item.quantity;
                 }
               }
 
