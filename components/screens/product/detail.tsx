@@ -1,7 +1,6 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import {
-  Box,
   HStack,
   Text,
   Toast,
@@ -14,6 +13,7 @@ import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { getErrorMessage } from "@/lib/api/client";
 import { useDeleteProduct, useProduct, useProducts } from "@/lib/api/products";
+import { findSellPrice } from "@/lib/price";
 import { unitSuffixHelper } from "@/lib/unit";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
@@ -25,6 +25,103 @@ export default function ProductDetail() {
   const { id } = useLocalSearchParams();
   const productId = decodeURIComponent(id as string);
   console.log(`[DETAIL] productId from URL (decoded): "${productId}"`);
+  const dummy = {
+    _dirty: false,
+    _syncedAt: "2026-02-27T00:52:37.000Z",
+    barcode: "Idmlk",
+    brand: { id: "brand_1771805613440_2xg86mbdz", name: "Indomilk" },
+    brandId: "brand_1771805613440_2xg86mbdz",
+    category: { id: "cat_1771805551659_m44wqzl6k", name: "Minuman" },
+    categoryId: "cat_1771805551659_m44wqzl6k",
+    code: "Idmlk",
+    createdAt: "2026-02-23T23:58:21.000Z",
+    createdBy: "user_owner_001",
+    deletedAt: null,
+    description: "",
+    discount: undefined,
+    discountId: null,
+    id: "prod_1771807377410_ma11p17c4",
+    isActive: true,
+    isFavorite: false,
+    isVariant: false,
+    minimumStock: 100,
+    name: "Indomilk",
+    organizationId: "org_default_001",
+    purchasePrice: 3000,
+    sellPrices: [
+      {
+        _dirty: false,
+        _syncedAt: "2026-02-27T00:52:38.000Z",
+        createdAt: "2026-02-23T23:58:21.000Z",
+        createdBy: "user_owner_001",
+        deletedAt: null,
+        id: "price_1771807407336_48b3teg6e",
+        label: "Retail",
+        minimumPurchase: 1,
+        organizationId: "org_default_001",
+        price: 4000,
+        productId: "prod_1771807377410_ma11p17c4",
+        type: "RETAIL",
+        updatedAt: "2026-02-23T23:58:21.000Z",
+        updatedBy: "user_owner_001",
+      },
+      {
+        _dirty: false,
+        _syncedAt: "2026-02-27T00:52:38.000Z",
+        createdAt: "2026-02-23T23:58:21.000Z",
+        createdBy: "user_owner_001",
+        deletedAt: null,
+        id: "price_1771807407340_x2gfdq7zo",
+        label: "Grosir",
+        minimumPurchase: 1,
+        organizationId: "org_default_001",
+        price: 3000,
+        productId: "prod_1771807377410_ma11p17c4",
+        type: "WHOLESALE",
+        updatedAt: "2026-02-23T23:58:21.000Z",
+        updatedBy: "user_owner_001",
+      },
+    ],
+    stock: 108,
+    supplierId: null,
+    type: "VARIANTS",
+    unit: null,
+    updatedAt: "2026-02-23T23:58:21.000Z",
+    updatedBy: "user_owner_001",
+    variantData: undefined,
+    variants: [
+      {
+        _dirty: false,
+        _syncedAt: "2026-02-27T00:52:39.000Z",
+        code: "Mrh",
+        createdAt: "2026-02-23T23:58:21.000Z",
+        createdBy: null,
+        deletedAt: null,
+        id: "var_1771807407353_ic0qbny2t",
+        name: "Merah",
+        netto: 1,
+        organizationId: "org_default_001",
+        productId: "prod_1771807377410_ma11p17c4",
+        updatedAt: "2026-02-23T23:58:21.000Z",
+        updatedBy: null,
+      },
+      {
+        _dirty: false,
+        _syncedAt: "2026-02-27T00:52:39.000Z",
+        code: "Br",
+        createdAt: "2026-02-23T23:58:21.000Z",
+        createdBy: null,
+        deletedAt: null,
+        id: "var_1771807407357_0nox8eth6",
+        name: "Biru",
+        netto: 1,
+        organizationId: "org_default_001",
+        productId: "prod_1771807377410_ma11p17c4",
+        updatedAt: "2026-02-23T23:58:21.000Z",
+        updatedBy: null,
+      },
+    ],
+  };
 
   const { refetch: refetchProducts } = useProducts();
   const { data: product, refetch: refetchProduct } = useProduct(
@@ -124,7 +221,7 @@ export default function ProductDetail() {
           },
         },
         {
-          label: "Delete",
+          label: "Hapus",
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
@@ -169,87 +266,98 @@ export default function ProductDetail() {
             </Text>
             <Text className="text-gray-500">{product?.code || "-"}</Text>
           </VStack>
-          <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
+          <Grid
+            _extra={{ className: "grid-cols-2" }}
+            className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300"
+          >
             {/* Stok Terkini - Highlighted */}
-            <VStack className="w-full mb-2 p-3 bg-primary-50 border border-primary-200 rounded-md">
+            <GridItem
+              _extra={{ className: "col-span-2" }}
+              className="mb-2 p-3 bg-primary-50 border border-primary-200 rounded-md"
+            >
               <Text className="text-primary-600 text-sm">Stok Terkini</Text>
               <Text className="font-bold text-2xl text-primary-700">
                 {product?.stock ?? 0} {product?.unit || "pcs"}
               </Text>
-            </VStack>
+            </GridItem>
 
-            <VStack className="w-1/2 pr-4">
+            <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
               <Text className="text-gray-500">Jenis Produk</Text>
               <Text className="font-bold">{product?.type || "-"}</Text>
-            </VStack>
-            <VStack className="w-1/2 pr-4">
+            </GridItem>
+            <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
               <Text className="text-gray-500">Harga Beli</Text>
-              <Text className="font-bold">{product?.purchasePrice || "-"}</Text>
-            </VStack>
+              <Text className="font-bold">{`Rp ${product?.purchasePrice?.toLocaleString("id-ID")}`}</Text>
+            </GridItem>
             {product?.unit && (
-              <VStack className="w-1/2 pr-4">
+              <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
                 <Text className="text-gray-500">Satuan</Text>
                 <Text className="font-bold">{product?.unit}</Text>
-              </VStack>
+              </GridItem>
             )}
-            <VStack className="w-1/2 pr-4">
+            <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
               <Text className="text-gray-500">Kategori</Text>
               <Text className="font-bold">
                 {product?.category?.name || "-"}
               </Text>
-            </VStack>
-            <VStack className="w-1/2 pr-4">
+            </GridItem>
+            <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
               <Text className="text-gray-500">Brand</Text>
               <Text className="font-bold">{product?.brand?.name || "-"}</Text>
-            </VStack>
-            <VStack className="w-1/2 pr-4">
+            </GridItem>
+            <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
               <Text className="text-gray-500">Diskon</Text>
               <Text className="font-bold">
                 {product?.discount?.name || "-"}
               </Text>
-            </VStack>
-            <VStack className="w-1/2 pr-4">
+            </GridItem>
+            <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
               <Text className="text-gray-500">Minimum Stok</Text>
               <Text className="font-bold">{product?.minimumStock || "-"}</Text>
-            </VStack>
-            <VStack className="w-1/2 pr-4">
+            </GridItem>
+            <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
               <Text className="text-gray-500">Status</Text>
               <Text className="font-bold">
                 {product?.isActive
                   ? "Tampil di transaksi"
                   : "Tidak tampil di transaksi"}
               </Text>
-            </VStack>
-            <VStack className="w-1/2 pr-4">
+            </GridItem>
+            <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
               <Text className="text-gray-500">Keterangan</Text>
               <Text className="font-bold">{product?.description || "-"}</Text>
-            </VStack>
-          </Box>
-          {product?.type === "VARIANTS" && (
-            <VStack
-              space="md"
-              className="pt-4 pb-6 border-b border-background-300"
-            >
-              <Text className="font-bold text-center">Varian</Text>
-              <Box className="w-full flex-row flex-wrap gap-y-4">
-                {product?.variants?.map((variant, index) => (
-                  <Box
-                    key={index}
-                    className={`w-1/2 ${
-                      index % 2 === 0 ? "pr-2 pl-4" : "pr-4 pl-2"
-                    }`}
-                  >
-                    <VStack className="border border-background-200 rounded-md shadow bg-info-50 p-4">
-                      <Text className="font-bold">{variant?.name || "-"}</Text>
-                      <Text className="text-gray-500">
-                        {variant?.code || "-"}
-                      </Text>
-                    </VStack>
-                  </Box>
-                ))}
-              </Box>
-            </VStack>
-          )}
+            </GridItem>
+            {product?.type === "VARIANTS" && (
+              <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
+                <Text className="text-gray-500">Varian Barcode</Text>
+                {!!product?.variants.length ? (
+                  product?.variants.map((variant, index) => (
+                    <Text key={index} className="font-bold">
+                      {variant.code}
+                    </Text>
+                  ))
+                ) : (
+                  <Text className="font-bold">-</Text>
+                )}
+              </GridItem>
+            )}
+            <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
+              <Text className="text-gray-500">Perkiraan Keuntungan</Text>
+              <Text className="text-success-500 font-bold">
+                {`Rp ${(
+                  findSellPrice({
+                    sellPrices: product?.sellPrices,
+                    type: "RETAIL",
+                    quantity: 1,
+                    unitVariant:
+                      product?.type === "MULTIUNIT"
+                        ? product?.variants.find((v) => v.netto === 1)
+                        : undefined,
+                  }) - (product?.purchasePrice || 0)
+                ).toLocaleString("id-ID")}`}
+              </Text>
+            </GridItem>
+          </Grid>
           {!!product?.sellPrices.length && (
             <VStack space="md" className="p-10 pt-4">
               <Text className="font-bold text-center">List Harga</Text>

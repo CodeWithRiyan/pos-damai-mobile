@@ -2,20 +2,20 @@ import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
-  Box,
-  HStack,
-  Text,
-  Toast,
-  ToastTitle,
-  useToast,
-  VStack,
+    Box,
+    HStack,
+    Text,
+    Toast,
+    ToastTitle,
+    useToast,
+    VStack,
 } from "@/components/ui";
 import { Grid, GridItem } from "@/components/ui/grid";
 import { Pressable } from "@/components/ui/pressable";
 import {
-  SolarIconBold,
-  SolarIconBoldDuotone,
-  SolarIconLinear,
+    SolarIconBold,
+    SolarIconBoldDuotone,
+    SolarIconLinear,
 } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { getErrorMessage } from "@/lib/api/client";
@@ -116,7 +116,7 @@ export default function ReceivableRealizationDetail() {
           },
         },
         {
-          label: "Delete",
+          label: "Hapus",
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {

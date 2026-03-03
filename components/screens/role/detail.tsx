@@ -2,13 +2,13 @@ import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
-  Box,
-  HStack,
-  Text,
-  Toast,
-  ToastTitle,
-  useToast,
-  VStack,
+    Box,
+    HStack,
+    Text,
+    Toast,
+    ToastTitle,
+    useToast,
+    VStack,
 } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
@@ -110,7 +110,7 @@ export default function RoleDetail() {
           },
         },
         {
-          label: "Delete",
+          label: "Hapus",
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {

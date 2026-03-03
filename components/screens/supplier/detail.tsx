@@ -2,21 +2,21 @@ import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
-  Box,
-  HStack,
-  Text,
-  Toast,
-  ToastTitle,
-  useToast,
-  VStack,
+    Box,
+    HStack,
+    Text,
+    Toast,
+    ToastTitle,
+    useToast,
+    VStack,
 } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { getErrorMessage } from "@/lib/api/client";
 import {
-  useDeleteSupplier,
-  useSupplier,
-  useSuppliers,
+    useDeleteSupplier,
+    useSupplier,
+    useSuppliers,
 } from "@/lib/api/suppliers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
@@ -123,7 +123,7 @@ export default function SupplierDetail() {
                       },
                     },
                     {
-                      label: "Delete",
+                      label: "Hapus",
                       icon: "TrashBin2",
                       theme: "red",
                       onPress: () => {

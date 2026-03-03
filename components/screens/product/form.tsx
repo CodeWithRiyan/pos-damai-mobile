@@ -93,7 +93,6 @@ export default function ProductForm() {
       variants: z
         .array(
           z.object({
-            name: z.string().min(1, "Nama wajib diisi."),
             code: z.string().min(1, "Kode wajib diisi."),
           }),
         )
@@ -477,7 +476,10 @@ export default function ProductForm() {
               code: uv.code,
               netto: uv.netto,
             }))
-        : data.variants || [];
+        : data.variants?.map((v) => ({
+            name: `${data.name} - ${v.code}`,
+            code: v.code,
+          })) || [];
 
     if (productId && product) {
       const updateData: UpdateProductDTO = {
@@ -1143,41 +1145,6 @@ export default function ProductForm() {
                   >
                     <HStack space="md">
                       <Controller
-                        name={`variants.${index}.name`}
-                        control={form.control}
-                        render={({
-                          field: { onChange, onBlur, value },
-                          fieldState: { error },
-                        }) => (
-                          <FormControl
-                            isRequired
-                            isInvalid={!!error}
-                            className="flex-1"
-                          >
-                            <FormControlLabel>
-                              <FormControlLabelText>
-                                Nama Varian
-                              </FormControlLabelText>
-                            </FormControlLabel>
-                            <Input>
-                              <InputField
-                                value={value}
-                                onChangeText={onChange}
-                                onBlur={onBlur}
-                                placeholder="Contoh: Merah, Biru"
-                              />
-                            </Input>
-                            {error && (
-                              <FormControlError>
-                                <FormControlErrorText>
-                                  {error.message}
-                                </FormControlErrorText>
-                              </FormControlError>
-                            )}
-                          </FormControl>
-                        )}
-                      />
-                      <Controller
                         name={`variants.${index}.code`}
                         control={form.control}
                         render={({
@@ -1263,7 +1230,7 @@ export default function ProductForm() {
                 ))}
                 <Button
                   size="sm"
-                  onPress={() => variantAppend({ name: "", code: "" })}
+                  onPress={() => variantAppend({ code: "" })}
                   className="bg-brand-primary"
                 >
                   <ButtonText className="text-white">

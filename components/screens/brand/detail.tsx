@@ -193,7 +193,7 @@ export default function BrandDetail() {
           },
         },
         {
-          label: "Delete",
+          label: "Hapus",
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
@@ -239,7 +239,6 @@ export default function BrandDetail() {
         }
         isGoBack
       />
-
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack>
