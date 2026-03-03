@@ -103,6 +103,52 @@ export default function CustomerDetail() {
     });
   };
 
+  const handleResetPointPress = () => {
+    showPopUpConfirm({
+      title: "RESET POIN PELANGGAN",
+      icon: "warning",
+      description: (
+        <Text className="text-slate-500">
+          {`Apakah Anda yakin ingin me-reset poin pelanggan `}
+          <Text className="font-bold text-slate-900">{customer?.name}</Text>
+          {` ? Tindakan ini tidak dapat dibatalkan.`}
+        </Text>
+      ),
+      showClose: true,
+      okText: "RESET",
+      closeText: "BATAL",
+      okVariant: "destructive",
+      onOk: () => confirmResetPoint(),
+      loading: deleteMutation.isPending, //TODO: ubah dengan resetPointMutation
+    });
+  };
+
+  const confirmResetPoint = async () => {
+    if (!customer) return;
+
+    //TODO: ubah dengan resetPointMutation
+    deleteMutation.mutate(customer.id, {
+      onSuccess: () => {
+        hidePopUpConfirm();
+        onRefetch();
+        router.back();
+
+        toast.show({
+          placement: "top",
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+              <ToastTitle>Poin Pelanggan berhasil direset</ToastTitle>
+            </Toast>
+          ),
+        });
+      },
+      onError: (error) => {
+        showErrorToast(error);
+        hidePopUpConfirm();
+      },
+    });
+  };
+
   const handleAction = () => {
     showActionDrawer({
       actions: [
@@ -117,7 +163,16 @@ export default function CustomerDetail() {
           },
         },
         {
-          label: "Delete",
+          label: "Reset Poin",
+          icon: "RestartCircle",
+          theme: "red",
+          onPress: () => {
+            handleResetPointPress();
+            hideActionDrawer();
+          },
+        },
+        {
+          label: "Hapus Pelanggan",
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
@@ -197,7 +252,6 @@ export default function CustomerDetail() {
                 Rp {(customer?.totalProfit || 0).toLocaleString("id-ID")}
               </Text>
             </VStack>
-
           </Box>
         </VStack>
       </ScrollView>
