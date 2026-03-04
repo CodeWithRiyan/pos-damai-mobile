@@ -17,6 +17,7 @@ import {
   useCustomer,
   useCustomers,
   useDeleteCustomer,
+  useResetCustomerPoints,
 } from "@/lib/api/customers";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
@@ -33,6 +34,7 @@ export default function CustomerDetail() {
     customerId || "",
   );
   const deleteMutation = useDeleteCustomer();
+  const resetPointMutation = useResetCustomerPoints();
   const toast = useToast();
 
   const helperCategory = (category = "") => {
@@ -119,19 +121,17 @@ export default function CustomerDetail() {
       closeText: "BATAL",
       okVariant: "destructive",
       onOk: () => confirmResetPoint(),
-      loading: deleteMutation.isPending, //TODO: ubah dengan resetPointMutation
+      loading: resetPointMutation.isPending,
     });
   };
 
   const confirmResetPoint = async () => {
     if (!customer) return;
 
-    //TODO: ubah dengan resetPointMutation
-    deleteMutation.mutate(customer.id, {
+    resetPointMutation.mutate(customer.id, {
       onSuccess: () => {
         hidePopUpConfirm();
         onRefetch();
-        router.back();
 
         toast.show({
           placement: "top",
