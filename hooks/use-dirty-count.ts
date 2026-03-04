@@ -35,6 +35,8 @@ export function useDirtyCount() {
         schema.cashDrawers,
         schema.finances,
         schema.shifts,
+        schema.storeSupplies,
+        schema.storeSupplyItems,
       ];
 
       let total = 0;

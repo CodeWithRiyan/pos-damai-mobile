@@ -194,6 +194,35 @@ export function useDeleteCustomer() {
   });
 }
 
+// Reset customer points
+export function useResetCustomerPoints() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const now = new Date();
+      const userId = useAuthStore.getState().profile?.id;
+
+      await db
+        .update(schema.customers)
+        .set({
+          points: 0,
+          updatedBy: userId,
+          updatedAt: now,
+          _dirty: true,
+        })
+        .where(eq(schema.customers.id, id));
+
+      return { id };
+    },
+    onSuccess: (data) => {
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ['customers', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['customers', data.id] });
+    },
+  });
+}
+
 // Bulk delete customers
 export function useBulkDeleteCustomer() {
   const queryClient = useQueryClient();
