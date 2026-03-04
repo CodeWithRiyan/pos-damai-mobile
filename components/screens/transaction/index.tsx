@@ -52,7 +52,7 @@ export default function TransactionList() {
     resetCart,
   } = useTransactionStore();
   const { data: customers } = useCustomers();
-  const { data: products } = useProducts({ forceParentMultiUnit: true });
+  const { data: products } = useProducts({ forceParent: true });
   const { data: currentShift, isLoading: isLoadingShift } = useCurrentShift();
   const router = useRouter();
   const toast = useToast();
@@ -80,7 +80,12 @@ export default function TransactionList() {
   const filteredProducts = products?.filter(
     (p) =>
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.barcode?.toLowerCase().includes(searchQuery.toLowerCase()),
+      p.barcode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.variants?.some(
+        (v) =>
+          v.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          v.code?.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
   );
 
   if (isLoadingShift) {
@@ -304,9 +309,7 @@ export default function TransactionList() {
                         <Heading size="md" className="line-clamp-2">
                           {item.variant && item.product.type === "MULTIUNIT"
                             ? `${item.product.name} - ${item.variant.name}`
-                            : item.variant && item.product.type === "VARIANTS"
-                              ? item.variant.name
-                              : item.product.name}
+                            : item.product.name}
                         </Heading>
                         <Text size="sm" className="text-slate-500">
                           {`${item.quantity} x Rp ${
@@ -406,21 +409,34 @@ export default function TransactionList() {
       <PopupAddProduct />
       <BarcodeScanner
         onBarcodeScanned={(result) => {
-          const item = products?.find((item) => item.barcode === result.data);
-          if (!item) {
+          const scannedData = result.data;
+
+          let foundProduct = products?.find((p) => p.barcode === scannedData);
+
+          // 2. Jika tidak ketemu, cari di dalam list variants milik semua produk
+          if (!foundProduct) {
+            foundProduct = products?.find((p) =>
+              p.variants?.some((v) => v.code === scannedData),
+            );
+          }
+
+          // 3. Validasi hasil pencarian
+          if (!foundProduct) {
             toast.show({
               placement: "top",
               render: ({ id }) => (
                 <Toast nativeID={`toast-${id}`} action="error" variant="solid">
                   <ToastTitle>
-                    {`Produk dengan barcode ${result.data} tidak ditemukan`}
+                    {`Produk dengan barcode ${scannedData} tidak ditemukan`}
                   </ToastTitle>
                 </Toast>
               ),
             });
             return;
           }
-          setAddProduct(item || null);
+
+          // 4. Set produk yang ditemukan (baik dari barcode utama maupun variant)
+          setAddProduct(foundProduct);
         }}
       />
     </Box>

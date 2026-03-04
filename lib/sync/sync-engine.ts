@@ -368,7 +368,6 @@ export class SyncEngine {
         createdAt, 
         updatedAt, 
         deletedAt, 
-        points,
         totalTransactions,
         totalRevenue,
         totalProfit,
@@ -770,4 +769,3 @@ export class SyncEngine {
     }
   }
 }
-

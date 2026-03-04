@@ -3,7 +3,7 @@ import Header from "@/components/header";
 import { Box, Heading, HStack, Pressable, Text, VStack } from "@/components/ui";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
-import { useTransaction } from "@/lib/api/transactions";
+import { TransactionItem, useTransaction } from "@/lib/api/transactions";
 import { formatDisplayRefId } from "@/lib/utils/reference";
 import { useAuthStore } from "@/stores/auth";
 import dayjs from "dayjs";
@@ -148,7 +148,10 @@ export default function TransactionReceipt() {
             <VStack space="md">
               {(() => {
                 // Group items by productId and variantId
-                const groupedItemsMap: Record<string, any> = {};
+                const groupedItemsMap: Record<
+                  string,
+                  TransactionItem & { quantity: number; total: number }
+                > = {};
                 transaction.items?.forEach((item) => {
                   const key = `${item.productId}-${item.variantId || "no-var"}`;
                   if (!groupedItemsMap[key]) {
@@ -159,17 +162,24 @@ export default function TransactionReceipt() {
                     };
                   }
                   groupedItemsMap[key].quantity += item.quantity;
-                  groupedItemsMap[key].total += item.quantity * (item.sellPrice || 0);
+                  groupedItemsMap[key].total +=
+                    item.quantity * (item.sellPrice || 0);
                 });
 
                 return Object.values(groupedItemsMap).map((group) => {
-                  
                   // Regular price is the max price in this group (undiscounted)
-                  const regularPrice = Math.max(...(transaction.items
-                    ?.filter(i => i.productId === group.productId && i.variantId === group.variantId)
-                    .map(i => i.sellPrice || 0) || [0]));
-                  
-                  const totalDiscount = (regularPrice * group.quantity) - group.total;
+                  const regularPrice = Math.max(
+                    ...(transaction.items
+                      ?.filter(
+                        (i) =>
+                          i.productId === group.productId &&
+                          i.variantId === group.variantId,
+                      )
+                      .map((i) => i.sellPrice || 0) || [0]),
+                  );
+
+                  const totalDiscount =
+                    regularPrice * group.quantity - group.total;
 
                   return (
                     <VStack key={group.id} space="xs" className="mb-2">
@@ -180,18 +190,19 @@ export default function TransactionReceipt() {
                             {group.variantName ? ` - ${group.variantName}` : ""}
                           </Heading>
                           <Text className="text-typography-500 text-sm">
-                            {group.quantity} x Rp {regularPrice.toLocaleString("id-ID")}
+                            {group.quantity} x Rp{" "}
+                            {regularPrice.toLocaleString("id-ID")}
                           </Text>
                         </VStack>
                         <Text className="text-typography-500 font-bold">
-                          Rp {(regularPrice * group.quantity).toLocaleString("id-ID")}
+                          Rp{" "}
+                          {(regularPrice * group.quantity).toLocaleString(
+                            "id-ID",
+                          )}
                         </Text>
                       </HStack>
                       {totalDiscount > 0 && (
-                        <HStack className="justify-between items-center pl-2">
-                          <Text className="text-error-500 text-sm italic">
-                            Potongan Harga (Diskon)
-                          </Text>
+                        <HStack className="justify-end items-center pl-2">
                           <Text className="text-error-500 text-sm italic">
                             - Rp {totalDiscount.toLocaleString("id-ID")}
                           </Text>
