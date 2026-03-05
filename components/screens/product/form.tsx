@@ -760,7 +760,7 @@ export default function ProductForm() {
                       label: cat.name,
                       value: cat.id,
                     }))}
-                    className="w-full"
+                    className="flex-1"
                     onChange={onChange}
                   />
                   <Pressable
@@ -1085,19 +1085,27 @@ export default function ProductForm() {
                           )}
                         />
                       </GridItem>
-                      {unitVariantFields.length > 1 && (
-                        <Button
-                          size="xs"
-                          action="negative"
-                          onPress={() => unitVariantRemove(index)}
+                      {index > 0 && (
+                        <GridItem
+                          _extra={{
+                            className: "col-span-2",
+                          }}
                         >
-                          <SolarIconBold
-                            name="TrashBin2"
-                            color="#FDFBF9"
-                            size={14}
-                          />
-                          <ButtonText className="text-white">Hapus</ButtonText>
-                        </Button>
+                          <Button
+                            size="xs"
+                            action="negative"
+                            onPress={() => unitVariantRemove(index)}
+                          >
+                            <SolarIconBold
+                              name="TrashBin2"
+                              color="#FDFBF9"
+                              size={14}
+                            />
+                            <ButtonText className="text-white">
+                              Hapus
+                            </ButtonText>
+                          </Button>
+                        </GridItem>
                       )}
                     </Grid>
                   ))}
@@ -1138,12 +1146,12 @@ export default function ProductForm() {
                 className="p-4 border border-primary-300 rounded-md bg-primary-200 shadow-lg"
               >
                 {variantFields.map((field, index) => (
-                  <VStack
+                  <Grid
                     key={field.id}
-                    space="md"
-                    className="p-4 border border-primary-300 rounded-md"
+                    _extra={{ className: "grid-cols-1" }}
+                    className="gap-4 p-4 border border-primary-300 rounded-md"
                   >
-                    <HStack space="md">
+                    <GridItem _extra={{ className: "col-span-1" }}>
                       <Controller
                         name={`variants.${index}.code`}
                         control={form.control}
@@ -1211,22 +1219,25 @@ export default function ProductForm() {
                           </FormControl>
                         )}
                       />
-                    </HStack>
+                    </GridItem>
                     {variantFields.length > 1 && (
-                      <Button
-                        size="xs"
-                        action="negative"
-                        onPress={() => variantRemove(index)}
-                      >
-                        <SolarIconBold
-                          name="TrashBin2"
-                          color="#FDFBF9"
-                          size={14}
-                        />
-                        <ButtonText className="text-white">Hapus</ButtonText>
-                      </Button>
+                      <GridItem _extra={{ className: "col-span-1" }}>
+                        <Button
+                          size="xs"
+                          action="negative"
+                          className="w-full"
+                          onPress={() => variantRemove(index)}
+                        >
+                          <SolarIconBold
+                            name="TrashBin2"
+                            color="#FDFBF9"
+                            size={14}
+                          />
+                          <ButtonText className="text-white">Hapus</ButtonText>
+                        </Button>
+                      </GridItem>
                     )}
-                  </VStack>
+                  </Grid>
                 ))}
                 <Button
                   size="sm"
@@ -1252,12 +1263,12 @@ export default function ProductForm() {
                 className="p-4 border border-primary-300 rounded-md bg-primary-200 shadow-lg"
               >
                 {retailFields.map((field, index) => (
-                  <VStack
+                  <Grid
                     key={field.id}
-                    space="md"
-                    className="p-4 border border-primary-300 rounded-md"
+                    _extra={{ className: "grid-cols-2" }}
+                    className="gap-4 p-4 border border-primary-300 rounded-md"
                   >
-                    <HStack space="md">
+                    <GridItem _extra={{ className: "col-span-1" }}>
                       <Controller
                         name={`retailPrice.${index}.minimumPurchase`}
                         control={form.control}
@@ -1296,6 +1307,8 @@ export default function ProductForm() {
                           </FormControl>
                         )}
                       />
+                    </GridItem>
+                    <GridItem _extra={{ className: "col-span-1" }}>
                       <Controller
                         name={`retailPrice.${index}.price`}
                         control={form.control}
@@ -1332,22 +1345,25 @@ export default function ProductForm() {
                           </FormControl>
                         )}
                       />
-                    </HStack>
+                    </GridItem>
                     {retailFields.length > 1 && (
-                      <Button
-                        size="xs"
-                        action="negative"
-                        onPress={() => retailRemove(index)}
-                      >
-                        <SolarIconBold
-                          name="TrashBin2"
-                          color="#FDFBF9"
-                          size={14}
-                        />
-                        <ButtonText className="text-white">Hapus</ButtonText>
-                      </Button>
+                      <GridItem _extra={{ className: "col-span-2" }}>
+                        <Button
+                          size="xs"
+                          action="negative"
+                          className="w-full"
+                          onPress={() => retailRemove(index)}
+                        >
+                          <SolarIconBold
+                            name="TrashBin2"
+                            color="#FDFBF9"
+                            size={14}
+                          />
+                          <ButtonText className="text-white">Hapus</ButtonText>
+                        </Button>
+                      </GridItem>
                     )}
-                  </VStack>
+                  </Grid>
                 ))}
                 <Button
                   size="sm"
@@ -1376,16 +1392,12 @@ export default function ProductForm() {
                 </Text>
               )}
               {wholesaleFields.map((field, index) => (
-                <VStack
+                <Grid
                   key={field.id}
-                  space="md"
-                  className="p-4 border border-primary-300 rounded-md"
+                  _extra={{ className: "grid-cols-2" }}
+                  className="gap-4 p-4 border border-primary-300 rounded-md"
                 >
-                  <HStack
-                    key={field.id}
-                    space="md"
-                    className="p-4 border border-primary-300 rounded-md"
-                  >
+                  <GridItem _extra={{ className: "col-span-1" }}>
                     <Controller
                       name={`wholesalePrice.${index}.minimumPurchase`}
                       control={form.control}
@@ -1424,6 +1436,8 @@ export default function ProductForm() {
                         </FormControl>
                       )}
                     />
+                  </GridItem>
+                  <GridItem _extra={{ className: "col-span-1" }}>
                     <Controller
                       name={`wholesalePrice.${index}.price`}
                       control={form.control}
@@ -1460,16 +1474,22 @@ export default function ProductForm() {
                         </FormControl>
                       )}
                     />
-                  </HStack>
-                  <Button
-                    size="xs"
-                    action="negative"
-                    onPress={() => wholesaleRemove(index)}
-                  >
-                    <SolarIconBold name="TrashBin2" color="#FDFBF9" size={14} />
-                    <ButtonText className="text-white">Hapus</ButtonText>
-                  </Button>
-                </VStack>
+                  </GridItem>
+                  <GridItem _extra={{ className: "col-span-2" }}>
+                    <Button
+                      size="xs"
+                      action="negative"
+                      onPress={() => wholesaleRemove(index)}
+                    >
+                      <SolarIconBold
+                        name="TrashBin2"
+                        color="#FDFBF9"
+                        size={14}
+                      />
+                      <ButtonText className="text-white">Hapus</ButtonText>
+                    </Button>
+                  </GridItem>
+                </Grid>
               ))}
               <Button
                 size="sm"
@@ -1533,7 +1553,7 @@ export default function ProductForm() {
                       label: brand.name,
                       value: brand.id,
                     }))}
-                    className="w-full"
+                    className="flex-1"
                     onChange={onChange}
                   />
                   <Pressable
@@ -1574,7 +1594,7 @@ export default function ProductForm() {
                       label: disc.name,
                       value: disc.id,
                     }))}
-                    className="w-full"
+                    className="flex-1"
                     onChange={onChange}
                   />
                   <Pressable
