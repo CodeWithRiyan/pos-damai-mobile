@@ -28,7 +28,9 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useCustomers();
-  const [selectedItems, setSelectedItems] = useState<CustomerWithStats[] | null>(null);
+  const [selectedItems, setSelectedItems] = useState<
+    CustomerWithStats[] | null
+  >(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -39,6 +41,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
   const customers = data || [];
 
   const deleteMutation = useBulkDeleteCustomer();
+  const resetPointMutation = useBulkDeleteCustomer(); // TODO: Ubah dengan useBulkResetCustomerPoints
   const createMutation = useCreateCustomer();
   const toast = useToast();
 
@@ -119,6 +122,56 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
     router.push("/(main)/management/customer-supplier/customer/add");
   };
 
+  const handleResetPointPress = () => {
+    const ids = selectedItems?.map((m) => m.id) || [];
+
+    showPopUpConfirm({
+      title: "RESET POIN PELANGGAN",
+      icon: "warning",
+      description: (
+        <Text className="text-slate-500">
+          {`Apakah Anda yakin ingin me-reset poin milik `}
+          <Text className="font-bold text-slate-900">{ids?.length}</Text>
+          {` pelanggan? Tindakan ini tidak dapat dibatalkan.`}
+        </Text>
+      ),
+      showClose: true,
+      okText: "RESET",
+      closeText: "BATAL",
+      okVariant: "destructive",
+      onOk: () => confirmResetPoint(ids),
+      loading: resetPointMutation.isPending,
+    });
+  };
+
+  const confirmResetPoint = async (ids: string[]) => {
+    if (!ids.length) return;
+
+    resetPointMutation.mutate(
+      { ids },
+      {
+        onSuccess: () => {
+          setSelectedItems(null);
+          hidePopUpConfirm();
+          refetch();
+
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                <ToastTitle>Poin Pelanggan berhasil direset</ToastTitle>
+              </Toast>
+            ),
+          });
+        },
+        onError: (error) => {
+          showErrorToast(error);
+          hidePopUpConfirm();
+        },
+      },
+    );
+  };
+
   const handleDeletePress = () => {
     const ids = selectedItems?.map((m) => m.id) || [];
 
@@ -183,7 +236,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
         header={isReport ? "LAPORAN PELANGGAN" : "PELANGGAN"}
         isGoBack
         selectedItemsLength={selectedItems?.length}
-        selectedItemsSuffixLabel="Produk terpilih"
+        selectedItemsSuffixLabel="Pelanggan terpilih"
         onCancelSelectedItems={() => setSelectedItems(null)}
         action={
           !isReport && (
@@ -196,7 +249,30 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
                 ) : (
                   <Pressable
                     className="p-6"
-                    onPress={() => handleDeletePress()}
+                    onPress={() =>
+                      showActionDrawer({
+                        actions: [
+                          {
+                            label: "Reset Poin",
+                            icon: "RestartCircle",
+                            theme: "red",
+                            onPress: () => {
+                              handleResetPointPress();
+                              hideActionDrawer();
+                            },
+                          },
+                          {
+                            label: "Hapus Pelanggan",
+                            icon: "TrashBin2",
+                            theme: "red",
+                            onPress: () => {
+                              handleDeletePress();
+                              hideActionDrawer();
+                            },
+                          },
+                        ],
+                      })
+                    }
                   >
                     <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
                   </Pressable>
@@ -275,10 +351,17 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
                       <Text className="text-brand-primary text-sm font-bold">
                         {item.points || 0} Poin
                       </Text>
-                      <Text className="text-xs">Total Transaksi: {item.totalTransactions || 0}</Text>
-                      <Text className="text-xs">Total Omset: Rp {(item.totalRevenue || 0).toLocaleString('id-ID')}</Text>
-                      <Text className="text-xs">Total Keuntungan: Rp {(item.totalProfit || 0).toLocaleString('id-ID')}</Text>
-
+                      <Text className="text-xs">
+                        Total Transaksi: {item.totalTransactions || 0}
+                      </Text>
+                      <Text className="text-xs">
+                        Total Omset: Rp{" "}
+                        {(item.totalRevenue || 0).toLocaleString("id-ID")}
+                      </Text>
+                      <Text className="text-xs">
+                        Total Keuntungan: Rp{" "}
+                        {(item.totalProfit || 0).toLocaleString("id-ID")}
+                      </Text>
                     </VStack>
                   </HStack>
                 </Pressable>

@@ -1,10 +1,6 @@
 import { Customer } from "@/lib/api/customers";
 import { Product, ProductVariant } from "@/lib/api/products";
-import {
-  calculateLineItemTotal,
-  findSellPrice,
-  getDiscountedPrice,
-} from "@/lib/price";
+import { calculateLineItemTotal, findSellPrice } from "@/lib/price";
 import { create } from "zustand";
 
 interface CartItem {
@@ -39,7 +35,6 @@ interface TransactionState {
   customer: Customer | null;
   cart: CartItem[];
   cartTotal: number;
-  cartDiscountTotal: number;
   status: "DRAFT" | "COMPLETED";
   checkoutData: CheckoutData | null;
   purchaseId: string | null;
@@ -59,7 +54,6 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   customer: null,
   cart: [],
   cartTotal: 0,
-  cartDiscountTotal: 0,
   status: "DRAFT",
   checkoutData: null,
   purchaseId: null,
@@ -67,47 +61,31 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   addProductVariantId: null,
   setCustomer: (customer) =>
     set((state) => {
-      if (state.customer === null) {
-        return { customer: null, cartTotal: 0, cartDiscountTotal: 0 };
+      if (customer) {
+        const updatedTotal = state.cart.reduce((sum, cartItem) => {
+          const unitPrice =
+            cartItem.tempSellPrice ||
+            findSellPrice({
+              sellPrices: cartItem.product.sellPrices,
+              type: customer.category,
+              quantity: cartItem.quantity,
+              unitVariant: cartItem.variant,
+            });
+
+          return (
+            sum +
+            calculateLineItemTotal({
+              quantity: cartItem.quantity,
+              unitPrice: unitPrice,
+              discount: cartItem.product.discount,
+              isManualPrice: !!cartItem.tempSellPrice,
+            })
+          );
+        }, 0);
+        return { customer, cartTotal: updatedTotal };
       }
 
-      const updatedTotal = state.cart.reduce((sum, cartItem) => {
-        const unitPrice =
-          cartItem.tempSellPrice ||
-          findSellPrice({
-            sellPrices: cartItem.product.sellPrices,
-            type: customer?.category,
-            quantity: cartItem.quantity,
-            unitVariant: cartItem.variant,
-          });
-
-        return (
-          sum +
-          calculateLineItemTotal({
-            quantity: cartItem.quantity,
-            unitPrice: unitPrice,
-            discount: cartItem.product.discount,
-            isManualPrice: !!cartItem.tempSellPrice,
-          })
-        );
-      }, 0);
-
-      const totalDiscount = state.cart.reduce((sum, cartItem) => {
-        const unitPrice =
-          cartItem.tempSellPrice ||
-          findSellPrice({
-            sellPrices: cartItem.product.sellPrices,
-            type: state.customer?.category,
-            quantity: cartItem.quantity,
-            unitVariant: cartItem.variant,
-          });
-        return sum + getDiscountedPrice(unitPrice, cartItem.product.discount);
-      }, 0);
-      return {
-        customer,
-        cartTotal: updatedTotal,
-        cartDiscountTotal: totalDiscount,
-      };
+      return { customer, cartTotal: 0 };
     }),
   setPurchaseId: (id) => set({ purchaseId: id }),
   setStatus: (status) => set({ status }),
@@ -156,23 +134,7 @@ export const useTransactionStore = create<TransactionState>((set) => ({
         );
       }, 0);
 
-      const totalDiscount = updatedCart.reduce((sum, cartItem) => {
-        const unitPrice =
-          cartItem.tempSellPrice ||
-          findSellPrice({
-            sellPrices: cartItem.product.sellPrices,
-            type: state.customer?.category,
-            quantity: cartItem.quantity,
-            unitVariant: cartItem.variant,
-          });
-        return sum + getDiscountedPrice(unitPrice, cartItem.product.discount);
-      }, 0);
-
-      return {
-        cart: updatedCart,
-        cartTotal: total,
-        cartDiscountTotal: totalDiscount,
-      };
+      return { cart: updatedCart, cartTotal: total };
     }),
   removeCartItem: (productId, variantId) =>
     set((state) => {
@@ -205,24 +167,7 @@ export const useTransactionStore = create<TransactionState>((set) => ({
         );
       }, 0);
 
-      const totalDiscount = updatedCart.reduce((sum, cartItem) => {
-        const unitPrice =
-          cartItem.tempSellPrice ||
-          findSellPrice({
-            sellPrices: cartItem.product.sellPrices,
-            type: state.customer?.category,
-            quantity: cartItem.quantity,
-            unitVariant: cartItem.variant,
-          });
-        return sum + getDiscountedPrice(unitPrice, cartItem.product.discount);
-      }, 0);
-
-      return {
-        cart: updatedCart,
-        cartTotal: total,
-        cartDiscountTotal: totalDiscount,
-      };
+      return { cart: updatedCart, cartTotal: total };
     }),
-  resetCart: () =>
-    set({ cart: [], cartTotal: 0, cartDiscountTotal: 0, purchaseId: null }),
+  resetCart: () => set({ cart: [], cartTotal: 0, purchaseId: null }),
 }));

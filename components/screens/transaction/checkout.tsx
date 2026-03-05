@@ -68,16 +68,9 @@ export default function TransactionCheckoutForm() {
 
   const { data: user } = useCurrentUser();
   const { data: paymentTypesData } = usePaymentTypes();
-  const {
-    customer,
-    cart,
-    cartTotal,
-    cartDiscountTotal,
-    status,
-    setCheckoutData,
-    setCustomer,
-  } = useTransactionStore();
-  const { resetCart } = useTransactionStore();
+  const { customer, cart, cartTotal, status, setCheckoutData } =
+    useTransactionStore();
+  const { resetCart, setCustomer } = useTransactionStore();
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
 
   // Map payment types to select options
@@ -115,7 +108,7 @@ export default function TransactionCheckoutForm() {
           ? (cartTotal * pt.commission) / 100
           : pt.commission;
     }
-    return { commission: Number(comm), grandTotal: Number(cartTotal + comm) };
+    return { commission: comm, grandTotal: cartTotal + comm };
   }, [cartTotal, paymentTypesData, paymentTypeId]);
 
   useEffect(() => {
@@ -161,7 +154,7 @@ export default function TransactionCheckoutForm() {
     try {
       const submissionData = {
         totalAmount: grandTotal,
-        totalPaid: Number(data.totalPaid || "0") || 0,
+        totalPaid: parseFloat(data.totalPaid || "0") || 0,
         commission: commission,
         paymentTypeId: data.paymentTypeId,
         customerId: customer?.id || "",
@@ -274,11 +267,6 @@ export default function TransactionCheckoutForm() {
                   <Text className="text-warning-600 mt-2 font-bold">
                     *Termasuk tambahan biaya Rp{" "}
                     {commission.toLocaleString("id-ID")}
-                  </Text>
-                )}
-                {cartDiscountTotal > 0 && (
-                  <Text className="text-error-600 mt-2 font-bold">
-                    **Diskon Rp {cartDiscountTotal.toLocaleString("id-ID")}
                   </Text>
                 )}
               </HStack>

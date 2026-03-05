@@ -193,7 +193,7 @@ export default function SupplierList() {
         header="SUPPLIER"
         isGoBack
         selectedItemsLength={selectedItems?.length}
-        selectedItemsSuffixLabel="Produk terpilih"
+        selectedItemsSuffixLabel="Supplier terpilih"
         onCancelSelectedItems={() => setSelectedItems(null)}
         action={
           <HStack space="sm" className="w-[72px]">

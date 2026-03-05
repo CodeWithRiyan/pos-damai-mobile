@@ -3,7 +3,7 @@ import Header from "@/components/header";
 import { Box, Heading, HStack, Pressable, Text, VStack } from "@/components/ui";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
-import { TransactionItem, useTransaction } from "@/lib/api/transactions";
+import { useTransaction } from "@/lib/api/transactions";
 import { formatDisplayRefId } from "@/lib/utils/reference";
 import { useAuthStore } from "@/stores/auth";
 import dayjs from "dayjs";
@@ -148,10 +148,7 @@ export default function TransactionReceipt() {
             <VStack space="md">
               {(() => {
                 // Group items by productId and variantId
-                const groupedItemsMap: Record<
-                  string,
-                  TransactionItem & { quantity: number; total: number }
-                > = {};
+                const groupedItemsMap: Record<string, any> = {};
                 transaction.items?.forEach((item) => {
                   const key = `${item.productId}-${item.variantId || "no-var"}`;
                   if (!groupedItemsMap[key]) {
@@ -202,7 +199,10 @@ export default function TransactionReceipt() {
                         </Text>
                       </HStack>
                       {totalDiscount > 0 && (
-                        <HStack className="justify-end items-center pl-2">
+                        <HStack className="justify-between items-center pl-2">
+                          <Text className="text-error-500 text-sm italic">
+                            Potongan Harga (Diskon)
+                          </Text>
                           <Text className="text-error-500 text-sm italic">
                             - Rp {totalDiscount.toLocaleString("id-ID")}
                           </Text>
