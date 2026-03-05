@@ -13,6 +13,7 @@ import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
 import { Role, useBulkDeleteRole, useRoles } from "@/lib/api/roles";
+import { exportRoles } from "@/lib/utils/excel";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
@@ -28,6 +29,22 @@ export default function RoleList() {
 
   const deleteMutation = useBulkDeleteRole();
   const toast = useToast();
+
+  const handleExport = async () => {
+    hideActionDrawer();
+    try {
+      await exportRoles(roles);
+    } catch (e) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
+  };
 
   const handleRolePress = (role: Role) => {
     if (selectedItems?.some((r) => r.id === role.id)) {
@@ -149,16 +166,12 @@ export default function RoleList() {
                       {
                         label: "Export Data",
                         icon: "Export",
-                        onPress: () => {
-                          hideActionDrawer();
-                        },
+                        onPress: handleExport,
                       },
                       {
                         label: "Import Data",
                         icon: "Import",
-                        onPress: () => {
-                          hideActionDrawer();
-                        },
+                        onPress: () => { hideActionDrawer(); },
                       },
                     ],
                   });

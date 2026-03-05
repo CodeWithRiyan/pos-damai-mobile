@@ -33,6 +33,7 @@ import {
   useBulkDeletePayableBySupplier,
   usePayableList,
 } from "@/lib/api/payable";
+import { exportPayables } from "@/lib/utils/excel";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
@@ -61,6 +62,22 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const toast = useToast();
+
+  const handleExport = async () => {
+    hideActionDrawer();
+    try {
+      await exportPayables(payableBySupplier);
+    } catch (e) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
+  };
 
   const handlePayablePress = (payable: PayableBySupplier) => {
     if (selectedItems?.some((r) => r.supplierId === payable.supplierId)) {
@@ -181,16 +198,12 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
                         {
                           label: "Export Data",
                           icon: "Export",
-                          onPress: () => {
-                            hideActionDrawer();
-                          },
+                          onPress: handleExport,
                         },
                         {
                           label: "Import Data",
                           icon: "Import",
-                          onPress: () => {
-                            hideActionDrawer();
-                          },
+                          onPress: () => { hideActionDrawer(); },
                         },
                       ],
                     });

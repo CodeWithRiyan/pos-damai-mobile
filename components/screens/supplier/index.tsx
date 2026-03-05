@@ -15,8 +15,10 @@ import { getErrorMessage } from "@/lib/api/client";
 import {
   Supplier,
   useBulkDeleteSupplier,
+  useCreateSupplier,
   useSuppliers,
 } from "@/lib/api/suppliers";
+import { exportSuppliers, importSuppliers } from "@/lib/utils/excel";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { ScrollView } from "react-native";
@@ -37,7 +39,61 @@ export default function SupplierList() {
   const suppliers = data || [];
 
   const deleteMutation = useBulkDeleteSupplier();
+  const createMutation = useCreateSupplier();
   const toast = useToast();
+
+  const handleExport = async () => {
+    hideActionDrawer();
+    try {
+      await exportSuppliers(suppliers);
+    } catch (e) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
+  };
+
+  const handleImport = async () => {
+    hideActionDrawer();
+    try {
+      const dtos = await importSuppliers();
+      if (!dtos) return;
+      let successCount = 0;
+      for (const dto of dtos) {
+        try {
+          await createMutation.mutateAsync({
+            name: dto.name,
+            phone: dto.phone ?? undefined,
+            address: dto.address ?? undefined,
+          } as any);
+          successCount++;
+        } catch {}
+      }
+      refetch();
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+            <ToastTitle>{`${successCount} supplier berhasil diimpor`}</ToastTitle>
+          </Toast>
+        ),
+      });
+    } catch (e) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
+  };
 
   const handlePress = (data: Supplier) => {
     if (selectedItems?.some((r) => r.id === data.id)) {
@@ -160,16 +216,12 @@ export default function SupplierList() {
                       {
                         label: "Export Data",
                         icon: "Export",
-                        onPress: () => {
-                          hideActionDrawer();
-                        },
+                        onPress: handleExport,
                       },
                       {
                         label: "Import Data",
                         icon: "Import",
-                        onPress: () => {
-                          hideActionDrawer();
-                        },
+                        onPress: handleImport,
                       },
                     ],
                   });

@@ -15,8 +15,10 @@ import { getErrorMessage } from "@/lib/api/client";
 import {
   CustomerWithStats,
   useBulkDeleteCustomer,
+  useCreateCustomer,
   useCustomers,
 } from "@/lib/api/customers";
+import { exportCustomers, importCustomers } from "@/lib/utils/excel";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { ScrollView } from "react-native";
@@ -37,7 +39,57 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
   const customers = data || [];
 
   const deleteMutation = useBulkDeleteCustomer();
+  const createMutation = useCreateCustomer();
   const toast = useToast();
+
+  const handleExport = async () => {
+    hideActionDrawer();
+    try {
+      await exportCustomers(customers);
+    } catch (e) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
+  };
+
+  const handleImport = async () => {
+    hideActionDrawer();
+    try {
+      const dtos = await importCustomers();
+      if (!dtos) return;
+      let successCount = 0;
+      for (const dto of dtos) {
+        try {
+          await createMutation.mutateAsync(dto);
+          successCount++;
+        } catch {}
+      }
+      refetch();
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+            <ToastTitle>{`${successCount} pelanggan berhasil diimpor`}</ToastTitle>
+          </Toast>
+        ),
+      });
+    } catch (e) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
+  };
 
   const handleItemPress = (item: CustomerWithStats) => {
     if (selectedItems?.some((r) => r.id === item.id)) {
@@ -158,16 +210,12 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
                         {
                           label: "Export Data",
                           icon: "Export",
-                          onPress: () => {
-                            hideActionDrawer();
-                          },
+                          onPress: handleExport,
                         },
                         {
                           label: "Import Data",
                           icon: "Import",
-                          onPress: () => {
-                            hideActionDrawer();
-                          },
+                          onPress: handleImport,
                         },
                       ],
                     });
