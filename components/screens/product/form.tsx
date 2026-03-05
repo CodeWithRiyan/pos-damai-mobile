@@ -581,7 +581,7 @@ export default function ProductForm() {
                   <FormControlLabelText>Kode</FormControlLabelText>
                 </FormControlLabel>
                 <HStack space="md">
-                  <Input className="w-full">
+                  <Input className="flex-1">
                     <InputField
                       value={value}
                       autoComplete="name"
@@ -638,7 +638,7 @@ export default function ProductForm() {
                 <Switch
                   size="md"
                   value={value}
-                  onChange={onChange}
+                  onValueChange={onChange}
                   onBlur={onBlur}
                   className="border-none"
                 />
@@ -991,7 +991,7 @@ export default function ProductForm() {
                                 </FormControlLabelText>
                               </FormControlLabel>
                               <HStack space="md">
-                                <Input className="w-full">
+                                <Input className="flex-1">
                                   <InputField
                                     value={value}
                                     onChangeText={onChange}
@@ -1162,7 +1162,7 @@ export default function ProductForm() {
                               </FormControlLabelText>
                             </FormControlLabel>
                             <HStack space="md">
-                              <Input className="w-full">
+                              <Input className="flex-1">
                                 <InputField
                                   value={value}
                                   onChangeText={onChange}
