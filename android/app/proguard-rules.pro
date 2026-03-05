@@ -18,3 +18,8 @@
 # expo-modules-kotlin (required for expo-file-system R8 release build)
 -keep class expo.modules.kotlin.** { *; }
 -keep interface expo.modules.kotlin.** { *; }
+
+# Suppress R8 missing class warnings for expo-file-system internal references
+-dontwarn expo.modules.kotlin.runtime.Runtime
+-dontwarn expo.modules.kotlin.services.FilePermissionService
+-dontwarn expo.modules.kotlin.services.FilePermissionService$Permission
