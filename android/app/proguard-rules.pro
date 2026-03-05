@@ -14,3 +14,7 @@
 # NativeWind
 -keep class nativewind.** { *; }
 -keep class com.nativewind.** { *; }
+
+# expo-modules-kotlin (required for expo-file-system R8 release build)
+-keep class expo.modules.kotlin.** { *; }
+-keep interface expo.modules.kotlin.** { *; }
