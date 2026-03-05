@@ -20,8 +20,10 @@ import { getErrorMessage } from "@/lib/api/client";
 import {
   PaymentType,
   useBulkDeletePaymentType,
+  useCreatePaymentType,
   usePaymentTypes,
 } from "@/lib/api/payment-types";
+import { exportPaymentTypes, importPaymentTypes } from "@/lib/utils/excel";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { useRouter } from "expo-router";
 import { SearchIcon } from "lucide-react-native";
@@ -42,7 +44,57 @@ export default function PaymentTypeList() {
   const isLoading = isLoadingPaymentTypes || deleteMutation.isPending;
   const paymentTypes = data || [];
 
+  const createMutation = useCreatePaymentType();
   const toast = useToast();
+
+  const handleExport = async () => {
+    hideActionDrawer();
+    try {
+      await exportPaymentTypes(paymentTypes);
+    } catch (e) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
+  };
+
+  const handleImport = async () => {
+    hideActionDrawer();
+    try {
+      const dtos = await importPaymentTypes();
+      if (!dtos) return;
+      let successCount = 0;
+      for (const dto of dtos) {
+        try {
+          await createMutation.mutateAsync(dto);
+          successCount++;
+        } catch {}
+      }
+      refetch();
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+            <ToastTitle>{`${successCount} jenis pembayaran berhasil diimpor`}</ToastTitle>
+          </Toast>
+        ),
+      });
+    } catch (e) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
+  };
 
   const handleItemPress = (item: PaymentType) => {
     if (selectedItems?.some((r) => r.id === item.id)) {
@@ -162,16 +214,12 @@ export default function PaymentTypeList() {
                       {
                         label: "Export Data",
                         icon: "Export",
-                        onPress: () => {
-                          hideActionDrawer();
-                        },
+                        onPress: handleExport,
                       },
                       {
                         label: "Import Data",
                         icon: "Import",
-                        onPress: () => {
-                          hideActionDrawer();
-                        },
+                        onPress: handleImport,
                       },
                     ],
                   });

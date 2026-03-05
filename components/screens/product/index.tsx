@@ -16,12 +16,15 @@ import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
+import { useCategories } from "@/lib/api/categories";
 import {
   Product,
   ShowByStock,
   useBulkDeleteProduct,
+  useCreateProduct,
   useProducts,
 } from "@/lib/api/products";
+import { exportProducts, importProducts } from "@/lib/utils/excel";
 import { useFocusEffect, useRouter } from "expo-router";
 import { debounce } from "lodash";
 import { SearchIcon } from "lucide-react-native";
@@ -53,6 +56,9 @@ export default function ProductList() {
   });
   const [selectedItems, setSelectedItems] = useState<Product[] | null>(null);
 
+  const { data: categoriesData } = useCategories();
+  const categories = categoriesData || [];
+
   const debouncedSetSearch = useMemo(
     () =>
       debounce((value: string) => {
@@ -82,7 +88,59 @@ export default function ProductList() {
   const products = data || [];
 
   const deleteMutation = useBulkDeleteProduct();
+  const createMutation = useCreateProduct();
   const toast = useToast();
+
+  const handleExport = async () => {
+    hideActionDrawer();
+    try {
+      await exportProducts(products);
+    } catch (e) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
+  };
+
+  const handleImport = async () => {
+    hideActionDrawer();
+    try {
+      const dtos = await importProducts(
+        categories.map((c) => ({ id: c.id, name: c.name })),
+      );
+      if (!dtos) return;
+      let successCount = 0;
+      for (const dto of dtos) {
+        try {
+          await createMutation.mutateAsync(dto);
+          successCount++;
+        } catch {}
+      }
+      refetch();
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+            <ToastTitle>{`${successCount} produk berhasil diimpor`}</ToastTitle>
+          </Toast>
+        ),
+      });
+    } catch (e) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
+  };
 
   const handlePress = (data: Product) => {
     if (selectedItems?.some((r) => r.id === data.id)) {
@@ -215,16 +273,12 @@ export default function ProductList() {
                     {
                       label: "Export Data",
                       icon: "Export",
-                      onPress: () => {
-                        hideActionDrawer();
-                      },
+                      onPress: handleExport,
                     },
                     {
                       label: "Import Data",
                       icon: "Import",
-                      onPress: () => {
-                        hideActionDrawer();
-                      },
+                      onPress: handleImport,
                     },
                   ],
                 });
