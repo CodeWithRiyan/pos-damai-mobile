@@ -581,7 +581,7 @@ export default function ProductForm() {
                   <FormControlLabelText>Kode</FormControlLabelText>
                 </FormControlLabel>
                 <HStack space="md">
-                  <Input className="flex-1">
+                  <Input className="w-full">
                     <InputField
                       value={value}
                       autoComplete="name"
@@ -628,7 +628,7 @@ export default function ProductForm() {
             }) => (
               <FormControl
                 isInvalid={!!error}
-                className="flex-row gap-4 items-center border border-background-300 px-4 rounded-md flex-1"
+                className="flex-row gap-4 items-center border border-background-300 px-4 rounded-md w-full"
               >
                 <FormControlLabel className="mb-0 flex-1">
                   <FormControlLabelText>
@@ -760,7 +760,7 @@ export default function ProductForm() {
                       label: cat.name,
                       value: cat.id,
                     }))}
-                    className="flex-1"
+                    className="w-full"
                     onChange={onChange}
                   />
                   <Pressable
@@ -796,7 +796,7 @@ export default function ProductForm() {
                   value={value}
                   placeholder="Pilih Jenis Produk"
                   options={productTypeOptions}
-                  className="flex-1"
+                  className="w-full"
                   showSearch={false}
                   onChange={onChange}
                 />
@@ -830,7 +830,7 @@ export default function ProductForm() {
                       value={value || ""}
                       placeholder="Pilih Satuan"
                       options={productUnitOptions}
-                      className="flex-1"
+                      className="w-full"
                       showSearch={false}
                       onChange={onChange}
                     />
@@ -874,7 +874,7 @@ export default function ProductForm() {
                               isRequired
                               isInvalid={!!error}
                               isDisabled={!index}
-                              className="flex-1"
+                              className="w-full"
                             >
                               <FormControlLabel>
                                 <FormControlLabelText>
@@ -947,7 +947,7 @@ export default function ProductForm() {
                           name={`unitVariants.${index}.purchasePrice`}
                           control={form.control}
                           render={({ field: { onChange, onBlur, value } }) => (
-                            <FormControl isDisabled className="flex-1">
+                            <FormControl isDisabled className="w-full">
                               <FormControlLabel>
                                 <FormControlLabelText>
                                   Harga Beli
@@ -983,7 +983,7 @@ export default function ProductForm() {
                             <FormControl
                               isRequired
                               isInvalid={!!error}
-                              className="flex-1"
+                              className="w-full"
                             >
                               <FormControlLabel>
                                 <FormControlLabelText>
@@ -991,7 +991,7 @@ export default function ProductForm() {
                                 </FormControlLabelText>
                               </FormControlLabel>
                               <HStack space="md">
-                                <Input className="flex-1">
+                                <Input className="w-full">
                                   <InputField
                                     value={value}
                                     onChangeText={onChange}
@@ -1056,7 +1056,7 @@ export default function ProductForm() {
                             <FormControl
                               isRequired
                               isInvalid={!!error}
-                              className="flex-1"
+                              className="w-full"
                             >
                               <FormControlLabel>
                                 <FormControlLabelText>
@@ -1154,7 +1154,7 @@ export default function ProductForm() {
                           <FormControl
                             isRequired
                             isInvalid={!!error}
-                            className="flex-1"
+                            className="w-full"
                           >
                             <FormControlLabel>
                               <FormControlLabelText>
@@ -1162,7 +1162,7 @@ export default function ProductForm() {
                               </FormControlLabelText>
                             </FormControlLabel>
                             <HStack space="md">
-                              <Input className="flex-1">
+                              <Input className="w-full">
                                 <InputField
                                   value={value}
                                   onChangeText={onChange}
@@ -1268,7 +1268,7 @@ export default function ProductForm() {
                           <FormControl
                             isRequired
                             isInvalid={!!error}
-                            className="flex-1"
+                            className="w-full"
                           >
                             <FormControlLabel>
                               <FormControlLabelText>
@@ -1306,7 +1306,7 @@ export default function ProductForm() {
                           <FormControl
                             isRequired
                             isInvalid={!!error}
-                            className="flex-1"
+                            className="w-full"
                           >
                             <FormControlLabel>
                               <FormControlLabelText>Harga</FormControlLabelText>
@@ -1396,7 +1396,7 @@ export default function ProductForm() {
                         <FormControl
                           isRequired
                           isInvalid={!!error}
-                          className="flex-1"
+                          className="w-full"
                         >
                           <FormControlLabel>
                             <FormControlLabelText>
@@ -1434,7 +1434,7 @@ export default function ProductForm() {
                         <FormControl
                           isRequired
                           isInvalid={!!error}
-                          className="flex-1"
+                          className="w-full"
                         >
                           <FormControlLabel>
                             <FormControlLabelText>Harga</FormControlLabelText>
@@ -1533,7 +1533,7 @@ export default function ProductForm() {
                       label: brand.name,
                       value: brand.id,
                     }))}
-                    className="flex-1"
+                    className="w-full"
                     onChange={onChange}
                   />
                   <Pressable
@@ -1574,7 +1574,7 @@ export default function ProductForm() {
                       label: disc.name,
                       value: disc.id,
                     }))}
-                    className="flex-1"
+                    className="w-full"
                     onChange={onChange}
                   />
                   <Pressable
