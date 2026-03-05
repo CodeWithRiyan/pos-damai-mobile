@@ -15,6 +15,7 @@ import { getErrorMessage } from "@/lib/api/client";
 import {
   CustomerWithStats,
   useBulkDeleteCustomer,
+  useBulkResetCustomerPoints,
   useCreateCustomer,
   useCustomers,
 } from "@/lib/api/customers";
@@ -41,7 +42,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
   const customers = data || [];
 
   const deleteMutation = useBulkDeleteCustomer();
-  const resetPointMutation = useBulkDeleteCustomer(); // TODO: Ubah dengan useBulkResetCustomerPoints
+  const resetPointMutation = useBulkResetCustomerPoints();
   const createMutation = useCreateCustomer();
   const toast = useToast();
 

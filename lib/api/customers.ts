@@ -223,6 +223,36 @@ export function useResetCustomerPoints() {
   });
 }
 
+// Bulk reset customer points
+export function useBulkResetCustomerPoints() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { ids: string[] }) => {
+      const now = new Date();
+      const userId = useAuthStore.getState().profile?.id;
+
+      for (const id of data.ids) {
+        await db
+          .update(schema.customers)
+          .set({
+            points: 0,
+            updatedBy: userId,
+            updatedAt: now,
+            _dirty: true,
+          })
+          .where(eq(schema.customers.id, id));
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      const orgId = useAuthStore.getState().getOrganizationId();
+      queryClient.invalidateQueries({ queryKey: ['customers', orgId] });
+    },
+  });
+}
+
 // Bulk delete customers
 export function useBulkDeleteCustomer() {
   const queryClient = useQueryClient();
