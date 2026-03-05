@@ -12,7 +12,9 @@ import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
-import { useBulkDeleteUser, User, useUsers } from "@/lib/api/users";
+import { useRoles } from "@/lib/api/roles";
+import { useBulkDeleteUser, useCreateUser, User, useUsers } from "@/lib/api/users";
+import { exportUsers, importUsers } from "@/lib/utils/excel";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -23,12 +25,70 @@ export default function UserList() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useUsers();
+  const { data: rolesData } = useRoles();
   const [selectedItems, setSelectedItems] = useState<User[] | null>(null);
 
   const users = data || [];
+  const roles = rolesData || [];
 
   const deleteMutation = useBulkDeleteUser();
+  const createMutation = useCreateUser();
   const toast = useToast();
+
+  const showSuccessToast = (message: string) => {
+    toast.show({
+      placement: "top",
+      render: ({ id }) => (
+        <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+          <ToastTitle>{message}</ToastTitle>
+        </Toast>
+      ),
+    });
+  };
+
+  const handleExport = async () => {
+    hideActionDrawer();
+    try {
+      await exportUsers(users);
+    } catch (e) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
+  };
+
+  const handleImport = async () => {
+    hideActionDrawer();
+    try {
+      const dtos = await importUsers(
+        roles.map((r) => ({ id: r.id, name: r.name })),
+      );
+      if (!dtos) return;
+      let successCount = 0;
+      for (const dto of dtos) {
+        try {
+          await createMutation.mutateAsync(dto);
+          successCount++;
+        } catch {}
+      }
+      refetch();
+      showSuccessToast(`${successCount} karyawan berhasil diimpor`);
+    } catch (e) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
+  };
 
   const handleUserPress = (user: User) => {
     if (selectedItems?.some((r) => r.id === user.id)) {
@@ -149,16 +209,12 @@ export default function UserList() {
                       {
                         label: "Export Data",
                         icon: "Export",
-                        onPress: () => {
-                          hideActionDrawer();
-                        },
+                        onPress: handleExport,
                       },
                       {
                         label: "Import Data",
                         icon: "Import",
-                        onPress: () => {
-                          hideActionDrawer();
-                        },
+                        onPress: handleImport,
                       },
                     ],
                   });

@@ -20,9 +20,11 @@ import {
   useBrands,
   useBulkDeleteBrand,
   useCapitalValueByBrand,
+  useCreateBrand,
   useProductCountsByBrand,
 } from "@/lib/api/brands";
 import { getErrorMessage } from "@/lib/api/client";
+import { exportBrands, importBrands } from "@/lib/utils/excel";
 import { useBrandStore } from "@/stores/brand";
 import { useRouter } from "expo-router";
 import { SearchIcon } from "lucide-react-native";
@@ -43,7 +45,51 @@ export default function BrandList() {
   const brands = data || [];
 
   const deleteMutation = useBulkDeleteBrand();
+  const createMutation = useCreateBrand();
   const toast = useToast();
+
+  const handleExport = async () => {
+    hideActionDrawer();
+    try {
+      await exportBrands(brands);
+    } catch (e) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
+  };
+
+  const handleImport = async () => {
+    hideActionDrawer();
+    try {
+      const dtos = await importBrands();
+      if (!dtos) return;
+      let successCount = 0;
+      for (const dto of dtos) {
+        try {
+          await createMutation.mutateAsync(dto);
+          successCount++;
+        } catch {}
+      }
+      refetch();
+      refetchCounts();
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+            <ToastTitle>{`${successCount} brand berhasil diimpor`}</ToastTitle>
+          </Toast>
+        ),
+      });
+    } catch (e) {
+      showErrorToast(e);
+    }
+  };
 
   const handleItemPress = (item: Brand) => {
     if (selectedItems?.some((r) => r.id === item.id)) {
@@ -164,16 +210,12 @@ export default function BrandList() {
                       {
                         label: "Export Data",
                         icon: "Export",
-                        onPress: () => {
-                          hideActionDrawer();
-                        },
+                        onPress: handleExport,
                       },
                       {
                         label: "Import Data",
                         icon: "Import",
-                        onPress: () => {
-                          hideActionDrawer();
-                        },
+                        onPress: handleImport,
                       },
                     ],
                   });

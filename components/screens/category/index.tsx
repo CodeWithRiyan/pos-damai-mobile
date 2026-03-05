@@ -18,9 +18,11 @@ import {
   useBulkDeleteCategory,
   useCapitalValueByCategory,
   useCategories,
+  useCreateCategory,
   useProductCountsByCategory,
 } from "@/lib/api/categories";
 import { getErrorMessage } from "@/lib/api/client";
+import { exportCategories, importCategories } from "@/lib/utils/excel";
 import { useCategoryStore } from "@/stores/category";
 import { useRouter } from "expo-router";
 import { SearchIcon } from "lucide-react-native";
@@ -41,7 +43,51 @@ export default function CategoryList() {
   const categories = data || [];
 
   const deleteMutation = useBulkDeleteCategory();
+  const createMutation = useCreateCategory();
   const toast = useToast();
+
+  const handleExport = async () => {
+    hideActionDrawer();
+    try {
+      await exportCategories(categories);
+    } catch (e) {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
+          </Toast>
+        ),
+      });
+    }
+  };
+
+  const handleImport = async () => {
+    hideActionDrawer();
+    try {
+      const dtos = await importCategories();
+      if (!dtos) return;
+      let successCount = 0;
+      for (const dto of dtos) {
+        try {
+          await createMutation.mutateAsync(dto);
+          successCount++;
+        } catch {}
+      }
+      refetch();
+      refetchCounts();
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+            <ToastTitle>{`${successCount} kategori berhasil diimpor`}</ToastTitle>
+          </Toast>
+        ),
+      });
+    } catch (e) {
+      showErrorToast(e);
+    }
+  };
 
   const handleItemPress = (item: Category) => {
     if (selectedItems?.some((r) => r.id === item.id)) {
@@ -162,16 +208,12 @@ export default function CategoryList() {
                       {
                         label: "Export Data",
                         icon: "Export",
-                        onPress: () => {
-                          hideActionDrawer();
-                        },
+                        onPress: handleExport,
                       },
                       {
                         label: "Import Data",
                         icon: "Import",
-                        onPress: () => {
-                          hideActionDrawer();
-                        },
+                        onPress: handleImport,
                       },
                     ],
                   });
