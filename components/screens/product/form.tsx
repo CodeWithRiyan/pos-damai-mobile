@@ -638,7 +638,7 @@ export default function ProductForm() {
                 <Switch
                   size="md"
                   value={value}
-                  onChange={onChange}
+                  onValueChange={onChange}
                   onBlur={onBlur}
                   className="border-none"
                 />
