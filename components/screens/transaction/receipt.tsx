@@ -164,19 +164,24 @@ export default function TransactionReceipt() {
                 });
 
                 return Object.values(groupedItemsMap).map((group) => {
-                  // Regular price is the max price in this group (undiscounted)
-                  const regularPrice = Math.max(
-                    ...(transaction.items
-                      ?.filter(
-                        (i) =>
-                          i.productId === group.productId &&
-                          i.variantId === group.variantId,
-                      )
-                      .map((i) => i.sellPrice || 0) || [0]),
-                  );
+                  // Collect all sell prices for this product group
+                  const groupPrices = transaction.items
+                    ?.filter(
+                      (i) =>
+                        i.productId === group.productId &&
+                        i.variantId === group.variantId,
+                    )
+                    .map((i) => i.sellPrice || 0) || [0];
 
-                  const totalDiscount =
-                    regularPrice * group.quantity - group.total;
+                  const regularPrice = Math.max(...groupPrices);
+                  const minPrice = Math.min(...groupPrices);
+
+                  // Only show a discount if the item was actually split into
+                  // rows with different prices (i.e. a discount was applied)
+                  const hasDiscount = minPrice < regularPrice;
+                  const totalDiscount = hasDiscount
+                    ? regularPrice * group.quantity - group.total
+                    : 0;
 
                   return (
                     <VStack key={group.id} space="xs" className="mb-2">
@@ -192,10 +197,7 @@ export default function TransactionReceipt() {
                           </Text>
                         </VStack>
                         <Text className="text-typography-500 font-bold">
-                          Rp{" "}
-                          {(regularPrice * group.quantity).toLocaleString(
-                            "id-ID",
-                          )}
+                          Rp {group.total.toLocaleString("id-ID")}
                         </Text>
                       </HStack>
                       {totalDiscount > 0 && (
@@ -215,40 +217,74 @@ export default function TransactionReceipt() {
             </VStack>
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack space="sm">
-              <HStack className="justify-between items-center">
-                <Text className="font-bold">Subtotal</Text>
-                <Text className="font-bold">
-                  {`Rp ${(transaction.totalAmount - (transaction.commission || 0)).toLocaleString("id-ID")}`}
-                </Text>
-              </HStack>
-              {transaction.commission ? (
-                <HStack className="justify-between items-center">
-                  <Text className="text-typography-500">
-                    Biaya Layanan/Admin
-                  </Text>
-                  <Text className="text-typography-500">
-                    Rp {transaction.commission.toLocaleString("id-ID")}
-                  </Text>
-                </HStack>
-              ) : null}
-              <HStack className="justify-between items-center">
-                <Text className="font-bold">Total Tagihan</Text>
-                <Text className="font-bold">
-                  Rp {transaction.totalAmount.toLocaleString("id-ID")}
-                </Text>
-              </HStack>
-              <HStack className="justify-between items-center">
-                <Text className="font-bold">Uang Dibayarkan</Text>
-                <Text className="font-bold">
-                  Rp {transaction.totalPaid.toLocaleString("id-ID")}
-                </Text>
-              </HStack>
-              <HStack className="justify-between items-center">
-                <Text className="font-bold">Kembalian</Text>
-                <Text className="font-bold">
-                  {`Rp ${(transaction.totalPaid - transaction.totalAmount).toLocaleString("id-ID")}`}
-                </Text>
-              </HStack>
+              {(() => {
+                // Pre-discount subtotal = maxPrice * qty per product group.
+                // Stored items use a split-row approach (1 discounted row +
+                // remaining rows at regular price), so maxPrice is the regular price.
+                const groupedMap: Record<string, { qty: number; maxPrice: number }> = {};
+                transaction.items?.forEach((item) => {
+                  const key = `${item.productId}-${item.variantId || "no-var"}`;
+                  if (!groupedMap[key]) groupedMap[key] = { qty: 0, maxPrice: 0 };
+                  groupedMap[key].qty += item.quantity;
+                  groupedMap[key].maxPrice = Math.max(groupedMap[key].maxPrice, item.sellPrice || 0);
+                });
+                const subtotalGross = Object.values(groupedMap).reduce(
+                  (sum, g) => sum + g.maxPrice * g.qty,
+                  0,
+                );
+                const subtotalAfterDiscount =
+                  transaction.totalAmount - (transaction.commission || 0);
+                const discountAmount = subtotalGross - subtotalAfterDiscount;
+
+                return (
+                  <>
+                    <HStack className="justify-between items-center">
+                      <Text className="font-bold">Subtotal</Text>
+                      <Text className="font-bold">
+                        Rp {subtotalGross.toLocaleString("id-ID")}
+                      </Text>
+                    </HStack>
+                    {discountAmount > 0 && (
+                      <HStack className="justify-between items-center">
+                        <Text className="text-success-600 font-bold">
+                          Total Diskon
+                        </Text>
+                        <Text className="text-success-600 font-bold">
+                          - Rp {discountAmount.toLocaleString("id-ID")}
+                        </Text>
+                      </HStack>
+                    )}
+                    {transaction.commission ? (
+                      <HStack className="justify-between items-center">
+                        <Text className="text-typography-500">
+                          Biaya Layanan/Admin
+                        </Text>
+                        <Text className="text-typography-500">
+                          Rp {transaction.commission.toLocaleString("id-ID")}
+                        </Text>
+                      </HStack>
+                    ) : null}
+                    <HStack className="justify-between items-center">
+                      <Text className="font-bold">Total Tagihan</Text>
+                      <Text className="font-bold">
+                        Rp {transaction.totalAmount.toLocaleString("id-ID")}
+                      </Text>
+                    </HStack>
+                    <HStack className="justify-between items-center">
+                      <Text className="font-bold">Uang Dibayarkan</Text>
+                      <Text className="font-bold">
+                        Rp {transaction.totalPaid.toLocaleString("id-ID")}
+                      </Text>
+                    </HStack>
+                    <HStack className="justify-between items-center">
+                      <Text className="font-bold">Kembalian</Text>
+                      <Text className="font-bold">
+                        {`Rp ${(transaction.totalPaid - transaction.totalAmount).toLocaleString("id-ID")}`}
+                      </Text>
+                    </HStack>
+                  </>
+                );
+              })()}
             </VStack>
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack className="items-center py-2">

@@ -24,223 +24,23 @@ import { formatDisplayRefId } from "@/lib/utils/reference";
 import classNames from "classnames";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { ScrollView } from "react-native";
-import TransactionFilter from "./filter";
+import TransactionFilter, {
+  TransactionFilterFormValues,
+  transactionFilterInitialValues,
+} from "./filter";
 
-interface TransactionChart {
-  date: string;
-  totalTransaction: number;
-  gmv: number;
-  profit: number;
+interface ChartCategory {
+  name: string;
+  code: string;
+  type: string;
 }
 
-const monthlyChartData: TransactionChart[] = [
-  // Minggu 1: Puncak Gajian
-  {
-    date: "2025-11-01T00:00:00.000Z",
-    totalTransaction: 65,
-    gmv: 3500000,
-    profit: 420000,
-  },
-  {
-    date: "2025-11-02T00:00:00.000Z",
-    totalTransaction: 70,
-    gmv: 4100000,
-    profit: 492000,
-  },
-  {
-    date: "2025-11-03T00:00:00.000Z",
-    totalTransaction: 55,
-    gmv: 2800000,
-    profit: 336000,
-  },
-  {
-    date: "2025-11-04T00:00:00.000Z",
-    totalTransaction: 48,
-    gmv: 2400000,
-    profit: 288000,
-  },
-  {
-    date: "2025-11-05T00:00:00.000Z",
-    totalTransaction: 50,
-    gmv: 2550000,
-    profit: 306000,
-  },
-  {
-    date: "2025-11-06T00:00:00.000Z",
-    totalTransaction: 45,
-    gmv: 2300000,
-    profit: 276000,
-  },
-  {
-    date: "2025-11-07T00:00:00.000Z",
-    totalTransaction: 52,
-    gmv: 2700000,
-    profit: 324000,
-  },
-
-  // Minggu 2: Stabil
-  {
-    date: "2025-11-08T00:00:00.000Z",
-    totalTransaction: 58,
-    gmv: 3100000,
-    profit: 372000,
-  },
-  {
-    date: "2025-11-09T00:00:00.000Z",
-    totalTransaction: 54,
-    gmv: 2900000,
-    profit: 348000,
-  },
-  {
-    date: "2025-11-10T00:00:00.000Z",
-    totalTransaction: 30,
-    gmv: 1500000,
-    profit: 180000,
-  },
-  {
-    date: "2025-11-11T00:00:00.000Z",
-    totalTransaction: 28,
-    gmv: 1400000,
-    profit: 168000,
-  },
-  {
-    date: "2025-11-12T00:00:00.000Z",
-    totalTransaction: 32,
-    gmv: 1650000,
-    profit: 198000,
-  },
-  {
-    date: "2025-11-13T00:00:00.000Z",
-    totalTransaction: 31,
-    gmv: 1550000,
-    profit: 186000,
-  },
-  {
-    date: "2025-11-14T00:00:00.000Z",
-    totalTransaction: 38,
-    gmv: 1900000,
-    profit: 228000,
-  },
-
-  // Minggu 3: Pertengahan Bulan
-  {
-    date: "2025-11-15T00:00:00.000Z",
-    totalTransaction: 50,
-    gmv: 2600000,
-    profit: 312000,
-  },
-  {
-    date: "2025-11-16T00:00:00.000Z",
-    totalTransaction: 48,
-    gmv: 2450000,
-    profit: 294000,
-  },
-  {
-    date: "2025-11-17T00:00:00.000Z",
-    totalTransaction: 25,
-    gmv: 1200000,
-    profit: 144000,
-  },
-  {
-    date: "2025-11-18T00:00:00.000Z",
-    totalTransaction: 24,
-    gmv: 1150000,
-    profit: 138000,
-  },
-  {
-    date: "2025-11-19T00:00:00.000Z",
-    totalTransaction: 27,
-    gmv: 1300000,
-    profit: 156000,
-  },
-  {
-    date: "2025-11-20T00:00:00.000Z",
-    totalTransaction: 26,
-    gmv: 1250000,
-    profit: 150000,
-  },
-  {
-    date: "2025-11-21T00:00:00.000Z",
-    totalTransaction: 30,
-    gmv: 1500000,
-    profit: 180000,
-  },
-
-  // Minggu 4: Tanggal Tua
-  {
-    date: "2025-11-22T00:00:00.000Z",
-    totalTransaction: 42,
-    gmv: 2100000,
-    profit: 252000,
-  },
-  {
-    date: "2025-11-23T00:00:00.000Z",
-    totalTransaction: 40,
-    gmv: 2000000,
-    profit: 240000,
-  },
-  {
-    date: "2025-11-24T00:00:00.000Z",
-    totalTransaction: 20,
-    gmv: 950000,
-    profit: 114000,
-  },
-  {
-    date: "2025-11-25T00:00:00.000Z",
-    totalTransaction: 18,
-    gmv: 850000,
-    profit: 102000,
-  },
-  {
-    date: "2025-11-26T00:00:00.000Z",
-    totalTransaction: 22,
-    gmv: 1000000,
-    profit: 120000,
-  },
-  {
-    date: "2025-11-27T00:00:00.000Z",
-    totalTransaction: 21,
-    gmv: 980000,
-    profit: 117600,
-  },
-  {
-    date: "2025-11-28T00:00:00.000Z",
-    totalTransaction: 25,
-    gmv: 1200000,
-    profit: 144000,
-  },
-  {
-    date: "2025-11-29T00:00:00.000Z",
-    totalTransaction: 45,
-    gmv: 2300000,
-    profit: 276000,
-  },
-  {
-    date: "2025-11-30T00:00:00.000Z",
-    totalTransaction: 48,
-    gmv: 2500000,
-    profit: 300000,
-  },
-];
-
-const dummyChartCategoryData = [
-  {
-    name: "Total Transaksi",
-    code: "totalTransaction",
-    type: "fixed",
-  },
-  {
-    name: "Pendapatan",
-    code: "gmv",
-    type: "currency",
-  },
-  {
-    name: "Keuntungan",
-    code: "profit",
-    type: "currency",
-  },
+const chartCategoryDefinitions: ChartCategory[] = [
+  { name: "Total Transaksi", code: "totalTransaction", type: "fixed" },
+  { name: "Pendapatan", code: "gmv", type: "currency" },
+  { name: "Keuntungan", code: "profit", type: "currency" },
 ];
 
 export default function TransactionHistory({
@@ -255,25 +55,60 @@ export default function TransactionHistory({
     isReport && !customerId ? "LAPORAN PENJUALAN" : "RIWAYAT TRANSAKSI";
   const router = useRouter();
 
+  const [transactionFilter, setTransactionFilter] =
+    useState<TransactionFilterFormValues>(transactionFilterInitialValues);
   const [chartCategory, setChartCategory] = useState("totalTransaction");
   const { data: allTransactions, isLoading } = useTransactions({
     customerId,
+    userId: transactionFilter.userId || undefined,
+    paymentTypeId: transactionFilter.paymentTypeId.length > 0 ? transactionFilter.paymentTypeId : undefined,
+    dateType: transactionFilter.dateType,
+    startDate: transactionFilter.startDate,
+    endDate: transactionFilter.endDate,
   });
   const [searchQuery, setSearchQuery] = useState("");
 
-  const chartCategoryOptions = dummyChartCategoryData.map((item) => ({
+  const completedTransactions = useMemo(
+    () => allTransactions?.filter((t) => t.status === "COMPLETED") ?? [],
+    [allTransactions],
+  );
+
+  const chartData = useMemo(() => {
+    const grouped = new Map<string, { totalTransaction: number; gmv: number; profit: number }>();
+    for (const t of completedTransactions) {
+      const key = dayjs(t.createdAt ?? t.transactionDate).format("YYYY-MM-DD");
+      const existing = grouped.get(key) ?? { totalTransaction: 0, gmv: 0, profit: 0 };
+      grouped.set(key, {
+        totalTransaction: existing.totalTransaction + 1,
+        gmv: existing.gmv + t.totalAmount,
+        profit: existing.profit + (t.totalAmount - (t.commission ?? 0)),
+      });
+    }
+    return Array.from(grouped.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, values]) => ({
+        date,
+        ...values,
+      }));
+  }, [completedTransactions]);
+
+  const chartCategoryOptions = chartCategoryDefinitions.map((item) => ({
     ...item,
-    value: (monthlyChartData as { [key: string]: any }[]).reduce(
-      (a, b) => a + b[item.code],
+    value: completedTransactions.reduce(
+      (sum, t) => {
+        if (item.code === "totalTransaction") return sum + 1;
+        if (item.code === "gmv") return sum + t.totalAmount;
+        return sum + (t.totalAmount - (t.commission ?? 0));
+      },
       0,
     ),
   }));
 
-  const chartData = monthlyChartData.map((d) => ({
+  const chartAreaData = chartData.map((d) => ({
     value:
       chartCategory === "totalTransaction"
         ? d.totalTransaction
-        : chartCategory === "GMV"
+        : chartCategory === "gmv"
           ? d.gmv
           : d.profit,
     label: dayjs(d.date).format("DD"),
@@ -281,15 +116,14 @@ export default function TransactionHistory({
     pointerValue:
       chartCategory === "totalTransaction"
         ? d.totalTransaction.toLocaleString("id-ID")
-        : chartCategory === "GMV"
+        : chartCategory === "gmv"
           ? `Rp ${d.gmv.toLocaleString("id-ID")}`
           : `Rp ${d.profit.toLocaleString("id-ID")}`,
   }));
 
   const transactions =
-    allTransactions?.filter(
+    completedTransactions.filter(
       (t) =>
-        t.status === "COMPLETED" &&
         ((formatDisplayRefId(t.local_ref_id) || t.id)
           .toLowerCase()
           .includes(searchQuery.toLowerCase()) ||
@@ -324,7 +158,7 @@ export default function TransactionHistory({
           </Input>
         )}
         <FilterAccordion title="Filter Laporan Penjualan">
-          <TransactionFilter />
+          <TransactionFilter onFilter={setTransactionFilter} />
         </FilterAccordion>
       </VStack>
       <Grid _extra={{ className: "grid-cols-2" }} className="flex-1">
@@ -359,7 +193,7 @@ export default function TransactionHistory({
                     </Radio>
                   ))}
                 </RadioGroup>
-                <AreaChart data={chartData} />
+                <AreaChart data={chartAreaData} />
               </VStack>
             </ScrollView>
           </GridItem>

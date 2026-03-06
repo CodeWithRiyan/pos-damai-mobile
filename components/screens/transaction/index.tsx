@@ -31,17 +31,17 @@ import { Spinner } from "@/components/ui/spinner";
 import { useCustomers } from "@/lib/api/customers";
 import { useProducts } from "@/lib/api/products";
 import { useCurrentShift } from "@/lib/api/shifts";
-import { findSellPrice } from "@/lib/price";
+import { calculateLineItemTotal, findSellPrice } from "@/lib/price";
 import { useTransactionStore } from "@/stores/transaction";
 import classNames from "classnames";
 import { useRouter } from "expo-router";
 import { AlertCircle, PlusIcon } from "lucide-react-native";
-import React from "react";
+import React, { useState } from "react";
 import { LayoutChangeEvent, ScrollView } from "react-native";
 import PopupAddProduct from "./popup-add";
 
 export default function TransactionList() {
-  const [deleteItem, setDeleteItem] = React.useState<string | null>(null);
+  const [deleteItem, setDeleteItem] = useState<string | null>(null);
   const {
     cart,
     customer,
@@ -56,10 +56,10 @@ export default function TransactionList() {
   const { data: currentShift, isLoading: isLoadingShift } = useCurrentShift();
   const router = useRouter();
   const toast = useToast();
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [layout, setLayout] = React.useState<"list" | "grid">("list");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [layout, setLayout] = useState<"list" | "grid">("list");
 
-  const [deviceWidth, setDeviceWidth] = React.useState<number>(0);
+  const [deviceWidth, setDeviceWidth] = useState<number>(0);
 
   const handleLayout = (event: LayoutChangeEvent) => {
     const { width } = event.nativeEvent.layout;
@@ -321,15 +321,17 @@ export default function TransactionList() {
                                   quantity: item.quantity,
                                   unitVariant: item.variant,
                                 }).toLocaleString("id-ID")
-                          } = Rp ${(item.tempSellPrice
-                            ? item.tempSellPrice * item.quantity
-                            : findSellPrice({
-                                sellPrices: item.product.sellPrices,
-                                type: customer?.category,
-                                quantity: item.quantity,
-                                unitVariant: item.variant,
-                              }) * item.quantity
-                          ).toLocaleString("id-ID")}`}
+                          } = Rp ${calculateLineItemTotal({
+                            quantity: item.quantity,
+                            unitPrice: item.tempSellPrice || findSellPrice({
+                              sellPrices: item.product.sellPrices,
+                              type: customer?.category,
+                              quantity: item.quantity,
+                              unitVariant: item.variant,
+                            }),
+                            discount: item.product.discount,
+                            isManualPrice: !!item.tempSellPrice,
+                          }).toLocaleString("id-ID")}`}
                         </Text>
                         {item.note && (
                           <Text size="sm" className="text-slate-500">
