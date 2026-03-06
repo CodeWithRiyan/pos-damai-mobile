@@ -26,8 +26,41 @@ import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView } from "react-native";
-import TransactionFilter from "./filter";
+import TransactionFilter, {
+  TransactionFilterFormValues,
+  transactionFilterInitialValues,
+} from "./filter";
 
+// TODO: buat tabel "chart-category" untuk mengelola tabulasi chart di setiap module
+interface ChartCategory {
+  name: string;
+  code: string;
+  type: string;
+  module: string;
+}
+
+const dummyChartCategoryData: ChartCategory[] = [
+  {
+    name: "Total Transaksi",
+    code: "totalTransaction",
+    type: "fixed",
+    module: "sales-report",
+  },
+  {
+    name: "Pendapatan",
+    code: "gmv",
+    type: "currency",
+    module: "sales-report",
+  },
+  {
+    name: "Keuntungan",
+    code: "profit",
+    type: "currency",
+    module: "sales-report",
+  },
+];
+
+// TODO: Ganti dengan data real
 interface TransactionChart {
   date: string;
   totalTransaction: number;
@@ -35,6 +68,8 @@ interface TransactionChart {
   profit: number;
 }
 
+// TODO: gunakan hook untuk mendapatkan data chart
+// jangan lupa terapkan transactionFilter juga kedalam hook chart
 const monthlyChartData: TransactionChart[] = [
   // Minggu 1: Puncak Gajian
   {
@@ -225,24 +260,6 @@ const monthlyChartData: TransactionChart[] = [
   },
 ];
 
-const dummyChartCategoryData = [
-  {
-    name: "Total Transaksi",
-    code: "totalTransaction",
-    type: "fixed",
-  },
-  {
-    name: "Pendapatan",
-    code: "gmv",
-    type: "currency",
-  },
-  {
-    name: "Keuntungan",
-    code: "profit",
-    type: "currency",
-  },
-];
-
 export default function TransactionHistory({
   isReport,
   showSearch = true,
@@ -255,8 +272,11 @@ export default function TransactionHistory({
     isReport && !customerId ? "LAPORAN PENJUALAN" : "RIWAYAT TRANSAKSI";
   const router = useRouter();
 
+  const [transactionFilter, setTransactionFilter] =
+    useState<TransactionFilterFormValues>(transactionFilterInitialValues);
   const [chartCategory, setChartCategory] = useState("totalTransaction");
   const { data: allTransactions, isLoading } = useTransactions({
+    ...transactionFilter, // TODO: tambahkan property yang ada di transactionFilter ke dalam argument useTransactions
     customerId,
   });
   const [searchQuery, setSearchQuery] = useState("");
@@ -324,7 +344,7 @@ export default function TransactionHistory({
           </Input>
         )}
         <FilterAccordion title="Filter Laporan Penjualan">
-          <TransactionFilter />
+          <TransactionFilter onFilter={setTransactionFilter} />
         </FilterAccordion>
       </VStack>
       <Grid _extra={{ className: "grid-cols-2" }} className="flex-1">

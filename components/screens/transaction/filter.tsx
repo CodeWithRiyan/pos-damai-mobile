@@ -23,9 +23,11 @@ const transactionFilterSchema = z.object({
   endDate: z.date(),
 });
 
-type TransactionFilterFormValues = z.infer<typeof transactionFilterSchema>;
+export type TransactionFilterFormValues = z.infer<
+  typeof transactionFilterSchema
+>;
 
-const initialValues: TransactionFilterFormValues = {
+export const transactionFilterInitialValues: TransactionFilterFormValues = {
   search: "",
   userId: "",
   paymentTypeId: [],
@@ -34,12 +36,16 @@ const initialValues: TransactionFilterFormValues = {
   endDate: new Date(),
 };
 
-export default function TransactionFilter() {
+export default function TransactionFilter({
+  onFilter,
+}: {
+  onFilter: (data: TransactionFilterFormValues) => void;
+}) {
   // State untuk mengontrol visibility date picker
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
 
-  const { data: users, refetch: refetchUsers } = useUsers();
+  const { data: users } = useUsers();
 
   const isLoading = false;
 
@@ -68,14 +74,14 @@ export default function TransactionFilter() {
 
   const form = useForm<TransactionFilterFormValues>({
     resolver: zodResolver(transactionFilterSchema),
-    defaultValues: initialValues,
+    defaultValues: transactionFilterInitialValues,
   });
   const dateType = form.watch("dateType");
 
   const onSubmit: SubmitHandler<TransactionFilterFormValues> = (
     data: TransactionFilterFormValues,
   ) => {
-    console.log(data);
+    onFilter(data);
   };
 
   return (
@@ -232,6 +238,10 @@ export default function TransactionFilter() {
         <Pressable
           className="flex-1 rounded-md h-10 flex justify-center items-center bg-error-200 border border-error-500"
           disabled={isLoading}
+          onPress={() => {
+            form.reset(transactionFilterInitialValues);
+            onFilter(transactionFilterInitialValues);
+          }}
         >
           <Text size="sm" className="text-error-500 font-bold">
             RESET
