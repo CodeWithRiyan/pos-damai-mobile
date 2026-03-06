@@ -29,7 +29,7 @@ import { useCurrentUser } from "@/lib/api/auth";
 
 import { usePaymentTypes } from "@/lib/api/payment-types";
 import { useCreateTransaction } from "@/lib/api/transactions";
-import { findSellPrice } from "@/lib/price";
+import { calculateLineItemTotal, findSellPrice, isDiscountActive, getDiscountedPrice } from "@/lib/price";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { useTransactionStore } from "@/stores/transaction";
 import { useRouter } from "expo-router";
@@ -99,7 +99,7 @@ export default function TransactionCheckoutForm() {
   const paymentTypeId = form.watch("paymentTypeId");
   const totalPurchase = form.watch("totalPurchase");
 
-  const { grandTotal, commission } = useMemo(() => {
+  const { grandTotal, commission, totalDiscount } = useMemo(() => {
     let comm = 0;
     const pt = paymentTypesData?.find((p) => p.id === paymentTypeId);
     if (pt && cartTotal) {
@@ -108,8 +108,22 @@ export default function TransactionCheckoutForm() {
           ? (cartTotal * pt.commission) / 100
           : pt.commission;
     }
-    return { commission: comm, grandTotal: cartTotal + comm };
-  }, [cartTotal, paymentTypesData, paymentTypeId]);
+
+    const discount = cart.reduce((sum, item) => {
+      if (item.tempSellPrice) return sum;
+      const unitPrice = findSellPrice({
+        sellPrices: item.product.sellPrices,
+        type: customer?.category,
+        quantity: item.quantity,
+        unitVariant: item.variant,
+      });
+      if (!isDiscountActive(item.product.discount)) return sum;
+      const discountedPrice = getDiscountedPrice(unitPrice, item.product.discount);
+      return sum + (unitPrice - discountedPrice);
+    }, 0);
+
+    return { commission: comm, grandTotal: cartTotal + comm, totalDiscount: discount };
+  }, [cartTotal, paymentTypesData, paymentTypeId, cart, customer]);
 
   useEffect(() => {
     if (cartTotal) {
@@ -263,6 +277,11 @@ export default function TransactionCheckoutForm() {
                 <Heading size="3xl" className="font-bold text-center">
                   {`Rp ${totalPurchase.toLocaleString("id-ID")}`}
                 </Heading>
+                {totalDiscount > 0 && (
+                  <Text className="text-success-600 mt-2 font-bold">
+                    Total Diskon Rp {totalDiscount.toLocaleString("id-ID")}
+                  </Text>
+                )}
                 {commission > 0 && (
                   <Text className="text-warning-600 mt-2 font-bold">
                     *Termasuk tambahan biaya Rp{" "}
