@@ -31,7 +31,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useCustomers } from "@/lib/api/customers";
 import { useProducts } from "@/lib/api/products";
 import { useCurrentShift } from "@/lib/api/shifts";
-import { findSellPrice } from "@/lib/price";
+import { calculateLineItemTotal, findSellPrice } from "@/lib/price";
 import { useTransactionStore } from "@/stores/transaction";
 import classNames from "classnames";
 import { useRouter } from "expo-router";
@@ -321,15 +321,17 @@ export default function TransactionList() {
                                   quantity: item.quantity,
                                   unitVariant: item.variant,
                                 }).toLocaleString("id-ID")
-                          } = Rp ${(item.tempSellPrice
-                            ? item.tempSellPrice * item.quantity
-                            : findSellPrice({
-                                sellPrices: item.product.sellPrices,
-                                type: customer?.category,
-                                quantity: item.quantity,
-                                unitVariant: item.variant,
-                              }) * item.quantity
-                          ).toLocaleString("id-ID")}`}
+                          } = Rp ${calculateLineItemTotal({
+                            quantity: item.quantity,
+                            unitPrice: item.tempSellPrice || findSellPrice({
+                              sellPrices: item.product.sellPrices,
+                              type: customer?.category,
+                              quantity: item.quantity,
+                              unitVariant: item.variant,
+                            }),
+                            discount: item.product.discount,
+                            isManualPrice: !!item.tempSellPrice,
+                          }).toLocaleString("id-ID")}`}
                         </Text>
                         {item.note && (
                           <Text size="sm" className="text-slate-500">

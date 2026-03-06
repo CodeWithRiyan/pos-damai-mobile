@@ -59,8 +59,17 @@ export interface CreateTransactionDTO {
   }[];
 }
 
+export interface TransactionFilterParams {
+  customerId?: string;
+  userId?: string;
+  paymentTypeId?: string[];
+  dateType?: "TODAY" | "THIS_WEEK" | "THIS_MONTH" | "THIS_YEAR" | "CUSTOM";
+  startDate?: Date;
+  endDate?: Date;
+}
+
 // Get all transactions from local SQLite
-export function useTransactions(params: { customerId?: string } | void) {
+export function useTransactions(params?: TransactionFilterParams) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   const conditions = [
     eq(schema.transactions.organizationId, orgId),
@@ -71,14 +80,58 @@ export function useTransactions(params: { customerId?: string } | void) {
     conditions.push(eq(schema.transactions.customerId, params.customerId));
   }
 
+  if (params?.userId) {
+    conditions.push(eq(schema.transactions.createdBy, params.userId));
+  }
+
   return useQuery({
-    queryKey: ["transactions", orgId, params?.customerId], // ← Tambahkan customerId di sini
+    queryKey: ["transactions", orgId, params],
     queryFn: async () => {
-      const transactionResult = await db
+      let transactionResult = await db
         .select()
         .from(schema.transactions)
         .where(and(...conditions))
         .orderBy(desc(schema.transactions.createdAt));
+
+      // Apply date filter in JS (since SQLite timestamps are integers)
+      if (params?.dateType) {
+        const now = new Date();
+        let filterStart: Date | undefined;
+        let filterEnd: Date | undefined;
+
+        if (params.dateType === "TODAY") {
+          filterStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          filterEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        } else if (params.dateType === "THIS_WEEK") {
+          const day = now.getDay();
+          const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+          filterStart = new Date(now.getFullYear(), now.getMonth(), diff);
+          filterEnd = new Date(now.getFullYear(), now.getMonth(), diff + 6, 23, 59, 59, 999);
+        } else if (params.dateType === "THIS_MONTH") {
+          filterStart = new Date(now.getFullYear(), now.getMonth(), 1);
+          filterEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        } else if (params.dateType === "THIS_YEAR") {
+          filterStart = new Date(now.getFullYear(), 0, 1);
+          filterEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+        } else if (params.dateType === "CUSTOM" && params.startDate && params.endDate) {
+          filterStart = new Date(params.startDate.getFullYear(), params.startDate.getMonth(), params.startDate.getDate());
+          filterEnd = new Date(params.endDate.getFullYear(), params.endDate.getMonth(), params.endDate.getDate(), 23, 59, 59, 999);
+        }
+
+        if (filterStart && filterEnd) {
+          transactionResult = transactionResult.filter((t) => {
+            const date = t.createdAt || t.transactionDate;
+            return date && date >= filterStart! && date <= filterEnd!;
+          });
+        }
+      }
+
+      // Apply paymentTypeId filter
+      if (params?.paymentTypeId && params.paymentTypeId.length > 0) {
+        transactionResult = transactionResult.filter((t) =>
+          params.paymentTypeId!.includes(t.paymentTypeId),
+        );
+      }
 
       // Join with customer and payment type names
       const transactionsWithDetails = await Promise.all(
