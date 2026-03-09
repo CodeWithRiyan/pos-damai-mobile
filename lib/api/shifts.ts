@@ -38,7 +38,8 @@ export interface ShiftTransactionHistory {
     | "PURCHASES"
     | "PAYABLE_REALIZATION"
     | "SUPPLIES"
-    | "EQUIPMENT";
+    | "EQUIPMENT"
+    | "CASH_DEPOSIT";
   nominal: number;
   note: string;
 }

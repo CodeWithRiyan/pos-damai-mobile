@@ -58,6 +58,10 @@ export default function CurrentShift() {
             <Text className="text-typography-600">Peralatan</Text>
             <Text className="font-bold text-error-500">Rp 0</Text>
           </HStack>
+          <HStack className="w-full flex-row justify-between">
+            <Text className="text-typography-600">Setor Tunai</Text>
+            <Text className="font-bold text-error-500">Rp 0</Text>
+          </HStack>
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-background-100">
             <Text className="text-typography-600">Subtotal</Text>
             <Text className="font-bold">Rp 0</Text>

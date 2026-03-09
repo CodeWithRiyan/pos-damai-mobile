@@ -51,7 +51,7 @@ export default function CashDepositForm({
 
   const initialValues: CashDepositFormValues = {
     type: "EXPENSES",
-    expensesType: "STORE_EXPENSES",
+    expensesType: "CASH_DEPOSIT",
     transactionDate: new Date(),
     note: "Setor Tunai",
     nominal: 0,
@@ -82,6 +82,8 @@ export default function CashDepositForm({
               </Toast>
             ),
           });
+          setOpen(false);
+          form.reset(initialValues);
         },
         onError: (error) => {
           toast.show({
