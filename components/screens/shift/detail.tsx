@@ -21,6 +21,7 @@ export default function ShiftDetail() {
         supplies: 0,
         equipment1: 0,
         equipment2: 0,
+        cashDeposit: 0,
         finalBalance: 0,
       };
 
@@ -46,6 +47,8 @@ export default function ShiftDetail() {
           trx.note.includes("Peralatan:")
         ) {
           acc.equipment2 += trx.nominal;
+        } else if (trx.type === "CASH_DEPOSIT") {
+          acc.cashDeposit += trx.nominal;
         }
 
         acc.finalBalance =
@@ -54,7 +57,8 @@ export default function ShiftDetail() {
           acc.payableRealization -
           acc.supplies -
           acc.equipment1 -
-          acc.equipment2;
+          acc.equipment2 -
+          acc.cashDeposit;
         return acc;
       },
       {
@@ -64,6 +68,7 @@ export default function ShiftDetail() {
         supplies: 0,
         equipment1: 0,
         equipment2: 0,
+        cashDeposit: 0,
         finalBalance: 0,
       },
     );
@@ -95,26 +100,42 @@ export default function ShiftDetail() {
             <Text className="text-typography-600">Transaksi Penjualan</Text>
             <Text className="font-bold">{`Rp ${totals.sales.toLocaleString("id")}`}</Text>
           </HStack>
-          <HStack className="w-full flex-row justify-between">
-            <Text className="text-typography-600">Pemasukkan</Text>
-            <Text className="font-bold">{`Rp ${totals.income.toLocaleString("id")}`}</Text>
-          </HStack>
-          <HStack className="w-full flex-row justify-between">
-            <Text className="text-typography-600">Pembayaran Hutang</Text>
-            <Text className="font-bold text-error-500">{`Rp ${totals.payableRealization.toLocaleString("id")}`}</Text>
-          </HStack>
-          <HStack className="w-full flex-row justify-between">
-            <Text className="text-typography-600">Beli Barang</Text>
-            <Text className="font-bold text-error-500">{`Rp ${totals.supplies.toLocaleString("id")}`}</Text>
-          </HStack>
-          <HStack className="w-full flex-row justify-between">
-            <Text className="text-typography-600">Perlengkapan</Text>
-            <Text className="font-bold text-error-500">{`Rp ${totals.equipment1.toLocaleString("id")}`}</Text>
-          </HStack>
-          <HStack className="w-full flex-row justify-between">
-            <Text className="text-typography-600">Peralatan</Text>
-            <Text className="font-bold text-error-500">{`Rp ${totals.equipment2.toLocaleString("id")}`}</Text>
-          </HStack>
+          {!!totals.income && (
+            <HStack className="w-full flex-row justify-between">
+              <Text className="text-typography-600">Pemasukkan</Text>
+              <Text className="font-bold">{`Rp ${totals.income.toLocaleString("id")}`}</Text>
+            </HStack>
+          )}
+          {!!totals.payableRealization && (
+            <HStack className="w-full flex-row justify-between">
+              <Text className="text-typography-600">Pembayaran Hutang</Text>
+              <Text className="font-bold text-error-500">{`Rp ${totals.payableRealization.toLocaleString("id")}`}</Text>
+            </HStack>
+          )}
+          {!!totals.supplies && (
+            <HStack className="w-full flex-row justify-between">
+              <Text className="text-typography-600">Beli Barang</Text>
+              <Text className="font-bold text-error-500">{`Rp ${totals.supplies.toLocaleString("id")}`}</Text>
+            </HStack>
+          )}
+          {!!totals.equipment1 && (
+            <HStack className="w-full flex-row justify-between">
+              <Text className="text-typography-600">Perlengkapan</Text>
+              <Text className="font-bold text-error-500">{`Rp ${totals.equipment1.toLocaleString("id")}`}</Text>
+            </HStack>
+          )}
+          {!!totals.equipment2 && (
+            <HStack className="w-full flex-row justify-between">
+              <Text className="text-typography-600">Peralatan</Text>
+              <Text className="font-bold text-error-500">{`Rp ${totals.equipment2.toLocaleString("id")}`}</Text>
+            </HStack>
+          )}
+          {!!totals.cashDeposit && (
+            <HStack className="w-full flex-row justify-between">
+              <Text className="text-typography-600">Setor Tunai</Text>
+              <Text className="font-bold text-error-500">{`Rp ${totals.cashDeposit.toLocaleString("id")}`}</Text>
+            </HStack>
+          )}
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-background-100">
             <Text className="text-typography-600">Subtotal</Text>
             <Text className="font-bold">{`Rp ${totals.finalBalance.toLocaleString("id")}`}</Text>

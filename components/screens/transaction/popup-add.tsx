@@ -34,6 +34,7 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
+import { ProductVariant } from "@/lib/api/products";
 import { findSellPrice } from "@/lib/price";
 import { useTransactionStore } from "@/stores/transaction";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,6 +51,7 @@ export default function PopupAddProduct() {
     cart,
     setAddProduct,
     addCartItem,
+    removeCartItem,
   } = useTransactionStore();
 
   const currentProductInCart = addProductVariantId
@@ -78,6 +80,13 @@ export default function PopupAddProduct() {
       note: z.string(),
     })
     .superRefine((data, ctx) => {
+      if (data.isTempSellPrice && data.tempSellPrice === 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Harga sementara tidak boleh 0 (Nol)",
+          path: ["tempSellPrice"],
+        });
+      }
       if (
         data.isTempSellPrice &&
         data.tempSellPrice <
@@ -133,7 +142,11 @@ export default function PopupAddProduct() {
     if (currentProductInCart) {
       form.reset({
         quantity: currentProductInCart?.quantity || 1,
-        isTempSellPrice: !!currentProductInCart?.tempSellPrice,
+        isTempSellPrice:
+          customer?.category === "WHOLESALE" &&
+          currentProductInCart.variant?.netto !== 1
+            ? false
+            : !!currentProductInCart?.tempSellPrice,
         tempSellPrice: currentProductInCart?.tempSellPrice || 0,
         addNote: !!currentProductInCart?.note,
         note: currentProductInCart?.note || "",
@@ -155,11 +168,7 @@ export default function PopupAddProduct() {
   const onSubmit: SubmitHandler<AddProductFormValues> = (
     data: AddProductFormValues,
   ) => {
-    if (
-      addProduct?.type === "MULTIUNIT" &&
-      !!(customer?.category !== "WHOLESALE") &&
-      !data.variantUnitId
-    ) {
+    if (addProduct?.type === "MULTIUNIT" && !data.variantUnitId) {
       toast.show({
         placement: "top",
         render: ({ id }) => {
@@ -173,6 +182,120 @@ export default function PopupAddProduct() {
       });
       return;
     }
+
+    if (addProduct?.type === "MULTIUNIT") {
+      const selectedVariant = addProduct.variants.find(
+        (item) => item.id === data.variantUnitId,
+      );
+
+      if (!selectedVariant) return;
+
+      const selectedNetto = selectedVariant.netto;
+
+      const resolveMultiunitPrice = (
+        variant: ProductVariant,
+        qty: number,
+      ): number | undefined => {
+        const variantNetto = variant.netto;
+        if (data.isTempSellPrice) {
+          return data.tempSellPrice;
+        }
+        if (
+          customer?.category === "WHOLESALE" &&
+          variantNetto != null &&
+          variantNetto !== 1
+        ) {
+          const baseWholesalePrice = findSellPrice({
+            sellPrices: addProduct.sellPrices || [],
+            type: customer.category,
+            quantity: qty,
+          });
+          return baseWholesalePrice * variantNetto;
+        }
+        return undefined;
+      };
+
+      if (!selectedNetto) {
+        addCartItem({
+          product: addProduct,
+          quantity: data.quantity,
+          tempSellPrice: data.isTempSellPrice ? data.tempSellPrice : undefined,
+          note: data.addNote ? data.note : undefined,
+          variant: selectedVariant,
+        });
+        setAddProduct(null);
+        return;
+      }
+
+      // Sort variants by their netto from largest to smallest
+      const sortedVariants = [...addProduct.variants]
+        .filter((v) => v.netto != null)
+        .sort((a, b) => (b.netto ?? 0) - (a.netto ?? 0));
+
+      // Decompose totalNetto into available variant-quantity pairs (greedy)
+      const decompose = (
+        remaining: number,
+        variants: typeof sortedVariants,
+      ): { variant: (typeof sortedVariants)[0]; quantity: number }[] => {
+        const result: {
+          variant: (typeof sortedVariants)[0];
+          quantity: number;
+        }[] = [];
+
+        let rem = remaining;
+        for (const variant of variants) {
+          const netto = variant.netto!;
+          if (netto > rem + 0.0001) continue;
+
+          const qty = Math.floor(rem / netto);
+          if (qty > 0) {
+            result.push({ variant, quantity: qty });
+            rem = parseFloat((rem - qty * netto).toFixed(10));
+          }
+
+          if (rem < 0.0001) break;
+        }
+
+        return result;
+      };
+
+      const totalNetto = parseFloat(
+        (selectedNetto * data.quantity).toFixed(10),
+      );
+      const decomposed = decompose(totalNetto, sortedVariants);
+
+      // Remove the variant being edited from cart first
+      removeCartItem(addProduct.id, selectedVariant.id);
+
+      for (const { variant, quantity } of decomposed) {
+        const existingItem = cart.find(
+          (item) =>
+            item.product.id === addProduct.id &&
+            item.variant?.id === variant.id,
+        );
+
+        // Prevent double-counting for the variant being edited
+        const existingQty =
+          existingItem && variant.id !== selectedVariant.id
+            ? existingItem.quantity
+            : 0;
+
+        const finalQty = existingQty + quantity;
+        console.log("variant: ", variant);
+        addCartItem({
+          product: addProduct,
+          quantity: finalQty,
+          tempSellPrice: resolveMultiunitPrice(variant, finalQty),
+          note: data.addNote ? data.note : undefined,
+          variant,
+        });
+      }
+
+      setAddProduct(null);
+      return;
+    }
+
+    // DEFAULT / VARIANTS
     if (addProduct) {
       addCartItem({
         product: addProduct,
@@ -183,8 +306,8 @@ export default function PopupAddProduct() {
           (item) => item.id === data.variantUnitId,
         ),
       });
+      setAddProduct(null);
     }
-    setAddProduct(null);
   };
 
   return (
@@ -211,56 +334,64 @@ export default function PopupAddProduct() {
                     {addProduct?.code}
                   </Text>
                 </VStack>
-                <HStack space="sm">
-                  <Heading size="md">
-                    {`Rp ${(
-                      tempSellPrice ||
-                      findSellPrice({
-                        sellPrices: addProduct?.sellPrices || [],
-                        type: customer?.category,
-                        quantity: quantity || 0,
-                        unitVariant: addProduct?.variants.find(
-                          (f) => f.id === variantUnitId,
-                        ),
-                      })
-                    ).toLocaleString("id-ID")}`}
-                  </Heading>
-                </HStack>
+                {addProduct?.type !== "MULTIUNIT" && (
+                  <HStack space="sm">
+                    <Heading size="md">
+                      {`Rp ${(
+                        tempSellPrice ||
+                        findSellPrice({
+                          sellPrices: addProduct?.sellPrices || [],
+                          type: customer?.category,
+                          quantity: quantity || 0,
+                          unitVariant: addProduct?.variants.find(
+                            (f) => f.id === variantUnitId,
+                          ),
+                        })
+                      ).toLocaleString("id-ID")}`}
+                    </Heading>
+                  </HStack>
+                )}
               </HStack>
             </HStack>
             <VStack space="lg" className="px-4">
-              {addProduct?.type === "MULTIUNIT" &&
-                customer?.category !== "WHOLESALE" && (
-                  <Controller
-                    name="variantUnitId"
-                    control={form.control}
-                    render={({ field: { onChange, value } }) => (
-                      <FormControl>
-                        <FormControlLabel>
-                          <FormControlLabelText>
-                            Pilih Unit
-                          </FormControlLabelText>
-                        </FormControlLabel>
-                        <RadioGroup value={value || ""} onChange={onChange}>
-                          <VStack space="sm">
-                            {variantUnitOptions.map((variant: any) => (
-                              <Radio
-                                key={variant.value}
-                                value={variant.value}
-                                size="md"
-                              >
-                                <RadioIndicator>
-                                  <RadioIcon as={CircleIcon} />
-                                </RadioIndicator>
-                                <RadioLabel>{variant.label}</RadioLabel>
-                              </Radio>
-                            ))}
-                          </VStack>
-                        </RadioGroup>
-                      </FormControl>
-                    )}
-                  />
-                )}
+              {addProduct?.type === "MULTIUNIT" && (
+                <Controller
+                  name="variantUnitId"
+                  control={form.control}
+                  render={({ field: { onChange, value } }) => (
+                    <FormControl>
+                      <FormControlLabel>
+                        <FormControlLabelText>Pilih Unit</FormControlLabelText>
+                      </FormControlLabel>
+                      <RadioGroup
+                        value={value || ""}
+                        onChange={(v) => {
+                          const variant = cart?.find(
+                            (f) => f.variant?.id === v,
+                          );
+                          onChange(v);
+                          form.setValue("quantity", variant?.quantity || 1);
+                        }}
+                      >
+                        <VStack space="sm">
+                          {variantUnitOptions.map((variant: any) => (
+                            <Radio
+                              key={variant.value}
+                              value={variant.value}
+                              size="md"
+                            >
+                              <RadioIndicator>
+                                <RadioIcon as={CircleIcon} />
+                              </RadioIndicator>
+                              <RadioLabel>{variant.label}</RadioLabel>
+                            </Radio>
+                          ))}
+                        </VStack>
+                      </RadioGroup>
+                    </FormControl>
+                  )}
+                />
+              )}
               <HStack
                 space="md"
                 className="w-full justify-between items-center"

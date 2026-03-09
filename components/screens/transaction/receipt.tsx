@@ -1,21 +1,33 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
-import { Box, Heading, HStack, Pressable, Text, VStack } from "@/components/ui";
+import {
+  Box,
+  Heading,
+  HStack,
+  Icon,
+  Pressable,
+  Text,
+  VStack,
+} from "@/components/ui";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { useTransaction } from "@/lib/api/transactions";
 import { formatDisplayRefId } from "@/lib/utils/reference";
 import { useAuthStore } from "@/stores/auth";
 import dayjs from "dayjs";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Check, Printer } from "lucide-react-native";
 import { ScrollView } from "react-native";
 
 export default function TransactionReceipt() {
+  const router = useRouter();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, isSuccess } = useLocalSearchParams<{
+    id: string;
+    isSuccess: string;
+  }>();
   const { data: transaction, isLoading } = useTransaction(id || "");
   const profile = useAuthStore((state) => state.profile);
-  console.log("transaction:", transaction);
 
   if (isLoading || !id) {
     return (
@@ -87,7 +99,29 @@ export default function TransactionReceipt() {
         }
       />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <Box className="p-4 flex-1">
+        <VStack space="md" className="p-4 flex-1">
+          {isSuccess === "true" && (
+            <HStack space="md" className="w-full">
+              <Pressable
+                className="flex-1 rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-primary-500 border border-primary-500 active:bg-primary-400"
+                onPress={() => router.back()}
+              >
+                <Icon as={Check} size="xl" color="#ffffff" />
+                <Text size="md" className="text-typography-0 font-bold">
+                  SELESAI
+                </Text>
+              </Pressable>
+              <Pressable
+                className="flex-1 rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-background-0 border border-primary-500 active:bg-primary-100"
+                onPress={() => {}}
+              >
+                <Icon as={Printer} size="xl" color="#3d2117" />
+                <Text size="md" className="text-brand-primary font-bold">
+                  CETAK ULANG STRUK
+                </Text>
+              </Pressable>
+            </HStack>
+          )}
           <VStack className="flex-1 bg-background-0 p-6 shadow">
             <VStack className="items-center">
               <Heading size="xl">
@@ -221,12 +255,19 @@ export default function TransactionReceipt() {
                 // Pre-discount subtotal = maxPrice * qty per product group.
                 // Stored items use a split-row approach (1 discounted row +
                 // remaining rows at regular price), so maxPrice is the regular price.
-                const groupedMap: Record<string, { qty: number; maxPrice: number }> = {};
+                const groupedMap: Record<
+                  string,
+                  { qty: number; maxPrice: number }
+                > = {};
                 transaction.items?.forEach((item) => {
                   const key = `${item.productId}-${item.variantId || "no-var"}`;
-                  if (!groupedMap[key]) groupedMap[key] = { qty: 0, maxPrice: 0 };
+                  if (!groupedMap[key])
+                    groupedMap[key] = { qty: 0, maxPrice: 0 };
                   groupedMap[key].qty += item.quantity;
-                  groupedMap[key].maxPrice = Math.max(groupedMap[key].maxPrice, item.sellPrice || 0);
+                  groupedMap[key].maxPrice = Math.max(
+                    groupedMap[key].maxPrice,
+                    item.sellPrice || 0,
+                  );
                 });
                 const subtotalGross = Object.values(groupedMap).reduce(
                   (sum, g) => sum + g.maxPrice * g.qty,
@@ -293,7 +334,7 @@ export default function TransactionReceipt() {
               </Text>
             </VStack>
           </VStack>
-        </Box>
+        </VStack>
       </ScrollView>
     </VStack>
   );
