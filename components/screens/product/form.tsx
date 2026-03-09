@@ -439,7 +439,7 @@ export default function ProductForm() {
                 minimumPurchase: 1,
               })),
             ...data.wholesalePrice
-              .sort((a, b) => a.price - b.price)
+              .sort((a, b) => b.price - a.price)
               .map((p) => ({
                 ...p,
                 type: "WHOLESALE" as const,

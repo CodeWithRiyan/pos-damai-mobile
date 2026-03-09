@@ -61,31 +61,34 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   addProductVariantId: null,
   setCustomer: (customer) =>
     set((state) => {
-      if (customer) {
-        const updatedTotal = state.cart.reduce((sum, cartItem) => {
-          const unitPrice =
-            cartItem.tempSellPrice ||
-            findSellPrice({
-              sellPrices: cartItem.product.sellPrices,
-              type: customer.category,
-              quantity: cartItem.quantity,
-              unitVariant: cartItem.variant,
-            });
+      const prevCategory = state.customer?.category;
+      const nextCategory = customer?.category;
+      const categoryChanged = prevCategory !== nextCategory;
 
-          return (
-            sum +
-            calculateLineItemTotal({
-              quantity: cartItem.quantity,
-              unitPrice: unitPrice,
-              discount: cartItem.product.discount,
-              isManualPrice: !!cartItem.tempSellPrice,
-            })
-          );
-        }, 0);
-        return { customer, cartTotal: updatedTotal };
-      }
+      if (!categoryChanged) return { customer };
 
-      return { customer, cartTotal: 0 };
+      const updatedTotal = state.cart.reduce((sum, cartItem) => {
+        const unitPrice =
+          cartItem.tempSellPrice ??
+          findSellPrice({
+            sellPrices: cartItem.product.sellPrices,
+            type: nextCategory ?? "RETAIL",
+            quantity: cartItem.quantity,
+            unitVariant: cartItem.variant,
+          });
+
+        return (
+          sum +
+          calculateLineItemTotal({
+            quantity: cartItem.quantity,
+            unitPrice: unitPrice,
+            discount: cartItem.product.discount,
+            isManualPrice: !!cartItem.tempSellPrice,
+          })
+        );
+      }, 0);
+
+      return { customer, cartTotal: updatedTotal };
     }),
   setPurchaseId: (id) => set({ purchaseId: id }),
   setStatus: (status) => set({ status }),

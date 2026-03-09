@@ -61,7 +61,10 @@ export default function TransactionHistory({
   const { data: allTransactions, isLoading } = useTransactions({
     customerId,
     userId: transactionFilter.userId || undefined,
-    paymentTypeId: transactionFilter.paymentTypeId.length > 0 ? transactionFilter.paymentTypeId : undefined,
+    paymentTypeId:
+      transactionFilter.paymentTypeId.length > 0
+        ? transactionFilter.paymentTypeId
+        : undefined,
     dateType: transactionFilter.dateType,
     startDate: transactionFilter.startDate,
     endDate: transactionFilter.endDate,
@@ -74,10 +77,17 @@ export default function TransactionHistory({
   );
 
   const chartData = useMemo(() => {
-    const grouped = new Map<string, { totalTransaction: number; gmv: number; profit: number }>();
+    const grouped = new Map<
+      string,
+      { totalTransaction: number; gmv: number; profit: number }
+    >();
     for (const t of completedTransactions) {
       const key = dayjs(t.createdAt ?? t.transactionDate).format("YYYY-MM-DD");
-      const existing = grouped.get(key) ?? { totalTransaction: 0, gmv: 0, profit: 0 };
+      const existing = grouped.get(key) ?? {
+        totalTransaction: 0,
+        gmv: 0,
+        profit: 0,
+      };
       grouped.set(key, {
         totalTransaction: existing.totalTransaction + 1,
         gmv: existing.gmv + t.totalAmount,
@@ -92,17 +102,27 @@ export default function TransactionHistory({
       }));
   }, [completedTransactions]);
 
-  const chartCategoryOptions = chartCategoryDefinitions.map((item) => ({
-    ...item,
-    value: completedTransactions.reduce(
-      (sum, t) => {
-        if (item.code === "totalTransaction") return sum + 1;
-        if (item.code === "gmv") return sum + t.totalAmount;
-        return sum + (t.totalAmount - (t.commission ?? 0));
-      },
+  const chartCategoryOptions = chartCategoryDefinitions.map((item) => {
+    const totalGmv = completedTransactions.reduce(
+      (sum, t) => sum + t.totalAmount,
       0,
-    ),
-  }));
+    );
+    const totalProfit = completedTransactions.reduce(
+      (sum, t) => sum + (t.totalAmount - (t.commission ?? 0)),
+      0,
+    );
+
+    const value = completedTransactions.reduce((sum, t) => {
+      if (item.code === "totalTransaction") return sum + 1;
+      if (item.code === "gmv") return sum + t.totalAmount;
+      return sum + (t.totalAmount - (t.commission ?? 0));
+    }, 0);
+
+    const profitPercentage =
+      totalGmv > 0 ? ((totalProfit / totalGmv) * 100).toFixed(1) : "0.0";
+
+    return { ...item, value, profitPercentage };
+  });
 
   const chartAreaData = chartData.map((d) => ({
     value:
@@ -124,10 +144,10 @@ export default function TransactionHistory({
   const transactions =
     completedTransactions.filter(
       (t) =>
-        ((formatDisplayRefId(t.local_ref_id) || t.id)
+        (formatDisplayRefId(t.local_ref_id) || t.id)
           .toLowerCase()
           .includes(searchQuery.toLowerCase()) ||
-          t.customerName?.toLowerCase().includes(searchQuery.toLowerCase())),
+        t.customerName?.toLowerCase().includes(searchQuery.toLowerCase()),
     ) || [];
 
   if (isLoading) {
@@ -187,7 +207,13 @@ export default function TransactionHistory({
                       <RadioLabel>
                         <VStack className="items-center">
                           <Text className="text-sm text-white">{o.name}</Text>
-                          <Text className="text-sm text-white">{`${o.type === "currency" ? "Rp " : ""}${o.value.toLocaleString("id-ID")}`}</Text>
+                          <Text className="text-sm text-white">
+                            {o.type === "currency" ? "Rp " : ""}
+                            {o.value.toLocaleString("id-ID")}
+                            {o.code === "profit"
+                              ? ` (${o.profitPercentage}%)`
+                              : ""}
+                          </Text>
                         </VStack>
                       </RadioLabel>
                     </Radio>

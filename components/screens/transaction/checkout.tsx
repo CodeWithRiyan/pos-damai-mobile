@@ -29,7 +29,11 @@ import { useCurrentUser } from "@/lib/api/auth";
 
 import { usePaymentTypes } from "@/lib/api/payment-types";
 import { useCreateTransaction } from "@/lib/api/transactions";
-import { calculateLineItemTotal, findSellPrice, isDiscountActive, getDiscountedPrice } from "@/lib/price";
+import {
+  findSellPrice,
+  getDiscountedPrice,
+  isDiscountActive
+} from "@/lib/price";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { useTransactionStore } from "@/stores/transaction";
 import { useRouter } from "expo-router";
@@ -118,11 +122,18 @@ export default function TransactionCheckoutForm() {
         unitVariant: item.variant,
       });
       if (!isDiscountActive(item.product.discount)) return sum;
-      const discountedPrice = getDiscountedPrice(unitPrice, item.product.discount);
+      const discountedPrice = getDiscountedPrice(
+        unitPrice,
+        item.product.discount,
+      );
       return sum + (unitPrice - discountedPrice);
     }, 0);
 
-    return { commission: comm, grandTotal: cartTotal + comm, totalDiscount: discount };
+    return {
+      commission: comm,
+      grandTotal: cartTotal + comm,
+      totalDiscount: discount,
+    };
   }, [cartTotal, paymentTypesData, paymentTypeId, cart, customer]);
 
   useEffect(() => {
@@ -230,7 +241,9 @@ export default function TransactionCheckoutForm() {
         if (status === "DRAFT") {
           router.push("/(main)/transaction");
         } else {
-          router.replace(`/(main)/transaction/receipt/${result.id}`);
+          router.replace(
+            `/(main)/transaction/receipt/${result.id}?isSuccess=true`,
+          );
         }
         resetCart();
         setCustomer(null);
