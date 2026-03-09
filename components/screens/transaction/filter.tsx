@@ -7,6 +7,7 @@ import {
 import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
 import SelectModal from "@/components/ui/select/select-modal";
 import { VStack } from "@/components/ui/vstack";
+import { usePaymentTypes } from "@/lib/api/payment-types";
 import { useUsers } from "@/lib/api/users";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -17,7 +18,7 @@ import z from "zod";
 const transactionFilterSchema = z.object({
   search: z.string(),
   userId: z.string(),
-  paymentTypeId: z.array(z.string()),
+  paymentTypeId: z.string(),
   dateType: z.enum(["TODAY", "THIS_WEEK", "THIS_MONTH", "THIS_YEAR", "CUSTOM"]),
   startDate: z.date(),
   endDate: z.date(),
@@ -30,7 +31,7 @@ export type TransactionFilterFormValues = z.infer<
 export const transactionFilterInitialValues: TransactionFilterFormValues = {
   search: "",
   userId: "",
-  paymentTypeId: [],
+  paymentTypeId: "",
   dateType: "TODAY",
   startDate: new Date(),
   endDate: new Date(),
@@ -46,6 +47,7 @@ export default function TransactionFilter({
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
 
   const { data: users } = useUsers();
+  const { data: paymentTypes } = usePaymentTypes();
 
   const isLoading = false;
 
@@ -127,6 +129,32 @@ export default function TransactionFilter({
                 users?.map((cd) => ({
                   label: cd.firstName,
                   value: cd.id,
+                })) || []
+              }
+              className="w-full"
+              onChange={onChange}
+            />
+            {error && (
+              <FormControlError>
+                <FormControlErrorText>{error.message}</FormControlErrorText>
+              </FormControlError>
+            )}
+          </FormControl>
+        )}
+      />
+      <Controller
+        control={form.control}
+        name="paymentTypeId"
+        render={({ field: { onChange, value }, fieldState: { error } }) => (
+          <FormControl isRequired isInvalid={!!error}>
+            <SelectModal
+              value={value}
+              placeholder="Pilih Jenis Pembayaran"
+              showSearch={false}
+              options={
+                paymentTypes?.map((pt) => ({
+                  label: pt.name,
+                  value: pt.id,
                 })) || []
               }
               className="w-full"
