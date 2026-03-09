@@ -1,26 +1,26 @@
 import Header from "@/components/header";
 import {
-  Box,
-  Checkbox,
-  CheckboxIcon,
-  CheckboxIndicator,
-  CheckboxLabel,
-  CheckIcon,
-  FormControl,
-  FormControlError,
-  FormControlErrorText,
-  Heading,
-  HStack,
-  Icon,
-  Pressable,
-  Spinner,
-  Text,
-  Textarea,
-  TextareaInput,
-  Toast,
-  ToastTitle,
-  useToast,
-  VStack,
+    Box,
+    Checkbox,
+    CheckboxIcon,
+    CheckboxIndicator,
+    CheckboxLabel,
+    CheckIcon,
+    FormControl,
+    FormControlError,
+    FormControlErrorText,
+    Heading,
+    HStack,
+    Icon,
+    Pressable,
+    Spinner,
+    Text,
+    Textarea,
+    TextareaInput,
+    Toast,
+    ToastTitle,
+    useToast,
+    VStack,
 } from "@/components/ui";
 import { getErrorMessage } from "@/lib/api/client";
 import { CreatePurchasingDTO, useCreatePurchasing } from "@/lib/api/purchasing";
@@ -118,16 +118,8 @@ export default function PurchasingCheckoutForm() {
   const isLoading = createMutation.isPending;
 
   const { grandTotal, commission } = useMemo(() => {
-    let comm = 0;
-    const pt = paymentTypesData?.find((p) => p.id === paymentMethodId);
-    if (pt && cartTotal) {
-      comm =
-        pt.commissionType === "PERCENTAGE"
-          ? (cartTotal * pt.commission) / 100
-          : pt.commission;
-    }
-    return { commission: comm, grandTotal: cartTotal + comm };
-  }, [cartTotal, paymentTypesData, paymentMethodId]);
+    return { commission: 0, grandTotal: cartTotal };
+  }, [cartTotal]);
 
   const paymentTypes =
     paymentTypesData?.map((pt) => ({
@@ -228,7 +220,7 @@ export default function PurchasingCheckoutForm() {
       ...data,
       id: purchaseId || undefined,
       totalPaid: Number(data.totalPaid),
-      commission: commission,
+      commission: 0,
       totalPurchase: grandTotal,
       items: cart.map((item) => ({
         product: {
@@ -350,12 +342,6 @@ export default function PurchasingCheckoutForm() {
                 <Heading size="3xl" className="font-bold text-center">
                   {`Rp ${form.getValues("totalPurchase").toLocaleString("id-ID")}`}
                 </Heading>
-                {commission > 0 && (
-                  <Text className="text-warning-600 mt-2 font-bold">
-                    *Termasuk tambahan biaya Rp{" "}
-                    {commission.toLocaleString("id-ID")}
-                  </Text>
-                )}
               </HStack>
               <VStack space="lg" className="p-4">
                 <Controller

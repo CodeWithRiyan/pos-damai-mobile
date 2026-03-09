@@ -61,10 +61,7 @@ export default function TransactionHistory({
   const { data: allTransactions, isLoading } = useTransactions({
     customerId,
     userId: transactionFilter.userId || undefined,
-    paymentTypeId:
-      transactionFilter.paymentTypeId.length > 0
-        ? transactionFilter.paymentTypeId
-        : undefined,
+    paymentTypeId: transactionFilter.paymentTypeId ? [transactionFilter.paymentTypeId] : undefined,
     dateType: transactionFilter.dateType,
     startDate: transactionFilter.startDate,
     endDate: transactionFilter.endDate,
