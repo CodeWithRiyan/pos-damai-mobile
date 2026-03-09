@@ -15,7 +15,7 @@ export const findSellPrice = ({
   if (!sellPrices.length) return 0;
 
   // 1. Priority: Variant-based pricing
-  if (unitVariant) {
+  if (unitVariant && type === "RETAIL") {
     const variantPrice = sellPrices.find((p) => p.label === unitVariant.name);
     if (variantPrice) return variantPrice.price;
   }

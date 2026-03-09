@@ -19,7 +19,7 @@ import {
 import { Box } from "@/components/ui/box";
 import { Grid, GridItem } from "@/components/ui/grid";
 import { Spinner } from "@/components/ui/spinner";
-import { useShiftDetail } from "@/lib/api/shifts";
+import { ShiftTransactionHistory, useShiftDetail } from "@/lib/api/shifts";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
@@ -28,7 +28,7 @@ import { ScrollView } from "react-native";
 type TypeState = "IN" | "OUT";
 
 export const helperInOut = (
-  type: "INITIAL" | "SALES" | "INCOME" | "PURCHASES" | "EXPENSES",
+  type: ShiftTransactionHistory["type"],
 ): TypeState => {
   if (type === "INITIAL") return "IN";
   if (type === "SALES") return "IN";

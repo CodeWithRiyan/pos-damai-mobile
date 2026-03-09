@@ -49,7 +49,6 @@ export default function TransactionList() {
     setAddProduct,
     setStatus,
     removeCartItem,
-    resetCart,
   } = useTransactionStore();
   const { data: customers } = useCustomers();
   const { data: products } = useProducts({ forceParent: true });
@@ -64,7 +63,6 @@ export default function TransactionList() {
   const handleLayout = (event: LayoutChangeEvent) => {
     const { width } = event.nativeEvent.layout;
     setDeviceWidth(width);
-    console.log("Device width:", width);
   };
 
   const optionsGroupCustomers =
@@ -163,7 +161,6 @@ export default function TransactionList() {
                   setCustomer(
                     customers?.find((customer) => customer.id === v) || null,
                   );
-                  resetCart();
                 } else {
                   setCustomer(null);
                 }
@@ -288,8 +285,7 @@ export default function TransactionList() {
                   }}
                   onLongPress={() => {
                     const newDeleteItem =
-                      item.product.type === "MULTIUNIT" &&
-                      customer?.category !== "WHOLESALE"
+                      item.product.type === "MULTIUNIT"
                         ? item.variant?.id || ""
                         : item.product.id;
 
@@ -323,12 +319,14 @@ export default function TransactionList() {
                                 }).toLocaleString("id-ID")
                           } = Rp ${calculateLineItemTotal({
                             quantity: item.quantity,
-                            unitPrice: item.tempSellPrice || findSellPrice({
-                              sellPrices: item.product.sellPrices,
-                              type: customer?.category,
-                              quantity: item.quantity,
-                              unitVariant: item.variant,
-                            }),
+                            unitPrice:
+                              item.tempSellPrice ||
+                              findSellPrice({
+                                sellPrices: item.product.sellPrices,
+                                type: customer?.category,
+                                quantity: item.quantity,
+                                unitVariant: item.variant,
+                              }),
                             discount: item.product.discount,
                             isManualPrice: !!item.tempSellPrice,
                           }).toLocaleString("id-ID")}`}
@@ -353,12 +351,7 @@ export default function TransactionList() {
                         deleteItem === item.product.id &&
                         "w-16",
                       item.product.type === "MULTIUNIT" &&
-                        customer?.category !== "WHOLESALE" &&
                         deleteItem === item.variant?.id &&
-                        "w-16",
-                      item.product.type === "MULTIUNIT" &&
-                        customer?.category === "WHOLESALE" &&
-                        deleteItem === item.product?.id &&
                         "w-16",
                     )}
                     onPress={() => {
