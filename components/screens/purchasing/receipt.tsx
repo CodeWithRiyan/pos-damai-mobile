@@ -1,6 +1,14 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
-import { Box, Heading, HStack, Pressable, Text, VStack } from "@/components/ui";
+import {
+  Box,
+  Heading,
+  HStack,
+  Icon,
+  Pressable,
+  Text,
+  VStack,
+} from "@/components/ui";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { usePurchase } from "@/lib/api/purchasing";
@@ -8,12 +16,17 @@ import { formatDisplayRefId } from "@/lib/utils/reference";
 import { useAuthStore } from "@/stores/auth";
 import classNames from "classnames";
 import dayjs from "dayjs";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Check, Printer } from "lucide-react-native";
 import { ScrollView } from "react-native";
 
 export default function PurchasingReceipt() {
+  const router = useRouter();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, isSuccess } = useLocalSearchParams<{
+    id: string;
+    isSuccess: string;
+  }>();
   const { data: purchase, isLoading } = usePurchase(id || "");
   const profile = useAuthStore((state) => state.profile);
 
@@ -88,6 +101,28 @@ export default function PurchasingReceipt() {
       />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <Box className="p-4 flex-1">
+          {isSuccess === "true" && (
+            <HStack space="md" className="w-full">
+              <Pressable
+                className="flex-1 rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-primary-500 border border-primary-500 active:bg-primary-400"
+                onPress={() => router.back()}
+              >
+                <Icon as={Check} size="xl" color="#ffffff" />
+                <Text size="md" className="text-typography-0 font-bold">
+                  SELESAI
+                </Text>
+              </Pressable>
+              <Pressable
+                className="flex-1 rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-background-0 border border-primary-500 active:bg-primary-100"
+                onPress={() => {}}
+              >
+                <Icon as={Printer} size="xl" color="#3d2117" />
+                <Text size="md" className="text-brand-primary font-bold">
+                  CETAK ULANG STRUK
+                </Text>
+              </Pressable>
+            </HStack>
+          )}
           <VStack className="flex-1 bg-background-0 p-6 shadow">
             <VStack className="items-center">
               <Heading size="xl">
