@@ -165,7 +165,7 @@ export default function TransactionHistory({
     <VStack className="flex-1 bg-white">
       <Header header={header} isGoBack />
       <VStack space="md" className="p-4 shadow-lg bg-background-0 items-center">
-        {showSearch && (
+        {showSearch ? (
           <Input className="w-full border border-background-300 rounded-lg h-10">
             <InputSlot className="pl-3">
               <InputIcon as={SearchIcon} />
@@ -176,10 +176,11 @@ export default function TransactionHistory({
               onChangeText={setSearchQuery}
             />
           </Input>
+        ) : (
+          <FilterAccordion title="Filter Laporan Penjualan">
+            <TransactionFilter onFilter={setTransactionFilter} />
+          </FilterAccordion>
         )}
-        <FilterAccordion title="Filter Laporan Penjualan">
-          <TransactionFilter onFilter={setTransactionFilter} />
-        </FilterAccordion>
       </VStack>
       <Grid _extra={{ className: "grid-cols-2" }} className="flex-1">
         {isReport && (
