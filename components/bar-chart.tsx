@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { LineChart, lineDataItem } from "react-native-gifted-charts";
+import {
+  BarChart as GiftedBarChart,
+  barDataItem,
+} from "react-native-gifted-charts";
 import { Box, HStack, Text, VStack } from "./ui";
 
-export default function AreaChart({
+export default function BarChart({
   data,
   spacing,
 }: {
-  data: lineDataItem[];
+  data: barDataItem[];
   spacing?: number;
 }) {
   const [containerWidth, setContainerWidth] = useState(0);
@@ -42,12 +45,10 @@ export default function AreaChart({
       className="flex-1 px-2 bg-white min-h-[200px]"
       onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width || 0)}
     >
-      {containerWidth > 0 && (
-        <LineChart
-          thickness={2}
+      {(containerWidth || 0) > 0 && (
+        <GiftedBarChart
           color="#3d2117"
           noOfSections={6}
-          areaChart
           yAxisLabelWidth={60}
           yAxisTextStyle={{
             color: "#1f2937",
@@ -64,12 +65,7 @@ export default function AreaChart({
             return val.toString();
           }}
           data={dataWithIndex}
-          startFillColor={"#3d2117"}
-          endFillColor={"#3d2117"}
-          startOpacity={1}
-          endOpacity={0.5}
           isAnimated
-          animateOnDataChange
           backgroundColor="#ffffff"
           rulesColor="#e2e2e2"
           rulesType="solid"
@@ -78,8 +74,6 @@ export default function AreaChart({
           endSpacing={0}
           yAxisColor="lightgray"
           xAxisColor="lightgray"
-          dataPointsHeight={8}
-          dataPointsWidth={8}
           pointerConfig={{
             activatePointersOnLongPress: true,
             pointerColor: "blue",
