@@ -1,5 +1,6 @@
 import BarcodeScanner from "@/components/barcode-scanner";
 import Header from "@/components/header";
+import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
   Button,
   ButtonText,
@@ -27,7 +28,7 @@ import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { useBrands } from "@/lib/api/brands";
 import { useCategories } from "@/lib/api/categories";
 import { getErrorMessage } from "@/lib/api/client";
-import { useDiscounts } from "@/lib/api/discounts";
+import { Discount, useDeleteDiscount, useDiscounts } from "@/lib/api/discounts";
 import {
   CreateProductDTO,
   UpdateProductDTO,
@@ -55,6 +56,7 @@ import { ScrollView } from "react-native";
 import { z } from "zod";
 
 export default function ProductForm() {
+  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { setOpen: setOpenCategory, setData: setDataCategory } =
     useCategoryStore();
   const { setOpen: setOpenBrand, setData: setDataBrand } = useBrandStore();
@@ -327,6 +329,7 @@ export default function ProductForm() {
   const { data: categories = [], refetch: refetchCategories } = useCategories();
   const { data: brands = [], refetch: refetchBrands } = useBrands();
   const { data: discounts = [], refetch: refetchDiscounts } = useDiscounts();
+  const deleteDiscountMutation = useDeleteDiscount();
   const createMutation = useCreateProduct();
   const updateMutation = useUpdateProduct();
   const isLoading = createMutation.isPending || updateMutation.isPending;
@@ -422,6 +425,48 @@ export default function ProductForm() {
 
   const handleCancel = () => {
     router.back();
+  };
+
+  const handleDeletePress = (discount: Discount) => {
+    showPopUpConfirm({
+      title: "HAPUS DISKON",
+      icon: "warning",
+      description: (
+        <Text className="text-slate-500">
+          {`Apakah Anda yakin ingin menghapus diskon `}
+          <Text className="font-bold text-slate-900">{discount?.name}</Text>
+          {` ? Tindakan ini tidak dapat dibatalkan.`}
+        </Text>
+      ),
+      showClose: true,
+      okText: "HAPUS",
+      closeText: "BATAL",
+      okVariant: "destructive",
+      onOk: () => confirmDelete(discount),
+      loading: deleteDiscountMutation.isPending,
+    });
+  };
+
+  const confirmDelete = async (discount: Discount) => {
+    deleteDiscountMutation.mutate(discount.id, {
+      onSuccess: () => {
+        hidePopUpConfirm();
+        onRefetch();
+
+        toast.show({
+          placement: "top",
+          render: ({ id }) => (
+            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+              <ToastTitle>Diskon berhasil dihapus</ToastTitle>
+            </Toast>
+          ),
+        });
+      },
+      onError: (error) => {
+        showErrorToast(error);
+        hidePopUpConfirm();
+      },
+    });
   };
 
   const onSubmit: SubmitHandler<ProductFormValues> = (
@@ -1593,6 +1638,24 @@ export default function ProductForm() {
                     options={discounts.map((disc) => ({
                       label: disc.name,
                       value: disc.id,
+                      actions: [
+                        {
+                          label: "Edit",
+                          icon: "Pen",
+                          onPress: () => {
+                            setDataDiscount(disc);
+                            setOpenDiscount(true, (newDisc) => {
+                              form.setValue("discountId", newDisc.id);
+                              refetchDiscounts();
+                            });
+                          },
+                        },
+                        {
+                          label: "Delete",
+                          icon: "TrashBin2",
+                          onPress: () => handleDeletePress(disc),
+                        },
+                      ],
                     }))}
                     className="flex-1"
                     onChange={onChange}
