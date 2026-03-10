@@ -18,6 +18,7 @@ import {
   ModalHeader,
 } from "../modal";
 import { Pressable } from "../pressable";
+import { SolarIconBold, SolarIconBoldProps } from "../solar-icon-wrapper";
 import { Text } from "../text";
 import { VStack } from "../vstack";
 
@@ -41,6 +42,19 @@ const selectTriggerStyle = tva({
   },
 });
 
+interface SelectModalOption {
+  value: string;
+  label: string;
+  desc?: string;
+  actions?: SelectAction[];
+}
+
+interface SelectAction {
+  label: string;
+  icon: SolarIconBoldProps["name"];
+  onPress: () => void;
+}
+
 export default function SelectModal({
   header = "PILIH",
   value,
@@ -57,10 +71,10 @@ export default function SelectModal({
 }: {
   header?: string;
   value: string;
-  options?: { value: string; label: string; desc?: string }[];
+  options?: SelectModalOption[];
   optionsGroup?: {
     label: string;
-    options: { value: string; label: string; desc?: string }[];
+    options: SelectModalOption[];
   }[];
   placeholder?: string;
   searchPlaceholder?: string;
@@ -147,7 +161,7 @@ export default function SelectModal({
                 filteredOptions.map((option) => (
                   <Pressable
                     key={option.value}
-                    className={`w-full flex-row items-center px-6 py-2 rounded-sm data-[disabled=true]:opacity-40 data-[disabled=true]:web:pointer-events-auto data-[disabled=true]:web:cursor-not-allowed hover:bg-background-50 active:bg-background-100 data-[focus=true]:bg-background-100 web:data-[focus-visible=true]:bg-background-100 data-[checked=true]:bg-background-100${
+                    className={`w-full flex-row gap-4 items-center px-6 py-2 rounded-sm data-[disabled=true]:opacity-40 data-[disabled=true]:web:pointer-events-auto data-[disabled=true]:web:cursor-not-allowed hover:bg-background-50 active:bg-background-100 data-[focus=true]:bg-background-100 web:data-[focus-visible=true]:bg-background-100 data-[checked=true]:bg-background-100${
                       option.value === value ? " bg-background-100" : ""
                     }`}
                     onPress={() => {
@@ -168,6 +182,19 @@ export default function SelectModal({
                     </VStack>
                     {option.value === value && (
                       <Icon as={CheckIcon} className="text-primary-500" />
+                    )}
+                    {!!option.actions?.length && (
+                      <HStack space="sm">
+                        {option.actions?.map((act, i) => (
+                          <Pressable
+                            key={i}
+                            onPress={act.onPress}
+                            className="h-8 w-8 rounded-md items-center justify-center active:bg-background-100"
+                          >
+                            <SolarIconBold name={act.icon} size={16} />
+                          </Pressable>
+                        ))}
+                      </HStack>
                     )}
                   </Pressable>
                 ))
