@@ -27,49 +27,33 @@ import InputVirtualKeyboard from "@/components/ui/input-virtual-keyboard";
 import SelectModal from "@/components/ui/select/select-modal";
 import { useCurrentUser } from "@/lib/api/auth";
 
+import { SolarIconBoldDuotone } from "@/components/ui/solar-icon-wrapper";
+import { useCustomer } from "@/lib/api/customers";
 import { usePaymentTypes } from "@/lib/api/payment-types";
+import { useTransactionReturn } from "@/lib/api/return-transaction";
 import { useCreateTransaction } from "@/lib/api/transactions";
 import {
   findSellPrice,
   getDiscountedPrice,
-  isDiscountActive
+  isDiscountActive,
 } from "@/lib/price";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { useTransactionStore } from "@/stores/transaction";
-import { useRouter } from "expo-router";
+import classNames from "classnames";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Check, PlusIcon } from "lucide-react-native";
-
-const transactionSchema = z
-  .object({
-    totalPurchase: z
-      .number()
-      .min(0, "Total pembelian harus lebih besar atau sama dengan 0"),
-    totalPaid: z.string(),
-    isCashdrawer: z.boolean(),
-    status: z.string(),
-    paymentTypeId: z.string().min(1, "Metode pembayaran harus dipilih"),
-    note: z.string(),
-  })
-  .superRefine((data, ctx) => {
-    if (
-      data.status === "COMPLETED" &&
-      parseFloat(data.totalPaid || "0") < data.totalPurchase
-    ) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Total pembayaran tidak boleh kurang dari total pembelian",
-        path: ["totalPaid"],
-      });
-    }
-  });
-
-export type TransactionFormValues = z.infer<typeof transactionSchema>;
 
 // Payment types are now loaded from the database via usePaymentTypes hook
 
 export default function TransactionCheckoutForm() {
+  const { returnCustomerId, returnId } = useLocalSearchParams<{
+    returnCustomerId: string;
+    returnId: string;
+  }>();
   const router = useRouter();
 
+  const { data: returnCustomer } = useCustomer(returnCustomerId);
+  const { data: returnData } = useTransactionReturn(returnId || "");
   const { data: user } = useCurrentUser();
   const { data: paymentTypesData } = usePaymentTypes();
   const { customer, cart, cartTotal, status, setCheckoutData } =
@@ -84,6 +68,45 @@ export default function TransactionCheckoutForm() {
       value: pt.id,
     })) || [];
   // const createMutation = useCreateTransaction();
+
+  const transactionSchema = z
+    .object({
+      totalPurchase: z
+        .number()
+        .min(0, "Total pembelian harus lebih besar atau sama dengan 0"),
+      totalPaid: z.string(),
+      isCashdrawer: z.boolean(),
+      status: z.string(),
+      paymentTypeId: z.string().min(1, "Metode pembayaran harus dipilih"),
+      note: z.string(),
+    })
+    .superRefine((data, ctx) => {
+      if (
+        data.status === "COMPLETED" &&
+        !returnCustomerId &&
+        Number(data.totalPaid || "0") < data.totalPurchase
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Total pembayaran tidak boleh kurang dari total pembelian",
+          path: ["totalPaid"],
+        });
+      }
+      if (
+        data.status === "COMPLETED" &&
+        returnCustomerId &&
+        Number(data.totalPaid || "0") + (returnData?.totalAmount || 0) <
+          data.totalPurchase
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Pembayaran tidak boleh kurang dari kekurangan",
+          path: ["totalPaid"],
+        });
+      }
+    });
+
+  type TransactionFormValues = z.infer<typeof transactionSchema>;
 
   const initialValues: TransactionFormValues = {
     totalPurchase: 0,
@@ -157,10 +180,24 @@ export default function TransactionCheckoutForm() {
     form.setValue("totalPurchase", grandTotal);
   }, [form, grandTotal]);
 
+  useEffect(() => {
+    if (returnCustomer && returnData) {
+      const totalPaid = returnData.totalAmount - grandTotal;
+
+      form.setValue(
+        "paymentTypeId",
+        paymentTypesData?.find((pt) => pt.isDefault)?.id || "",
+      );
+      form.setValue("isCashdrawer", false);
+      form.setValue("totalPaid", totalPaid > 0 ? totalPaid.toString() : "0");
+    }
+  }, [form, grandTotal, paymentTypesData, returnCustomer, returnData]);
+
   const toast = useToast();
   const createTransactionMutation = useCreateTransaction();
 
   const isLoading = createTransactionMutation.isPending;
+  const excessAndLackAmount = (returnData?.totalAmount || 0) - totalPurchase;
 
   const showValidationError = (message?: string) => {
     toast.show({
@@ -179,10 +216,13 @@ export default function TransactionCheckoutForm() {
     try {
       const submissionData = {
         totalAmount: grandTotal,
-        totalPaid: parseFloat(data.totalPaid || "0") || 0,
+        totalPaid: !returnCustomerId
+          ? Number(data.totalPaid || "0")
+          : Number(data.totalPaid || "0") + (returnData?.totalAmount || 0),
         commission: commission,
         paymentTypeId: data.paymentTypeId,
         customerId: customer?.id || "",
+        returnId: returnId || undefined, // TODO: Tambahkan returnId untuk flaging bahwa ini adalah transaksi retur dari sebuah returnId
         transactionDate: new Date(),
         status: status,
         note: data.note || "",
@@ -283,6 +323,40 @@ export default function TransactionCheckoutForm() {
         <VStack className="flex-1 border-r border-gray-300">
           <ScrollView className="flex-1">
             <VStack className="flex-1">
+              {customer && (
+                <HStack space="sm" className="px-4 py-3 bg-primary-100">
+                  <HStack space="sm" className="items-center">
+                    <SolarIconBoldDuotone
+                      name="UserCircle"
+                      size={24}
+                      color="#3b82f6"
+                    />
+                    <VStack>
+                      <Text className="text-primary-500 font-bold">
+                        {customer.name}
+                      </Text>
+                      <Text className="text-typography-500 text-sm font-bold">
+                        {customer.code}
+                      </Text>
+                    </VStack>
+                  </HStack>
+                  <VStack className="flex-1 items-end">
+                    <Text className="text-typography-500 text-sm font-bold">
+                      {!returnCustomerId ? "Poin" : "Total Retur"}
+                    </Text>
+                    <Text
+                      className={classNames(
+                        "text-sm font-bold text-success-500",
+                        returnCustomerId && "text-error-500",
+                      )}
+                    >
+                      {!returnCustomerId
+                        ? customer.points.toLocaleString("id-ID")
+                        : `Rp ${(returnData?.totalAmount || 0).toLocaleString("id-ID")}`}
+                    </Text>
+                  </VStack>
+                </HStack>
+              )}
               <HStack className="justify-center p-6 flex-col items-center">
                 <Text className="text-typography-600 mb-2 font-bold">
                   Total Tagihan
@@ -303,41 +377,65 @@ export default function TransactionCheckoutForm() {
                 )}
               </HStack>
               <VStack space="lg" className="p-4">
-                <Controller
-                  control={form.control}
-                  name="paymentTypeId"
-                  render={({
-                    field: { onChange, value },
-                    fieldState: { error },
-                  }) => (
-                    <FormControl isRequired isInvalid={!!error}>
-                      <HStack space="md">
-                        <SelectModal
-                          value={value}
-                          placeholder="Metode Pembayaran"
-                          options={paymentTypes}
-                          className="flex-1"
-                          onChange={(v) => {
-                            onChange(v);
-                          }}
-                        />
-                        <Pressable
-                          className="size-10 rounded-full bg-primary-500 items-center justify-center"
-                          onPress={() => setPaymentTypeOpen(true, () => {})}
-                        >
-                          <Icon as={PlusIcon} color="white" />
-                        </Pressable>
-                      </HStack>
-                      {error && (
-                        <FormControlError>
-                          <FormControlErrorText>
-                            {error.message}
-                          </FormControlErrorText>
-                        </FormControlError>
+                {returnCustomerId && (
+                  <HStack
+                    space="sm"
+                    className={classNames(
+                      "px-4 py-3 rounded-md bg-success-100 border border-success-500",
+                      excessAndLackAmount < 0 &&
+                        "bg-error-100 border-error-500",
+                    )}
+                  >
+                    <Text className="text-typography-800 font-bold flex-1">
+                      {excessAndLackAmount > 0 ? "Kelebihan" : "Kekurangan"}
+                    </Text>
+                    <Text
+                      className={classNames(
+                        "text-success-500 font-bold",
+                        excessAndLackAmount < 0 && "text-error-500",
                       )}
-                    </FormControl>
-                  )}
-                />
+                    >
+                      {`Rp ${Math.abs(excessAndLackAmount).toLocaleString("id-ID")}`}
+                    </Text>
+                  </HStack>
+                )}
+                {!returnCustomerId && (
+                  <Controller
+                    control={form.control}
+                    name="paymentTypeId"
+                    render={({
+                      field: { onChange, value },
+                      fieldState: { error },
+                    }) => (
+                      <FormControl isRequired isInvalid={!!error}>
+                        <HStack space="md">
+                          <SelectModal
+                            value={value}
+                            placeholder="Metode Pembayaran"
+                            options={paymentTypes}
+                            className="flex-1"
+                            onChange={(v) => {
+                              onChange(v);
+                            }}
+                          />
+                          <Pressable
+                            className="size-10 rounded-full bg-primary-500 items-center justify-center"
+                            onPress={() => setPaymentTypeOpen(true, () => {})}
+                          >
+                            <Icon as={PlusIcon} color="white" />
+                          </Pressable>
+                        </HStack>
+                        {error && (
+                          <FormControlError>
+                            <FormControlErrorText>
+                              {error.message}
+                            </FormControlErrorText>
+                          </FormControlError>
+                        )}
+                      </FormControl>
+                    )}
+                  />
+                )}
                 <Controller
                   name="note"
                   control={form.control}
@@ -369,7 +467,7 @@ export default function TransactionCheckoutForm() {
             </VStack>
           </ScrollView>
         </VStack>
-        {status === "COMPLETED" && (
+        {status === "COMPLETED" && excessAndLackAmount < 0 && (
           <VStack className="flex-1">
             <ScrollView className="flex-1">
               <VStack className="flex-1">
