@@ -56,7 +56,14 @@ export interface Product {
   supplierId: string | null; // Added
   category?: { id: string; name: string };
   brand?: { id: string; name: string };
-  discount?: { id: string; name: string; nominal: number; type: 'FLAT' | 'PERCENTAGE'; startDate: Date; endDate: Date };
+  discount?: {
+    id: string;
+    name: string;
+    nominal: number;
+    type: "FLAT" | "PERCENTAGE";
+    startDate: Date;
+    endDate: Date;
+  };
   isVariant?: boolean; // Added for flattened list UI support
   variantData?: any; // Added for flattened list UI support
   originalId?: string; // Added to reference parent
@@ -147,7 +154,10 @@ export function useProducts(params: ProductParams | void) {
           discount: schema.discounts,
         })
         .from(schema.products)
-        .leftJoin(schema.discounts, eq(schema.products.discountId, schema.discounts.id))
+        .leftJoin(
+          schema.discounts,
+          eq(schema.products.discountId, schema.discounts.id),
+        )
         .where(and(...conditions));
 
       const productsWithPrices = await Promise.all(
@@ -201,14 +211,16 @@ export function useProducts(params: ProductParams | void) {
             variants: variants,
             stock: totalStock,
             discountId: product.discountId,
-            discount: discount ? {
-              id: discount.id,
-              name: discount.name,
-              nominal: discount.nominal,
-              type: discount.type as 'FLAT' | 'PERCENTAGE',
-              startDate: discount.startDate,
-              endDate: discount.endDate,
-            } : undefined,
+            discount: discount
+              ? {
+                  id: discount.id,
+                  name: discount.name,
+                  nominal: discount.nominal,
+                  type: discount.type as "FLAT" | "PERCENTAGE",
+                  startDate: discount.startDate,
+                  endDate: discount.endDate,
+                }
+              : undefined,
           };
         }),
       );
@@ -353,7 +365,10 @@ export function useProductsByCategory(categoryId: string) {
           discount: schema.discounts,
         })
         .from(schema.products)
-        .leftJoin(schema.discounts, eq(schema.products.discountId, schema.discounts.id))
+        .leftJoin(
+          schema.discounts,
+          eq(schema.products.discountId, schema.discounts.id),
+        )
         .where(
           and(
             eq(schema.products.organizationId, orgId),
@@ -393,14 +408,16 @@ export function useProductsByCategory(categoryId: string) {
             variants: [],
             stock: totalStock,
             discountId: product.discountId,
-            discount: discount ? {
-              id: discount.id,
-              name: discount.name,
-              nominal: discount.nominal,
-              type: discount.type as 'FLAT' | 'PERCENTAGE',
-              startDate: discount.startDate,
-              endDate: discount.endDate,
-            } : undefined,
+            discount: discount
+              ? {
+                  id: discount.id,
+                  name: discount.name,
+                  nominal: discount.nominal,
+                  type: discount.type as "FLAT" | "PERCENTAGE",
+                  startDate: discount.startDate,
+                  endDate: discount.endDate,
+                }
+              : undefined,
           };
         }),
       );
@@ -423,7 +440,10 @@ export function useProductsByBrand(brandId: string) {
           discount: schema.discounts,
         })
         .from(schema.products)
-        .leftJoin(schema.discounts, eq(schema.products.discountId, schema.discounts.id))
+        .leftJoin(
+          schema.discounts,
+          eq(schema.products.discountId, schema.discounts.id),
+        )
         .where(
           and(
             eq(schema.products.organizationId, orgId),
@@ -463,14 +483,16 @@ export function useProductsByBrand(brandId: string) {
             variants: [],
             stock: totalStock,
             discountId: product.discountId,
-            discount: discount ? {
-              id: discount.id,
-              name: discount.name,
-              nominal: discount.nominal,
-              type: discount.type as 'FLAT' | 'PERCENTAGE',
-              startDate: discount.startDate,
-              endDate: discount.endDate,
-            } : undefined,
+            discount: discount
+              ? {
+                  id: discount.id,
+                  name: discount.name,
+                  nominal: discount.nominal,
+                  type: discount.type as "FLAT" | "PERCENTAGE",
+                  startDate: discount.startDate,
+                  endDate: discount.endDate,
+                }
+              : undefined,
           };
         }),
       );
@@ -478,6 +500,81 @@ export function useProductsByBrand(brandId: string) {
       return productsWithPrices as unknown as Product[];
     },
     enabled: !!brandId,
+  });
+}
+
+// Get products by supplier
+export function useProductsBySupplier(supplierId: string) {
+  const orgId = useAuthStore((state) => state.getOrganizationId());
+  return useQuery({
+    queryKey: ["products", orgId, "bySupplier", supplierId],
+    queryFn: async () => {
+      const productResult = await db
+        .select({
+          product: schema.products,
+          discount: schema.discounts,
+        })
+        .from(schema.products)
+        .leftJoin(
+          schema.discounts,
+          eq(schema.products.discountId, schema.discounts.id),
+        )
+        .where(
+          and(
+            eq(schema.products.organizationId, orgId),
+            eq(schema.products.supplierId, supplierId),
+            isNull(schema.products.deletedAt),
+          ),
+        );
+
+      // Fetch prices for each product
+      const productsWithPrices = await Promise.all(
+        productResult.map(async ({ product, discount }) => {
+          const prices = await db
+            .select()
+            .from(schema.productPrices)
+            .where(eq(schema.productPrices.productId, product.id));
+
+          // Calculate stock from inventory transactions (only COMPLETED)
+          const transactions = await db
+            .select()
+            .from(schema.inventoryTransactions)
+            .where(
+              and(
+                eq(schema.inventoryTransactions.productId, product.id),
+                eq(schema.inventoryTransactions.status, "COMPLETED"),
+              ),
+            );
+
+          const totalStock = transactions.reduce(
+            (sum, tx) => sum + tx.quantity,
+            0,
+          );
+
+          return {
+            ...product,
+            code: product.barcode,
+            sellPrices: prices,
+            variants: [],
+            stock: totalStock,
+            discountId: product.discountId,
+            discount: discount
+              ? {
+                  id: discount.id,
+                  name: discount.name,
+                  nominal: discount.nominal,
+                  type: discount.type as "FLAT" | "PERCENTAGE",
+                  startDate: discount.startDate,
+                  endDate: discount.endDate,
+                }
+              : undefined,
+          };
+        }),
+      );
+
+      return productsWithPrices as unknown as Product[];
+    },
+    enabled: !!supplierId,
   });
 }
 
@@ -669,7 +766,9 @@ export function useCreateProduct() {
         if (variants && variants.length > 0) {
           for (const variant of variants) {
             await tx.insert(schema.productVariants).values({
-              id: (variant as any).id || `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              id:
+                (variant as any).id ||
+                `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               ...variant,
               productId: id,
               organizationId: orgId,
@@ -763,7 +862,9 @@ export function useUpdateProduct() {
             .where(eq(schema.productVariants.productId, id));
           for (const variant of variants) {
             await tx.insert(schema.productVariants).values({
-              id: (variant as any).id || `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              id:
+                (variant as any).id ||
+                `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               ...variant,
               productId: id,
               organizationId: orgId,

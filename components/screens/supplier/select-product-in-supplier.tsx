@@ -63,6 +63,12 @@ export default function SelectProductInSupplier() {
     );
   };
 
+  // TODO: Cek console ini, terkait bug no 158
+  console.log(
+    "Total Product in Supplier:",
+    products?.filter((p) => p.supplierId?.includes(supplierId)).length,
+  );
+
   return (
     <SelectingProductList
       usedFor="supplier"
