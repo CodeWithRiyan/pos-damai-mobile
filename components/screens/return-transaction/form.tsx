@@ -107,12 +107,20 @@ export default function ReturnTransactionConfirmForm() {
     };
 
     createMutation.mutate(returnData, {
-      onSuccess: (data) => {
+      onSuccess: (response) => {
         showSuccessToast("Retur berhasil disimpan");
         setOpenConfirm(false);
-        router.navigate(
-          `/(main)/management/return/transaction/receipt/${data.id}`,
-        );
+
+        if (data.returnType === "ITEM") {
+          router.navigate(
+            `/(main)/transaction?returnCustomerId=${customerId}&returnId=${response.id}`,
+          );
+        } else {
+          router.navigate(
+            `/(main)/management/return/transaction/receipt/${response.id}`,
+          );
+        }
+
         resetCart();
         form.reset(initialValues);
       },
