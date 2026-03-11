@@ -2,23 +2,23 @@ import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
-    Box,
-    Heading,
-    HStack,
-    Spinner,
-    Text,
-    Toast,
-    ToastTitle,
-    useToast,
-    VStack,
+  Box,
+  Heading,
+  HStack,
+  Spinner,
+  Text,
+  Toast,
+  ToastTitle,
+  useToast,
+  VStack,
 } from "@/components/ui";
 import { Badge, BadgeText } from "@/components/ui/badge";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import {
-    useCategories,
-    useCategory,
-    useDeleteCategory,
+  useCategories,
+  useCategory,
+  useDeleteCategory,
 } from "@/lib/api/categories";
 import { getErrorMessage } from "@/lib/api/client";
 import { Product, useProductsByCategory } from "@/lib/api/products";
@@ -88,7 +88,7 @@ export default function CategoryDetail() {
       okText: "HAPUS",
       closeText: "BATAL",
       okVariant: "destructive",
-      onOk: () => {}, // tambahkan fungsi hapus produk dari category
+      onOk: () => {}, // TODO: tambahkan fungsi hapus produk dari category
       // loading: false,
     });
   };
