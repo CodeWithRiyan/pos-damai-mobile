@@ -39,7 +39,8 @@ export interface ShiftTransactionHistory {
     | "PAYABLE_REALIZATION"
     | "SUPPLIES"
     | "EQUIPMENT"
-    | "CASH_DEPOSIT";
+    | "CASH_DEPOSIT"
+    | "OTHER_EXPENSES";
   nominal: number;
   note: string;
 }
@@ -426,6 +427,7 @@ export function useShiftDetail(id: string) {
       });
 
       // Sales
+      // TODO: jika transaksi penjualan memiliki returnId, maka tidak perlu ditampilkan di history shift karena sudah tercatat sebagai finance income maupun expenses
       sales.forEach((s) => {
         history.push({
           id: s.id,

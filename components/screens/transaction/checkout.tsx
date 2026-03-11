@@ -29,6 +29,7 @@ import { useCurrentUser } from "@/lib/api/auth";
 
 import { SolarIconBoldDuotone } from "@/components/ui/solar-icon-wrapper";
 import { useCustomer } from "@/lib/api/customers";
+import { useCreateFinance } from "@/lib/api/finances";
 import { usePaymentTypes } from "@/lib/api/payment-types";
 import { useTransactionReturn } from "@/lib/api/return-transaction";
 import { useCreateTransaction } from "@/lib/api/transactions";
@@ -75,7 +76,6 @@ export default function TransactionCheckoutForm() {
         .number()
         .min(0, "Total pembelian harus lebih besar atau sama dengan 0"),
       totalPaid: z.string(),
-      isCashdrawer: z.boolean(),
       status: z.string(),
       paymentTypeId: z.string().min(1, "Metode pembayaran harus dipilih"),
       note: z.string(),
@@ -111,7 +111,6 @@ export default function TransactionCheckoutForm() {
   const initialValues: TransactionFormValues = {
     totalPurchase: 0,
     totalPaid: "",
-    isCashdrawer: false,
     status: "DRAFT",
     paymentTypeId: "",
     note: "",
@@ -188,15 +187,16 @@ export default function TransactionCheckoutForm() {
         "paymentTypeId",
         paymentTypesData?.find((pt) => pt.isDefault)?.id || "",
       );
-      form.setValue("isCashdrawer", false);
       form.setValue("totalPaid", totalPaid > 0 ? totalPaid.toString() : "0");
     }
   }, [form, grandTotal, paymentTypesData, returnCustomer, returnData]);
 
   const toast = useToast();
   const createTransactionMutation = useCreateTransaction();
+  const createFinanceMutation = useCreateFinance();
 
-  const isLoading = createTransactionMutation.isPending;
+  const isLoading =
+    createTransactionMutation.isPending || createFinanceMutation.isPending;
   const excessAndLackAmount = (returnData?.totalAmount || 0) - totalPurchase;
 
   const showValidationError = (message?: string) => {
@@ -222,7 +222,10 @@ export default function TransactionCheckoutForm() {
         commission: commission,
         paymentTypeId: data.paymentTypeId,
         customerId: customer?.id || "",
-        returnId: returnId || undefined, // TODO: Tambahkan returnId untuk flaging bahwa ini adalah transaksi retur dari sebuah returnId
+        // TODO: Tambahkan returnId untuk flaging bahwa ini adalah transaksi retur dari sebuah returnId
+        // TODO: Jika returnId ada, maka di backend jangan memasukkan data transaksi ke dalam shift, dan jangan berikan poin.
+        // Untuk total keuntungan pelanggan mungkin perlu didiskusikan terlebih dahulu, apakah dihitung dari total pembelian atau total pembelian dikurangi total retur
+        returnId: returnId || undefined,
         transactionDate: new Date(),
         status: status,
         note: data.note || "",
@@ -273,7 +276,6 @@ export default function TransactionCheckoutForm() {
           totalPaid: data.totalPaid,
           customerId: customer?.id || "",
           transactionDate: new Date(),
-          isCashdrawer: false,
           status: status,
           note: data.note || "",
         });
@@ -281,6 +283,7 @@ export default function TransactionCheckoutForm() {
         if (status === "DRAFT") {
           router.push("/(main)/transaction");
         } else {
+          createFinance();
           router.replace(
             `/(main)/transaction/receipt/${result.id}?isSuccess=true`,
           );
@@ -291,6 +294,43 @@ export default function TransactionCheckoutForm() {
     } catch (error) {
       console.error("[onSubmit] Error creating transaction:", error);
     }
+  };
+
+  const createFinance = () => {
+    createFinanceMutation.mutate(
+      {
+        type: excessAndLackAmount > 0 ? "EXPENSES" : "INCOME",
+        expensesType: excessAndLackAmount > 0 ? "OTHER_EXPENSES" : undefined,
+        transactionDate: new Date(),
+        nominal: Math.abs(excessAndLackAmount),
+        note: `Retur Ref: ${returnData?.local_ref_id}`,
+        inputToCashdrawer: true,
+        status: "COMPLETED",
+      },
+      {
+        onSuccess: (responseData) => {
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={id} action="success" variant="solid">
+                <ToastTitle>Berhasil Tukar Barang</ToastTitle>
+              </Toast>
+            ),
+          });
+          form.reset(initialValues);
+        },
+        onError: (error) => {
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={id} action="error" variant="solid">
+                <ToastTitle>{`Gagal menyimpan: ${error.message}`}</ToastTitle>
+              </Toast>
+            ),
+          });
+        },
+      },
+    );
   };
 
   return (
