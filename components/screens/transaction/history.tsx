@@ -82,7 +82,10 @@ export default function TransactionHistory({
     [allTransactions],
   );
 
-  const chartData = useMemo(() => {
+  // TODO: Jika transactionFilter.dateType TODAY, maka grouping berdasarkan jam, jika THIS_WEEK, THIS_MONTH, THIS_YEAR, atau CUSTOM maka grouping berdasarkan tanggal
+  // TODO: Jika tidak ada transaksi di jam atau tanggal tertentu, tetap tampilkan di chart dengan value 0
+  // TODO: Hanya tampilkan jam atau tanggal sampai current date, misal jika dateType TODAY dan sekarang jam 15:00, maka tampilkan dari jam 00:00 sampai 15:00, jika dateType THIS_MONTH dan sekarang tanggal 20, maka tampilkan dari tanggal 1 sampai 20, dst.
+  const groupingChartData = useMemo(() => {
     const grouped = new Map<
       string,
       { totalTransaction: number; gmv: number; profit: number }
@@ -143,15 +146,21 @@ export default function TransactionHistory({
     return { ...item, value, profitPercentage };
   });
 
-  const chartAreaData = chartData.map((d) => ({
+  const chartData = groupingChartData.map((d) => ({
     value:
       chartCategory === "totalTransaction"
         ? d.totalTransaction
         : chartCategory === "gmv"
           ? d.gmv
           : d.profit,
-    label: dayjs(d.date).format("DD"),
-    pointerLabel: dayjs(d.date).format("DD MMM YYYY"),
+    label:
+      transactionFilter.dateType === "TODAY"
+        ? dayjs(d.date).format("HH")
+        : dayjs(d.date).format("DD"),
+    pointerLabel:
+      transactionFilter.dateType === "TODAY"
+        ? dayjs(d.date).format("HH:mm")
+        : dayjs(d.date).format("DD MMM YYYY"),
     pointerValue:
       chartCategory === "totalTransaction"
         ? d.totalTransaction.toLocaleString("id-ID")
@@ -264,9 +273,9 @@ export default function TransactionHistory({
                   ))}
                 </RadioGroup>
                 {chartType === "area-chart" ? (
-                  <AreaChart data={chartAreaData} />
+                  <AreaChart data={chartData} />
                 ) : (
-                  <BarChart data={chartAreaData} />
+                  <BarChart data={chartData} />
                 )}
               </VStack>
             </ScrollView>
