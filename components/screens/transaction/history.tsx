@@ -1,4 +1,5 @@
 import AreaChart from "@/components/area-chart";
+import BarChart from "@/components/bar-chart";
 import FilterAccordion from "@/components/filter-accordion";
 import Header from "@/components/header";
 import {
@@ -18,6 +19,10 @@ import {
 } from "@/components/ui";
 import { Box } from "@/components/ui/box";
 import { Grid, GridItem } from "@/components/ui/grid";
+import {
+  SolarIconBold,
+  SolarIconBoldProps,
+} from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { useTransactions } from "@/lib/api/transactions";
 import { formatDisplayRefId } from "@/lib/utils/reference";
@@ -58,6 +63,7 @@ export default function TransactionHistory({
   const [transactionFilter, setTransactionFilter] =
     useState<TransactionFilterFormValues>(transactionFilterInitialValues);
   const [chartCategory, setChartCategory] = useState("totalTransaction");
+  const [chartType, setChartType] = useState("area-chart");
   const { data: allTransactions, isLoading } = useTransactions({
     customerId,
     userId: transactionFilter.userId || undefined,
@@ -98,6 +104,19 @@ export default function TransactionHistory({
         ...values,
       }));
   }, [completedTransactions]);
+
+  const chartTypeOptions: {
+    label: string;
+    icon: SolarIconBoldProps["name"];
+    value: string;
+  }[] = [
+    {
+      label: "Area Chart",
+      icon: "DiagramUp",
+      value: "area-chart",
+    },
+    { label: "Bar Chart", icon: "Chart", value: "bar-chart" },
+  ];
 
   const chartCategoryOptions = chartCategoryDefinitions.map((item) => {
     const totalGmv = completedTransactions.reduce(
@@ -162,7 +181,7 @@ export default function TransactionHistory({
     <VStack className="flex-1 bg-white">
       <Header header={header} isGoBack />
       <VStack space="md" className="p-4 shadow-lg bg-background-0 items-center">
-        {showSearch && (
+        {showSearch ? (
           <Input className="w-full border border-background-300 rounded-lg h-10">
             <InputSlot className="pl-3">
               <InputIcon as={SearchIcon} />
@@ -173,10 +192,11 @@ export default function TransactionHistory({
               onChangeText={setSearchQuery}
             />
           </Input>
+        ) : (
+          <FilterAccordion title="Filter Laporan Penjualan">
+            <TransactionFilter onFilter={setTransactionFilter} />
+          </FilterAccordion>
         )}
-        <FilterAccordion title="Filter Laporan Penjualan">
-          <TransactionFilter onFilter={setTransactionFilter} />
-        </FilterAccordion>
       </VStack>
       <Grid _extra={{ className: "grid-cols-2" }} className="flex-1">
         {isReport && (
@@ -216,7 +236,35 @@ export default function TransactionHistory({
                     </Radio>
                   ))}
                 </RadioGroup>
-                <AreaChart data={chartAreaData} />
+                <RadioGroup
+                  value={chartType}
+                  onChange={setChartType}
+                  className="w-full flex-row gap-2"
+                >
+                  {chartTypeOptions.map((o) => (
+                    <Radio
+                      key={o.value}
+                      value={o.value}
+                      size="md"
+                      isInvalid={false}
+                      isDisabled={false}
+                      className={classNames(
+                        "flex-1 w-9 h-9 border rounded-md flex items-center justify-center bg-primary-500",
+                        chartType === o.value &&
+                          "bg-primary-500/80 border-primary-500/80 text-white",
+                      )}
+                    >
+                      <RadioLabel>
+                        <SolarIconBold name={o.icon} size={20} color="#fff" />
+                      </RadioLabel>
+                    </Radio>
+                  ))}
+                </RadioGroup>
+                {chartType === "area-chart" ? (
+                  <AreaChart data={chartAreaData} />
+                ) : (
+                  <BarChart data={chartAreaData} />
+                )}
               </VStack>
             </ScrollView>
           </GridItem>

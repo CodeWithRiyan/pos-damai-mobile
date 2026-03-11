@@ -19,6 +19,7 @@ import {
   useDeleteCustomer,
   useResetCustomerPoints,
 } from "@/lib/api/customers";
+import { helperCustomerCategory } from "@/lib/customer-category";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
 
@@ -36,10 +37,6 @@ export default function CustomerDetail() {
   const deleteMutation = useDeleteCustomer();
   const resetPointMutation = useResetCustomerPoints();
   const toast = useToast();
-
-  const helperCategory = (category = "") => {
-    return category === "RETAIL" ? "RETAIL" : "GROSIR";
-  };
 
   const onRefetch = () => {
     refetchCustomers();
@@ -217,7 +214,7 @@ export default function CustomerDetail() {
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Kategori</Text>
               <Text className="font-bold">
-                {helperCategory(customer?.category)}
+                {helperCustomerCategory(customer?.category)}
               </Text>
             </VStack>
             <VStack className="w-1/2 pr-4">

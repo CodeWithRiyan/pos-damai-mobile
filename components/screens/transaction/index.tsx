@@ -28,19 +28,23 @@ import GridProductLayout from "@/components/ui/layout/grid-product-layout";
 import ListProductLayout from "@/components/ui/layout/list-product-layout";
 import SelectModal from "@/components/ui/select/select-modal";
 import { Spinner } from "@/components/ui/spinner";
-import { useCustomers } from "@/lib/api/customers";
+import { useCustomer, useCustomers } from "@/lib/api/customers";
 import { useProducts } from "@/lib/api/products";
 import { useCurrentShift } from "@/lib/api/shifts";
 import { calculateLineItemTotal, findSellPrice } from "@/lib/price";
 import { useTransactionStore } from "@/stores/transaction";
 import classNames from "classnames";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { AlertCircle, PlusIcon } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { LayoutChangeEvent, ScrollView } from "react-native";
 import PopupAddProduct from "./popup-add";
 
 export default function TransactionList() {
+  const searchParams = useLocalSearchParams<{
+    returnCustomerId: string;
+    returnId: string;
+  }>();
   const [deleteItem, setDeleteItem] = useState<string | null>(null);
   const {
     cart,
@@ -51,6 +55,7 @@ export default function TransactionList() {
     removeCartItem,
   } = useTransactionStore();
   const { data: customers } = useCustomers();
+  const { data: returnCustomer } = useCustomer(searchParams.returnCustomerId);
   const { data: products } = useProducts({ forceParent: true });
   const { data: currentShift, isLoading: isLoadingShift } = useCurrentShift();
   const router = useRouter();
@@ -85,6 +90,10 @@ export default function TransactionList() {
           v.code?.toLowerCase().includes(searchQuery.toLowerCase()),
       ),
   );
+
+  useEffect(() => {
+    if (returnCustomer) setCustomer(returnCustomer);
+  }, [returnCustomer, setCustomer]);
 
   if (isLoadingShift) {
     return (
@@ -122,51 +131,61 @@ export default function TransactionList() {
   return (
     <Box className="flex-1 bg-white" onLayout={handleLayout}>
       <Header
-        header="TRANSAKSI PENJUALAN"
+        header={
+          !searchParams.returnCustomerId
+            ? "TRANSAKSI PENJUALAN"
+            : "TUKAR BARANG"
+        }
         action={
-          <HStack space="sm" className="pr-4">
-            <Pressable
-              className="size-10 items-center justify-center"
-              onPress={() => router.navigate("/(main)/transaction/draft")}
-            >
-              <SolarIconBold name="ClipboardList" size={20} color="#FDFBF9" />
-            </Pressable>
-            <Pressable
-              className="size-10 items-center justify-center"
-              onPress={() => router.navigate("/(main)/transaction/history")}
-            >
-              <SolarIconBold name="History" size={20} color="#FDFBF9" />
-            </Pressable>
-          </HStack>
+          !searchParams.returnCustomerId && (
+            <HStack space="sm" className="pr-4">
+              <Pressable
+                className="size-10 items-center justify-center"
+                onPress={() => router.navigate("/(main)/transaction/draft")}
+              >
+                <SolarIconBold name="ClipboardList" size={20} color="#FDFBF9" />
+              </Pressable>
+              <Pressable
+                className="size-10 items-center justify-center"
+                onPress={() => router.navigate("/(main)/transaction/history")}
+              >
+                <SolarIconBold name="History" size={20} color="#FDFBF9" />
+              </Pressable>
+            </HStack>
+          )
         }
       />
       <HStack className="flex-1 bg-white">
         <VStack className="flex-1 border-r border-gray-300">
-          <HStack space="md" className="p-4 pb-0">
-            <Pressable
-              className="size-10 rounded-full bg-primary-500 items-center justify-center"
-              onPress={() =>
-                router.push("/(main)/management/customer-supplier/customer/add")
-              }
-            >
-              <Icon as={PlusIcon} color="white" />
-            </Pressable>
-            <SelectModal
-              value={customer?.id || ""}
-              placeholder="Pilih Pelanggan"
-              optionsGroup={optionsGroupCustomers}
-              className="flex-1"
-              onChange={(v) => {
-                if (v) {
-                  setCustomer(
-                    customers?.find((customer) => customer.id === v) || null,
-                  );
-                } else {
-                  setCustomer(null);
+          {!searchParams.returnCustomerId && (
+            <HStack space="md" className="p-4 pb-0">
+              <Pressable
+                className="size-10 rounded-full bg-primary-500 items-center justify-center"
+                onPress={() =>
+                  router.push(
+                    "/(main)/management/customer-supplier/customer/add",
+                  )
                 }
-              }}
-            />
-          </HStack>
+              >
+                <Icon as={PlusIcon} color="white" />
+              </Pressable>
+              <SelectModal
+                value={customer?.id || ""}
+                placeholder="Pilih Pelanggan"
+                optionsGroup={optionsGroupCustomers}
+                className="flex-1"
+                onChange={(v) => {
+                  if (v) {
+                    setCustomer(
+                      customers?.find((customer) => customer.id === v) || null,
+                    );
+                  } else {
+                    setCustomer(null);
+                  }
+                }}
+              />
+            </HStack>
+          )}
           <HStack
             space="sm"
             className="p-4 shadow-lg bg-background-0 items-center"
@@ -370,7 +389,10 @@ export default function TransactionList() {
               <Pressable
                 className="flex-1 flex-row items-center justify-between h-16 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
                 onPress={() => {
-                  router.navigate("/(main)/transaction/checkout");
+                  router.push({
+                    pathname: "/(main)/transaction/checkout",
+                    params: searchParams,
+                  });
                   setStatus("COMPLETED");
                 }}
               >
@@ -391,7 +413,10 @@ export default function TransactionList() {
               <Pressable
                 className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                 onPress={() => {
-                  router.navigate("/(main)/transaction/checkout");
+                  router.push({
+                    pathname: "/(main)/transaction/checkout",
+                    params: searchParams,
+                  });
                   setStatus("DRAFT");
                 }}
               >

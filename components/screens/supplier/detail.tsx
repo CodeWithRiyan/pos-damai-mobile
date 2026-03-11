@@ -2,23 +2,29 @@ import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
-    Box,
-    HStack,
-    Text,
-    Toast,
-    ToastTitle,
-    useToast,
-    VStack,
+  Badge,
+  BadgeText,
+  Box,
+  Heading,
+  HStack,
+  Spinner,
+  Text,
+  Toast,
+  ToastTitle,
+  useToast,
+  VStack,
 } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { getErrorMessage } from "@/lib/api/client";
+import { Product, useProductsBySupplier } from "@/lib/api/products";
 import {
-    useDeleteSupplier,
-    useSupplier,
-    useSuppliers,
+  useDeleteSupplier,
+  useSupplier,
+  useSuppliers,
 } from "@/lib/api/suppliers";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function SupplierDetail() {
@@ -28,18 +34,56 @@ export default function SupplierDetail() {
   const { id } = useLocalSearchParams();
   const supplierId = id as string;
 
-  // const { sm } = useBreakpoint();
+  const [selectedProducts, setSelectedProducts] = useState<Product[] | null>(
+    null,
+  );
 
   const { refetch: refetchSuppliers } = useSuppliers();
   const { data: supplier, refetch: refetchSupplier } = useSupplier(
     supplierId || "",
   );
+  const { data: products = [] } = useProductsBySupplier(supplierId || "");
   const deleteMutation = useDeleteSupplier();
   const toast = useToast();
 
   const onRefetch = () => {
     refetchSuppliers();
     refetchSupplier();
+  };
+
+  const handleProductPress = (data: Product) => {
+    if (selectedProducts?.some((r) => r.id === data.id)) {
+      setSelectedProducts(selectedProducts.filter((r) => r.id !== data.id));
+      return;
+    }
+    if (!selectedProducts) {
+      setSelectedProducts([data]);
+      return;
+    }
+
+    setSelectedProducts([...selectedProducts, data]);
+  };
+
+  const handleDeleteProductPress = () => {
+    const productIds = selectedProducts?.map((m) => m.id) || [];
+
+    showPopUpConfirm({
+      title: `HAPUS PRODUK DARI ${supplier?.name.toUpperCase()}`,
+      icon: "warning",
+      description: (
+        <Text className="text-slate-500">
+          {`Apakah Anda yakin ingin menghapus `}
+          <Text className="font-bold text-slate-900">{productIds?.length}</Text>
+          {` produk dari supplier ${supplier?.name}? Tindakan ini tidak dapat dibatalkan.`}
+        </Text>
+      ),
+      showClose: true,
+      okText: "HAPUS",
+      closeText: "BATAL",
+      okVariant: "destructive",
+      onOk: () => {}, // tambahkan fungsi hapus produk dari category
+      // loading: false,
+    });
   };
 
   const showErrorToast = (error: unknown) => {
@@ -101,40 +145,53 @@ export default function SupplierDetail() {
     });
   };
 
+  const handleAction = () => {
+    showActionDrawer({
+      actions: [
+        {
+          label: "Edit",
+          icon: "Pen",
+          onPress: () => {
+            router.navigate(
+              `/(main)/management/customer-supplier/supplier/edit/${supplier?.id}`,
+            );
+            hideActionDrawer();
+          },
+        },
+        {
+          label: "Hapus",
+          icon: "TrashBin2",
+          theme: "red",
+          onPress: () => {
+            handleDeletePress();
+            hideActionDrawer();
+          },
+        },
+      ],
+    });
+  };
+
   return (
     <VStack className="flex-1 bg-white">
       <Header
         header="DETAIL SUPPLIER"
         action={
-          <HStack space="sm">
-            <Pressable
-              className="p-6"
-              onPress={() =>
-                showActionDrawer({
-                  actions: [
-                    {
-                      label: "Edit",
-                      icon: "Pen",
-                      onPress: () => {
-                        router.navigate(
-                          `/(main)/management/customer-supplier/supplier/edit/${supplier?.id}`,
-                        );
-                        hideActionDrawer();
-                      },
-                    },
-                    {
-                      label: "Hapus",
-                      icon: "TrashBin2",
-                      theme: "red",
-                      onPress: () => {
-                        handleDeletePress();
-                        hideActionDrawer();
-                      },
-                    },
-                  ],
-                })
-              }
-            >
+          !!selectedProducts?.length ? (
+            // deleteProductFromCategoryMutation.isPending
+            false ? (
+              <Box className="p-6">
+                <Spinner size="small" color="#FFFFFF" />
+              </Box>
+            ) : (
+              <Pressable
+                className="p-6"
+                onPress={() => handleDeleteProductPress()}
+              >
+                <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+              </Pressable>
+            )
+          ) : (
+            <Pressable className="p-6" onPress={handleAction}>
               <SolarIconBold
                 name="MenuDots"
                 size={20}
@@ -142,7 +199,7 @@ export default function SupplierDetail() {
                 style={{ transform: [{ rotate: "90deg" }] }}
               />
             </Pressable>
-          </HStack>
+          )
         }
         isGoBack
       />
@@ -163,9 +220,78 @@ export default function SupplierDetail() {
               <Text className="font-bold">{supplier?.address || "-"}</Text>
             </VStack>
           </Box>
+          <Box className="pr-4">
+            <VStack>
+              {products?.map((product) => (
+                <Pressable
+                  key={product.id}
+                  className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                    selectedProducts?.some((r) => r.id === product.id)
+                      ? "bg-gray-100"
+                      : ""
+                  }`}
+                  onPress={() => {
+                    if (!!selectedProducts?.length) {
+                      handleProductPress(product);
+                    }
+                  }}
+                  onLongPress={() => handleProductPress(product)}
+                >
+                  <HStack className="justify-between items-center">
+                    <HStack space="md" className="items-center">
+                      <Box className="w-10 h-10 rounded-lg bg-primary-200 items-center justify-center">
+                        <Text className="text-primary-500 font-bold">
+                          {product.name.substring(0, 1).toUpperCase()}
+                        </Text>
+                      </Box>
+                      <VStack>
+                        <Heading size="sm">{product.name}</Heading>
+                        <Text size="xs" className="text-slate-500">
+                          {product.code}
+                        </Text>
+                        <Badge size="sm" variant="solid" action="muted">
+                          <BadgeText className="text-xs">{`Harga Beli: Rp ${product.purchasePrice.toLocaleString(
+                            "id-ID",
+                          )}`}</BadgeText>
+                        </Badge>
+                      </VStack>
+                    </HStack>
+                    <VStack className="items-end">
+                      <Text className="text-primary-500 text-sm font-bold">
+                        {product.stock}
+                      </Text>
+                      <Text className="text-xs">
+                        Retail:{" "}
+                        {`${
+                          product.sellPrices?.filter(
+                            (r) => r.type === "RETAIL",
+                          )?.[0]?.minimumPurchase
+                        }@ Rp ${product.sellPrices
+                          ?.filter((r) => r.type === "RETAIL")?.[0]
+                          .price.toLocaleString("id-ID")}`}
+                      </Text>
+                      {!!product.sellPrices?.filter(
+                        (r) => r.type === "WHOLESALE",
+                      ).length && (
+                        <Text className="text-xs">
+                          Grosir:{" "}
+                          {`${
+                            product.sellPrices?.filter(
+                              (r) => r.type === "WHOLESALE",
+                            )?.[0]?.minimumPurchase
+                          }@ Rp ${product.sellPrices
+                            ?.filter((r) => r.type === "WHOLESALE")?.[0]
+                            .price.toLocaleString("id-ID")}`}
+                        </Text>
+                      )}
+                    </VStack>
+                  </HStack>
+                </Pressable>
+              ))}
+            </VStack>
+          </Box>
         </VStack>
       </ScrollView>
-
       <VStack space="md" className="w-full p-4">
         <HStack space="md">
           <Pressable

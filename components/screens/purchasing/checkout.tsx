@@ -255,7 +255,11 @@ export default function PurchasingCheckoutForm() {
           resetCart();
           setCheckoutData(null);
         } else {
-          router.replace(`/(main)/purchasing/receipt/${responseData.id}`);
+          router.replace(
+            `/(main)/purchasing/receipt/${responseData.id}?isSuccess=true`,
+          );
+          resetCart();
+          setCheckoutData(null);
           if (!!changedProductPrice.length) {
             showPopUpConfirm({
               title: `ADA PERUBAHAN HARGA BELI`,
