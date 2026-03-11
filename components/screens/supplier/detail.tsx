@@ -81,7 +81,7 @@ export default function SupplierDetail() {
       okText: "HAPUS",
       closeText: "BATAL",
       okVariant: "destructive",
-      onOk: () => {}, // tambahkan fungsi hapus produk dari category
+      onOk: () => {}, // TODO: tambahkan fungsi hapus produk dari suplier
       // loading: false,
     });
   };
