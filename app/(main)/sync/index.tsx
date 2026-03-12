@@ -8,14 +8,20 @@ import { useNetworkStore } from "@/stores/network-store";
 import { useState } from "react";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import { RepeatIcon, ArrowUpIcon, DownloadIcon } from "@/components/ui/icon";
+import dayjs from "dayjs";
 
 export default function SyncScreen() {
   const { dirtyCount, refetch } = useDirtyCount();
   const isSyncing = useSyncQueueStore((state) => state.isSyncing);
   const setIsSyncing = useSyncQueueStore((state) => state.setIsSyncing);
+  const lastSyncAt = useSyncQueueStore((state) => state.lastSyncAt);
   const isConnected = useNetworkStore((state) => state.isConnected);
   const { showPopUpConfirm } = usePopUpConfirm();
   const [lastSyncResult, setLastSyncResult] = useState<string | null>(null);
+
+  const lastPullLabel = lastSyncAt
+    ? dayjs(lastSyncAt).format("DD MMM YYYY HH:mm")
+    : "Belum pernah sinkron";
 
   const handleManualSync = async () => {
     showPopUpConfirm({
@@ -49,7 +55,7 @@ export default function SyncScreen() {
         <VStack space="xl">
           <Box className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
             <Text className="text-gray-500 text-xs font-bold uppercase mb-4">Status Saat Ini</Text>
-            
+
             <VStack space="md">
               <HStack className="justify-between items-center">
                 <HStack space="sm" className="items-center">
@@ -74,9 +80,9 @@ export default function SyncScreen() {
               <HStack className="justify-between items-center">
                 <HStack space="sm" className="items-center">
                   <Icon as={DownloadIcon} color="$success500" />
-                  <Text className="text-gray-700">Status Server (Pull)</Text>
+                  <Text className="text-gray-700">Terakhir Pull</Text>
                 </HStack>
-                <Text className="text-gray-600 font-bold">Siap</Text>
+                <Text className="text-gray-600 font-bold">{lastPullLabel}</Text>
               </HStack>
             </VStack>
           </Box>
@@ -92,7 +98,7 @@ export default function SyncScreen() {
               <Icon as={RepeatIcon} color="$white" className="mr-2" />
               <ButtonText>{isSyncing ? "Menyinkronkan..." : "Sinkronkan Sekarang"}</ButtonText>
             </Button>
-            
+
             {lastSyncResult && (
               <Text className={`text-center text-sm font-medium ${lastSyncResult.includes('berhasil') ? 'text-success-600' : 'text-error-600'}`}>
                 {lastSyncResult}

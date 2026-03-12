@@ -6,12 +6,14 @@ import { Icon, CloseIcon, RepeatIcon, ArrowUpIcon, DownloadIcon } from './ui/ico
 import { useDirtyCount } from '@/hooks/use-dirty-count';
 import { useSyncQueueStore } from '@/stores/sync-queue-store';
 import { useRouter } from 'expo-router';
+import dayjs from 'dayjs';
 
 export function SyncFloatingButton() {
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(true);
   const { dirtyCount } = useDirtyCount();
   const isSyncing = useSyncQueueStore((state) => state.isSyncing);
+  const lastSyncAt = useSyncQueueStore((state) => state.lastSyncAt);
 
   if (!isVisible) return null;
 
@@ -19,12 +21,16 @@ export function SyncFloatingButton() {
     router.push('/sync');
   };
 
+  const pullLabel = lastSyncAt
+    ? dayjs(lastSyncAt).format('HH:mm')
+    : '—';
+
   return (
     <View style={styles.container}>
       <View style={styles.card}>
         <View style={styles.header}>
           <Text style={styles.title}>Data Sync</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => setIsVisible(false)}
             style={styles.closeButton}
             hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
@@ -46,7 +52,7 @@ export function SyncFloatingButton() {
             <View style={styles.stat}>
               <Icon as={DownloadIcon} size="xs" color="$success500" />
               <Text style={styles.statLabel}>Pull:</Text>
-              <Text style={styles.statValue}>Ready</Text>
+              <Text style={styles.statValue}>{pullLabel}</Text>
             </View>
           </View>
 

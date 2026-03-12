@@ -22,11 +22,15 @@ interface SyncQueueState {
 }
 
 const QUEUE_STORAGE_KEY = 'sync_queue';
+const LAST_SYNC_AT_KEY = 'lastSyncAt_ts';
 
 export const useSyncQueueStore = create<SyncQueueState>((set, get) => ({
   queue: [],
   isSyncing: false,
-  lastSyncAt: null,
+  lastSyncAt: (() => {
+    const stored = storage.getString(LAST_SYNC_AT_KEY);
+    return stored ? Number(stored) : null;
+  })(),
 
   addToQueue: (operation) => {
     const newOperation: QueuedOperation = {
@@ -59,7 +63,10 @@ export const useSyncQueueStore = create<SyncQueueState>((set, get) => ({
 
   setIsSyncing: (syncing) => set({ isSyncing: syncing }),
 
-  setLastSyncAt: (timestamp) => set({ lastSyncAt: timestamp }),
+  setLastSyncAt: (timestamp) => {
+    storage.set(LAST_SYNC_AT_KEY, String(timestamp));
+    set({ lastSyncAt: timestamp });
+  },
 
   loadQueue: () => {
     const stored = storage.getString(QUEUE_STORAGE_KEY);

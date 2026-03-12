@@ -39,7 +39,8 @@ export interface ShiftTransactionHistory {
     | "PAYABLE_REALIZATION"
     | "SUPPLIES"
     | "EQUIPMENT"
-    | "CASH_DEPOSIT";
+    | "CASH_DEPOSIT"
+    | "OTHER_EXPENSES";
   nominal: number;
   note: string;
 }
@@ -395,6 +396,7 @@ export function useShiftDetail(id: string) {
               gte(schema.transactions.transactionDate, start),
               lte(schema.transactions.transactionDate, end),
               isNull(schema.transactions.deletedAt),
+              isNull(schema.transactions.returnId), // exclude return-backed sales (already recorded as finance income/expenses)
             ),
           ),
         // Finances (Income/Expenses)
@@ -425,7 +427,7 @@ export function useShiftDetail(id: string) {
         note: "Saldo Awal",
       });
 
-      // Sales
+      // Sales (return-backed transactions already excluded at query level)
       sales.forEach((s) => {
         history.push({
           id: s.id,

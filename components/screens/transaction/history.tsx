@@ -79,13 +79,61 @@ export default function TransactionHistory({
     [allTransactions],
   );
 
-  const chartData = useMemo(() => {
+  const groupingChartData = useMemo(() => {
+    const now = dayjs();
+    const isToday = transactionFilter.dateType === "TODAY";
+
+    // Build the full list of keys to display (filling gaps with 0)
+    const allKeys: string[] = [];
+    if (isToday) {
+      const currentHour = now.hour();
+      for (let h = 0; h <= currentHour; h++) {
+        allKeys.push(now.startOf("day").add(h, "hour").format("YYYY-MM-DD HH"));
+      }
+    } else {
+      let start: dayjs.Dayjs;
+      let end: dayjs.Dayjs;
+      if (transactionFilter.dateType === "THIS_WEEK") {
+        const day = now.day();
+        const diff = day === 0 ? -6 : 1 - day;
+        start = now.startOf("day").add(diff, "day");
+        end = now.startOf("day");
+      } else if (transactionFilter.dateType === "THIS_MONTH") {
+        start = now.startOf("month");
+        end = now.startOf("day");
+      } else if (transactionFilter.dateType === "THIS_YEAR") {
+        start = now.startOf("year");
+        end = now.startOf("day");
+      } else if (
+        transactionFilter.dateType === "CUSTOM" &&
+        transactionFilter.startDate &&
+        transactionFilter.endDate
+      ) {
+        start = dayjs(transactionFilter.startDate).startOf("day");
+        end = dayjs(transactionFilter.endDate).startOf("day");
+        if (end.isAfter(now.startOf("day"))) end = now.startOf("day");
+      } else {
+        // No filter or unknown — just use whatever dates appear in the data
+        start = dayjs(0);
+        end = now.startOf("day");
+      }
+      let cursor = start;
+      while (!cursor.isAfter(end)) {
+        allKeys.push(cursor.format("YYYY-MM-DD"));
+        cursor = cursor.add(1, "day");
+      }
+    }
+
+    // Aggregate transactions
     const grouped = new Map<
       string,
       { totalTransaction: number; gmv: number; profit: number }
     >();
     for (const t of completedTransactions) {
-      const key = dayjs(t.createdAt ?? t.transactionDate).format("YYYY-MM-DD");
+      const d = dayjs(t.createdAt ?? t.transactionDate);
+      const key = isToday
+        ? d.format("YYYY-MM-DD HH")
+        : d.format("YYYY-MM-DD");
       const existing = grouped.get(key) ?? {
         totalTransaction: 0,
         gmv: 0,
@@ -97,13 +145,18 @@ export default function TransactionHistory({
         profit: existing.profit + (t.totalAmount - (t.commission ?? 0)),
       });
     }
-    return Array.from(grouped.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, values]) => ({
-        date,
-        ...values,
-      }));
-  }, [completedTransactions]);
+
+    // If allKeys is empty (no-filter case), fall back to keys from data sorted
+    const keys =
+      allKeys.length > 0
+        ? allKeys
+        : Array.from(grouped.keys()).sort((a, b) => a.localeCompare(b));
+
+    return keys.map((key) => ({
+      date: key,
+      ...(grouped.get(key) ?? { totalTransaction: 0, gmv: 0, profit: 0 }),
+    }));
+  }, [completedTransactions, transactionFilter]);
 
   const chartTypeOptions: {
     label: string;
@@ -140,22 +193,31 @@ export default function TransactionHistory({
     return { ...item, value, profitPercentage };
   });
 
-  const chartAreaData = chartData.map((d) => ({
-    value:
-      chartCategory === "totalTransaction"
-        ? d.totalTransaction
-        : chartCategory === "gmv"
-          ? d.gmv
-          : d.profit,
-    label: dayjs(d.date).format("DD"),
-    pointerLabel: dayjs(d.date).format("DD MMM YYYY"),
-    pointerValue:
-      chartCategory === "totalTransaction"
-        ? d.totalTransaction.toLocaleString("id-ID")
-        : chartCategory === "gmv"
-          ? `Rp ${d.gmv.toLocaleString("id-ID")}`
-          : `Rp ${d.profit.toLocaleString("id-ID")}`,
-  }));
+  const chartData = groupingChartData.map((d) => {
+    const isToday = transactionFilter.dateType === "TODAY";
+    // For TODAY keys are "YYYY-MM-DD HH"; for other types keys are "YYYY-MM-DD"
+    const parsed = isToday
+      ? dayjs(d.date, "YYYY-MM-DD HH")
+      : dayjs(d.date, "YYYY-MM-DD");
+    return {
+      value:
+        chartCategory === "totalTransaction"
+          ? d.totalTransaction
+          : chartCategory === "gmv"
+            ? d.gmv
+            : d.profit,
+      label: isToday ? parsed.format("HH") : parsed.format("DD"),
+      pointerLabel: isToday
+        ? parsed.format("HH:00")
+        : parsed.format("DD MMM YYYY"),
+      pointerValue:
+        chartCategory === "totalTransaction"
+          ? d.totalTransaction.toLocaleString("id-ID")
+          : chartCategory === "gmv"
+            ? `Rp ${d.gmv.toLocaleString("id-ID")}`
+            : `Rp ${d.profit.toLocaleString("id-ID")}`,
+    };
+  });
 
   const transactions =
     completedTransactions.filter(
@@ -261,9 +323,9 @@ export default function TransactionHistory({
                   ))}
                 </RadioGroup>
                 {chartType === "area-chart" ? (
-                  <AreaChart data={chartAreaData} />
+                  <AreaChart data={chartData} />
                 ) : (
-                  <BarChart data={chartAreaData} />
+                  <BarChart data={chartData} />
                 )}
               </VStack>
             </ScrollView>

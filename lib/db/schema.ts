@@ -270,6 +270,7 @@ export const transactions = sqliteTable("transactions", {
   transactionDate: integer("transactionDate", { mode: "timestamp" }).notNull(),
   status: text("status").default("COMPLETED"), // 'DRAFT' | 'COMPLETED'
   note: text("note"),
+  returnId: text("returnId"), // links to a return-transaction; NULL = regular sale
   organizationId: text("organizationId").notNull(),
   ...syncColumns,
 });

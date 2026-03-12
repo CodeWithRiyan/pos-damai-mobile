@@ -67,6 +67,7 @@ export interface Product {
   isVariant?: boolean; // Added for flattened list UI support
   variantData?: any; // Added for flattened list UI support
   originalId?: string; // Added to reference parent
+  lastSellPrice?: number; // Last sell price from customer's transaction history (set by usePurchasedProducts)
 }
 
 export interface CreateProductDTO {
@@ -1133,6 +1134,66 @@ export function useAssignProductsToBrand() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["productCountsByBrand"] });
+    },
+  });
+}
+
+// Unassign products from a category (sets categoryId to "" since it is NOT NULL)
+export function useUnassignProductsFromCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { productIds: string[] }) => {
+      const now = new Date();
+      const userId = useAuthStore.getState().profile?.id;
+
+      for (const productId of data.productIds) {
+        await db
+          .update(schema.products)
+          .set({
+            categoryId: "",
+            updatedBy: userId,
+            updatedAt: now,
+            _dirty: true,
+          })
+          .where(eq(schema.products.id, productId));
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["productCountsByCategory"] });
+    },
+  });
+}
+
+// Unassign products from a supplier (sets supplierId to null)
+export function useUnassignProductsFromSupplier() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { productIds: string[] }) => {
+      const now = new Date();
+      const userId = useAuthStore.getState().profile?.id;
+
+      for (const productId of data.productIds) {
+        await db
+          .update(schema.products)
+          .set({
+            supplierId: null,
+            updatedBy: userId,
+            updatedAt: now,
+            _dirty: true,
+          })
+          .where(eq(schema.products.id, productId));
+      }
+
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["productCountsBySupplier"] });
     },
   });
 }

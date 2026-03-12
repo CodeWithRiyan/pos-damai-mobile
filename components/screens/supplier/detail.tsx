@@ -17,7 +17,11 @@ import {
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { getErrorMessage } from "@/lib/api/client";
-import { Product, useProductsBySupplier } from "@/lib/api/products";
+import {
+  Product,
+  useProductsBySupplier,
+  useUnassignProductsFromSupplier,
+} from "@/lib/api/products";
 import {
   useDeleteSupplier,
   useSupplier,
@@ -44,6 +48,7 @@ export default function SupplierDetail() {
   );
   const { data: products = [] } = useProductsBySupplier(supplierId || "");
   const deleteMutation = useDeleteSupplier();
+  const unassignProductMutation = useUnassignProductsFromSupplier();
   const toast = useToast();
 
   const onRefetch = () => {
@@ -81,8 +86,35 @@ export default function SupplierDetail() {
       okText: "HAPUS",
       closeText: "BATAL",
       okVariant: "destructive",
-      onOk: () => {}, // tambahkan fungsi hapus produk dari category
-      // loading: false,
+      onOk: () => {
+        unassignProductMutation.mutate(
+          { productIds },
+          {
+            onSuccess: () => {
+              hidePopUpConfirm();
+              setSelectedProducts(null);
+              onRefetch();
+              toast.show({
+                placement: "top",
+                render: ({ id }) => (
+                  <Toast
+                    nativeID={`toast-${id}`}
+                    action="success"
+                    variant="solid"
+                  >
+                    <ToastTitle>Produk berhasil dihapus dari supplier</ToastTitle>
+                  </Toast>
+                ),
+              });
+            },
+            onError: (error) => {
+              showErrorToast(error);
+              hidePopUpConfirm();
+            },
+          },
+        );
+      },
+      loading: unassignProductMutation.isPending,
     });
   };
 
@@ -177,8 +209,7 @@ export default function SupplierDetail() {
         header="DETAIL SUPPLIER"
         action={
           !!selectedProducts?.length ? (
-            // deleteProductFromCategoryMutation.isPending
-            false ? (
+            unassignProductMutation.isPending ? (
               <Box className="p-6">
                 <Spinner size="small" color="#FFFFFF" />
               </Box>

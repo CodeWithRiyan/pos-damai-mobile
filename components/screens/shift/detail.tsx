@@ -22,6 +22,7 @@ export default function ShiftDetail() {
         equipment1: 0,
         equipment2: 0,
         cashDeposit: 0,
+        otherExpenses: 0,
         finalBalance: 0,
       };
 
@@ -49,6 +50,8 @@ export default function ShiftDetail() {
           acc.equipment2 += trx.nominal;
         } else if (trx.type === "CASH_DEPOSIT") {
           acc.cashDeposit += trx.nominal;
+        } else if (trx.type === "OTHER_EXPENSES") {
+          acc.otherExpenses += trx.nominal;
         }
 
         acc.finalBalance =
@@ -58,7 +61,8 @@ export default function ShiftDetail() {
           acc.supplies -
           acc.equipment1 -
           acc.equipment2 -
-          acc.cashDeposit;
+          acc.cashDeposit -
+          acc.otherExpenses;
         return acc;
       },
       {
@@ -69,6 +73,7 @@ export default function ShiftDetail() {
         equipment1: 0,
         equipment2: 0,
         cashDeposit: 0,
+        otherExpenses: 0,
         finalBalance: 0,
       },
     );
@@ -136,6 +141,12 @@ export default function ShiftDetail() {
               <Text className="font-bold text-error-500">{`Rp ${totals.cashDeposit.toLocaleString("id")}`}</Text>
             </HStack>
           )}
+          {!!totals.otherExpenses && (
+            <HStack className="w-full flex-row justify-between">
+              <Text className="text-typography-600">Pengeluaran Lainnya</Text>
+              <Text className="font-bold text-error-500">{`Rp ${totals.otherExpenses.toLocaleString("id")}`}</Text>
+            </HStack>
+          )}
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-background-100">
             <Text className="text-typography-600">Subtotal</Text>
             <Text className="font-bold">{`Rp ${totals.finalBalance.toLocaleString("id")}`}</Text>
@@ -151,7 +162,7 @@ export default function ShiftDetail() {
             <Text className="text-typography-600 font-bold">
               Penerimaan Sistem
             </Text>
-            <Text className="font-bold">{`Rp ${((detailShift?.finalBalance || 0) + totals.finalBalance).toLocaleString("id")}`}</Text>
+            <Text className="font-bold">{`Rp ${totals.finalBalance.toLocaleString("id")}`}</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-warning-100">
             <Text className="text-typography-600 font-bold">

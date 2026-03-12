@@ -26,7 +26,6 @@ interface CheckoutData {
   totalPaid: string;
   customerId: string;
   transactionDate: Date;
-  isCashdrawer: boolean;
   status: string;
   note: string;
 }

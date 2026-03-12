@@ -29,6 +29,7 @@ import { VStack } from "@/components/ui/vstack";
 //   useUpdateReturnTransaction,
 // } from "@/lib/api/return-transaction";
 import { getErrorMessage } from "@/lib/api/client";
+import { useCreateFinance } from "@/lib/api/finances";
 import { useCreateTransactionReturn } from "@/lib/api/return-transaction";
 import { useReturnTransactionStore } from "@/stores/return-transaction";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,7 +45,8 @@ export default function ReturnTransactionConfirmForm() {
   const router = useRouter();
   const toast = useToast();
   const createMutation = useCreateTransactionReturn();
-  const isLoading = createMutation.isPending;
+  const createFinanceMutation = useCreateFinance();
+  const isLoading = createMutation.isPending || createFinanceMutation.isPending;
 
   const returnPurchaseSchema = z.object({
     reason: z.string().min(1, "Alasan wajib diisi."),
@@ -116,6 +118,10 @@ export default function ReturnTransactionConfirmForm() {
             `/(main)/transaction?returnCustomerId=${customerId}&returnId=${response.id}`,
           );
         } else {
+          createFinance({
+            returnId: response.id,
+            totalAmount,
+          });
           router.navigate(
             `/(main)/management/return/transaction/receipt/${response.id}`,
           );
@@ -126,6 +132,49 @@ export default function ReturnTransactionConfirmForm() {
       },
       onError: showErrorToast,
     });
+  };
+
+  const createFinance = ({
+    returnId,
+    totalAmount,
+  }: {
+    returnId: string;
+    totalAmount: number;
+  }) => {
+    createFinanceMutation.mutate(
+      {
+        type: "EXPENSES",
+        expensesType: "OTHER_EXPENSES",
+        transactionDate: new Date(),
+        nominal: totalAmount,
+        note: `Retur Ref: ${returnId}`,
+        inputToCashdrawer: true,
+        status: "COMPLETED",
+      },
+      {
+        onSuccess: (responseData) => {
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={id} action="success" variant="solid">
+                <ToastTitle>Berhasil Tukar Uang</ToastTitle>
+              </Toast>
+            ),
+          });
+          form.reset(initialValues);
+        },
+        onError: (error) => {
+          toast.show({
+            placement: "top",
+            render: ({ id }) => (
+              <Toast nativeID={id} action="error" variant="solid">
+                <ToastTitle>{`Gagal menyimpan: ${error.message}`}</ToastTitle>
+              </Toast>
+            ),
+          });
+        },
+      },
+    );
   };
 
   return (
