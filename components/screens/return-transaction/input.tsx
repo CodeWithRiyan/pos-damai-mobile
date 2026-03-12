@@ -25,7 +25,6 @@ export default function ReturnTransactionInput() {
   const { customerId } = useLocalSearchParams<{ customerId: string }>();
   const { cart, setAddProduct, setOpenConfirm } = useReturnTransactionStore();
   const [search, setSearch] = useState<string>("");
-  // TODO: purchasedProduct belum tampil, sesuaikan kembali responsenya
   const { data: products = [], isLoading: isLoadingProduct } =
     usePurchasedProducts(customerId!);
 
@@ -89,8 +88,7 @@ export default function ReturnTransactionInput() {
                                 {item.name || "Unknown"}
                               </Heading>
                               <Text size="xs" className="text-slate-500">
-                                {/* TODO: pastikan sellPrice yang tertera disini adalah harga jual terakhir dari produk tersebut */}
-                                {`Rp ${item.sellPrices?.[0]?.price?.toLocaleString("id-ID") || 0}`}
+                                {`Rp ${(item.lastSellPrice ?? item.sellPrices?.[0]?.price)?.toLocaleString("id-ID") ?? 0}`}
                               </Text>
                             </VStack>
                             <HStack space="sm">

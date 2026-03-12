@@ -222,9 +222,6 @@ export default function TransactionCheckoutForm() {
         commission: commission,
         paymentTypeId: data.paymentTypeId,
         customerId: customer?.id || "",
-        // TODO: Tambahkan returnId untuk flaging bahwa ini adalah transaksi retur dari sebuah returnId
-        // TODO: Jika returnId ada, maka di backend jangan memasukkan data transaksi ke dalam shift, dan jangan berikan poin.
-        // Untuk total keuntungan pelanggan mungkin perlu didiskusikan terlebih dahulu, apakah dihitung dari total pembelian atau total pembelian dikurangi total retur
         returnId: returnId || undefined,
         transactionDate: new Date(),
         status: status,
