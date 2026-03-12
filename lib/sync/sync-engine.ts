@@ -4,6 +4,7 @@ import { eq, inArray } from 'drizzle-orm';
 import { apiClient } from '../api/client';
 import { storageAdapter } from '../storage';
 import { useAuthStore } from '@/stores/auth';
+import { useSyncQueueStore } from '@/stores/sync-queue-store';
 import { queryClient } from '@/providers/query-provider';
 
 export class SyncEngine {
@@ -173,6 +174,7 @@ export class SyncEngine {
 
       // 5. Finalize
       storageAdapter.setItem('lastSyncAt', serverTime);
+      useSyncQueueStore.getState().setLastSyncAt(Date.now());
       console.log('[Sync] Completed successfully at', serverTime);
       
       return { success: true };

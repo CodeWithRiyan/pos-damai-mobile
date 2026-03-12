@@ -102,8 +102,7 @@ export default function PopupAddProduct() {
       addCartItem({
         product: addProduct,
         quantity: data.quantity,
-        // TODO: pastikan sellPrice yang tertera disini adalah harga jual terakhir dari produk tersebut
-        sellPrice: addProduct.sellPrices?.[0]?.price || 0,
+        sellPrice: addProduct.lastSellPrice ?? addProduct.sellPrices?.[0]?.price ?? 0,
         note: data.addNote ? data.note : undefined,
       });
     }
@@ -135,11 +134,10 @@ export default function PopupAddProduct() {
                 </VStack>
                 <HStack space="sm">
                   <Heading size="md">
-                    {/* TODO: pastikan sellPrice yang tertera disini adalah harga jual terakhir dari produk tersebut */}
                     Rp{" "}
-                    {addProduct?.sellPrices?.[0]?.price?.toLocaleString(
+                    {(addProduct?.lastSellPrice ?? addProduct?.sellPrices?.[0]?.price)?.toLocaleString(
                       "id-ID",
-                    ) || 0}
+                    ) ?? 0}
                   </Heading>
                 </HStack>
               </HStack>

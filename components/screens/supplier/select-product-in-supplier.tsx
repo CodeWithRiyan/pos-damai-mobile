@@ -14,7 +14,7 @@ export default function SelectProductInSupplier() {
   const { id } = useLocalSearchParams();
   const supplierId = id as string;
   const { data } = useSupplier(supplierId);
-  const { data: products } = useProducts();
+  const { data: products } = useProducts({ supplierId });
   const toast = useToast();
 
   const assignMutation = useAssignProductsToSupplier();
@@ -63,19 +63,11 @@ export default function SelectProductInSupplier() {
     );
   };
 
-  // TODO: Cek console ini, terkait bug no 158
-  console.log(
-    "Total Product in Supplier:",
-    products?.filter((p) => p.supplierId?.includes(supplierId)).length,
-  );
-
   return (
     <SelectingProductList
       usedFor="supplier"
       header={`TAMBAH PRODUK KE ${data?.name?.toUpperCase() ?? "SUPPLIER"}`}
-      selectedItems={products?.filter((p) =>
-        p.supplierId?.includes(supplierId),
-      )}
+      selectedItems={products}
       isLoading={isLoading}
       onSubmit={handleSubmit}
     />

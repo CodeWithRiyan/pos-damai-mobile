@@ -19,6 +19,7 @@ export interface Transaction {
   transactionDate: Date;
   status: string;
   note: string | null;
+  returnId?: string | null;
   organizationId: string;
   createdBy: string | null;
   updatedBy: string | null;
@@ -49,6 +50,7 @@ export interface CreateTransactionDTO {
   transactionDate: Date;
   status: string;
   note: string;
+  returnId?: string;
   items: {
     product: { id: string; discount?: { nominal: number; type: "FLAT" | "PERCENTAGE"; startDate: Date; endDate: Date } };
     variant?: { id: string; name: string; netto?: number | null };
@@ -175,11 +177,13 @@ export function usePurchasedProducts(customerId: string) {
     queryFn: async () => {
       if (!customerId || !orgId) return [];
 
-      // 1. Get all product IDs from transaction items for this customer
+      // 1. Get all purchased items + their sell price ordered by most recent first
       const purchasedItems = await db
         .select({
           productId: schema.transactionItems.productId,
           variantId: schema.transactionItems.variantId,
+          sellPrice: schema.transactionItems.sellPrice,
+          transactionDate: schema.transactions.transactionDate,
         })
         .from(schema.transactionItems)
         .innerJoin(
@@ -190,11 +194,21 @@ export function usePurchasedProducts(customerId: string) {
           and(
             eq(schema.transactions.customerId, customerId),
             eq(schema.transactions.organizationId, orgId),
+            eq(schema.transactions.status, "COMPLETED"),
             isNull(schema.transactions.deletedAt),
           ),
-        );
+        )
+        .orderBy(desc(schema.transactions.transactionDate));
 
       if (purchasedItems.length === 0) return [];
+
+      // Most-recent sell price per product for this customer
+      const lastSellPriceMap: Record<string, number> = {};
+      for (const item of purchasedItems) {
+        if (!(item.productId in lastSellPriceMap)) {
+          lastSellPriceMap[item.productId] = item.sellPrice;
+        }
+      }
 
       // Use a set to get unique product IDs
       const productIds = Array.from(new Set(purchasedItems.map(item => item.productId)));
@@ -269,6 +283,7 @@ export function usePurchasedProducts(customerId: string) {
             })),
             variants: variants,
             stock: totalStock,
+            lastSellPrice: lastSellPriceMap[product.id],
             discount: discount ? {
               id: discount.id,
               name: discount.name,
@@ -400,6 +415,7 @@ export function useCreateTransaction() {
           transactionDate: data.transactionDate,
           status: data.status,
           note: data.note || null,
+          returnId: data.returnId || null,
           organizationId: orgId,
           createdBy: userId,
           updatedBy: userId,

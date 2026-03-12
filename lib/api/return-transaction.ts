@@ -4,10 +4,12 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "../db";
 import { generateLocalRefId } from "../utils/reference";
 import {
+  categories,
+  customers,
   inventoryTransactions,
+  products,
   transactionReturnItems,
   transactionReturns,
-  customers,
   users,
 } from "../db/schema";
 
@@ -36,6 +38,33 @@ export interface ReturnTransaction {
 
 export interface TransactionReturnParams {
   customerId?: string;
+}
+
+async function calcEarnedPoints(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  items: { productId: string; quantity: number; sellPrice: number }[],
+  customerCategory: string | null,
+): Promise<{ points: number; revenue: number; profit: number }> {
+  let points = 0, revenue = 0, profit = 0;
+  for (const item of items) {
+    const [row] = await tx
+      .select({
+        retailPoint: categories.retailPoint,
+        wholesalePoint: categories.wholesalePoint,
+        purchasePrice: products.purchasePrice,
+      })
+      .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id))
+      .where(eq(products.id, item.productId))
+      .limit(1);
+    if (row) {
+      const catPoints = customerCategory === "WHOLESALE" ? row.wholesalePoint : row.retailPoint;
+      points  += (catPoints ?? 0) * item.quantity;
+      revenue += item.sellPrice * item.quantity;
+      profit  += (item.sellPrice - (row.purchasePrice ?? 0)) * item.quantity;
+    }
+  }
+  return { points, revenue, profit };
 }
 
 export const useTransactionReturns = (params: TransactionReturnParams | void) => {
@@ -258,6 +287,31 @@ export const useCreateTransactionReturn = () => {
             }
           }
         }
+
+        // 3. Customer points adjustment
+        if (data.customerId) {
+          const [cust] = await tx
+            .select()
+            .from(customers)
+            .where(eq(customers.id, data.customerId))
+            .limit(1);
+          if (cust) {
+            const returned = await calcEarnedPoints(tx, data.items ?? [], cust.category);
+            if (data.returnType === "CASH") {
+              await tx
+                .update(customers)
+                .set({
+                  points:            Math.max(0, (cust.points            ?? 0) - returned.points),
+                  totalTransactions: Math.max(0, (cust.totalTransactions ?? 0) - 1),
+                  totalRevenue:      Math.max(0, (cust.totalRevenue      ?? 0) - returned.revenue),
+                  totalProfit:       Math.max(0, (cust.totalProfit       ?? 0) - returned.profit),
+                  _dirty: true,
+                })
+                .where(eq(customers.id, cust.id));
+            }
+            // ITEM return: deducted points equal re-awarded points → net 0, no DB write needed
+          }
+        }
       });
 
       return { id: returnId, local_ref_id: finalLocalRefId };
@@ -266,6 +320,7 @@ export const useCreateTransactionReturn = () => {
       queryClient.invalidateQueries({ queryKey: ["transaction-returns"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["inventory-transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
     },
   });
 };
