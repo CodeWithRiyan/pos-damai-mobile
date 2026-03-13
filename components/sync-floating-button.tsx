@@ -35,14 +35,14 @@ export function SyncFloatingButton() {
             style={styles.closeButton}
             hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
           >
-            <Icon as={CloseIcon} size="sm" color="$textDark950" />
+            <Icon as={CloseIcon} size="sm" />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity onPress={handleGoToSync} activeOpacity={0.7}>
           <View style={styles.statsRow}>
             <View style={styles.stat}>
-              <Icon as={ArrowUpIcon} size="xs" color="$primary500" />
+              <Icon as={ArrowUpIcon} size="xs" />
               <Text style={styles.statLabel}>Push:</Text>
               <Text style={[styles.statValue, dirtyCount > 0 && styles.dirtyText]}>
                 {dirtyCount}
@@ -50,7 +50,7 @@ export function SyncFloatingButton() {
             </View>
             <View style={styles.divider} />
             <View style={styles.stat}>
-              <Icon as={DownloadIcon} size="xs" color="$success500" />
+              <Icon as={DownloadIcon} size="xs" />
               <Text style={styles.statLabel}>Pull:</Text>
               <Text style={styles.statValue}>{pullLabel}</Text>
             </View>
@@ -63,7 +63,7 @@ export function SyncFloatingButton() {
             disabled={isSyncing}
             className="h-8 mt-2 bg-brand-primary"
           >
-            <Icon as={RepeatIcon} size="xs" color="$white" className="mr-1" />
+            <Icon as={RepeatIcon} size="xs" className="mr-1" />
             <ButtonText size="xs">
               {isSyncing ? 'Syncing...' : 'Manage Sync'}
             </ButtonText>
