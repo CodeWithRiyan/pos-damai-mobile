@@ -64,7 +64,7 @@ export function useDirtyCount() {
     fetchDirtyCount();
     
     // Refresh every 10 seconds or could be triggered by events
-    const interval = setInterval(fetchDirtyCount, 10000);
+    const interval = setInterval(fetchDirtyCount, 5000);
     return () => clearInterval(interval);
   }, []);
 
