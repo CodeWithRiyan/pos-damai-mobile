@@ -64,7 +64,7 @@ export default function ReturnTransactionHistory({
                 key={ret.id}
                 className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
                 onPress={() =>
-                  router.navigate(
+                  router.push(
                     `/(main)/management/return/transaction/receipt/${ret.id}`,
                   )
                 }

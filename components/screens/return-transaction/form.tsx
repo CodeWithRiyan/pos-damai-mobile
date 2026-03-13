@@ -113,24 +113,16 @@ export default function ReturnTransactionConfirmForm() {
         showSuccessToast("Retur berhasil disimpan");
         setOpenConfirm(false);
 
-        if (data.returnType === "ITEM") {
-          router.navigate({
-            pathname: "/(main)/transaction",
-            params: {
-              returnCustomerId: customerId,
-              returnId: response.id,
-            },
-          });
-        } else {
+        if (data.returnType === "CASH") {
           createFinance({
             returnId: response.id,
             totalAmount,
           });
-          router.navigate(
-            `/(main)/management/return/transaction/receipt/${response.id}`,
-          );
         }
 
+        router.replace(
+          `/(main)/management/return/transaction/receipt/${response.id}?isSuccess=true`,
+        );
         resetCart();
         form.reset(initialValues);
       },
@@ -156,17 +148,6 @@ export default function ReturnTransactionConfirmForm() {
         status: "COMPLETED",
       },
       {
-        onSuccess: (responseData) => {
-          toast.show({
-            placement: "top",
-            render: ({ id }) => (
-              <Toast nativeID={id} action="success" variant="solid">
-                <ToastTitle>Berhasil Tukar Uang</ToastTitle>
-              </Toast>
-            ),
-          });
-          form.reset(initialValues);
-        },
         onError: (error) => {
           toast.show({
             placement: "top",

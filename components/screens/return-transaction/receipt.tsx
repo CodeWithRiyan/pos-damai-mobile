@@ -38,7 +38,6 @@ export default function ReturnTransactionReceipt() {
     isLoading: isLoadingTransaction,
     refetch: refetchTransaction,
   } = useTransaction(id || "", { useReturnId: true });
-  console.log("transaction: ", transaction?.items);
   const profile = useAuthStore((state) => state.profile);
   const isLoading = isLoadingReturnData || isLoadingTransaction;
   const [refreshing, setRefreshing] = useState(false);
@@ -131,7 +130,7 @@ export default function ReturnTransactionReceipt() {
             <Pressable
               className="flex-1 rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-primary-500 border border-primary-500 active:bg-primary-400"
               onPress={() => {
-                router.push({
+                router.replace({
                   pathname: "/(main)/transaction",
                   params: {
                     returnCustomerId: returnData.customerId,
@@ -153,8 +152,8 @@ export default function ReturnTransactionReceipt() {
                 className="flex-1 rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-background-0 border border-primary-500 active:bg-primary-100"
                 onPress={() => router.back()}
               >
-                <Icon as={Check} size="xl" color="#ffffff" />
-                <Text size="md" className="text-typography-0 font-bold">
+                <Icon as={Check} size="xl" color="#3d2117" />
+                <Text size="md" className="text-primary-500 font-bold">
                   SELESAI
                 </Text>
               </Pressable>
@@ -163,7 +162,7 @@ export default function ReturnTransactionReceipt() {
                 onPress={() => {}}
               >
                 <Icon as={Printer} size="xl" color="#3d2117" />
-                <Text size="md" className="text-brand-primary font-bold">
+                <Text size="md" className="text-primary-500 font-bold">
                   CETAK ULANG STRUK
                 </Text>
               </Pressable>
