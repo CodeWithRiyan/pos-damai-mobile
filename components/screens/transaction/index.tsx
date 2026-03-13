@@ -53,6 +53,7 @@ export default function TransactionList() {
     setAddProduct,
     setStatus,
     removeCartItem,
+    resetCart,
   } = useTransactionStore();
   const { data: customers } = useCustomers();
   const { data: returnCustomer } = useCustomer(searchParams.returnCustomerId);
@@ -62,6 +63,8 @@ export default function TransactionList() {
   const toast = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [layout, setLayout] = useState<"list" | "grid">("list");
+
+  const isDirty = !!cart.length || customer;
 
   const [deviceWidth, setDeviceWidth] = useState<number>(0);
 
@@ -126,18 +129,14 @@ export default function TransactionList() {
       </Box>
     );
   }
-  console.log("deviceWidth: ", deviceWidth);
 
   return (
     <Box className="flex-1 bg-white" onLayout={handleLayout}>
       <Header
-        header={
-          !searchParams.returnCustomerId
-            ? "TRANSAKSI PENJUALAN"
-            : "TUKAR BARANG"
-        }
+        isGoBack={!!searchParams.returnId}
+        header={!searchParams.returnId ? "TRANSAKSI PENJUALAN" : "TUKAR BARANG"}
         action={
-          !searchParams.returnCustomerId && (
+          !searchParams.returnId && !isDirty ? (
             <HStack space="sm" className="pr-4">
               <Pressable
                 className="size-10 items-center justify-center"
@@ -152,12 +151,24 @@ export default function TransactionList() {
                 <SolarIconBold name="History" size={20} color="#FDFBF9" />
               </Pressable>
             </HStack>
+          ) : (
+            <HStack space="sm" className="pr-4">
+              <Pressable
+                className="size-10 items-center justify-center"
+                onPress={() => {
+                  setCustomer(null);
+                  resetCart();
+                }}
+              >
+                <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+              </Pressable>
+            </HStack>
           )
         }
       />
       <HStack className="flex-1 bg-white">
         <VStack className="flex-1 border-r border-gray-300">
-          {!searchParams.returnCustomerId && (
+          {!searchParams.returnId && (
             <HStack space="md" className="p-4 pb-0">
               <Pressable
                 className="size-10 rounded-full bg-primary-500 items-center justify-center"
@@ -410,18 +421,24 @@ export default function TransactionList() {
                   LANJUT
                 </Text>
               </Pressable>
-              <Pressable
-                className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
-                onPress={() => {
-                  router.push({
-                    pathname: "/(main)/transaction/checkout",
-                    params: searchParams,
-                  });
-                  setStatus("DRAFT");
-                }}
-              >
-                <SolarIconBold name="ClipboardAdd" size={32} color="#3d2117" />
-              </Pressable>
+              {!searchParams.returnId && (
+                <Pressable
+                  className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
+                  onPress={() => {
+                    router.push({
+                      pathname: "/(main)/transaction/checkout",
+                      params: searchParams,
+                    });
+                    setStatus("DRAFT");
+                  }}
+                >
+                  <SolarIconBold
+                    name="ClipboardAdd"
+                    size={32}
+                    color="#3d2117"
+                  />
+                </Pressable>
+              )}
             </HStack>
           )}
         </VStack>

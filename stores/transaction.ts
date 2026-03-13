@@ -66,7 +66,40 @@ export const useTransactionStore = create<TransactionState>((set) => ({
 
       if (!categoryChanged) return { customer };
 
-      const updatedTotal = state.cart.reduce((sum, cartItem) => {
+      const updatedCart = state.cart.map((cartItem) => {
+        const updateTempSellPrice = () => {
+          if (nextCategory === "RETAIL" && cartItem.variant?.netto) {
+            return undefined;
+          } else if (nextCategory === "WHOLESALE" && cartItem.variant?.netto) {
+            return (
+              findSellPrice({
+                sellPrices: cartItem.product.sellPrices,
+                type: "WHOLESALE",
+                quantity: cartItem.quantity,
+              }) * cartItem.variant.netto
+            );
+          }
+
+          return cartItem.tempSellPrice;
+        };
+
+        console.log(
+          "updateTempSellPrice for",
+          `${cartItem.product.name} - ${cartItem.variant?.name}`,
+          {
+            prevCategory,
+            nextCategory,
+            tempSellPrice: cartItem.tempSellPrice,
+            updatedTempSellPrice: updateTempSellPrice(),
+          },
+        );
+        return {
+          ...cartItem,
+          tempSellPrice: updateTempSellPrice(),
+        };
+      });
+
+      const updatedTotal = updatedCart.reduce((sum, cartItem) => {
         const unitPrice =
           cartItem.tempSellPrice ??
           findSellPrice({
@@ -87,7 +120,7 @@ export const useTransactionStore = create<TransactionState>((set) => ({
         );
       }, 0);
 
-      return { customer, cartTotal: updatedTotal };
+      return { customer, cartTotal: updatedTotal, cart: updatedCart };
     }),
   setPurchaseId: (id) => set({ purchaseId: id }),
   setStatus: (status) => set({ status }),
