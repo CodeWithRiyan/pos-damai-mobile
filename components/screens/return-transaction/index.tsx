@@ -21,7 +21,6 @@ import { ScrollView } from "react-native";
 
 export default function PurchasingCustomerList() {
   const { data: customers, isLoading: loadingCustomers } = useCustomers();
-  console.log('data', customers)
   const [search, setSearch] = useState("");
   const router = useRouter();
 

@@ -5,6 +5,7 @@ import { db } from "../db";
 import * as schema from "../db/schema";
 import { getDiscountedPrice, isDiscountActive } from "../price";
 import { generateLocalRefId } from "../utils/reference";
+import { Product } from "./products";
 
 export interface Transaction {
   id: string;
@@ -33,6 +34,7 @@ export interface TransactionItem {
   transactionId: string;
   productId: string;
   productName?: string;
+  productType?: Product["type"];
   variantId?: string | null;
   variantName?: string;
   quantity: number;
@@ -52,7 +54,15 @@ export interface CreateTransactionDTO {
   note: string;
   returnId?: string;
   items: {
-    product: { id: string; discount?: { nominal: number; type: "FLAT" | "PERCENTAGE"; startDate: Date; endDate: Date } };
+    product: {
+      id: string;
+      discount?: {
+        nominal: number;
+        type: "FLAT" | "PERCENTAGE";
+        startDate: Date;
+        endDate: Date;
+      };
+    };
     variant?: { id: string; name: string; netto?: number | null };
     quantity: number;
     tempSellPrice: number;
@@ -102,22 +112,66 @@ export function useTransactions(params?: TransactionFilterParams) {
         let filterEnd: Date | undefined;
 
         if (params.dateType === "TODAY") {
-          filterStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          filterEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+          filterStart = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+          );
+          filterEnd = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            23,
+            59,
+            59,
+            999,
+          );
         } else if (params.dateType === "THIS_WEEK") {
           const day = now.getDay();
           const diff = now.getDate() - day + (day === 0 ? -6 : 1);
           filterStart = new Date(now.getFullYear(), now.getMonth(), diff);
-          filterEnd = new Date(now.getFullYear(), now.getMonth(), diff + 6, 23, 59, 59, 999);
+          filterEnd = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            diff + 6,
+            23,
+            59,
+            59,
+            999,
+          );
         } else if (params.dateType === "THIS_MONTH") {
           filterStart = new Date(now.getFullYear(), now.getMonth(), 1);
-          filterEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+          filterEnd = new Date(
+            now.getFullYear(),
+            now.getMonth() + 1,
+            0,
+            23,
+            59,
+            59,
+            999,
+          );
         } else if (params.dateType === "THIS_YEAR") {
           filterStart = new Date(now.getFullYear(), 0, 1);
           filterEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
-        } else if (params.dateType === "CUSTOM" && params.startDate && params.endDate) {
-          filterStart = new Date(params.startDate.getFullYear(), params.startDate.getMonth(), params.startDate.getDate());
-          filterEnd = new Date(params.endDate.getFullYear(), params.endDate.getMonth(), params.endDate.getDate(), 23, 59, 59, 999);
+        } else if (
+          params.dateType === "CUSTOM" &&
+          params.startDate &&
+          params.endDate
+        ) {
+          filterStart = new Date(
+            params.startDate.getFullYear(),
+            params.startDate.getMonth(),
+            params.startDate.getDate(),
+          );
+          filterEnd = new Date(
+            params.endDate.getFullYear(),
+            params.endDate.getMonth(),
+            params.endDate.getDate(),
+            23,
+            59,
+            59,
+            999,
+          );
         }
 
         if (filterStart && filterEnd) {
@@ -211,7 +265,9 @@ export function usePurchasedProducts(customerId: string) {
       }
 
       // Use a set to get unique product IDs
-      const productIds = Array.from(new Set(purchasedItems.map(item => item.productId)));
+      const productIds = Array.from(
+        new Set(purchasedItems.map((item) => item.productId)),
+      );
 
       // 2. Fetch full product details for these IDs
       // We'll reuse the logic from useProducts but filtered by IDs
@@ -221,19 +277,24 @@ export function usePurchasedProducts(customerId: string) {
           discount: schema.discounts,
         })
         .from(schema.products)
-        .leftJoin(schema.discounts, eq(schema.products.discountId, schema.discounts.id))
+        .leftJoin(
+          schema.discounts,
+          eq(schema.products.discountId, schema.discounts.id),
+        )
         .where(
           and(
             eq(schema.products.organizationId, orgId),
             isNull(schema.products.deletedAt),
-            // Drizzle doesn't have a direct "in Array" helper that works easily with large arrays in all versions, 
+            // Drizzle doesn't have a direct "in Array" helper that works easily with large arrays in all versions,
             // but we can use multiple or conditions or just filter in JS if the list is small.
             // For POS, customer's unique products usually aren't thousands.
-          )
+          ),
         );
 
       // Filter in memory for simplicity and to match the schema
-      const filteredResult = productResult.filter(r => productIds.includes(r.product.id));
+      const filteredResult = productResult.filter((r) =>
+        productIds.includes(r.product.id),
+      );
 
       const productsWithDetails = await Promise.all(
         filteredResult.map(async ({ product, discount }) => {
@@ -274,9 +335,12 @@ export function usePurchasedProducts(customerId: string) {
             minimumStock: product.minimumStock ?? 0,
             isActive: !!product.isActive,
             isFavorite: !!product.isFavorite,
-            type: (product.type || "DEFAULT") as "DEFAULT" | "MULTIUNIT" | "VARIANTS",
+            type: (product.type || "DEFAULT") as
+              | "DEFAULT"
+              | "MULTIUNIT"
+              | "VARIANTS",
             code: product.barcode,
-            sellPrices: prices.map(p => ({
+            sellPrices: prices.map((p) => ({
               ...p,
               minimumPurchase: p.minimumPurchase ?? 0,
               type: p.type as "RETAIL" | "WHOLESALE",
@@ -284,14 +348,16 @@ export function usePurchasedProducts(customerId: string) {
             variants: variants,
             stock: totalStock,
             lastSellPrice: lastSellPriceMap[product.id],
-            discount: discount ? {
-              id: discount.id,
-              name: discount.name,
-              nominal: discount.nominal,
-              type: discount.type as 'FLAT' | 'PERCENTAGE',
-              startDate: discount.startDate,
-              endDate: discount.endDate,
-            } : undefined,
+            discount: discount
+              ? {
+                  id: discount.id,
+                  name: discount.name,
+                  nominal: discount.nominal,
+                  type: discount.type as "FLAT" | "PERCENTAGE",
+                  startDate: discount.startDate,
+                  endDate: discount.endDate,
+                }
+              : undefined,
           };
         }),
       );
@@ -302,12 +368,21 @@ export function usePurchasedProducts(customerId: string) {
   });
 }
 
-export async function fetchTransaction(id: string): Promise<Transaction | null> {
+export async function fetchTransaction(
+  id: string,
+  options?: {
+    useReturnId?: boolean;
+  },
+): Promise<Transaction | null> {
   // Get transaction record
   const transactionResult = await db
     .select()
     .from(schema.transactions)
-    .where(eq(schema.transactions.id, id))
+    .where(
+      options?.useReturnId
+        ? eq(schema.transactions.returnId, id)
+        : eq(schema.transactions.id, id),
+    )
     .limit(1);
 
   if (transactionResult.length === 0) return null;
@@ -342,7 +417,7 @@ export async function fetchTransaction(id: string): Promise<Transaction | null> 
   const itemsWithProductNames = await Promise.all(
     items.map(async (item) => {
       const product = await db
-        .select({ name: schema.products.name })
+        .select({ name: schema.products.name, type: schema.products.type })
         .from(schema.products)
         .where(eq(schema.products.id, item.productId))
         .limit(1);
@@ -360,6 +435,7 @@ export async function fetchTransaction(id: string): Promise<Transaction | null> 
       return {
         ...item,
         productName: product[0]?.name || "Unknown",
+        productType: product[0]?.type || "DEFAULT",
         variantName,
       };
     }),
@@ -374,10 +450,13 @@ export async function fetchTransaction(id: string): Promise<Transaction | null> 
 }
 
 // Get single transaction with items
-export function useTransaction(id: string) {
+export function useTransaction(
+  id: string,
+  options?: { useReturnId?: boolean },
+) {
   return useQuery({
-    queryKey: ["transactions", id],
-    queryFn: () => fetchTransaction(id),
+    queryKey: ["transactions", options?.useReturnId ? "returnId" : "id", id],
+    queryFn: () => fetchTransaction(id, options),
     enabled: !!id,
   });
 }
@@ -396,13 +475,17 @@ export function useCreateTransaction() {
       const transactionId =
         data.id ||
         `trans_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
 
       await db.transaction(async (tx) => {
-        const localRefId = await generateLocalRefId(tx, schema.transactions, "TRX");
-        
+        const localRefId = await generateLocalRefId(
+          tx,
+          schema.transactions,
+          "TRX",
+        );
+
         // 1. Create/Update Transaction record
         const transactionValues = {
           id: transactionId,
@@ -471,25 +554,32 @@ export function useCreateTransaction() {
           : localRefId;
 
         if (data.id) {
-            const existing = await tx
-              .select({ status: schema.transactions.status, local_ref_id: schema.transactions.local_ref_id })
-              .from(schema.transactions)
-              .where(eq(schema.transactions.id, data.id))
-              .limit(1);
+          const existing = await tx
+            .select({
+              status: schema.transactions.status,
+              local_ref_id: schema.transactions.local_ref_id,
+            })
+            .from(schema.transactions)
+            .where(eq(schema.transactions.id, data.id))
+            .limit(1);
 
-            const statusCompleted =
-              data.status === "COMPLETED" && existing[0]?.status === "DRAFT";
+          const statusCompleted =
+            data.status === "COMPLETED" && existing[0]?.status === "DRAFT";
 
-            if (statusCompleted) {
-              const newRefId = await generateLocalRefId(tx, schema.transactions, "TRX");
-              
-              await tx
-                .update(schema.transactions)
-                .set({ status: "COMPLETED", local_ref_id: newRefId })
-                .where(eq(schema.transactions.id, data.id));
-              
-              finalLocalRefId = newRefId;
-            }
+          if (statusCompleted) {
+            const newRefId = await generateLocalRefId(
+              tx,
+              schema.transactions,
+              "TRX",
+            );
+
+            await tx
+              .update(schema.transactions)
+              .set({ status: "COMPLETED", local_ref_id: newRefId })
+              .where(eq(schema.transactions.id, data.id));
+
+            finalLocalRefId = newRefId;
+          }
         }
 
         // 2. Create Transaction Items and Inventory Transactions
@@ -502,20 +592,20 @@ export function useCreateTransaction() {
           // We split the item into two entries if it has a discount and quantity > 0
           // Entry 1: 1 quantity with discounted price
           // Entry 2: quantity - 1 with regular price (if quantity > 1)
-          
+
           const itemsToCreate = [];
           if (hasDiscount && item.quantity > 0) {
             const discountedPrice = getDiscountedPrice(unitPrice, discount);
-            
+
             // If quantity >= 1, 1 unit is discounted, rest is regular
             // If quantity < 1, the entire fraction is discounted
             const discountedQty = Math.min(1, item.quantity);
-            
+
             itemsToCreate.push({
               qty: discountedQty,
               price: discountedPrice,
             });
-            
+
             if (item.quantity > discountedQty) {
               itemsToCreate.push({
                 qty: item.quantity - discountedQty,
@@ -621,13 +711,15 @@ export function useCreateTransaction() {
                     customer.category === "WHOLESALE"
                       ? p.wholesalePoint
                       : p.retailPoint;
-                  
+
                   const variantNetto = item.variant?.netto || 1;
-                  earnedPoints += (categoryPoints || 0) * (item.quantity * variantNetto);
+                  earnedPoints +=
+                    (categoryPoints || 0) * (item.quantity * variantNetto);
 
                   // Purchase Cost
                   const purchasePrice = p.purchasePrice || 0;
-                  totalPurchaseCost += (purchasePrice * variantNetto) * item.quantity;
+                  totalPurchaseCost +=
+                    purchasePrice * variantNetto * item.quantity;
                 }
               }
 
@@ -644,7 +736,6 @@ export function useCreateTransaction() {
                 })
 
                 .where(eq(schema.customers.id, customer.id));
-
             }
           }
         }
@@ -666,7 +757,6 @@ export function useCreateTransaction() {
         });
       }
     },
-
   });
 }
 

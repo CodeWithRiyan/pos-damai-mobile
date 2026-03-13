@@ -1,19 +1,52 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
-import { Box, Heading, HStack, Pressable, Text, VStack } from "@/components/ui";
+import {
+  Box,
+  Heading,
+  HStack,
+  Icon,
+  Pressable,
+  Text,
+  VStack,
+} from "@/components/ui";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { useTransactionReturn } from "@/lib/api/return-transaction";
+import { useTransaction } from "@/lib/api/transactions";
 import { useAuthStore } from "@/stores/auth";
 import dayjs from "dayjs";
-import { useLocalSearchParams } from "expo-router";
-import { ScrollView } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Check, Printer, Send } from "lucide-react-native";
+import { useCallback, useState } from "react";
+import { RefreshControl, ScrollView } from "react-native";
 
 export default function ReturnTransactionReceipt() {
+  const router = useRouter();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: returnData, isLoading } = useTransactionReturn(id || "");
+  const { id, isSuccess } = useLocalSearchParams<{
+    id: string;
+    isSuccess: string;
+  }>();
+  const {
+    data: returnData,
+    isLoading: isLoadingReturnData,
+    refetch: refetchReturnData,
+  } = useTransactionReturn(id || "");
+  const {
+    data: transaction,
+    isLoading: isLoadingTransaction,
+    refetch: refetchTransaction,
+  } = useTransaction(id || "", { useReturnId: true });
   const profile = useAuthStore((state) => state.profile);
+  const isLoading = isLoadingReturnData || isLoadingTransaction;
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetchReturnData();
+    await refetchTransaction();
+    setRefreshing(false);
+  }, [refetchReturnData, refetchTransaction]);
 
   if (isLoading || !id) {
     return (
@@ -84,8 +117,61 @@ export default function ReturnTransactionReceipt() {
           </Pressable>
         }
       />
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <Box className="p-4 flex-1">
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <VStack space="md" className="p-4 flex-1">
+          <Pressable
+            className="flex-1 rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-primary-500 border border-primary-500 active:bg-primary-400"
+            onPress={() => {
+              if (transaction) {
+                router.navigate({
+                  pathname: "/(main)/transaction/receipt/[id]",
+                  params: { id: transaction.id },
+                });
+              } else {
+                router.push({
+                  pathname: "/(main)/transaction",
+                  params: {
+                    returnCustomerId: returnData.customerId,
+                    returnId: returnData.id,
+                  },
+                });
+              }
+            }}
+          >
+            <Icon as={Send} size="xl" color="#ffffff" />
+            <Text size="md" className="text-typography-0 font-bold">
+              {transaction ? "LIHAT STRUK TUKAR BARANG" : "LANJUT TUKAR BARANG"}
+            </Text>
+          </Pressable>
+
+          {isSuccess === "true" && (
+            <HStack space="md" className="w-full">
+              <Pressable
+                className="flex-1 rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-background-0 border border-primary-500 active:bg-primary-100"
+                onPress={() => router.back()}
+              >
+                <Icon as={Check} size="xl" color="#ffffff" />
+                <Text size="md" className="text-typography-0 font-bold">
+                  SELESAI
+                </Text>
+              </Pressable>
+              <Pressable
+                className="flex-1 rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-background-0 border border-primary-500 active:bg-primary-100"
+                onPress={() => {}}
+              >
+                <Icon as={Printer} size="xl" color="#3d2117" />
+                <Text size="md" className="text-brand-primary font-bold">
+                  CETAK ULANG STRUK
+                </Text>
+              </Pressable>
+            </HStack>
+          )}
           <VStack className="flex-1 bg-background-0 p-6 shadow">
             <VStack className="items-center">
               <Heading size="xl">
@@ -169,7 +255,7 @@ export default function ReturnTransactionReceipt() {
               </HStack>
             </VStack>
           </VStack>
-        </Box>
+        </VStack>
       </ScrollView>
     </VStack>
   );

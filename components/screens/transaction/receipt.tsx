@@ -11,7 +11,7 @@ import {
 } from "@/components/ui";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
-import { useTransaction } from "@/lib/api/transactions";
+import { TransactionItem, useTransaction } from "@/lib/api/transactions";
 import { formatDisplayRefId } from "@/lib/utils/reference";
 import { useAuthStore } from "@/stores/auth";
 import dayjs from "dayjs";
@@ -27,7 +27,7 @@ export default function TransactionReceipt() {
     isSuccess: string;
   }>();
   const { data: transaction, isLoading } = useTransaction(id || "");
-  console.log("transaction", transaction);
+
   const profile = useAuthStore((state) => state.profile);
 
   if (isLoading || !id) {
@@ -57,7 +57,11 @@ export default function TransactionReceipt() {
   return (
     <VStack className="flex-1 bg-primary-200">
       <Header
-        header="STRUK PENJUALAN BARANG"
+        header={
+          transaction?.returnId
+            ? "STRUK PENUKARAN BARANG"
+            : "STRUK PENJUALAN BARANG"
+        }
         isGoBack
         action={
           <Pressable
@@ -132,7 +136,9 @@ export default function TransactionReceipt() {
                 {profile?.selectedOrganization?.address ||
                   "Pekalongan Timur, Pekalongan"}
               </Text>
-              <Text className="text-typography-500">## Struk Penjualan ##</Text>
+              <Text className="text-typography-500">
+                {`## Struk ${transaction?.returnId ? "Penukaran Barang" : "Penjualan"} ##`}
+              </Text>
               {transaction.status === "DRAFT" && (
                 <Text className="text-red-500 font-bold mt-1">(DRAFT)</Text>
               )}
@@ -183,7 +189,13 @@ export default function TransactionReceipt() {
             <VStack space="md">
               {(() => {
                 // Group items by productId and variantId
-                const groupedItemsMap: Record<string, any> = {};
+                const groupedItemsMap: Record<
+                  string,
+                  TransactionItem & {
+                    quantity: number;
+                    total: number;
+                  }
+                > = {};
                 transaction.items?.forEach((item) => {
                   const key = `${item.productId}-${item.variantId || "no-var"}`;
                   if (!groupedItemsMap[key]) {
@@ -224,7 +236,10 @@ export default function TransactionReceipt() {
                         <VStack className="flex-1 mr-2">
                           <Heading size="sm">
                             {group.productName}
-                            {group.variantName ? ` - ${group.variantName}` : ""}
+                            {group.productType === "MULTIUNIT" &&
+                            group.variantName
+                              ? ` - ${group.variantName}`
+                              : ""}
                           </Heading>
                           <Text className="text-typography-500 text-sm">
                             {group.quantity} x Rp{" "}

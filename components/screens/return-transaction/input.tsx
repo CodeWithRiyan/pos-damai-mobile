@@ -91,19 +91,6 @@ export default function ReturnTransactionInput() {
                                 {`Rp ${(item.lastSellPrice ?? item.sellPrices?.[0]?.price)?.toLocaleString("id-ID") ?? 0}`}
                               </Text>
                             </VStack>
-                            <HStack space="sm">
-                              <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
-                                <Text className="font-bold">
-                                  {cart?.find((f) => f.product.id === item.id)
-                                    ?.quantity || 0}
-                                </Text>
-                              </Box>
-                              <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
-                                <Text className="text-typography-0 font-bold">
-                                  {item.stock}
-                                </Text>
-                              </Box>
-                            </HStack>
                           </HStack>
                         </HStack>
                       </Pressable>
