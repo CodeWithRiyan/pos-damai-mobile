@@ -100,7 +100,7 @@ export default function TransactionCheckoutForm() {
       ) {
         ctx.addIssue({
           code: "custom",
-          message: "Pembayaran tidak boleh kurang dari kekurangan",
+          message: "Pembayaran tidak boleh kurang dari nominal kekurangan",
           path: ["totalPaid"],
         });
       }
@@ -163,13 +163,13 @@ export default function TransactionCheckoutForm() {
       form.setValue("status", status);
       if (!paymentTypeId && paymentTypesData && paymentTypesData.length > 0) {
         const defaultPaymentType =
-          paymentTypesData?.find((pt) => pt.isDefault)?.id ||
           paymentTypesData?.find(
-            (pt) =>
+            (pt, i) =>
+              pt.isDefault ||
               pt.name.toLowerCase() === "cash" ||
-              pt.name.toLowerCase() === "tunai",
-          )?.id ||
-          "";
+              pt.name.toLowerCase() === "tunai" ||
+              i === 0,
+          )?.id || "";
         form.setValue("paymentTypeId", defaultPaymentType);
       }
     }

@@ -114,9 +114,13 @@ export default function ReturnTransactionConfirmForm() {
         setOpenConfirm(false);
 
         if (data.returnType === "ITEM") {
-          router.navigate(
-            `/(main)/transaction?returnCustomerId=${customerId}&returnId=${response.id}`,
-          );
+          router.navigate({
+            pathname: "/(main)/transaction",
+            params: {
+              returnCustomerId: customerId,
+              returnId: response.id,
+            },
+          });
         } else {
           createFinance({
             returnId: response.id,

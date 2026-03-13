@@ -102,7 +102,8 @@ export default function PopupAddProduct() {
       addCartItem({
         product: addProduct,
         quantity: data.quantity,
-        sellPrice: addProduct.lastSellPrice ?? addProduct.sellPrices?.[0]?.price ?? 0,
+        sellPrice:
+          addProduct.lastSellPrice ?? addProduct.sellPrices?.[0]?.price ?? 0,
         note: data.addNote ? data.note : undefined,
       });
     }
@@ -135,9 +136,10 @@ export default function PopupAddProduct() {
                 <HStack space="sm">
                   <Heading size="md">
                     Rp{" "}
-                    {(addProduct?.lastSellPrice ?? addProduct?.sellPrices?.[0]?.price)?.toLocaleString(
-                      "id-ID",
-                    ) ?? 0}
+                    {(
+                      addProduct?.lastSellPrice ??
+                      addProduct?.sellPrices?.[0]?.price
+                    )?.toLocaleString("id-ID") ?? 0}
                   </Heading>
                 </HStack>
               </HStack>
