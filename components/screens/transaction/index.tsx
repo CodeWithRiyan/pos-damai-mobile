@@ -400,7 +400,7 @@ export default function TransactionList() {
               <Pressable
                 className="flex-1 flex-row items-center justify-between h-16 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
                 onPress={() => {
-                  router.push({
+                  router.replace({
                     pathname: "/(main)/transaction/checkout",
                     params: searchParams,
                   });
@@ -425,7 +425,7 @@ export default function TransactionList() {
                 <Pressable
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                   onPress={() => {
-                    router.push({
+                    router.replace({
                       pathname: "/(main)/transaction/checkout",
                       params: searchParams,
                     });

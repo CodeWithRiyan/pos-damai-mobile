@@ -78,6 +78,7 @@ export interface TransactionFilterParams {
   dateType?: "TODAY" | "THIS_WEEK" | "THIS_MONTH" | "THIS_YEAR" | "CUSTOM";
   startDate?: Date;
   endDate?: Date;
+  showReturnData?: boolean;
 }
 
 // Get all transactions from local SQLite
@@ -94,6 +95,10 @@ export function useTransactions(params?: TransactionFilterParams) {
 
   if (params?.userId) {
     conditions.push(eq(schema.transactions.createdBy, params.userId));
+  }
+
+  if (!params?.showReturnData) {
+    conditions.push(isNull(schema.transactions.returnId));
   }
 
   return useQuery({
@@ -411,7 +416,7 @@ export async function fetchTransaction(
   const items = await db
     .select()
     .from(schema.transactionItems)
-    .where(eq(schema.transactionItems.transactionId, id));
+    .where(eq(schema.transactionItems.transactionId, transaction?.id || id));
 
   // Get product names for each item
   const itemsWithProductNames = await Promise.all(

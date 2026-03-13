@@ -47,10 +47,11 @@ import { Check, PlusIcon } from "lucide-react-native";
 // Payment types are now loaded from the database via usePaymentTypes hook
 
 export default function TransactionCheckoutForm() {
-  const { returnCustomerId, returnId } = useLocalSearchParams<{
+  const searchParams = useLocalSearchParams<{
     returnCustomerId: string;
     returnId: string;
   }>();
+  const { returnCustomerId, returnId } = searchParams;
   const router = useRouter();
 
   const { data: returnCustomer } = useCustomer(returnCustomerId);
@@ -280,10 +281,16 @@ export default function TransactionCheckoutForm() {
         if (status === "DRAFT") {
           router.push("/(main)/transaction");
         } else {
-          createFinance();
-          router.replace(
-            `/(main)/transaction/receipt/${result.id}?isSuccess=true`,
-          );
+          if (returnId) {
+            createFinance();
+            router.replace(
+              `/(main)/management/return/transaction/receipt/${returnId}?isSuccess=true`,
+            );
+          } else {
+            router.replace(
+              `/(main)/transaction/receipt/${result.id}?isSuccess=true`,
+            );
+          }
         }
         resetCart();
         setCustomer(null);
