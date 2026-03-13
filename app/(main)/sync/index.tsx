@@ -59,7 +59,7 @@ export default function SyncScreen() {
             <VStack space="md">
               <HStack className="justify-between items-center">
                 <HStack space="sm" className="items-center">
-                  <Icon as={isConnected ? DownloadIcon : ArrowUpIcon} color={isConnected ? "$success500" : "$error500"} />
+                  <Icon as={isConnected ? DownloadIcon : ArrowUpIcon} />
                   <Text className="text-gray-700">Koneksi Internet</Text>
                 </HStack>
                 <Text className={isConnected ? "text-success-600 font-bold" : "text-error-600 font-bold"}>
@@ -69,7 +69,7 @@ export default function SyncScreen() {
 
               <HStack className="justify-between items-center">
                 <HStack space="sm" className="items-center">
-                  <Icon as={ArrowUpIcon} color="$primary500" />
+                  <Icon as={ArrowUpIcon} />
                   <Text className="text-gray-700">Data Tertunda (Push)</Text>
                 </HStack>
                 <Text className={dirtyCount > 0 ? "text-primary-600 font-bold" : "text-gray-600 font-bold"}>
@@ -79,7 +79,7 @@ export default function SyncScreen() {
 
               <HStack className="justify-between items-center">
                 <HStack space="sm" className="items-center">
-                  <Icon as={DownloadIcon} color="$success500" />
+                  <Icon as={DownloadIcon} />
                   <Text className="text-gray-700">Terakhir Pull</Text>
                 </HStack>
                 <Text className="text-gray-600 font-bold">{lastPullLabel}</Text>
@@ -95,7 +95,7 @@ export default function SyncScreen() {
               disabled={isSyncing || !isConnected}
               className="bg-brand-primary h-14 rounded-xl"
             >
-              <Icon as={RepeatIcon} color="$white" className="mr-2" />
+              <Icon as={RepeatIcon} className="mr-2" />
               <ButtonText>{isSyncing ? "Menyinkronkan..." : "Sinkronkan Sekarang"}</ButtonText>
             </Button>
 

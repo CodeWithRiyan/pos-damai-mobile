@@ -27,6 +27,7 @@ export default function TransactionReceipt() {
     isSuccess: string;
   }>();
   const { data: transaction, isLoading } = useTransaction(id || "");
+  console.log("transaction", transaction);
   const profile = useAuthStore((state) => state.profile);
 
   if (isLoading || !id) {

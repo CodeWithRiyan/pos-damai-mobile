@@ -5,12 +5,12 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { resetDb, initializeDb } from "@/lib/db";
-import * as Updates from "expo-updates";
 import { useRouter } from "expo-router";
 import React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth";
 import { Alert, Pressable, ScrollView } from "react-native";
+import { authStorageAdapter, storageAdapter } from "@/lib/storage";
 
 export default function SettingScreen() {
   const router = useRouter();
@@ -34,14 +34,9 @@ export default function SettingScreen() {
               queryClient.clear();
               // Clear Zustand auth profile from memory
               useAuthStore.getState().setProfile(null);
-
-              // Try to reload the bundle to ensure clean state
-              try {
-                await Updates.reloadAsync();
-              } catch {
-                // Fallback for development where reload might not work same way
-                router.replace("/login");
-              }
+              authStorageAdapter.clearAll();
+              storageAdapter.removeItem('lastSyncAt');
+              router.replace("/login");
             } catch (error) {
               Alert.alert("Error", "Failed to reset database");
               console.error(error);

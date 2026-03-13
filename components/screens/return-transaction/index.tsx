@@ -20,7 +20,8 @@ import React, { useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function PurchasingCustomerList() {
-  const { data: customers, isLoading: loadingCustomers } = useCustomers({ category: 'WHOLESALE' });
+  const { data: customers, isLoading: loadingCustomers } = useCustomers();
+  console.log('data', customers)
   const [search, setSearch] = useState("");
   const router = useRouter();
 
@@ -69,8 +70,9 @@ export default function PurchasingCustomerList() {
             customers
               ?.filter(
                 (s) =>
-                  !search ||
-                  s.name.toLowerCase().includes(search.toLowerCase()),
+                  s.totalTransactions > 0 &&
+                  (!search ||
+                    s.name.toLowerCase().includes(search.toLowerCase())),
               )
               .map((customer) => (
                 <Pressable
