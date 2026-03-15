@@ -8,7 +8,6 @@ import { useLocalSearchParams } from "expo-router";
 export default function TabContentShift() {
   const { data: currentShift, isLoading } = useCurrentShift();
   const { tab } = useLocalSearchParams();
-  console.log("[TabContentShift] tab:", currentShift);
 
   if (isLoading) {
     return (

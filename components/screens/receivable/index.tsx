@@ -28,7 +28,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-import { getErrorMessage } from "@/lib/api/client";
+import { showErrorToast } from "@/lib/utils/toast";
 import {
   ReceivableByUser,
   useBulkDeleteReceivableByUser,
@@ -39,8 +39,9 @@ import dayjs from "dayjs";
 import { useRouter } from "expo-router";
 import { CalendarIcon } from "lucide-react-native";
 import React, { useState } from "react";
-import { ScrollView } from "react-native";
+import { FlatList } from "react-native";
 
+import { formatRp } from "@/lib/utils/format";
 export default function ReceivableList({ isReport }: { isReport?: boolean }) {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
@@ -59,33 +60,13 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
 
   const toast = useToast();
 
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
   const handleReceivablePress = (receivable: ReceivableByUser) => {
-    if (selectedItems?.some((r) => r.userId === receivable.userId)) {
-      setSelectedItems(
-        selectedItems.filter((r) => r.userId !== receivable.userId),
-      );
-      return;
-    }
-    if (!selectedItems) {
-      setSelectedItems([receivable]);
-      return;
-    }
-
-    setSelectedItems([...selectedItems, receivable]);
+    setSelectedItems((prev) => {
+      if (prev?.some((r) => r.userId === receivable.userId)) {
+        return prev.filter((r) => r.userId !== receivable.userId);
+      }
+      return [...(prev ?? []), receivable];
+    });
   };
 
   const handleAdd = () => {
@@ -133,7 +114,7 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
         });
       },
       onError: (error) => {
-        showErrorToast(error);
+        showErrorToast(toast, error);
         hidePopUpConfirm();
       },
     });
@@ -244,14 +225,10 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
                   Total Belum Lunas
                 </Text>
                 <Heading size="xl" className="text-error-500">
-                  Rp{" "}
-                  {receivableByUser
-                    .reduce(
-                      (sum, r) =>
-                        sum + (r.totalReceivable - r.totalRealization),
-                      0,
-                    )
-                    .toLocaleString("id-ID")}
+                  {formatRp(receivableByUser.reduce(
+                    (sum, r) => sum + (r.totalReceivable - r.totalRealization),
+                    0,
+                  ))}
                 </Heading>
               </VStack>
               <VStack className="flex-1 items-end">
@@ -304,98 +281,97 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
               </Checkbox>
             </HStack>
           </VStack>
-          <ScrollView className="flex-1">
-            <VStack>
-              {receivableByUser
-                ?.filter((r) =>
-                  statuses.includes(
-                    r.totalReceivable - r.totalRealization > 0
-                      ? "Belum Lunas"
-                      : "Lunas",
-                  ),
-                )
-                ?.filter((r) =>
-                  r.userName.toLowerCase().includes(searchQuery.toLowerCase()),
-                )
-                ?.map((receivable) => (
-                  <Pressable
-                    key={receivable.userId}
-                    className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                      selectedItems?.some((r) => r.userId === receivable.userId)
-                        ? "bg-gray-100"
-                        : ""
-                    }`}
-                    onPress={() => {
-                      if (!!selectedItems?.length) {
-                        handleReceivablePress(receivable);
-                      } else {
-                        router.navigate(
-                          `/(main)/management/payable-receivable/receivable/detail/${receivable.userId}` as any,
-                        );
-                        setSelectedItems(null);
-                      }
-                    }}
-                    onLongPress={() =>
-                      !isReport && handleReceivablePress(receivable)
-                    }
-                  >
-                    <HStack className="justify-between items-center">
-                      <HStack space="md" className="items-center">
-                        <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
-                          <Text className="text-brand-primary font-bold">
-                            {receivable.userName
-                              ?.substring(0, 1)
-                              .toUpperCase() || "?"}
-                          </Text>
-                        </Box>
-                        <VStack>
-                          <Heading size="sm">{receivable.userName}</Heading>
-                          <Text size="xs" className="text-slate-500">
-                            {receivable.nearestDueDate
-                              ? dayjs(receivable.nearestDueDate).format(
-                                  "DD/MM/YYYY",
-                                )
-                              : "-"}
-                          </Text>
-                          <Text size="xs" className="text-blue-500">
-                            {`Rp ${receivable.totalReceivable.toLocaleString("id-ID")}`}
-                          </Text>
-                        </VStack>
-                      </HStack>
-                      <VStack className="items-end">
-                        <HStack space="xs" className="items-center">
-                          <Box
-                            className={`w-2 h-2 rounded-full${receivable.totalRealization < receivable.totalReceivable ? " bg-red-500" : " bg-green-500"}`}
-                          />
-                          <Text
-                            size="xs"
-                            className="text-brand-primary text-sm font-bold"
-                          >
-                            {receivable.totalRealization <
-                            receivable.totalReceivable
-                              ? "Belum Lunas"
-                              : "Lunas"}
-                          </Text>
-                        </HStack>
-                        {receivable.totalRealization <
-                          receivable.totalReceivable && (
-                          <Text size="xs" className="font-bold text-error-500">
-                            {`Rp ${(receivable.totalReceivable - receivable.totalRealization).toLocaleString("id-ID")}`}
-                          </Text>
-                        )}
-                      </VStack>
-                    </HStack>
-                  </Pressable>
-                ))}
-              {receivableByUser?.length === 0 && (
-                <Box className="p-8 items-center">
-                  <Text className="text-slate-400 italic">
-                    No receivable found
-                  </Text>
-                </Box>
+          <FlatList
+            data={receivableByUser
+              ?.filter((r) =>
+                statuses.includes(
+                  r.totalReceivable - r.totalRealization > 0
+                    ? "Belum Lunas"
+                    : "Lunas",
+                ),
+              )
+              ?.filter((r) =>
+                r.userName.toLowerCase().includes(searchQuery.toLowerCase()),
               )}
-            </VStack>
-          </ScrollView>
+            className="flex-1"
+            keyExtractor={(receivable) => receivable.userId}
+            renderItem={({ item: receivable }) => (
+              <Pressable
+                className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                  selectedItems?.some((r) => r.userId === receivable.userId)
+                    ? "bg-gray-100"
+                    : ""
+                }`}
+                onPress={() => {
+                  if (!!selectedItems?.length) {
+                    handleReceivablePress(receivable);
+                  } else {
+                    router.navigate(
+                      `/(main)/management/payable-receivable/receivable/detail/${receivable.userId}` as any,
+                    );
+                    setSelectedItems(null);
+                  }
+                }}
+                onLongPress={() =>
+                  !isReport && handleReceivablePress(receivable)
+                }
+              >
+                <HStack className="justify-between items-center">
+                  <HStack space="md" className="items-center">
+                    <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
+                      <Text className="text-brand-primary font-bold">
+                        {receivable.userName
+                          ?.substring(0, 1)
+                          .toUpperCase() || "?"}
+                      </Text>
+                    </Box>
+                    <VStack>
+                      <Heading size="sm">{receivable.userName}</Heading>
+                      <Text size="xs" className="text-slate-500">
+                        {receivable.nearestDueDate
+                          ? dayjs(receivable.nearestDueDate).format(
+                              "DD/MM/YYYY",
+                            )
+                          : "-"}
+                      </Text>
+                      <Text size="xs" className="text-blue-500">
+                        {formatRp(receivable.totalReceivable)}
+                      </Text>
+                    </VStack>
+                  </HStack>
+                  <VStack className="items-end">
+                    <HStack space="xs" className="items-center">
+                      <Box
+                        className={`w-2 h-2 rounded-full${receivable.totalRealization < receivable.totalReceivable ? " bg-red-500" : " bg-green-500"}`}
+                      />
+                      <Text
+                        size="xs"
+                        className="text-brand-primary text-sm font-bold"
+                      >
+                        {receivable.totalRealization <
+                        receivable.totalReceivable
+                          ? "Belum Lunas"
+                          : "Lunas"}
+                      </Text>
+                    </HStack>
+                    {receivable.totalRealization <
+                      receivable.totalReceivable && (
+                      <Text size="xs" className="font-bold text-error-500">
+                        {formatRp(receivable.totalReceivable - receivable.totalRealization)}
+                      </Text>
+                    )}
+                  </VStack>
+                </HStack>
+              </Pressable>
+            )}
+            ListEmptyComponent={
+              <Box className="p-8 items-center">
+                <Text className="text-slate-400 italic">
+                  No receivable found
+                </Text>
+              </Box>
+            }
+          />
           {!isReport && (
             <HStack className="w-full p-4">
               <Button

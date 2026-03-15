@@ -1,3 +1,4 @@
+import { FinanceType, Status } from "@/lib/constants";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { useAuthStore } from "@/stores/auth";
@@ -26,6 +27,19 @@ export interface Finance {
   deletedAt: Date | null;
 }
 
+export interface CreateFinanceDTO {
+  id?: string;
+  local_ref_id?: string;
+  nominal?: number;
+  type?: "INCOME" | "EXPENSES";
+  expensesType?: string | null;
+  transactionDate?: Date;
+  status?: "DRAFT" | "COMPLETED";
+  note?: string | null;
+  inputToCashdrawer?: boolean;
+  createdAt?: Date;
+}
+
 export function useFinances() {
   const orgId = useAuthStore((state) => state.getOrganizationId());
 
@@ -43,7 +57,7 @@ export function useFinances() {
           )
         )
         .orderBy(desc(schema.finances.transactionDate));
-      return results as unknown as Finance[];
+      return results as Finance[];
     },
     enabled: !!orgId,
   });
@@ -61,7 +75,7 @@ export function useFinance(id?: string) {
         .limit(1);
       
       if (results.length === 0) return null;
-      return results[0] as unknown as Finance;
+      return results[0] as Finance;
     },
     enabled: !!id,
   });
@@ -72,7 +86,7 @@ export function useCreateFinance() {
   const orgId = useAuthStore((state) => state.getOrganizationId());
 
   return useMutation({
-    mutationFn: async (data: Partial<Finance>) => {
+    mutationFn: async (data: CreateFinanceDTO) => {
       if (!orgId) throw new Error("Organization ID is required");
 
       const now = new Date();
@@ -91,10 +105,10 @@ export function useCreateFinance() {
         id: financeId,
         local_ref_id: localRefId,
         nominal: data.nominal || 0,
-        type: data.type || "EXPENSES",
+        type: data.type || FinanceType.EXPENSES,
         expensesType: data.expensesType || null,
         transactionDate: data.transactionDate || now,
-        status: data.status || "COMPLETED",
+        status: data.status || Status.COMPLETED,
         note: data.note || null,
         inputToCashdrawer: data.inputToCashdrawer ?? false,
         userId: userId,

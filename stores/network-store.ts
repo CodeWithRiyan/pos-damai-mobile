@@ -29,7 +29,7 @@ export function useNetworkMonitoring() {
 
   useEffect(() => {
     // Get initial state
-    NetInfo.fetch().then(setNetworkState);
+    NetInfo.fetch().then(setNetworkState).catch(() => {});
 
     // Subscribe to network state updates
     const unsubscribe = NetInfo.addEventListener(setNetworkState);

@@ -117,7 +117,7 @@ export function PopUpConfirm({
           </HStack>
 
           {/* Description */}
-          {description && <Text className="text-gray-600">{description}</Text>}
+          {description ? <Text className="text-gray-600">{description}</Text> : null}
 
           {/* Action Buttons */}
           <VStack space="md" className="w-full mt-4">

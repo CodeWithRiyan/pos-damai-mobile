@@ -23,11 +23,13 @@ import { usePurchasingStore } from "@/stores/purchasing";
 import { useRouter } from "expo-router";
 import { Plus } from "lucide-react-native";
 import React, { useState } from "react";
-import { ScrollView } from "react-native";
+import { FlatList } from "react-native";
 import ProductNotification from "../product/notification";
 import PurchasingFilter from "./filter";
 import PopupAddProduct from "./popup-add";
 
+import { Status } from "@/lib/constants";
+import { formatRp, formatNumber } from "@/lib/utils/format";
 export default function PurchasingList() {
   const [openNotification, setOpenNotification] = useState<boolean>(false);
   const [stockFilter, setStockFilter] = useState<ShowByStock>("ALL_STOCK");
@@ -97,8 +99,11 @@ export default function PurchasingList() {
               <InputField placeholder="Cari nama atau kode" />
             </Input>
           </HStack>
-          <ScrollView className="flex-1">
-            <VStack className="flex-1">
+          <FlatList
+            data={products}
+            className="flex-1"
+            keyExtractor={(product) => product.id}
+            ListHeaderComponent={
               <VStack className="p-4">
                 <Pressable
                   className="w-full rounded-md h-10 flex-row justify-center items-center gap-4 bg-primary-100 border border-primary-500 active:bg-primary-200"
@@ -114,103 +119,110 @@ export default function PurchasingList() {
                   </Text>
                 </Pressable>
               </VStack>
-              {products?.map((product, index) => (
-                <Pressable
-                  key={index}
-                  className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                  onPress={() => setAddProduct(product)}
-                >
-                  <HStack className="justify-between items-center">
-                    <HStack space="md" className="items-center">
-                      <Box className="size-16 rounded-lg bg-primary-200 items-center justify-center">
-                        <Heading className="text-primary-500 font-bold">
-                          {product.name.charAt(0).toUpperCase()}
-                        </Heading>
-                      </Box>
-                      <VStack className="flex-1">
-                        <Heading size="md" className="line-clamp-2">
-                          {product.name}
-                        </Heading>
-                        <Text size="sm" className="text-slate-500">
-                          {`Rp ${product.purchasePrice.toLocaleString("id-ID")}`}
+            }
+            renderItem={({ item: product }) => (
+              <Pressable
+                className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
+                onPress={() => setAddProduct(product)}
+              >
+                <HStack className="justify-between items-center">
+                  <HStack space="md" className="items-center">
+                    <Box className="size-16 rounded-lg bg-primary-200 items-center justify-center">
+                      <Heading className="text-primary-500 font-bold">
+                        {product.name.charAt(0).toUpperCase()}
+                      </Heading>
+                    </Box>
+                    <VStack className="flex-1">
+                      <Heading size="md" className="line-clamp-2">
+                        {product.name}
+                      </Heading>
+                      <Text size="sm" className="text-slate-500">
+                        {formatRp(product.purchasePrice)}
+                      </Text>
+                    </VStack>
+                    <HStack space="sm">
+                      <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
+                        <Text className="font-bold">
+                          {cart?.find((f) => f.product.id === product.id)
+                            ?.quantity || 0}
                         </Text>
-                      </VStack>
-                      <HStack space="sm">
-                        <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
-                          <Text className="font-bold">
-                            {cart?.find((f) => f.product.id === product.id)
-                              ?.quantity || 0}
-                          </Text>
-                        </Box>
-                        <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
-                          <Text className="text-typography-0 font-bold">
-                            {product.stock}
-                          </Text>
-                        </Box>
-                      </HStack>
+                      </Box>
+                      <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
+                        <Text className="text-typography-0 font-bold">
+                          {product.stock}
+                        </Text>
+                      </Box>
                     </HStack>
                   </HStack>
-                </Pressable>
-              ))}
-            </VStack>
-          </ScrollView>
+                </HStack>
+              </Pressable>
+            )}
+            ListEmptyComponent={
+              <Box className="p-8 items-center">
+                <Text className="text-slate-400 italic">Belum ada produk</Text>
+              </Box>
+            }
+          />
         </VStack>
         <VStack space="lg" className="flex-1">
-          <ScrollView className="flex-1">
-            <VStack className="flex-1">
-              {cart?.map((item, index) => (
-                <Pressable
-                  key={item.product.id}
-                  className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                  onPress={() => setAddProduct(item.product)}
-                >
-                  <HStack className="justify-between items-center">
-                    <HStack space="md" className="items-center">
-                      <Box className="size-6 justify-center items-center">
-                        <Heading size="md">{index + 1}</Heading>
-                      </Box>
-                      <VStack className="flex-1">
-                        <Heading size="md" className="line-clamp-2">
-                          {item.product.name}
-                        </Heading>
+          <FlatList
+            data={cart}
+            className="flex-1"
+            keyExtractor={(item) => item.product.id}
+            renderItem={({ item, index }) => (
+              <Pressable
+                className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
+                onPress={() => setAddProduct(item.product)}
+              >
+                <HStack className="justify-between items-center">
+                  <HStack space="md" className="items-center">
+                    <Box className="size-6 justify-center items-center">
+                      <Heading size="md">{index + 1}</Heading>
+                    </Box>
+                    <VStack className="flex-1">
+                      <Heading size="md" className="line-clamp-2">
+                        {item.product.name}
+                      </Heading>
+                      <Text size="sm" className="text-slate-500">
+                        {item.quantity} x Rp{" "}
+                        {formatNumber(item.newPurchasePrice)} = Rp{" "}
+                        {formatNumber(item.quantity * item.newPurchasePrice)}
+                      </Text>
+                      {item.note ? (
                         <Text size="sm" className="text-slate-500">
-                          {item.quantity} x Rp{" "}
-                          {item.newPurchasePrice.toLocaleString("id-ID")} = Rp{" "}
-                          {(
-                            item.quantity * item.newPurchasePrice
-                          ).toLocaleString("id-ID")}
+                          {item.note}
                         </Text>
-                        {item.note && (
-                          <Text size="sm" className="text-slate-500">
-                            {item.note}
-                          </Text>
-                        )}
-                      </VStack>
-                      <HStack space="sm">
-                        <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
-                          <Text className="font-bold">{item.quantity}</Text>
-                        </Box>
-                      </HStack>
+                      ) : null}
+                    </VStack>
+                    <HStack space="sm">
+                      <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
+                        <Text className="font-bold">{item.quantity}</Text>
+                      </Box>
                     </HStack>
                   </HStack>
-                </Pressable>
-              ))}
-            </VStack>
-          </ScrollView>
+                </HStack>
+              </Pressable>
+            )}
+            ListEmptyComponent={
+              <Box className="p-8 items-center">
+                <Text className="text-slate-400 italic">
+                  Belum ada barang di keranjang
+                </Text>
+              </Box>
+            }
+          />
           {!!cart.length && (
             <HStack space="md" className="w-full p-4">
               <Pressable
                 className="flex-1 flex-row items-center justify-between h-16 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
                 onPress={() => {
                   router.navigate("/(main)/purchasing/checkout");
-                  setStatus("COMPLETED");
+                  setStatus(Status.COMPLETED);
                 }}
               >
                 <HStack space="md" className="items-center">
                   <Text size="4xl" className="text-white font-bold">
-                    {cart
-                      .reduce((total, item) => total + item.quantity, 0)
-                      .toLocaleString("id-ID")}
+                    {formatNumber(cart.reduce((total, item) => total + item.quantity, 0))}
                   </Text>
                   <Text size="lg" className="text-white font-bold">
                     ITEM
@@ -224,7 +236,7 @@ export default function PurchasingList() {
                 className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                 onPress={() => {
                   router.navigate("/(main)/purchasing/checkout");
-                  setStatus("DRAFT");
+                  setStatus(Status.DRAFT);
                 }}
               >
                 <SolarIconBold name="ClipboardAdd" size={32} color="#3d2117" />

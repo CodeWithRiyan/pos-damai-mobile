@@ -21,14 +21,14 @@ import {
   FormControlLabelText,
 } from "@/components/ui/form-control";
 import { Radio, RadioGroup, RadioLabel } from "@/components/ui/radio";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 // import {
 //   useReturnPurchasing,
 //   useCreateReturnPurchasing,
 //   useUpdateReturnPurchasing,
 // } from "@/lib/api/return-purchasing";
-import { getErrorMessage } from "@/lib/api/client";
+import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 import { usePurchase } from "@/lib/api/purchasing";
 import { useCreatePurchaseReturn } from "@/lib/api/return-purchasing";
 import { useReturnPurchasingStore } from "@/stores/return-purchasing";
@@ -68,28 +68,6 @@ export default function ReturnPurchasingConfirmForm() {
     defaultValues: initialValues,
   });
 
-  const showSuccessToast = (message: string) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-          <ToastTitle>{message}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-          <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
   const onSubmit: SubmitHandler<ReturnPurchasingFormValues> = (
     data: ReturnPurchasingFormValues,
   ) => {
@@ -113,7 +91,7 @@ export default function ReturnPurchasingConfirmForm() {
 
     createMutation.mutate(returnData, {
       onSuccess: (data) => {
-        showSuccessToast("Retur berhasil disimpan");
+        showSuccessToast(toast, "Retur berhasil disimpan");
         setOpenConfirm(false);
         router.navigate(
           `/(main)/management/return/purchasing/receipt/${data.id}`,
@@ -121,7 +99,7 @@ export default function ReturnPurchasingConfirmForm() {
         resetCart();
         form.reset(initialValues);
       },
-      onError: showErrorToast,
+      onError: (error) => showErrorToast(toast, error),
     });
   };
 

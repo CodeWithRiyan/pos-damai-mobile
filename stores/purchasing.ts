@@ -1,11 +1,10 @@
 import { Product } from "@/lib/api/products";
+import { Status } from "@/lib/constants";
+import { BaseCartItem } from "@/lib/types/cart";
 import { create } from "zustand";
 
-interface CartItem {
-  product: Product;
+interface CartItem extends BaseCartItem {
   newPurchasePrice: number;
-  quantity: number;
-  note?: string;
 }
 
 type PurchasingCheckoutResponse = {
@@ -50,7 +49,7 @@ export const usePurchasingStore = create<PurchasingState>((set) => ({
   cart: [],
   cartTotal: 0,
   checkoutData: null,
-  status: "DRAFT",
+  status: Status.DRAFT,
   purchaseId: null,
   setPurchaseId: (id) => set({ purchaseId: id }),
   setStatus: (status) => set({ status }),

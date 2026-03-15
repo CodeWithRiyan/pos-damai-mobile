@@ -46,7 +46,7 @@ export function useDiscounts() {
             isNull(schema.discounts.deletedAt)
           )
         );
-      return result as unknown as Discount[];
+      return result as Discount[];
     },
     enabled: !!orgId,
   });
@@ -62,7 +62,7 @@ export function useDiscount(id: string) {
         .from(schema.discounts)
         .where(eq(schema.discounts.id, id))
         .limit(1);
-      return (result[0] as unknown as Discount) || null;
+      return (result[0] as Discount) || null;
     },
     enabled: !!id,
   });

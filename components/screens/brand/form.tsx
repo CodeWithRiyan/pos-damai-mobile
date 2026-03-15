@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/form-control";
 import { Input, InputField } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import {
   useBrand,
@@ -27,7 +27,7 @@ import {
   useCreateBrand,
   useUpdateBrand,
 } from "@/lib/api/brands";
-import { getErrorMessage } from "@/lib/api/client";
+import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 import { useBrandStore } from "@/stores/brand";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useEffect } from "react";
@@ -73,46 +73,24 @@ export default function BrandForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataBrand, form]);
 
-  const showSuccessToast = (message: string) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-          <ToastTitle>{message}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-          <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
   const onSubmit: SubmitHandler<BrandFormValues> = (data: BrandFormValues) => {
     if (dataBrand) {
       updateMutation.mutate(
         { id: dataBrand.id, ...data },
         {
           onSuccess: () => {
-            showSuccessToast("Brand berhasil diperbarui");
+            showSuccessToast(toast, "Brand berhasil diperbarui");
             onRefetch();
             form.reset(initialValues);
             setOpen(false);
           },
-          onError: showErrorToast,
+          onError: (error) => showErrorToast(toast, error),
         },
       );
     } else {
       createMutation.mutate(data, {
         onSuccess: (newBrand) => {
-          showSuccessToast("Brand berhasil ditambahkan");
+          showSuccessToast(toast, "Brand berhasil ditambahkan");
           onRefetch();
           if (useBrandStore.getState().onSuccess) {
             useBrandStore.getState().onSuccess?.(newBrand);
@@ -120,7 +98,7 @@ export default function BrandForm() {
           form.reset(initialValues);
           setOpen(false);
         },
-        onError: showErrorToast,
+        onError: (error) => showErrorToast(toast, error),
       });
     }
   };

@@ -7,6 +7,7 @@ import { PlusCircle } from "lucide-react-native";
 import { useMemo } from "react";
 import { ScrollView } from "react-native";
 
+import { formatRp } from "@/lib/utils/format";
 export default function ShiftDetail() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -79,7 +80,6 @@ export default function ShiftDetail() {
     );
   }, [detailShift]);
 
-  console.log("totals", totals);
   return (
     <VStack className="flex-1 bg-white">
       <Header header="DETAIL SHIFT" isGoBack />
@@ -103,72 +103,72 @@ export default function ShiftDetail() {
         <VStack space="sm" className="p-4 border-b border-background-300">
           <HStack className="w-full flex-row justify-between">
             <Text className="text-typography-600">Transaksi Penjualan</Text>
-            <Text className="font-bold">{`Rp ${totals.sales.toLocaleString("id")}`}</Text>
+            <Text className="font-bold">{formatRp(totals.sales)}</Text>
           </HStack>
           {!!totals.income && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Pemasukkan</Text>
-              <Text className="font-bold">{`Rp ${totals.income.toLocaleString("id")}`}</Text>
+              <Text className="font-bold">{formatRp(totals.income)}</Text>
             </HStack>
           )}
           {!!totals.payableRealization && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Pembayaran Hutang</Text>
-              <Text className="font-bold text-error-500">{`Rp ${totals.payableRealization.toLocaleString("id")}`}</Text>
+              <Text className="font-bold text-error-500">{formatRp(totals.payableRealization)}</Text>
             </HStack>
           )}
           {!!totals.supplies && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Beli Barang</Text>
-              <Text className="font-bold text-error-500">{`Rp ${totals.supplies.toLocaleString("id")}`}</Text>
+              <Text className="font-bold text-error-500">{formatRp(totals.supplies)}</Text>
             </HStack>
           )}
           {!!totals.equipment1 && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Perlengkapan</Text>
-              <Text className="font-bold text-error-500">{`Rp ${totals.equipment1.toLocaleString("id")}`}</Text>
+              <Text className="font-bold text-error-500">{formatRp(totals.equipment1)}</Text>
             </HStack>
           )}
           {!!totals.equipment2 && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Peralatan</Text>
-              <Text className="font-bold text-error-500">{`Rp ${totals.equipment2.toLocaleString("id")}`}</Text>
+              <Text className="font-bold text-error-500">{formatRp(totals.equipment2)}</Text>
             </HStack>
           )}
           {!!totals.cashDeposit && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Setor Tunai</Text>
-              <Text className="font-bold text-error-500">{`Rp ${totals.cashDeposit.toLocaleString("id")}`}</Text>
+              <Text className="font-bold text-error-500">{formatRp(totals.cashDeposit)}</Text>
             </HStack>
           )}
           {!!totals.otherExpenses && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Pengeluaran Lainnya</Text>
-              <Text className="font-bold text-error-500">{`Rp ${totals.otherExpenses.toLocaleString("id")}`}</Text>
+              <Text className="font-bold text-error-500">{formatRp(totals.otherExpenses)}</Text>
             </HStack>
           )}
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-background-100">
             <Text className="text-typography-600">Subtotal</Text>
-            <Text className="font-bold">{`Rp ${totals.finalBalance.toLocaleString("id")}`}</Text>
+            <Text className="font-bold">{formatRp(totals.finalBalance)}</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between px-4">
             <HStack space="sm" className="items-center">
               <Icon as={PlusCircle} size="md" />
               <Text className="text-typography-600">Saldo Awal</Text>
             </HStack>
-            <Text className="font-bold">{`Rp ${detailShift?.initialBalance.toLocaleString("id")}`}</Text>
+            <Text className="font-bold">{formatRp(detailShift?.initialBalance ?? 0)}</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-success-100">
             <Text className="text-typography-600 font-bold">
               Penerimaan Sistem
             </Text>
-            <Text className="font-bold">{`Rp ${totals.finalBalance.toLocaleString("id")}`}</Text>
+            <Text className="font-bold">{formatRp(totals.finalBalance)}</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-warning-100">
             <Text className="text-typography-600 font-bold">
               Penerimaan Aktual
             </Text>
-            <Text className="font-bold">{`Rp ${(detailShift?.actualBalance || 0).toLocaleString("id")}`}</Text>
+            <Text className="font-bold">{formatRp(detailShift?.actualBalance || 0)}</Text>
           </HStack>
         </VStack>
         <VStack space="sm" className="p-4">

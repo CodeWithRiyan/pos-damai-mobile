@@ -1,7 +1,7 @@
 import { useSyncQueueStore } from "@/stores/sync-queue-store";
 import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiClient, ApiResponse, isConnectionError } from "./client";
+import { apiClient, ApiResponse, isConnectionError, unwrapResponse } from "./client";
 import { Role } from "./roles";
 import { db } from "../db";
 import * as schema from "../db/schema";
@@ -55,18 +55,6 @@ export interface UpdateUserDTO {
   name?: string;
   roleId?: string;
   isActive?: boolean;
-}
-
-// Helper to unwrap API responses safely
-function unwrapResponse<T>(response: any): T {
-  let data = response.data;
-  if (data && data.data !== undefined) {
-    data = data.data;
-  }
-  if (data && data.data !== undefined && !Array.isArray(data)) {
-    data = data.data;
-  }
-  return data;
 }
 
 // Get all users
@@ -152,10 +140,10 @@ export function useDeleteUser() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiClient.delete<ApiResponse<any> | any>(
+      const response = await apiClient.delete<ApiResponse<void>>(
         `/users/${id}`
       );
-      return unwrapResponse<any>(response);
+      return unwrapResponse<void>(response);
     },
     onError: (error, id) => {
       if (isConnectionError(error)) {
@@ -175,11 +163,11 @@ export function useBulkDeleteUser() {
   return useMutation({
     mutationFn: async (data: { ids: string[] }) => {
       // Fix: Pass data inside config object
-      const response = await apiClient.delete<ApiResponse<any> | any>(
+      const response = await apiClient.delete<ApiResponse<void>>(
         "/users/bulk",
         { data }
       );
-      return unwrapResponse<any>(response);
+      return unwrapResponse<void>(response);
     },
     onError: (error, data) => {
       if (isConnectionError(error)) {

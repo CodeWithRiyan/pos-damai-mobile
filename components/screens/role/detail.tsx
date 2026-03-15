@@ -1,25 +1,21 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
     Box,
     HStack,
     Text,
-    Toast,
-    ToastTitle,
-    useToast,
     VStack,
 } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import useBreakpoint from "@/hooks/use-breakpoint";
-import { getErrorMessage } from "@/lib/api/client";
+import { useDeleteEntity } from "@/hooks/use-delete-entity";
+import { singleDeleteConfirm } from "@/lib/utils/delete-confirm";
 import { useDeleteRole, useRole, useRoles } from "@/lib/api/roles";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
 
 export default function RoleDetail() {
-  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { id } = useLocalSearchParams();
@@ -30,71 +26,17 @@ export default function RoleDetail() {
   const { refetch: refetchRoles } = useRoles();
   const { data: role, refetch: refetchRole } = useRole(roleId || "");
   const deleteMutation = useDeleteRole();
-  const toast = useToast();
 
   const onRefetch = () => {
     refetchRoles();
     refetchRole();
   };
 
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
-  const handleDeletePress = () => {
-    showPopUpConfirm({
-      title: "HAPUS ROLE",
-      icon: "warning",
-      description: (
-        <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus role `}
-          <Text className="font-bold text-slate-900">{role?.name}</Text>
-          {` ? Tindakan ini tidak dapat dibatalkan.`}
-        </Text>
-      ),
-      showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
-      onOk: () => confirmDelete(),
-      loading: deleteMutation.isPending,
-    });
-  };
-
-  const confirmDelete = async () => {
-    if (!role) return;
-
-    deleteMutation.mutate(role.id, {
-      onSuccess: () => {
-        hidePopUpConfirm();
-        onRefetch();
-        router.back();
-
-        toast.show({
-          placement: "top",
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-              <ToastTitle>Role berhasil dihapus</ToastTitle>
-            </Toast>
-          ),
-        });
-      },
-      onError: (error) => {
-        showErrorToast(error);
-        hidePopUpConfirm();
-      },
-    });
-  };
+  const { triggerDelete } = useDeleteEntity({
+    successMessage: "Role berhasil dihapus",
+    deleteMutation,
+    onSuccess: onRefetch,
+  });
 
   const handleAction = () => {
     showActionDrawer({
@@ -114,7 +56,7 @@ export default function RoleDetail() {
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
-            handleDeletePress();
+            triggerDelete(singleDeleteConfirm("role", role?.id || "", role?.name));
             hideActionDrawer();
           },
         },

@@ -13,12 +13,16 @@ import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { TransactionItem, useTransaction } from "@/lib/api/transactions";
 import { formatDisplayRefId } from "@/lib/utils/reference";
+import { getReceiptActions } from "@/lib/utils/receipt-actions";
+import { ProductType, Status } from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Check, Printer } from "lucide-react-native";
+import { useMemo } from "react";
 import { ScrollView } from "react-native";
 
+import { formatRp, formatNumber } from "@/lib/utils/format";
 export default function TransactionReceipt() {
   const router = useRouter();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -29,6 +33,38 @@ export default function TransactionReceipt() {
   const { data: transaction, isLoading } = useTransaction(id || "");
 
   const profile = useAuthStore((state) => state.profile);
+
+  const groupedItems = useMemo(() => {
+    if (!transaction?.items) return [];
+    const groupedItemsMap: Record<
+      string,
+      TransactionItem & {
+        quantity: number;
+        total: number;
+        totalDiscount: number;
+        regularPrice: number;
+      }
+    > = {};
+    transaction.items.forEach((item) => {
+      const key = `${item.productId}-${item.variantId || "no-var"}`;
+      if (!groupedItemsMap[key]) {
+        groupedItemsMap[key] = {
+          ...item,
+          quantity: 0,
+          total: 0,
+          totalDiscount: 0,
+          regularPrice: item.sellPrice,
+        };
+      }
+      groupedItemsMap[key].quantity += item.quantity;
+      groupedItemsMap[key].total += item.quantity * item.sellPrice;
+      groupedItemsMap[key].totalDiscount += item.discountAmount ?? 0;
+      if (item.sellPrice > groupedItemsMap[key].regularPrice) {
+        groupedItemsMap[key].regularPrice = item.sellPrice;
+      }
+    });
+    return Object.values(groupedItemsMap);
+  }, [transaction?.items]);
 
   if (isLoading || !id) {
     return (
@@ -53,6 +89,8 @@ export default function TransactionReceipt() {
   }
 
   const date = transaction.createdAt ? dayjs(transaction.createdAt) : dayjs();
+  const totalDiscount = transaction.totalDiscount ?? 0;
+  const subtotalGross = transaction.totalAmount + totalDiscount;
 
   return (
     <VStack className="flex-1 bg-primary-200">
@@ -68,29 +106,7 @@ export default function TransactionReceipt() {
             className="p-6"
             onPress={() => {
               showActionDrawer({
-                actions: [
-                  {
-                    label: "Cetak Struk",
-                    icon: "Printer",
-                    onPress: () => {
-                      hideActionDrawer();
-                    },
-                  },
-                  {
-                    label: "Download",
-                    icon: "Download",
-                    onPress: () => {
-                      hideActionDrawer();
-                    },
-                  },
-                  {
-                    label: "Share",
-                    icon: "Share",
-                    onPress: () => {
-                      hideActionDrawer();
-                    },
-                  },
-                ],
+                actions: getReceiptActions(hideActionDrawer),
               });
             }}
           >
@@ -139,7 +155,7 @@ export default function TransactionReceipt() {
               <Text className="text-typography-500">
                 {`## Struk ${transaction?.returnId ? "Penukaran Barang" : "Penjualan"} ##`}
               </Text>
-              {transaction.status === "DRAFT" && (
+              {transaction.status === Status.DRAFT && (
                 <Text className="text-red-500 font-bold mt-1">(DRAFT)</Text>
               )}
             </VStack>
@@ -187,161 +203,84 @@ export default function TransactionReceipt() {
             </VStack>
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack space="md">
-              {(() => {
-                // Group items by productId and variantId
-                const groupedItemsMap: Record<
-                  string,
-                  TransactionItem & {
-                    quantity: number;
-                    total: number;
-                  }
-                > = {};
-                transaction.items?.forEach((item) => {
-                  const key = `${item.productId}-${item.variantId || "no-var"}`;
-                  if (!groupedItemsMap[key]) {
-                    groupedItemsMap[key] = {
-                      ...item,
-                      quantity: 0,
-                      total: 0,
-                    };
-                  }
-                  groupedItemsMap[key].quantity += item.quantity;
-                  groupedItemsMap[key].total +=
-                    item.quantity * (item.sellPrice || 0);
-                });
-
-                return Object.values(groupedItemsMap).map((group) => {
-                  // Collect all sell prices for this product group
-                  const groupPrices = transaction.items
-                    ?.filter(
-                      (i) =>
-                        i.productId === group.productId &&
-                        i.variantId === group.variantId,
-                    )
-                    .map((i) => i.sellPrice || 0) || [0];
-
-                  const regularPrice = Math.max(...groupPrices);
-                  const minPrice = Math.min(...groupPrices);
-
-                  // Only show a discount if the item was actually split into
-                  // rows with different prices (i.e. a discount was applied)
-                  const hasDiscount = minPrice < regularPrice;
-                  const totalDiscount = hasDiscount
-                    ? regularPrice * group.quantity - group.total
-                    : 0;
-
-                  return (
-                    <VStack key={group.id} space="xs" className="mb-2">
-                      <HStack className="justify-between items-center">
-                        <VStack className="flex-1 mr-2">
-                          <Heading size="sm">
-                            {group.productName}
-                            {group.productType === "MULTIUNIT" &&
-                            group.variantName
-                              ? ` - ${group.variantName}`
-                              : ""}
-                          </Heading>
-                          <Text className="text-typography-500 text-sm">
-                            {group.quantity} x Rp{" "}
-                            {regularPrice.toLocaleString("id-ID")}
-                          </Text>
-                        </VStack>
-                        <Text className="text-typography-500 font-bold">
-                          Rp {group.total.toLocaleString("id-ID")}
-                        </Text>
-                      </HStack>
-                      {totalDiscount > 0 && (
-                        <HStack className="justify-between items-center pl-2">
-                          <Text className="text-error-500 text-sm italic">
-                            Potongan Harga (Diskon)
-                          </Text>
-                          <Text className="text-error-500 text-sm italic">
-                            - Rp {totalDiscount.toLocaleString("id-ID")}
-                          </Text>
-                        </HStack>
-                      )}
+              {groupedItems.map((group) => (
+                <VStack key={group.id} space="xs" className="mb-2">
+                  <HStack className="justify-between items-center">
+                    <VStack className="flex-1 mr-2">
+                      <Heading size="sm">
+                        {group.productName}
+                        {group.productType === ProductType.MULTIUNIT && group.variantName
+                          ? ` - ${group.variantName}`
+                          : ""}
+                      </Heading>
+                      <Text className="text-typography-500 text-sm">
+                        {group.quantity} x Rp{" "}
+                        {(group.regularPrice ?? 0)}
+                      </Text>
                     </VStack>
-                  );
-                });
-              })()}
+                    <Text className="text-typography-500 font-bold">
+                      Rp {formatNumber(group.total ?? 0)}
+                    </Text>
+                  </HStack>
+                  {group.totalDiscount > 0 && (
+                    <HStack className="justify-between items-center pl-2">
+                      <Text className="text-error-500 text-sm italic">
+                        Potongan Harga (Diskon)
+                      </Text>
+                      <Text className="text-error-500 text-sm italic">
+                        - Rp {formatNumber(group.totalDiscount ?? 0)}
+                      </Text>
+                    </HStack>
+                  )}
+                </VStack>
+              ))}
             </VStack>
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack space="sm">
-              {(() => {
-                // Pre-discount subtotal = maxPrice * qty per product group.
-                // Stored items use a split-row approach (1 discounted row +
-                // remaining rows at regular price), so maxPrice is the regular price.
-                const groupedMap: Record<
-                  string,
-                  { qty: number; maxPrice: number }
-                > = {};
-                transaction.items?.forEach((item) => {
-                  const key = `${item.productId}-${item.variantId || "no-var"}`;
-                  if (!groupedMap[key])
-                    groupedMap[key] = { qty: 0, maxPrice: 0 };
-                  groupedMap[key].qty += item.quantity;
-                  groupedMap[key].maxPrice = Math.max(
-                    groupedMap[key].maxPrice,
-                    item.sellPrice || 0,
-                  );
-                });
-                const subtotalGross = Object.values(groupedMap).reduce(
-                  (sum, g) => sum + g.maxPrice * g.qty,
-                  0,
-                );
-                const subtotalAfterDiscount =
-                  transaction.totalAmount - (transaction.commission || 0);
-                const discountAmount = subtotalGross - subtotalAfterDiscount;
-
-                return (
-                  <>
-                    <HStack className="justify-between items-center">
-                      <Text className="font-bold">Subtotal</Text>
-                      <Text className="font-bold">
-                        Rp {subtotalGross.toLocaleString("id-ID")}
-                      </Text>
-                    </HStack>
-                    {discountAmount > 0 && (
-                      <HStack className="justify-between items-center">
-                        <Text className="text-success-600 font-bold">
-                          Total Diskon
-                        </Text>
-                        <Text className="text-success-600 font-bold">
-                          - Rp {discountAmount.toLocaleString("id-ID")}
-                        </Text>
-                      </HStack>
-                    )}
-                    {transaction.commission ? (
-                      <HStack className="justify-between items-center">
-                        <Text className="text-typography-500">
-                          Biaya Layanan/Admin
-                        </Text>
-                        <Text className="text-typography-500">
-                          Rp {transaction.commission.toLocaleString("id-ID")}
-                        </Text>
-                      </HStack>
-                    ) : null}
-                    <HStack className="justify-between items-center">
-                      <Text className="font-bold">Total Tagihan</Text>
-                      <Text className="font-bold">
-                        Rp {transaction.totalAmount.toLocaleString("id-ID")}
-                      </Text>
-                    </HStack>
-                    <HStack className="justify-between items-center">
-                      <Text className="font-bold">Uang Dibayarkan</Text>
-                      <Text className="font-bold">
-                        Rp {transaction.totalPaid.toLocaleString("id-ID")}
-                      </Text>
-                    </HStack>
-                    <HStack className="justify-between items-center">
-                      <Text className="font-bold">Kembalian</Text>
-                      <Text className="font-bold">
-                        {`Rp ${(transaction.totalPaid - transaction.totalAmount).toLocaleString("id-ID")}`}
-                      </Text>
-                    </HStack>
-                  </>
-                );
-              })()}
+              <HStack className="justify-between items-center">
+                <Text className="font-bold">Subtotal</Text>
+                <Text className="font-bold">
+                  Rp {formatNumber(subtotalGross)}
+                </Text>
+              </HStack>
+              {totalDiscount > 0 && (
+                <HStack className="justify-between items-center">
+                  <Text className="text-success-600 font-bold">
+                    Total Diskon
+                  </Text>
+                  <Text className="text-success-600 font-bold">
+                    - Rp {formatNumber(totalDiscount)}
+                  </Text>
+                </HStack>
+              )}
+              {transaction.commission ? (
+                <HStack className="justify-between items-center">
+                  <Text className="text-typography-500">
+                    Biaya Layanan/Admin
+                  </Text>
+                  <Text className="text-typography-500">
+                    Rp {formatNumber(transaction.commission ?? 0)}
+                  </Text>
+                </HStack>
+              ) : null}
+              <HStack className="justify-between items-center">
+                <Text className="font-bold">Total Tagihan</Text>
+                <Text className="font-bold">
+                  Rp {formatNumber(transaction.totalAmount ?? 0)}
+                </Text>
+              </HStack>
+              <HStack className="justify-between items-center">
+                <Text className="font-bold">Uang Dibayarkan</Text>
+                <Text className="font-bold">
+                  Rp {formatNumber(transaction.totalPaid ?? 0)}
+                </Text>
+              </HStack>
+              <HStack className="justify-between items-center">
+                <Text className="font-bold">Kembalian</Text>
+                <Text className="font-bold">
+                  {formatRp((transaction.totalPaid ?? 0) - (transaction.totalAmount ?? 0))}
+                </Text>
+              </HStack>
             </VStack>
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack className="items-center py-2">

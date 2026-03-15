@@ -3,10 +3,10 @@ import { create } from "zustand";
 
 interface BrandState {
   open: boolean;
-  data?: Brand | null;
+  data: Brand | null;
   onSuccess?: (brand: Brand) => void;
   setOpen: (state: boolean, onSuccess?: (brand: Brand) => void) => void;
-  setData: (data?: Brand | null) => void;
+  setData: (data: Brand | null) => void;
 }
 
 export const useBrandStore = create<BrandState>((set) => ({

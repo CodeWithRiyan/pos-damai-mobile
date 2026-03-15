@@ -10,12 +10,14 @@ import {
   Text,
   VStack,
 } from "@/components/ui";
+import { FinanceType, Status } from "@/lib/constants";
 import { useDeleteFinance, useFinances } from "@/lib/api/finances";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
 import { Trash2 } from "lucide-react-native";
 import { ScrollView } from "react-native";
 
+import { formatNumber } from "@/lib/utils/format";
 export default function FinanceDraft() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
@@ -25,7 +27,7 @@ export default function FinanceDraft() {
   const isLoading = isLoadingFinances || isPendingDelete;
 
   // Filter only DRAFT status
-  const drafts = finances?.filter((f) => f.status === "DRAFT") || [];
+  const drafts = finances?.filter((f) => f.status === Status.DRAFT) || [];
 
   const handleContinueDraft = async (financeId: string) => {
     // For now, we just navigate to Finance screen.
@@ -118,7 +120,7 @@ export default function FinanceDraft() {
                             Nominal
                           </Text>
                           <Text className="font-bold">
-                            Rp {draft.nominal.toLocaleString("id-ID")}
+                            Rp {formatNumber(draft.nominal)}
                           </Text>
                         </VStack>
                         <VStack>
@@ -126,9 +128,9 @@ export default function FinanceDraft() {
                             Tipe
                           </Text>
                           <Text
-                            className={`font-bold ${draft.type === "INCOME" ? "text-success-500" : "text-error-500"}`}
+                            className={`font-bold ${draft.type === FinanceType.INCOME ? "text-success-500" : "text-error-500"}`}
                           >
-                            {draft.type === "INCOME"
+                            {draft.type === FinanceType.INCOME
                               ? "Pemasukan"
                               : "Pengeluaran"}
                           </Text>

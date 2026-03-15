@@ -8,6 +8,8 @@ import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
 
+import { FinanceType, Status } from "@/lib/constants";
+import { formatRp, formatNumber } from "@/lib/utils/format";
 export default function FinanceTransactionReceipt() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: finance, isLoading } = useFinance(id || "");
@@ -55,7 +57,7 @@ export default function FinanceTransactionReceipt() {
               <Text className="text-typography-500">
                 ## Struk Transaksi Keuangan ##
               </Text>
-              {finance.status === "DRAFT" && (
+              {finance.status === Status.DRAFT && (
                 <Text className="text-red-500 font-bold mt-1">(DRAFT)</Text>
               )}
             </VStack>
@@ -64,12 +66,12 @@ export default function FinanceTransactionReceipt() {
               <HStack className="justify-between items-center">
                 <Text
                   className={`font-bold ${
-                    finance.type === "INCOME"
+                    finance.type === FinanceType.INCOME
                       ? "text-success-500"
                       : "text-error-500"
                   }`}
                 >
-                  {finance.type === "INCOME"
+                  {finance.type === FinanceType.INCOME
                     ? "Transaksi Masuk"
                     : "Transaksi Keluar"}
                 </Text>
@@ -77,11 +79,11 @@ export default function FinanceTransactionReceipt() {
                   {`Oleh: ${profile?.name || ""}`}
                 </Text>
               </HStack>
-              {finance.expensesType && (
+              {finance.expensesType ? (
                 <HStack className="justify-between items-center">
                   <Text className="font-bold">{finance.expensesType}</Text>
                 </HStack>
-              )}
+              ) : null}
               <HStack className="justify-between items-center mt-2">
                 <Text className="text-typography-500">
                   {date.format("DD/MM/YYYY")}
@@ -104,11 +106,11 @@ export default function FinanceTransactionReceipt() {
                 <VStack className="flex-1 mr-2">
                   <Heading size="sm">{finance.note}</Heading>
                   <Text className="text-typography-500 text-sm">
-                    {`1 x Rp ${finance.nominal.toLocaleString("id-ID")}`}
+                    {`1 x ${formatRp(finance.nominal)}`}
                   </Text>
                 </VStack>
                 <Text className="text-typography-500 font-bold">
-                  Rp {finance.nominal.toLocaleString("id-ID")}
+                  Rp {formatNumber(finance.nominal)}
                 </Text>
               </HStack>
             </VStack>
@@ -117,7 +119,7 @@ export default function FinanceTransactionReceipt() {
               <HStack className="justify-between items-center">
                 <Text className="font-bold">Total</Text>
                 <Text className="font-bold">
-                  Rp {finance.nominal.toLocaleString("id-ID")}
+                  Rp {formatNumber(finance.nominal)}
                 </Text>
               </HStack>
             </VStack>

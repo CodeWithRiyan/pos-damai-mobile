@@ -12,6 +12,7 @@ import { useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
 import { ScrollView } from "react-native";
 
+import { formatNumber } from "@/lib/utils/format";
 export default function ProductSupplierTransactions() {
   const { productId, supplierId } = useLocalSearchParams<{
     productId: string;
@@ -96,7 +97,7 @@ export default function ProductSupplierTransactions() {
               <VStack className="items-center">
                 <Text className="text-typography-500 text-xs">Total Nilai</Text>
                 <Heading size="lg" className="text-info-600">
-                  Rp {summary.totalValue.toLocaleString("id-ID")}
+                  Rp {formatNumber(summary.totalValue)}
                 </Heading>
                 <Text className="text-typography-500 text-xs">
                   {transactions.length} transaksi
@@ -146,23 +147,23 @@ export default function ProductSupplierTransactions() {
                       Harga Satuan
                     </Text>
                     <Text className="text-sm font-bold">
-                      Rp {transaction.unitPrice.toLocaleString("id-ID")}
+                      Rp {formatNumber(transaction.unitPrice)}
                     </Text>
                   </GridItem>
                   <GridItem _extra={{ className: "col-span-1" }}>
                     <Text className="text-typography-500 text-sm">Total</Text>
                     <Text className="text-sm font-bold text-primary-600">
-                      Rp {transaction.totalPrice.toLocaleString("id-ID")}
+                      Rp {formatNumber(transaction.totalPrice)}
                     </Text>
                   </GridItem>
-                  {transaction.note && (
+                  {transaction.note ? (
                     <GridItem _extra={{ className: "col-span-2" }}>
                       <Text className="text-typography-500 text-sm">
                         Catatan
                       </Text>
                       <Text className="text-sm">{transaction.note}</Text>
                     </GridItem>
-                  )}
+                  ) : null}
                 </Grid>
               </Box>
             ))}

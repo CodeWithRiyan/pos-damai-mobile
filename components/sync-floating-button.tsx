@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { Text } from './ui/text';
 import { Button, ButtonText } from './ui/button';
 import { Icon, CloseIcon, RepeatIcon, ArrowUpIcon, DownloadIcon } from './ui/icon';
@@ -30,16 +30,16 @@ export function SyncFloatingButton() {
       <View style={styles.card}>
         <View style={styles.header}>
           <Text style={styles.title}>Data Sync</Text>
-          <TouchableOpacity
+          <Pressable
             onPress={() => setIsVisible(false)}
             style={styles.closeButton}
             hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
           >
             <Icon as={CloseIcon} size="sm" />
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
-        <TouchableOpacity onPress={handleGoToSync} activeOpacity={0.7}>
+        <Pressable onPress={handleGoToSync}>
           <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Icon as={ArrowUpIcon} size="xs" />
@@ -68,7 +68,7 @@ export function SyncFloatingButton() {
               {isSyncing ? 'Syncing...' : 'Manage Sync'}
             </ButtonText>
           </Button>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );
@@ -84,6 +84,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: 'white',
     borderRadius: 12,
+    borderCurve: 'continuous',
     padding: 12,
     width: 160,
     shadowColor: '#000',
@@ -103,8 +104,9 @@ const styles = StyleSheet.create({
   closeButton: {
     width: 24,
     height: 24,
-    backgroundColor: '#e5e7eb', // Slightly darker gray for better contrast
+    backgroundColor: '#e5e7eb',
     borderRadius: 12,
+    borderCurve: 'continuous',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -125,20 +127,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 4,
   },
   stat: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 3,
   },
   statLabel: {
     fontSize: 11,
-    marginLeft: 4,
     color: '#444',
   },
   statValue: {
     fontSize: 11,
     fontWeight: 'bold',
-    marginLeft: 3,
   },
   dirtyText: {
     color: '#ef4444',
@@ -147,6 +149,5 @@ const styles = StyleSheet.create({
     width: 1,
     height: 12,
     backgroundColor: '#eee',
-    marginHorizontal: 4,
   },
 });

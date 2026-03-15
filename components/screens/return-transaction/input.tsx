@@ -21,6 +21,7 @@ import { ScrollView } from "react-native";
 import ReturnTransactionConfirmForm from "./form";
 import PopupAddProduct from "./popup-add";
 
+import { formatNumber } from "@/lib/utils/format";
 export default function ReturnTransactionInput() {
   const { customerId } = useLocalSearchParams<{ customerId: string }>();
   const { cart, setAddProduct, setOpenConfirm } = useReturnTransactionStore();
@@ -88,7 +89,7 @@ export default function ReturnTransactionInput() {
                                 {item.name || "Unknown"}
                               </Heading>
                               <Text size="xs" className="text-slate-500">
-                                {`Rp ${(item.lastSellPrice ?? item.sellPrices?.[0]?.price)?.toLocaleString("id-ID") ?? 0}`}
+                                {`Rp ${formatNumber((item.lastSellPrice ?? item.sellPrices?.[0]?.price) ?? 0)}`}
                               </Text>
                             </VStack>
                           </HStack>
@@ -120,16 +121,14 @@ export default function ReturnTransactionInput() {
                         </Heading>
                         <Text size="sm" className="text-slate-500">
                           {item.quantity} x Rp{" "}
-                          {item.sellPrice?.toLocaleString("id-ID")} = Rp{" "}
-                          {(
-                            item.quantity * (item.sellPrice || 0)
-                          ).toLocaleString("id-ID")}
+                          {formatNumber(item.sellPrice ?? 0)} = Rp{" "}
+                          {formatNumber(item.quantity * (item.sellPrice || 0))}
                         </Text>
-                        {item.note && (
+                        {item.note ? (
                           <Text size="sm" className="text-slate-500">
                             {item.note}
                           </Text>
-                        )}
+                        ) : null}
                       </VStack>
                       <HStack space="sm">
                         <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
@@ -150,9 +149,7 @@ export default function ReturnTransactionInput() {
               >
                 <HStack space="md" className="items-center">
                   <Text size="4xl" className="text-white font-bold">
-                    {cart
-                      .reduce((total, item) => total + item.quantity, 0)
-                      .toLocaleString("id-ID")}
+                    {formatNumber(cart.reduce((total, item) => total + item.quantity, 0))}
                   </Text>
                   <Text size="lg" className="text-white font-bold">
                     ITEM

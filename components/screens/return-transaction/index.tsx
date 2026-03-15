@@ -15,14 +15,27 @@ import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { useCustomers } from "@/lib/api/customers";
+import { useCustomerIdsWithTransactions } from "@/lib/api/transactions";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { ScrollView } from "react-native";
+import { FlatList } from "react-native";
 
 export default function PurchasingCustomerList() {
   const { data: customers, isLoading: loadingCustomers } = useCustomers();
+  const { data: customerIdsWithTx, isLoading: loadingTx } =
+    useCustomerIdsWithTransactions();
   const [search, setSearch] = useState("");
   const router = useRouter();
+
+  const isLoading = loadingCustomers || loadingTx;
+
+  const filteredCustomers = isLoading
+    ? []
+    : (customers ?? []).filter(
+        (s) =>
+          customerIdsWithTx?.has(s.id) &&
+          (!search || s.name.toLowerCase().includes(search.toLowerCase())),
+      );
 
   return (
     <Box className="flex-1 bg-white">
@@ -56,48 +69,44 @@ export default function PurchasingCustomerList() {
             />
           </Input>
         </HStack>
-        <ScrollView className="flex-1">
-          {loadingCustomers ? (
-            <VStack className="items-center py-10">
-              <Spinner />
-            </VStack>
-          ) : !customers?.length ? (
-            <VStack className="items-center py-10">
-              <Text className="text-gray-400">Belum ada customer</Text>
-            </VStack>
-          ) : (
-            customers
-              ?.filter(
-                (s) =>
-                  s.totalTransactions > 0 &&
-                  (!search ||
-                    s.name.toLowerCase().includes(search.toLowerCase())),
-              )
-              .map((customer) => (
-                <Pressable
-                  key={customer.id}
-                  className="px-4 py-4 border-b border-gray-200 active:bg-gray-100"
-                  onPress={() => {
-                    router.navigate(
-                      `/(main)/management/return/transaction/input/${customer.id}` as any,
-                    );
-                  }}
-                >
-                  <HStack className="justify-between items-center">
-                    <VStack className="flex-1">
-                      <Heading size="sm">{customer.name}</Heading>
-                      {customer.phone && (
-                        <Text size="xs" className="text-gray-500">
-                          {customer.phone}
-                        </Text>
-                      )}
-                    </VStack>
-                    <Text className="text-gray-400 text-lg">›</Text>
-                  </HStack>
-                </Pressable>
-              ))
+        <FlatList
+          data={filteredCustomers}
+          className="flex-1"
+          keyExtractor={(customer) => customer.id}
+          renderItem={({ item: customer }) => (
+            <Pressable
+              className="px-4 py-4 border-b border-gray-200 active:bg-gray-100"
+              onPress={() => {
+                router.navigate(
+                  `/(main)/management/return/transaction/input/${customer.id}` as any,
+                );
+              }}
+            >
+              <HStack className="justify-between items-center">
+                <VStack className="flex-1">
+                  <Heading size="sm">{customer.name}</Heading>
+                  {!!customer.phone && (
+                    <Text size="xs" className="text-gray-500">
+                      {customer.phone}
+                    </Text>
+                  )}
+                </VStack>
+                <Text className="text-gray-400 text-lg">›</Text>
+              </HStack>
+            </Pressable>
           )}
-        </ScrollView>
+          ListEmptyComponent={
+            isLoading ? (
+              <VStack className="items-center py-10">
+                <Spinner />
+              </VStack>
+            ) : (
+              <VStack className="items-center py-10">
+                <Text className="text-gray-400">Belum ada customer</Text>
+              </VStack>
+            )
+          }
+        />
       </VStack>
     </Box>
   );

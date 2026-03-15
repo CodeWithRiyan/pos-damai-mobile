@@ -1,3 +1,4 @@
+import { formatRp } from "@/lib/utils/format";
 import { Box, Heading, HStack, Pressable, Text, VStack } from "@/components/ui";
 
 export default function ListProductLayout({
@@ -30,7 +31,7 @@ export default function ListProductLayout({
               {name}
             </Heading>
             <Text size="sm" className="text-slate-500">
-              {`Rp ${price.toLocaleString("id-ID")}`}
+              {formatRp(price)}
             </Text>
           </VStack>
           <HStack space="sm">

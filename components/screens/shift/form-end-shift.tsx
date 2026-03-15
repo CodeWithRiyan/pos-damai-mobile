@@ -23,9 +23,9 @@ import {
 } from "@/components/ui/form-control";
 import { Input, InputField, InputSlot } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-import { getErrorMessage } from "@/lib/api/client";
+import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 import { useCurrentShift, useEndShift } from "@/lib/api/shifts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
@@ -62,28 +62,6 @@ export default function EndShiftForm({
     defaultValues: initialValues,
   });
 
-  const showSuccessToast = (message: string) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-          <ToastTitle>{message}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-          <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
   const onSubmit: SubmitHandler<EndShiftFormValues> = (
     data: EndShiftFormValues,
   ) => {
@@ -95,13 +73,13 @@ export default function EndShiftForm({
       },
       {
         onSuccess: (newEndShift) => {
-          showSuccessToast("Shift Telah Berakhir");
+          showSuccessToast(toast, "Shift Telah Berakhir");
           form.reset(initialValues);
           setOpen(false);
           router.push(`/shift/detail/${newEndShift.id}`);
         },
-        onError: (error: any) => {
-          showErrorToast(error);
+        onError: (error: unknown) => {
+          showErrorToast(toast, error);
         },
       },
     );

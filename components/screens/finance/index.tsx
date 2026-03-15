@@ -31,6 +31,7 @@ import { CalendarIcon } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
+import { FinanceType, Status } from "@/lib/constants";
 import z from "zod";
 
 // Dummy data removed
@@ -77,7 +78,7 @@ export default function FinanceTransaction() {
   const isLoading = createMutation.isPending;
 
   const initialValues: FinanceFormValues = {
-    type: "INCOME",
+    type: FinanceType.INCOME,
     expensesType: "",
     nominal: 0,
     transactionDate: new Date(),
@@ -90,7 +91,7 @@ export default function FinanceTransaction() {
   });
 
   useEffect(() => {
-    if (draftData && draftData.status === "DRAFT") {
+    if (draftData && draftData.status === Status.DRAFT) {
       let expType = draftData.expensesType || "";
       let parsedNote = draftData.note || "";
       if (expType === "EQUIPMENT") {
@@ -121,12 +122,12 @@ export default function FinanceTransaction() {
   const onSubmit: SubmitHandler<FinanceFormValues> = (
     data: FinanceFormValues,
   ) => {
-    handleSave(data, "COMPLETED");
+    handleSave(data, Status.COMPLETED);
   };
 
   const onSaveDraft = () => {
     const data = form.getValues();
-    handleSave(data, "DRAFT");
+    handleSave(data, Status.DRAFT);
   };
 
   const handleSave = (
@@ -140,7 +141,7 @@ export default function FinanceTransaction() {
         ...data,
         expensesType: isEquipment ? "EQUIPMENT" : data.expensesType,
         nominal: data.nominal,
-        inputToCashdrawer: status === "COMPLETED",
+        inputToCashdrawer: status === Status.COMPLETED,
         note: !isEquipment
           ? data.note
           : `${data.expensesType.includes("1") ? "Perlengkapan" : "Peralatan"}${data.note ? `: ${data.note}` : ""}`,
@@ -153,7 +154,7 @@ export default function FinanceTransaction() {
             render: ({ id }) => (
               <Toast nativeID={id} action="success" variant="solid">
                 <ToastTitle>
-                  {status === "COMPLETED"
+                  {status === Status.COMPLETED
                     ? "Transaksi berhasil disimpan"
                     : "Draft berhasil disimpan"}
                 </ToastTitle>
@@ -161,7 +162,7 @@ export default function FinanceTransaction() {
             ),
           });
 
-          if (status === "COMPLETED") {
+          if (status === Status.COMPLETED) {
             router.replace(`/(main)/finance/receipt/${responseData.id}`);
           } else {
             router.navigate("/(main)/finance/draft");
@@ -264,7 +265,7 @@ export default function FinanceTransaction() {
                   </FormControl>
                 )}
               />
-              {form.watch("type") === "EXPENSES" && (
+              {form.watch("type") === FinanceType.EXPENSES && (
                 <Controller
                   control={form.control}
                   name="expensesType"

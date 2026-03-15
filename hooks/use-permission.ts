@@ -9,7 +9,7 @@ export function usePermission() {
   const { profile } = useAuthStore();
   
   // Flatten all permissions from all roles
-  const permissions = profile?.roles.flatMap(role => role.permissions || []) || [];
+  const permissions = profile?.roles?.flatMap(role => role.permissions || []) || [];
   
   /**
    * Check if user has a specific permission name.

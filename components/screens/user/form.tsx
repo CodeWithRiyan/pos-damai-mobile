@@ -18,7 +18,7 @@ import {
   VStack,
 } from "@/components/ui";
 import SelectModal from "@/components/ui/select/select-modal";
-import { getErrorMessage } from "@/lib/api/client";
+import { showErrorToast } from "@/lib/utils/toast";
 import { useRoles } from "@/lib/api/roles";
 import {
   CreateUserDTO,
@@ -74,20 +74,6 @@ export default function UserForm() {
 
   const toast = useToast();
 
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
   useEffect(() => {
     if (userId && user) {
       form.reset({
@@ -138,7 +124,7 @@ export default function UserForm() {
           });
         },
         onError: (error) => {
-          showErrorToast(error);
+          showErrorToast(toast, error);
         },
       });
     } else {
@@ -160,7 +146,7 @@ export default function UserForm() {
           });
         },
         onError: (error) => {
-          showErrorToast(error);
+          showErrorToast(toast, error);
         },
       });
     }
@@ -287,7 +273,7 @@ export default function UserForm() {
             )}
           />
 
-          {userId && (
+          {!!userId && (
             <Controller
               control={form.control}
               name="isActive"

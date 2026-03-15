@@ -1,3 +1,4 @@
+import { formatRp } from "@/lib/utils/format";
 import {
   Badge,
   BadgeText,
@@ -54,7 +55,7 @@ export default function GridProductLayout({
             {name}
           </Heading>
           <Text size="sm" className="font-semibold text-primary-600">
-            {`Rp ${price.toLocaleString("id-ID")}`}
+            {formatRp(price)}
           </Text>
         </VStack>
 

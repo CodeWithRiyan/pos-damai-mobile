@@ -3,13 +3,13 @@ import { create } from "zustand";
 
 interface PaymentTypeState {
   open: boolean;
-  data?: PaymentType | null;
-  onSuccess?: (category: PaymentType) => void;
+  data: PaymentType | null;
+  onSuccess?: (paymentType: PaymentType) => void;
   setOpen: (
     state: boolean,
-    onSuccess?: (category: PaymentType) => void,
+    onSuccess?: (paymentType: PaymentType) => void,
   ) => void;
-  setData: (data?: PaymentType | null) => void;
+  setData: (data: PaymentType | null) => void;
 }
 
 export const usePaymentTypeStore = create<PaymentTypeState>((set) => ({

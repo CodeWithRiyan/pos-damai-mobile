@@ -266,6 +266,8 @@ export const transactions = sqliteTable("transactions", {
   totalAmount: real("totalAmount").notNull(),
   totalPaid: real("totalPaid").notNull(),
   commission: real("commission").default(0),
+  totalDiscount: real("totalDiscount").default(0),
+  totalProfit: real("totalProfit").default(0),
   paymentTypeId: text("paymentTypeId").notNull(),
   transactionDate: integer("transactionDate", { mode: "timestamp" }).notNull(),
   status: text("status").default("COMPLETED"), // 'DRAFT' | 'COMPLETED'
@@ -282,6 +284,9 @@ export const transactionItems = sqliteTable("transaction_items", {
   variantId: text("variantId"),
   quantity: real("quantity").notNull(),
   sellPrice: real("sellPrice").notNull(),
+  discountAmount: real("discountAmount").default(0),
+  purchasePrice: real("purchasePrice").default(0),
+  profit: real("profit").default(0),
   note: text("note"),
   organizationId: text("organizationId").notNull(),
   ...syncColumns,
@@ -377,4 +382,36 @@ export const storeSupplyItems = sqliteTable("store_supply_items", {
   organizationId: text("organizationId").notNull(),
   ...syncColumns,
 });
+
+// Inferred types for select/insert operations
+export type UserRow = typeof users.$inferSelect;
+export type NewUserRow = typeof users.$inferInsert;
+export type CategoryRow = typeof categories.$inferSelect;
+export type BrandRow = typeof brands.$inferSelect;
+export type ProductRow = typeof products.$inferSelect;
+export type SupplierRow = typeof suppliers.$inferSelect;
+export type DiscountRow = typeof discounts.$inferSelect;
+export type PaymentTypeRow = typeof paymentTypes.$inferSelect;
+export type ProductVariantRow = typeof productVariants.$inferSelect;
+export type ProductPriceRow = typeof productPrices.$inferSelect;
+export type CustomerRow = typeof customers.$inferSelect;
+export type PurchaseRow = typeof purchases.$inferSelect;
+export type InventoryTransactionRow = typeof inventoryTransactions.$inferSelect;
+export type PurchaseReturnRow = typeof purchaseReturns.$inferSelect;
+export type PurchaseReturnItemRow = typeof purchaseReturnItems.$inferSelect;
+export type StockOpnameRow = typeof stockOpnames.$inferSelect;
+export type StockOpnameItemRow = typeof stockOpnameItems.$inferSelect;
+export type PayableRow = typeof payables.$inferSelect;
+export type PayableRealizationRow = typeof payableRealizations.$inferSelect;
+export type ReceivableRow = typeof receivables.$inferSelect;
+export type ReceivableRealizationRow = typeof receivableRealizations.$inferSelect;
+export type TransactionRow = typeof transactions.$inferSelect;
+export type TransactionItemRow = typeof transactionItems.$inferSelect;
+export type TransactionReturnRow = typeof transactionReturns.$inferSelect;
+export type TransactionReturnItemRow = typeof transactionReturnItems.$inferSelect;
+export type CashDrawerRow = typeof cashDrawers.$inferSelect;
+export type FinanceRow = typeof finances.$inferSelect;
+export type ShiftRow = typeof shifts.$inferSelect;
+export type StoreSupplyRow = typeof storeSupplies.$inferSelect;
+export type StoreSupplyItemRow = typeof storeSupplyItems.$inferSelect;
 

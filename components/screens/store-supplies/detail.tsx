@@ -7,20 +7,12 @@ import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
 
+import { formatMoney } from "@/lib/utils/format";
 export default function StoreSuppliesDetail() {
   const { id } = useLocalSearchParams();
   const storeSuppliesId = id as string;
 
   const { data: storeSupplies, isLoading } = useStoreSupply(storeSuppliesId);
-
-  const formatMoney = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
   if (isLoading) {
     return (
       <Box className="flex-1 justify-center items-center bg-white">

@@ -25,7 +25,7 @@ import {
   VStack,
 } from "@/components/ui";
 import SelectModal from "@/components/ui/select/select-modal";
-import { getErrorMessage } from "@/lib/api/client";
+import { showErrorToast } from "@/lib/utils/toast";
 import { usePaymentTypes } from "@/lib/api/payment-types";
 import {
   useCreateReceivableRealization,
@@ -42,6 +42,7 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
 
+import { formatRp } from "@/lib/utils/format";
 export default function ReceivableRealizationForm() {
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
 
@@ -66,7 +67,7 @@ export default function ReceivableRealizationForm() {
       .min(1, "Nominal wajib diisi.")
       .max(
         remainingBalance,
-        `Nominal tidak boleh melebihi sisa piutang (Rp ${remainingBalance.toLocaleString("id-ID")})`,
+        `Nominal tidak boleh melebihi sisa piutang (${formatRp(remainingBalance)})`,
       ),
     payOff: z.boolean(),
     realizationDate: z.date(),
@@ -101,20 +102,6 @@ export default function ReceivableRealizationForm() {
 
   const toast = useToast();
 
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
   const onSubmit: SubmitHandler<ReceivableRealizationFormValues> = async (
     data: ReceivableRealizationFormValues,
   ) => {
@@ -143,7 +130,7 @@ export default function ReceivableRealizationForm() {
             });
             router.back();
           },
-          onError: (error) => showErrorToast(error),
+          onError: (error) => showErrorToast(toast, error),
         },
       );
     } else {

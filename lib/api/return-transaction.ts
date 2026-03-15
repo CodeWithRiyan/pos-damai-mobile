@@ -1,3 +1,4 @@
+import { InventoryTxType, PriceType, ReturnType, Status } from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { desc, eq } from "drizzle-orm";
@@ -58,7 +59,7 @@ async function calcEarnedPoints(
       .where(eq(products.id, item.productId))
       .limit(1);
     if (row) {
-      const catPoints = customerCategory === "WHOLESALE" ? row.wholesalePoint : row.retailPoint;
+      const catPoints = customerCategory === PriceType.WHOLESALE ? row.wholesalePoint : row.retailPoint;
       points  += (catPoints ?? 0) * item.quantity;
       revenue += item.sellPrice * item.quantity;
       profit  += (item.sellPrice - (row.purchasePrice ?? 0)) * item.quantity;
@@ -254,9 +255,9 @@ export const useCreateTransactionReturn = () => {
               id: txIdIn,
               local_ref_id: txRefIdIn,
               productId: item.productId,
-              type: "RETURN_SALE",
+              type: InventoryTxType.RETURN_SALE,
               quantity: item.quantity, // Positive for returned sales
-              status: "COMPLETED",
+              status: Status.COMPLETED,
               organizationId,
               createdBy: userId,
               updatedBy: userId,
@@ -266,7 +267,7 @@ export const useCreateTransactionReturn = () => {
             });
 
             // Leg 2: Replacement item goes out (Stock OUT) - only for ITEM return
-            if (data.returnType === "ITEM") {
+            if (data.returnType === ReturnType.ITEM) {
               const txIdOut = `invrt_out_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
               const txRefIdOut = `${finalLocalRefId}-${item.productId}-out`;
 
@@ -274,9 +275,9 @@ export const useCreateTransactionReturn = () => {
                 id: txIdOut,
                 local_ref_id: txRefIdOut,
                 productId: item.productId,
-                type: "SALE",
+                type: InventoryTxType.SALE,
                 quantity: -item.quantity, // Negative for replacement item
-                status: "COMPLETED",
+                status: Status.COMPLETED,
                 organizationId,
                 createdBy: userId,
                 updatedBy: userId,
@@ -297,7 +298,7 @@ export const useCreateTransactionReturn = () => {
             .limit(1);
           if (cust) {
             const returned = await calcEarnedPoints(tx, data.items ?? [], cust.category);
-            if (data.returnType === "CASH") {
+            if (data.returnType === ReturnType.CASH) {
               await tx
                 .update(customers)
                 .set({

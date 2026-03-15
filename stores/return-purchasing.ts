@@ -1,16 +1,6 @@
 import { Product } from "@/lib/api/products";
+import { BaseCartItem as CartItem, ConfirmData } from "@/lib/types/cart";
 import { create } from "zustand";
-
-interface CartItem {
-  product: Product;
-  quantity: number;
-  note?: string;
-}
-
-interface ConfirmData {
-  reason: string;
-  returnType: string;
-}
 
 interface ReturnPurchasingState {
   addProduct: Product | null;
@@ -59,11 +49,16 @@ export const useReturnPurchasingStore = create<ReturnPurchasingState>(
       }),
     removeCartItem: (productId) =>
       set((state) => {
-        const updatedCart = state.cart?.filter(
+        const updatedCart = (state.cart ?? []).filter(
           (cartItem) => cartItem.product.id !== productId,
         );
 
-        return { cart: updatedCart };
+        const cartTotal = updatedCart.reduce(
+          (sum, item) => sum + item.product.purchasePrice * item.quantity,
+          0,
+        );
+
+        return { cart: updatedCart, cartTotal };
       }),
     resetCart: () => set({ cart: [], cartTotal: 0 }),
   }),

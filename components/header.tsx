@@ -16,6 +16,7 @@ export default function Header({
   header,
   action,
   isGoBack = false,
+  onGoBack,
   selectedItemsLength,
   selectedItemsSuffixLabel,
   selectedItemsPosition = "left",
@@ -24,6 +25,7 @@ export default function Header({
   header?: React.ReactNode;
   action?: React.ReactNode;
   isGoBack?: boolean;
+  onGoBack?: () => void;
   selectedItemsLength?: number;
   selectedItemsSuffixLabel?: string;
   selectedItemsPosition?: "left" | "right";
@@ -31,7 +33,13 @@ export default function Header({
 }) {
   const { setShowDrawer } = useSidebarStore((state) => state);
   const router = useRouter();
-  const goBack = () => router.back();
+  const goBack = () => {
+    if (onGoBack) {
+      onGoBack();
+    } else {
+      router.back();
+    }
+  };
   const isCanGoBack = router.canGoBack();
 
   const CancelSelectedItems = () => {

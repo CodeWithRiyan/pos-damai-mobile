@@ -23,9 +23,9 @@ import {
 } from "@/components/ui/form-control";
 import { Input, InputField } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-import { getErrorMessage } from "@/lib/api/client";
+import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 import {
   useCreatePaymentType,
   usePaymentType,
@@ -37,6 +37,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Percent } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
+import { CalcType } from "@/lib/constants";
 import z from "zod";
 
 export default function PaymentTypeForm() {
@@ -65,7 +66,7 @@ export default function PaymentTypeForm() {
   const initialValues: PaymentTypeFormValues = {
     name: "",
     commission: 0,
-    commissionType: "PERCENTAGE",
+    commissionType: CalcType.PERCENTAGE,
     minimalAmount: 0,
   };
 
@@ -97,7 +98,7 @@ export default function PaymentTypeForm() {
       form.reset({
         name: dataPaymentType.name,
         commission: dataPaymentType.commission,
-        commissionType: dataPaymentType.commissionType || "PERCENTAGE",
+        commissionType: dataPaymentType.commissionType || CalcType.PERCENTAGE,
         minimalAmount: dataPaymentType.minimalAmount,
       });
     } else {
@@ -106,28 +107,6 @@ export default function PaymentTypeForm() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataPaymentType, form]);
-
-  const showSuccessToast = (message: string) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-          <ToastTitle>{message}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-          <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
 
   const onSubmit: SubmitHandler<PaymentTypeFormValues> = (
     data: PaymentTypeFormValues,
@@ -140,7 +119,7 @@ export default function PaymentTypeForm() {
         },
         {
           onSuccess: (updatedData) => {
-            showSuccessToast("Jenis pembayaran berhasil diperbarui");
+            showSuccessToast(toast, "Jenis pembayaran berhasil diperbarui");
             if (usePaymentTypeStore.getState().onSuccess) {
               usePaymentTypeStore.getState().onSuccess!(updatedData as any);
             }
@@ -148,13 +127,13 @@ export default function PaymentTypeForm() {
             onRefetch();
             setOpen(false);
           },
-          onError: showErrorToast,
+          onError: (error) => showErrorToast(toast, error),
         },
       );
     } else {
       createMutation.mutate(data, {
         onSuccess: (newData) => {
-          showSuccessToast("Jenis pembayaran berhasil ditambahkan");
+          showSuccessToast(toast, "Jenis pembayaran berhasil ditambahkan");
           if (usePaymentTypeStore.getState().onSuccess) {
             usePaymentTypeStore.getState().onSuccess!(newData);
           }
@@ -162,7 +141,7 @@ export default function PaymentTypeForm() {
           onRefetch();
           setOpen(false);
         },
-        onError: showErrorToast,
+        onError: (error) => showErrorToast(toast, error),
       });
     }
   };

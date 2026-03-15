@@ -33,6 +33,7 @@ import { useEffect } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
+import { formatNumber } from "@/lib/utils/format";
 export default function PopupAddProduct() {
   const toast = useToast();
   const { addProduct, cart, setAddProduct, addCartItem } =
@@ -136,10 +137,10 @@ export default function PopupAddProduct() {
                 <HStack space="sm">
                   <Heading size="md">
                     Rp{" "}
-                    {(
+                    {formatNumber((
                       addProduct?.lastSellPrice ??
                       addProduct?.sellPrices?.[0]?.price
-                    )?.toLocaleString("id-ID") ?? 0}
+                    ) ?? 0)}
                   </Heading>
                 </HStack>
               </HStack>
