@@ -19,10 +19,12 @@ import dayjs from "dayjs";
 import { useRouter } from "expo-router";
 import { CalendarIcon } from "lucide-react-native";
 import { useState } from "react";
-import { ScrollView } from "react-native";
+import { FlatList } from "react-native";
 import { useFinances } from "@/lib/api/finances";
 import { formatDisplayRefId } from "@/lib/utils/reference";
 
+import { FinanceType, Status } from "@/lib/constants";
+import { formatNumber } from "@/lib/utils/format";
 export default function FinanceHistory() {
   const router = useRouter();
   const [showTransactionDatePicker, setShowTransactionDatePicker] =
@@ -30,7 +32,7 @@ export default function FinanceHistory() {
   const [transactionDate, setTransactionDate] = useState<Date | null>(null);
 
   const { data, isLoading } = useFinances();
-  const finance = data?.filter((f) => f.status === "COMPLETED") || [];
+  const finance = data?.filter((f) => f.status === Status.COMPLETED) || [];
 
   if (isLoading) {
     return (
@@ -84,94 +86,95 @@ export default function FinanceHistory() {
           )}
         </>
       </HStack>
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {!finance || finance.length === 0 ? (
+      <FlatList
+        data={finance}
+        className="flex-1"
+        keyExtractor={(item) => item.id}
+        renderItem={({ item: purchase }) => {
+          const date = purchase.createdAt
+            ? dayjs(purchase.createdAt)
+            : dayjs();
+          return (
+            <Pressable
+              className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
+              onPress={() =>
+                router.navigate({
+                  pathname: "/(main)/finance/receipt/[id]",
+                  params: { id: purchase.id },
+                })
+              }
+            >
+              <HStack space="xl" className="items-center">
+                <VStack>
+                  <Text className="text-typography-500 font-bold">
+                    {date.format("HH:mm:ss")}
+                  </Text>
+                  <HStack space="sm" className="items-center">
+                    <Heading size="4xl">{date.format("DD")}</Heading>
+                    <VStack>
+                      <Text className="text-typography-500 font-bold">
+                        {date.format("MMM")}
+                      </Text>
+                      <Text className="text-typography-500 font-bold">
+                        {date.format("YYYY")}
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </VStack>
+                <VStack space="sm" className="flex-1">
+                  <HStack className="w-1/2 justify-between">
+                    <VStack>
+                      <Text className="text-typography-400 text-xs">
+                        Jenis Transaksi
+                      </Text>
+                      <Text
+                        className={`font-bold ${purchase.type === FinanceType.INCOME ? "text-success-500" : "text-error-500"}`}
+                      >
+                        {purchase.type === FinanceType.INCOME
+                          ? "Pemasukkan"
+                          : "Pengeluaran"}
+                      </Text>
+                    </VStack>
+                    {purchase.expensesType ? (
+                      <VStack>
+                        <Text className="text-typography-400 text-xs">
+                          Jenis Pengeluaran
+                        </Text>
+                        <Text className="font-bold">
+                          {purchase.expensesType}
+                        </Text>
+                      </VStack>
+                    ) : null}
+                  </HStack>
+                  <HStack className="justify-between">
+                    <Text className="text-typography-400 font-bold">
+                      No: {formatDisplayRefId(purchase.local_ref_id) || purchase.id}
+                    </Text>
+                  </HStack>
+                </VStack>
+                <HStack space="xl" className="items-center">
+                  <VStack>
+                    <Text className="text-typography-400 text-xs">
+                      Total Transaksi
+                    </Text>
+                    <Text className="font-bold">
+                      Rp {formatNumber(purchase.nominal)}
+                    </Text>
+                  </VStack>
+                  <Text className="text-typography-400 text-lg">›</Text>
+                </HStack>
+              </HStack>
+            </Pressable>
+          );
+        }}
+        ListEmptyComponent={
           <Box className="flex-1 justify-center items-center py-10">
             <Text className="text-gray-500">
               Belum ada histori transaksi keuangan
             </Text>
           </Box>
-        ) : (
-          finance.map((purchase) => {
-            const date = purchase.createdAt
-              ? dayjs(purchase.createdAt)
-              : dayjs();
-            return (
-              <Pressable
-                key={purchase.id}
-                className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
-                onPress={() =>
-                  router.navigate({
-                    pathname: "/(main)/finance/receipt/[id]",
-                    params: { id: purchase.id },
-                  })
-                }
-              >
-                <HStack space="xl" className="items-center">
-                  <VStack>
-                    <Text className="text-typography-500 font-bold">
-                      {date.format("HH:mm:ss")}
-                    </Text>
-                    <HStack space="sm" className="items-center">
-                      <Heading size="4xl">{date.format("DD")}</Heading>
-                      <VStack>
-                        <Text className="text-typography-500 font-bold">
-                          {date.format("MMM")}
-                        </Text>
-                        <Text className="text-typography-500 font-bold">
-                          {date.format("YYYY")}
-                        </Text>
-                      </VStack>
-                    </HStack>
-                  </VStack>
-                  <VStack space="sm" className="flex-1">
-                    <HStack className="w-1/2 justify-between">
-                      <VStack>
-                        <Text className="text-typography-400 text-xs">
-                          Jenis Transaksi
-                        </Text>
-                        <Text
-                          className={`font-bold ${purchase.type === "INCOME" ? "text-success-500" : "text-error-500"}`}
-                        >
-                          {purchase.type === "INCOME"
-                            ? "Pemasukkan"
-                            : "Pengeluaran"}
-                        </Text>
-                      </VStack>
-                      {purchase.expensesType && (
-                        <VStack>
-                          <Text className="text-typography-400 text-xs">
-                            Jenis Pengeluaran
-                          </Text>
-                          <Text className="font-bold">
-                            {purchase.expensesType}
-                          </Text>
-                        </VStack>
-                      )}
-                    </HStack>
-                    <HStack className="justify-between">
-                      <Text className="text-typography-400 font-bold">
-                        No: {formatDisplayRefId(purchase.local_ref_id) || purchase.id}
-                      </Text>
-                    </HStack>
-                  </VStack>
-                  <HStack space="xl" className="items-center">
-                    <VStack>
-                      <Text className="text-typography-400 text-xs">
-                        Total Transaksi
-                      </Text>
-                      <Text className="font-bold">
-                        Rp {purchase.nominal.toLocaleString("id-ID")}
-                      </Text>
-                    </VStack>
-                    <Text className="text-typography-400 text-lg">›</Text>
-                  </HStack>
-                </HStack>
-              </Pressable>
-            );
-          })
-        )}
-      </ScrollView>
+        }
+      />
     </VStack>
   );
 }

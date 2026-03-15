@@ -3,10 +3,10 @@ import { create } from "zustand";
 
 interface CategoryState {
   open: boolean;
-  data?: Category | null;
+  data: Category | null;
   onSuccess?: (category: Category) => void;
   setOpen: (state: boolean, onSuccess?: (category: Category) => void) => void;
-  setData: (data?: Category | null) => void;
+  setData: (data: Category | null) => void;
 }
 
 export const useCategoryStore = create<CategoryState>((set) => ({

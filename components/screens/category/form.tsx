@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/form-control";
 import { Input, InputField } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import {
   useCategories,
@@ -27,7 +27,7 @@ import {
   useCreateCategory,
   useUpdateCategory,
 } from "@/lib/api/categories";
-import { getErrorMessage } from "@/lib/api/client";
+import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 import { useCategoryStore } from "@/stores/category";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useEffect } from "react";
@@ -81,28 +81,6 @@ export default function CategoryForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataCategory, form]);
 
-  const showSuccessToast = (message: string) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-          <ToastTitle>{message}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-          <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
   const onSubmit: SubmitHandler<CategoryFormValues> = (
     data: CategoryFormValues,
   ) => {
@@ -111,18 +89,18 @@ export default function CategoryForm() {
         { id: dataCategory.id, ...data },
         {
           onSuccess: () => {
-            showSuccessToast("Kategori berhasil diperbarui");
+            showSuccessToast(toast, "Kategori berhasil diperbarui");
             onRefetch();
             form.reset(initialValues);
             setOpen(false);
           },
-          onError: showErrorToast,
+          onError: (error) => showErrorToast(toast, error),
         },
       );
     } else {
       createMutation.mutate(data, {
         onSuccess: (newCat) => {
-          showSuccessToast("Kategori berhasil ditambahkan");
+          showSuccessToast(toast, "Kategori berhasil ditambahkan");
           onRefetch();
           if (useCategoryStore.getState().onSuccess) {
             useCategoryStore.getState().onSuccess?.(newCat);
@@ -130,7 +108,7 @@ export default function CategoryForm() {
           form.reset(initialValues);
           setOpen(false);
         },
-        onError: showErrorToast,
+        onError: (error) => showErrorToast(toast, error),
       });
     }
   };

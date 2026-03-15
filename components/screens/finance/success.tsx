@@ -7,6 +7,7 @@ import { ScrollView } from "react-native";
 import { useFinance } from "@/lib/api/finances";
 import { useAuthStore } from "@/stores/auth";
 
+import { formatRp } from "@/lib/utils/format";
 export default function FinanceTransactionSuccess() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -45,7 +46,7 @@ export default function FinanceTransactionSuccess() {
                 Total Transaksi
               </Text>
               <Text className="font-bold text-lg">
-                {finance?.nominal ? `Rp ${finance.nominal.toLocaleString("id-ID")}` : 'Rp 0'}
+                {finance?.nominal ? formatRp(finance.nominal) : 'Rp 0'}
               </Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">

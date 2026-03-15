@@ -1,50 +1,60 @@
+import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import { Box } from "@/components/ui/box";
 import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Text } from "@/components/ui/text";
+import { useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { resetDb, initializeDb } from "@/lib/db";
+import { showErrorToast } from "@/lib/utils/toast";
 import { useRouter } from "expo-router";
 import React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth";
-import { Alert, Pressable, ScrollView } from "react-native";
+import { Pressable, ScrollView } from "react-native";
 import { authStorageAdapter, storageAdapter } from "@/lib/storage";
 
 export default function SettingScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
+  const toast = useToast();
 
   const handleReset = () => {
-    Alert.alert(
-      "Reset Database",
-      "Are you sure you want to delete all local data? This action cannot be undone and will require you to login again.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete Everything",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await resetDb();
-              await initializeDb();
-              
-              // Clear query cache from memory
-              queryClient.clear();
-              // Clear Zustand auth profile from memory
-              useAuthStore.getState().setProfile(null);
-              authStorageAdapter.clearAll();
-              storageAdapter.removeItem('lastSyncAt');
-              router.replace("/login");
-            } catch (error) {
-              Alert.alert("Error", "Failed to reset database");
-              console.error(error);
-            }
-          },
-        },
-      ]
-    );
+    showPopUpConfirm({
+      title: "Reset Database",
+      icon: "warning" as const,
+      description: (
+        <Text className="text-slate-500">
+          Are you sure you want to delete all local data? This action cannot be
+          undone and will require you to login again.
+        </Text>
+      ),
+      showClose: true,
+      okText: "DELETE EVERYTHING",
+      closeText: "CANCEL",
+      okVariant: "destructive" as const,
+      onOk: async () => {
+        try {
+          await resetDb();
+          await initializeDb();
+
+          // Clear query cache from memory
+          queryClient.clear();
+          // Clear Zustand auth profile from memory
+          useAuthStore.getState().setProfile(null);
+          authStorageAdapter.clearAll();
+          storageAdapter.removeItem("lastSyncAt");
+          hidePopUpConfirm();
+          router.replace("/login");
+        } catch (error) {
+          hidePopUpConfirm();
+          showErrorToast(toast, error);
+          console.error(error);
+        }
+      },
+    });
   };
 
   return (

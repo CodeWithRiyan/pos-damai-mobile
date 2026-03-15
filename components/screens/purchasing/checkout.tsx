@@ -22,8 +22,8 @@ import {
     useToast,
     VStack,
 } from "@/components/ui";
-import { getErrorMessage } from "@/lib/api/client";
 import { CreatePurchasingDTO, useCreatePurchasing } from "@/lib/api/purchasing";
+import { showErrorToast } from "@/lib/utils/toast";
 import { useSuppliers } from "@/lib/api/suppliers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
@@ -43,6 +43,8 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { ArrowRight, CalendarIcon, Check, PlusIcon } from "lucide-react-native";
 
+import { Status } from "@/lib/constants";
+import { formatRp, formatNumber } from "@/lib/utils/format";
 const purchasingSchema = z
   .object({
     totalPurchase: z
@@ -99,7 +101,7 @@ export default function PurchasingCheckoutForm() {
     isPayable: false,
     dueDate: null,
     isCashdrawer: false,
-    status: "DRAFT",
+    status: Status.DRAFT,
     paymentMethodId: "",
     note: "",
   };
@@ -117,8 +119,8 @@ export default function PurchasingCheckoutForm() {
   const createMutation = useCreatePurchasing();
   const isLoading = createMutation.isPending;
 
-  const { grandTotal, commission } = useMemo(() => {
-    return { commission: 0, grandTotal: cartTotal };
+  const { grandTotal } = useMemo(() => {
+    return { grandTotal: cartTotal };
   }, [cartTotal]);
 
   const paymentTypes =
@@ -128,20 +130,6 @@ export default function PurchasingCheckoutForm() {
     })) || [];
 
   const toast = useToast();
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
 
   useEffect(() => {
     if (cartTotal) {
@@ -171,7 +159,7 @@ export default function PurchasingCheckoutForm() {
     data: PurchasingFormValues,
   ) => {
     if (
-      data.status === "COMPLETED" &&
+      data.status === Status.COMPLETED &&
       Number(data.totalPaid) < data.totalPurchase &&
       !isPayable
     ) {
@@ -186,7 +174,7 @@ export default function PurchasingCheckoutForm() {
         ),
       });
     } else if (
-      data.status === "COMPLETED" &&
+      data.status === Status.COMPLETED &&
       Number(data.totalPaid) < data.totalPurchase &&
       isPayable
     ) {
@@ -196,7 +184,7 @@ export default function PurchasingCheckoutForm() {
         description: (
           <Text className="text-slate-500">
             <Text>{`Pembayaran senilai `}</Text>
-            <Text className="font-bold text-slate-900">{`Rp ${data.totalPaid ? Number(data.totalPaid).toLocaleString("id-ID") : 0}`}</Text>
+            <Text className="font-bold text-slate-900">{`Rp ${data.totalPaid ? formatNumber(Number(data.totalPaid)) : 0}`}</Text>
             <Text>{` akan digunakan sebagai DP. Apakah transaksi akan dilanjutkan?`}</Text>
           </Text>
         ),
@@ -250,7 +238,7 @@ export default function PurchasingCheckoutForm() {
         const changedProductPrice = cart.filter(
           (item) => item.newPurchasePrice !== item.product.purchasePrice,
         );
-        if (data.status === "DRAFT") {
+        if (data.status === Status.DRAFT) {
           router.replace("/(main)/purchasing");
           resetCart();
           setCheckoutData(null);
@@ -281,13 +269,13 @@ export default function PurchasingCheckoutForm() {
                         {item.product.name}
                       </Text>
                       <Text className="font-bold text-slate-500">
-                        {`Rp ${item.product.purchasePrice.toLocaleString("id-ID")}`}
+                        {formatRp(item.product.purchasePrice)}
                       </Text>
                       <Icon as={ArrowRight} className="text-slate-500" />
                       <Text
                         className={`font-bold${item.newPurchasePrice < item.product.purchasePrice ? " text-success-500" : " text-error-500"}`}
                       >
-                        {`Rp ${item.newPurchasePrice.toLocaleString("id-ID")}`}
+                        {formatRp(item.newPurchasePrice)}
                       </Text>
                     </HStack>
                   ))}
@@ -310,7 +298,7 @@ export default function PurchasingCheckoutForm() {
         }
       },
       onError: (error) => {
-        showErrorToast(error);
+        showErrorToast(toast, error);
       },
     });
   };
@@ -318,7 +306,7 @@ export default function PurchasingCheckoutForm() {
   return (
     <VStack className="flex-1 bg-white">
       <Header
-        header={status === "DRAFT" ? "SIMPAN DRAFT" : "CHECKOUT"}
+        header={status === Status.DRAFT ? "SIMPAN DRAFT" : "CHECKOUT"}
         isGoBack
         action={
           <HStack space="md" className="pr-4">
@@ -344,7 +332,7 @@ export default function PurchasingCheckoutForm() {
                   Total Tagihan
                 </Text>
                 <Heading size="3xl" className="font-bold text-center">
-                  {`Rp ${form.getValues("totalPurchase").toLocaleString("id-ID")}`}
+                  {formatRp(form.getValues("totalPurchase") ?? 0)}
                 </Heading>
               </HStack>
               <VStack space="lg" className="p-4">
@@ -437,7 +425,7 @@ export default function PurchasingCheckoutForm() {
                     </FormControl>
                   )}
                 />
-                {status === "COMPLETED" && (
+                {status === Status.COMPLETED && (
                   <Controller
                     name="isPayable"
                     control={form.control}
@@ -586,7 +574,7 @@ export default function PurchasingCheckoutForm() {
             </VStack>
           </ScrollView>
         </VStack>
-        {status === "COMPLETED" && (
+        {status === Status.COMPLETED && (
           <VStack className="flex-1">
             <ScrollView className="flex-1">
               <VStack className="flex-1">
@@ -594,16 +582,14 @@ export default function PurchasingCheckoutForm() {
                   <Heading size="3xl" className="font-bold">
                     Rp{" "}
                     {totalPaid
-                      ? parseFloat(totalPaid).toLocaleString("id-ID")
+                      ? formatNumber(parseFloat(totalPaid))
                       : "0"}
                   </Heading>
-                  {Number(totalPaid) > form.getValues("totalPurchase") &&
+                  {Number(totalPaid) > (form.getValues("totalPurchase") ?? 0) &&
                     !form.getValues("isPayable") && (
                       <Text className="text-success-500 font-bold mt-2">
-                        Kembalian: Rp{" "}
-                        {(
-                          Number(totalPaid) - form.getValues("totalPurchase")
-                        ).toLocaleString("id-ID")}
+                        Kembalian:{" "}
+                        {formatRp(Number(totalPaid) - (form.getValues("totalPurchase") ?? 0))}
                       </Text>
                     )}
                 </HStack>

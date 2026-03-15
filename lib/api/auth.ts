@@ -75,16 +75,13 @@ export interface ProfileResponse {
 export function useLogin() {
   return useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
-      console.log("useLogin mutationFn called", credentials);
       const response = await apiClient.post<LoginResponse>(
         "/auth/login",
         credentials
       );
-      console.log("useLogin mutationFn response", response.data);
       return response.data;
     },
     onSuccess: (response) => {
-      console.log("useLogin onSuccess called");
       if (response.success && response.data) {
         // Store tokens
         authStorageAdapter.setToken(response.data.accessToken);

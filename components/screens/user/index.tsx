@@ -1,6 +1,7 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
+import { useBulkDeleteEntity } from "@/hooks/use-bulk-delete-entity";
+import { useItemSelection } from "@/hooks/use-item-selection";
 import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
@@ -14,37 +15,33 @@ import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
 import { useRoles } from "@/lib/api/roles";
 import { useBulkDeleteUser, useCreateUser, User, useUsers } from "@/lib/api/users";
+import { bulkDeleteConfirm } from "@/lib/utils/delete-confirm";
 import { exportUsers, importUsers } from "@/lib/utils/excel";
+import { showSuccessToast } from "@/lib/utils/toast";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import { ScrollView } from "react-native";
+import React from "react";
+import { FlatList } from "react-native";
 
 export default function UserList() {
-  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useUsers();
   const { data: rolesData } = useRoles();
-  const [selectedItems, setSelectedItems] = useState<User[] | null>(null);
+  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } = useItemSelection<User>();
 
   const users = data || [];
   const roles = rolesData || [];
 
   const deleteMutation = useBulkDeleteUser();
+  const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({
+    successMessage: "Karyawan berhasil dihapus",
+    deleteMutation,
+    onSuccess: () => refetch(),
+    clearSelection,
+  });
   const createMutation = useCreateUser();
   const toast = useToast();
-
-  const showSuccessToast = (message: string) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-          <ToastTitle>{message}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
 
   const handleExport = async () => {
     hideActionDrawer();
@@ -77,7 +74,7 @@ export default function UserList() {
         } catch {}
       }
       refetch();
-      showSuccessToast(`${successCount} karyawan berhasil diimpor`);
+      showSuccessToast(toast, `${successCount} karyawan berhasil diimpor`);
     } catch (e) {
       toast.show({
         placement: "top",
@@ -90,86 +87,9 @@ export default function UserList() {
     }
   };
 
-  const handleUserPress = (user: User) => {
-    if (selectedItems?.some((r) => r.id === user.id)) {
-      setSelectedItems(selectedItems.filter((r) => r.id !== user.id));
-      return;
-    }
-    if (!selectedItems) {
-      setSelectedItems([user]);
-      return;
-    }
-
-    setSelectedItems([...selectedItems, user]);
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
   const handleAddUser = () => {
-    setSelectedItems(null);
+    clearSelection();
     router.push("/(main)/management/role-user/user/add");
-  };
-
-  const handleDeletePress = () => {
-    const userIds = selectedItems?.map((m) => m.id) || [];
-
-    showPopUpConfirm({
-      title: "HAPUS KARYAWAN",
-      icon: "warning",
-      description: (
-        <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus `}
-          <Text className="font-bold text-slate-900">{userIds?.length}</Text>
-          {` karyawan? Tindakan ini tidak dapat dibatalkan.`}
-        </Text>
-      ),
-      showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
-      onOk: () => confirmDelete(userIds),
-      loading: deleteMutation.isPending,
-    });
-  };
-
-  const confirmDelete = async (userIds: string[]) => {
-    if (!userIds.length) return;
-
-    deleteMutation.mutate(
-      { ids: userIds },
-      {
-        onSuccess: () => {
-          setSelectedItems(null);
-          hidePopUpConfirm();
-          refetch();
-
-          toast.show({
-            placement: "top",
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Karyawan berhasil dihapus</ToastTitle>
-              </Toast>
-            ),
-          });
-        },
-        onError: (error) => {
-          showErrorToast(error);
-          hidePopUpConfirm();
-        },
-      },
-    );
   };
 
   if (isLoading) {
@@ -187,16 +107,19 @@ export default function UserList() {
         isGoBack
         selectedItemsLength={selectedItems?.length}
         selectedItemsSuffixLabel="Karyawan terpilih"
-        onCancelSelectedItems={() => setSelectedItems(null)}
+        onCancelSelectedItems={clearSelection}
         action={
           <HStack space="sm" className="w-[72px]">
-            {!!selectedItems?.length ? (
-              deleteMutation.isPending ? (
+            {hasSelection ? (
+              isBulkDeleting ? (
                 <Box className="p-6">
                   <Spinner size="small" color="#FFFFFF" />
                 </Box>
               ) : (
-                <Pressable className="p-6" onPress={() => handleDeletePress()}>
+                <Pressable
+                  className="p-6"
+                  onPress={() => triggerBulkDelete(bulkDeleteConfirm("karyawan", selectedItems))}
+                >
                   <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
                 </Pressable>
               )
@@ -233,69 +156,67 @@ export default function UserList() {
       />
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
-          <ScrollView className="flex-1">
-            <VStack>
-              {users?.map((user) => (
-                <Pressable
-                  key={user.id}
-                  className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    selectedItems?.some((r) => r.id === user.id)
-                      ? "bg-gray-100"
-                      : ""
-                  }`}
-                  onPress={() => {
-                    if (!!selectedItems?.length) {
-                      handleUserPress(user);
-                    } else {
-                      router.navigate(
-                        `/(main)/management/role-user/user/detail/${user.id}`,
-                      );
-                      setSelectedItems(null);
-                    }
-                  }}
-                  onLongPress={() => handleUserPress(user)}
-                >
-                  <HStack className="justify-between items-center">
-                    <HStack space="md" className="items-center">
-                      <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
-                        <Text className="text-brand-primary font-bold">
-                          {(user.firstName || user.username)
-                            .substring(0, 1)
-                            .toUpperCase()}
-                        </Text>
-                      </Box>
-                      <VStack>
-                        <Heading size="sm">
-                          {user.firstName || user.username}
-                        </Heading>
-                        <Text size="xs" className="text-slate-500">
-                          {user.roles?.[0]?.role?.name || "No role"}
-                        </Text>
-                      </VStack>
-                    </HStack>
-                    <VStack className="items-end">
-                      <Text
-                        size="xs"
-                        className="text-brand-primary text-sm font-bold"
-                      >
-                        Terakhir Login
+          <FlatList
+            data={users}
+            className="flex-1"
+            keyExtractor={(user) => user.id}
+            renderItem={({ item: user }) => (
+              <Pressable
+                className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                  isSelected(user) ? "bg-gray-100" : ""
+                }`}
+                onPress={() => {
+                  if (hasSelection) {
+                    handleItemPress(user);
+                  } else {
+                    router.navigate(
+                      `/(main)/management/role-user/user/detail/${user.id}`,
+                    );
+                    clearSelection();
+                  }
+                }}
+                onLongPress={() => handleItemPress(user)}
+              >
+                <HStack className="justify-between items-center">
+                  <HStack space="md" className="items-center">
+                    <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
+                      <Text className="text-brand-primary font-bold">
+                        {(user.firstName || user.username)
+                          .substring(0, 1)
+                          .toUpperCase()}
                       </Text>
-                      <Text size="xs">
-                        {user.lastLoginAt
-                          ? dayjs(user.lastLoginAt).format("DD MMMM YYYY")
-                          : "-"}
+                    </Box>
+                    <VStack>
+                      <Heading size="sm">
+                        {user.firstName || user.username}
+                      </Heading>
+                      <Text size="xs" className="text-slate-500">
+                        {user.roles?.[0]?.role?.name || "No role"}
                       </Text>
                     </VStack>
                   </HStack>
-                </Pressable>
-              ))}
-              {users?.length === 0 && (
-                <Box className="p-8 items-center">
-                  <Text className="text-slate-400 italic">No users found</Text>
-                </Box>
-              )}
-            </VStack>
-          </ScrollView>
+                  <VStack className="items-end">
+                    <Text
+                      size="xs"
+                      className="text-brand-primary text-sm font-bold"
+                    >
+                      Terakhir Login
+                    </Text>
+                    <Text size="xs">
+                      {user.lastLoginAt
+                        ? dayjs(user.lastLoginAt).format("DD MMMM YYYY")
+                        : "-"}
+                    </Text>
+                  </VStack>
+                </HStack>
+              </Pressable>
+            )}
+            ListEmptyComponent={
+              <Box className="p-8 items-center">
+                <Text className="text-slate-400 italic">No users found</Text>
+              </Box>
+            }
+          />
           <HStack className="w-full p-4">
             <Button
               size="sm"

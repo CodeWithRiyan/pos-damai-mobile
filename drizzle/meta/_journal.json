@@ -155,6 +155,13 @@
       "when": 1773270248970,
       "tag": "0021_mute_quicksilver",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1773900000000,
+      "tag": "0022_add_discount_profit_fields",
+      "breakpoints": true
     }
   ]
 }

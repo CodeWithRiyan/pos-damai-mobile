@@ -175,11 +175,7 @@ export function Sidebar() {
                       <SolarIconBoldDuotone
                         name={item.icon}
                         size={20}
-                        className={
-                          isActive
-                            ? "text-brand-primary-forground"
-                            : "text-slate-500"
-                        }
+                        color={isActive ? "#FDFBF9" : "#64748b"}
                       />
 
                       <Text

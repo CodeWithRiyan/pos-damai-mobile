@@ -15,8 +15,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { usePurchaseReturns } from "@/lib/api/return-purchasing";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ScrollView } from "react-native";
+import { FlatList } from "react-native";
 
+import { formatNumber } from "@/lib/utils/format";
 export default function ReturnPurchasingHistory({
   isReport,
 }: {
@@ -46,21 +47,19 @@ export default function ReturnPurchasingHistory({
           />
         </Input>
       </VStack>
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {isLoading ? (
-          <VStack className="items-center py-10">
-            <Spinner />
-          </VStack>
-        ) : !returns?.length ? (
-          <VStack className="items-center py-10">
-            <Text className="text-typography-400">Belum ada riwayat retur</Text>
-          </VStack>
-        ) : (
-          returns.map((ret: any) => {
+      {isLoading ? (
+        <VStack className="items-center py-10">
+          <Spinner />
+        </VStack>
+      ) : (
+        <FlatList
+          data={returns}
+          className="flex-1"
+          keyExtractor={(item) => item.id}
+          renderItem={({ item: ret }) => {
             const date = dayjs(ret.createdAt);
             return (
               <Pressable
-                key={ret.id}
                 className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
                 onPress={() =>
                   router.navigate(
@@ -92,7 +91,7 @@ export default function ReturnPurchasingHistory({
                           Jumlah Retur
                         </Text>
                         <Text className="font-bold">
-                          Rp {ret.totalAmount.toLocaleString("id-ID")}
+                          Rp {formatNumber(ret.totalAmount ?? 0)}
                         </Text>
                       </VStack>
                       <VStack>
@@ -113,9 +112,14 @@ export default function ReturnPurchasingHistory({
                 </HStack>
               </Pressable>
             );
-          })
-        )}
-      </ScrollView>
+          }}
+          ListEmptyComponent={
+            <VStack className="items-center py-10">
+              <Text className="text-typography-400">Belum ada riwayat retur</Text>
+            </VStack>
+          }
+        />
+      )}
     </VStack>
   );
 }

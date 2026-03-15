@@ -177,7 +177,7 @@ export function usePayableBySupplier(supplierId: string) {
         })
       );
 
-      return detailedPayables as unknown as Payable[];
+      return detailedPayables as Payable[];
     },
     enabled: !!supplierId && !!orgId,
   });
@@ -217,7 +217,7 @@ export function usePayableDetail(id: string) {
         supplier,
         realizations,
         totalRealization,
-      } as unknown as Payable;
+      } as Payable;
     },
     enabled: !!id,
   });

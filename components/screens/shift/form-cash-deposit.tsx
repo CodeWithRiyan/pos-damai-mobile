@@ -21,9 +21,9 @@ import { Input, InputField, InputSlot } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
+import { FinanceType, Status } from "@/lib/constants";
 import { useCreateFinance } from "@/lib/api/finances";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
 import React from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
@@ -35,7 +35,6 @@ export default function CashDepositForm({
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
-  const router = useRouter();
   const toast = useToast();
   const createFinanceMutation = useCreateFinance();
 
@@ -50,7 +49,7 @@ export default function CashDepositForm({
   type CashDepositFormValues = z.infer<typeof cashDepositSchema>;
 
   const initialValues: CashDepositFormValues = {
-    type: "EXPENSES",
+    type: FinanceType.EXPENSES,
     expensesType: "CASH_DEPOSIT",
     transactionDate: new Date(),
     note: "Setor Tunai",
@@ -70,7 +69,7 @@ export default function CashDepositForm({
         ...data,
         nominal: data.nominal,
         inputToCashdrawer: true,
-        status: "COMPLETED",
+        status: Status.COMPLETED,
       },
       {
         onSuccess: (responseData) => {

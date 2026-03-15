@@ -1,6 +1,6 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
+import { useBulkDeleteEntity } from "@/hooks/use-bulk-delete-entity";
 import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
@@ -18,17 +18,18 @@ import {
   useCreateSupplier,
   useSuppliers,
 } from "@/lib/api/suppliers";
+import { bulkDeleteConfirm } from "@/lib/utils/delete-confirm";
 import { exportSuppliers, importSuppliers } from "@/lib/utils/excel";
+import { useItemSelection } from "@/hooks/use-item-selection";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
-import { ScrollView } from "react-native";
+import React, { useCallback } from "react";
+import { FlatList } from "react-native";
 
 export default function SupplierList() {
-  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useSuppliers();
-  const [selectedItems, setSelectedItems] = useState<any[] | null>(null);
+  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } = useItemSelection<Supplier>();
 
   useFocusEffect(
     useCallback(() => {
@@ -39,6 +40,12 @@ export default function SupplierList() {
   const suppliers = data || [];
 
   const deleteMutation = useBulkDeleteSupplier();
+  const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({
+    successMessage: "Supplier berhasil dihapus",
+    deleteMutation,
+    onSuccess: () => refetch(),
+    clearSelection,
+  });
   const createMutation = useCreateSupplier();
   const toast = useToast();
 
@@ -95,88 +102,9 @@ export default function SupplierList() {
     }
   };
 
-  const handlePress = (data: Supplier) => {
-    if (selectedItems?.some((r) => r.id === data.id)) {
-      setSelectedItems(selectedItems.filter((r) => r.id !== data.id));
-      return;
-    }
-    if (!selectedItems) {
-      setSelectedItems([data]);
-      return;
-    }
-
-    setSelectedItems([...selectedItems, data]);
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
   const handleAdd = () => {
-    setSelectedItems(null);
+    clearSelection();
     router.push("/(main)/management/customer-supplier/supplier/add");
-  };
-
-  const handleDeletePress = () => {
-    const supplierIds = selectedItems?.map((m) => m.id) || [];
-
-    showPopUpConfirm({
-      title: "HAPUS SUPPLIER",
-      icon: "warning",
-      description: (
-        <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus `}
-          <Text className="font-bold text-slate-900">
-            {supplierIds?.length}
-          </Text>
-          {` supplier? Tindakan ini tidak dapat dibatalkan.`}
-        </Text>
-      ),
-      showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
-      onOk: () => confirmDelete(supplierIds),
-      loading: deleteMutation.isPending,
-    });
-  };
-
-  const confirmDelete = async (supplierIds: string[]) => {
-    if (!supplierIds.length) return;
-
-    deleteMutation.mutate(
-      { ids: supplierIds },
-      {
-        onSuccess: () => {
-          setSelectedItems(null);
-          hidePopUpConfirm();
-          refetch();
-
-          toast.show({
-            placement: "top",
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Supplier berhasil dihapus</ToastTitle>
-              </Toast>
-            ),
-          });
-        },
-        onError: (error) => {
-          showErrorToast(error);
-          hidePopUpConfirm();
-        },
-      },
-    );
   };
 
   if (isLoading) {
@@ -194,16 +122,19 @@ export default function SupplierList() {
         isGoBack
         selectedItemsLength={selectedItems?.length}
         selectedItemsSuffixLabel="Supplier terpilih"
-        onCancelSelectedItems={() => setSelectedItems(null)}
+        onCancelSelectedItems={() => clearSelection()}
         action={
           <HStack space="sm" className="w-[72px]">
-            {!!selectedItems?.length ? (
-              deleteMutation.isPending ? (
+            {hasSelection ? (
+              isBulkDeleting ? (
                 <Box className="p-6">
                   <Spinner size="small" color="#FFFFFF" />
                 </Box>
               ) : (
-                <Pressable className="p-6" onPress={() => handleDeletePress()}>
+                <Pressable
+                  className="p-6"
+                  onPress={() => triggerBulkDelete(bulkDeleteConfirm("supplier", selectedItems))}
+                >
                   <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
                 </Pressable>
               )
@@ -240,51 +171,51 @@ export default function SupplierList() {
       />
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
-          <ScrollView className="flex-1">
-            <VStack>
-              {suppliers?.map((supplier) => (
-                <Pressable
-                  key={supplier.id}
-                  className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    selectedItems?.some((r) => r.id === supplier.id)
-                      ? "bg-gray-100"
-                      : ""
-                  }`}
-                  onPress={() => {
-                    if (!!selectedItems?.length) {
-                      handlePress(supplier);
-                    } else {
-                      router.navigate(
-                        `/(main)/management/customer-supplier/supplier/detail/${supplier.id}`,
-                      );
-                      setSelectedItems(null);
-                    }
-                  }}
-                  onLongPress={() => handlePress(supplier)}
-                >
-                  <HStack className="justify-between items-center">
-                    <HStack space="md" className="items-center">
-                      <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
-                        <Text className="text-brand-primary font-bold">
-                          {supplier.name.substring(0, 1).toUpperCase()}
-                        </Text>
-                      </Box>
-                      <VStack>
-                        <Heading size="sm">{supplier.name}</Heading>
-                      </VStack>
-                    </HStack>
+          <FlatList
+            data={suppliers}
+            className="flex-1"
+            keyExtractor={(supplier) => supplier.id}
+            renderItem={({ item: supplier }) => (
+              <Pressable
+                className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                  isSelected(supplier)
+                    ? "bg-gray-100"
+                    : ""
+                }`}
+                onPress={() => {
+                  if (hasSelection) {
+                    handleItemPress(supplier);
+                  } else {
+                    router.navigate(
+                      `/(main)/management/customer-supplier/supplier/detail/${supplier.id}`,
+                    );
+                    clearSelection();
+                  }
+                }}
+                onLongPress={() => handleItemPress(supplier)}
+              >
+                <HStack className="justify-between items-center">
+                  <HStack space="md" className="items-center">
+                    <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
+                      <Text className="text-brand-primary font-bold">
+                        {supplier.name.substring(0, 1).toUpperCase()}
+                      </Text>
+                    </Box>
+                    <VStack>
+                      <Heading size="sm">{supplier.name}</Heading>
+                    </VStack>
                   </HStack>
-                </Pressable>
-              ))}
-              {suppliers?.length === 0 && (
-                <Box className="p-8 items-center">
-                  <Text className="text-slate-400 italic">
-                    No suppliers found
-                  </Text>
-                </Box>
-              )}
-            </VStack>
-          </ScrollView>
+                </HStack>
+              </Pressable>
+            )}
+            ListEmptyComponent={
+              <Box className="p-8 items-center">
+                <Text className="text-slate-400 italic">
+                  No suppliers found
+                </Text>
+              </Box>
+            }
+          />
           <HStack className="w-full p-4">
             <Button
               size="sm"

@@ -24,15 +24,19 @@ import {
   useCreateProduct,
   useProducts,
 } from "@/lib/api/products";
+import { bulkDeleteConfirm } from "@/lib/utils/delete-confirm";
 import { exportProducts, importProducts } from "@/lib/utils/excel";
+import { useItemSelection } from "@/hooks/use-item-selection";
+import { useBulkDeleteEntity } from "@/hooks/use-bulk-delete-entity";
 import { useFocusEffect, useRouter } from "expo-router";
 import { debounce } from "lodash";
 import { SearchIcon } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
-import { Alert, RefreshControl, ScrollView } from "react-native";
+import { FlatList, RefreshControl } from "react-native";
 import ProductFilter from "./filter";
 import ProductNotification from "./notification";
 
+import { formatRp, formatNumber } from "@/lib/utils/format";
 export default function ProductList() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
@@ -54,7 +58,7 @@ export default function ProductList() {
     categoryId,
     forceParent: true,
   });
-  const [selectedItems, setSelectedItems] = useState<Product[] | null>(null);
+  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } = useItemSelection<Product>();
 
   const { data: categoriesData } = useCategories();
   const categories = categoriesData || [];
@@ -90,6 +94,13 @@ export default function ProductList() {
   const deleteMutation = useBulkDeleteProduct();
   const createMutation = useCreateProduct();
   const toast = useToast();
+
+  const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({
+    successMessage: "Produk berhasil dihapus",
+    deleteMutation,
+    onSuccess: () => refetch(),
+    clearSelection,
+  });
 
   const handleExport = async () => {
     hideActionDrawer();
@@ -142,81 +153,9 @@ export default function ProductList() {
     }
   };
 
-  const handlePress = (data: Product) => {
-    if (selectedItems?.some((r) => r.id === data.id)) {
-      setSelectedItems(selectedItems.filter((r) => r.id !== data.id));
-      return;
-    }
-    if (!selectedItems) {
-      setSelectedItems([data]);
-      return;
-    }
-
-    setSelectedItems([...selectedItems, data]);
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
   const handleAdd = () => {
-    setSelectedItems(null);
+    clearSelection();
     router.push("/(main)/management/product-category-brand/product/add");
-  };
-
-  const handleDeletePress = () => {
-    const productIds = selectedItems?.map((m) => m.id) || [];
-    if (!productIds.length) return;
-
-    Alert.alert(
-      "HAPUS PRODUK",
-      `Apakah Anda yakin ingin menghapus ${productIds.length} produk? Tindakan ini tidak dapat dibatalkan.`,
-      [
-        { text: "BATAL", style: "cancel" },
-        {
-          text: "HAPUS",
-          style: "destructive",
-          onPress: () => {
-            console.log(
-              `[LIST DELETE] Deleting ids: ${JSON.stringify(productIds)}`,
-            );
-            deleteMutation.mutate(
-              { ids: productIds },
-              {
-                onSuccess: () => {
-                  setSelectedItems(null);
-                  toast.show({
-                    placement: "top",
-                    render: ({ id }) => (
-                      <Toast
-                        nativeID={`toast-${id}`}
-                        action="success"
-                        variant="solid"
-                      >
-                        <ToastTitle>Produk berhasil dihapus</ToastTitle>
-                      </Toast>
-                    ),
-                  });
-                },
-                onError: (error) => {
-                  showErrorToast(error);
-                },
-              },
-            );
-          },
-        },
-      ],
-    );
   };
 
   const PopUp = () => {
@@ -252,15 +191,20 @@ export default function ProductList() {
         isGoBack
         selectedItemsLength={selectedItems?.length}
         selectedItemsSuffixLabel="Produk terpilih"
-        onCancelSelectedItems={() => setSelectedItems(null)}
+        onCancelSelectedItems={clearSelection}
         action={
-          !!selectedItems?.length ? (
-            deleteMutation.isPending ? (
+          hasSelection ? (
+            isBulkDeleting ? (
               <Box className="p-6">
                 <Spinner size="small" color="#FFFFFF" />
               </Box>
             ) : (
-              <Pressable className="p-6" onPress={() => handleDeletePress()}>
+              <Pressable
+                className="p-6"
+                onPress={() =>
+                  triggerBulkDelete(bulkDeleteConfirm("produk", selectedItems))
+                }
+              >
                 <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
               </Pressable>
             )
@@ -330,99 +274,93 @@ export default function ProductList() {
               />
             </Input>
           </HStack>
-          <ScrollView
+          <FlatList
+            data={products}
             className="flex-1"
+            keyExtractor={(product) => product.id}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
-          >
-            <VStack>
-              {products?.map((product) => (
-                <Pressable
-                  key={product.id}
-                  className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    selectedItems?.some((r) => r.id === product.id)
-                      ? "bg-gray-100"
-                      : ""
-                  }`}
-                  onPress={() => {
-                    if (!!selectedItems?.length) {
-                      handlePress(product);
-                    } else {
-                      router.navigate(
-                        `/(main)/management/product-category-brand/product/detail/${encodeURIComponent(product.id)}` as any,
-                      );
-                      setSelectedItems(null);
-                    }
-                  }}
-                  onLongPress={() => handlePress(product)}
-                >
-                  <HStack className="justify-between items-center">
-                    <HStack space="md" className="items-center">
-                      <Box className="w-10 h-10 rounded-lg bg-primary-200 items-center justify-center">
-                        <Text className="text-primary-500 font-bold">
-                          {product.name.substring(0, 1).toUpperCase()}
-                        </Text>
-                      </Box>
-                      <VStack>
-                        <Heading size="sm">{product.name}</Heading>
-                        <Text size="xs" className="text-slate-500">
-                          {product.code}
-                        </Text>
-                        <HStack>
-                          <Badge size="sm" variant="solid" action="muted">
-                            <BadgeText className="text-xs">{`Harga Beli: Rp ${(
-                              product.purchasePrice ?? 0
-                            ).toLocaleString("id-ID")}`}</BadgeText>
-                          </Badge>
-                        </HStack>
-                      </VStack>
-                    </HStack>
-                    <VStack className="items-end">
-                      <Text className="text-brand-primary text-sm font-bold">
-                        Stok: {product.stock ?? 0}
+            renderItem={({ item: product }) => (
+              <Pressable
+                className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                  isSelected(product) ? "bg-gray-100" : ""
+                }`}
+                onPress={() => {
+                  if (hasSelection) {
+                    handleItemPress(product);
+                  } else {
+                    router.navigate(
+                      `/(main)/management/product-category-brand/product/detail/${encodeURIComponent(product.id)}` as any,
+                    );
+                    clearSelection();
+                  }
+                }}
+                onLongPress={() => handleItemPress(product)}
+              >
+                <HStack className="justify-between items-center">
+                  <HStack space="md" className="items-center">
+                    <Box className="w-10 h-10 rounded-lg bg-primary-200 items-center justify-center">
+                      <Text className="text-primary-500 font-bold">
+                        {product.name.substring(0, 1).toUpperCase()}
                       </Text>
-                      <Text className="text-xs">
-                        Retail:{" "}
-                        {`${
-                          product.sellPrices?.filter(
-                            (r) => r.type === "RETAIL",
-                          )?.[0]?.minimumPurchase ?? 0
-                        }@ Rp ${
-                          product.sellPrices
-                            ?.filter((r) => r.type === "RETAIL")?.[0]
-                            ?.price.toLocaleString("id-ID") ?? 0
-                        }`}
+                    </Box>
+                    <VStack>
+                      <Heading size="sm">{product.name}</Heading>
+                      <Text size="xs" className="text-slate-500">
+                        {product.code}
                       </Text>
-                      {!!product.sellPrices?.filter(
-                        (r) => r.type === "WHOLESALE",
-                      ).length && (
-                        <Text className="text-xs">
-                          Grosir:{" "}
-                          {`${
-                            product.sellPrices?.filter(
-                              (r) => r.type === "WHOLESALE",
-                            )?.[0]?.minimumPurchase ?? 0
-                          }@ Rp ${
-                            product.sellPrices
-                              ?.filter((r) => r.type === "WHOLESALE")?.[0]
-                              ?.price.toLocaleString("id-ID") ?? 0
-                          }`}
-                        </Text>
-                      )}
+                      <HStack>
+                        <Badge size="sm" variant="solid" action="muted">
+                          <BadgeText className="text-xs">{`Harga Beli: ${formatRp(product.purchasePrice ?? 0)}`}</BadgeText>
+                        </Badge>
+                      </HStack>
                     </VStack>
                   </HStack>
-                </Pressable>
-              ))}
-              {products?.length === 0 && (
-                <Box className="p-8 items-center">
-                  <Text className="text-slate-400 italic">
-                    Belum ada produk
-                  </Text>
-                </Box>
-              )}
-            </VStack>
-          </ScrollView>
+                  <VStack className="items-end">
+                    <Text className="text-brand-primary text-sm font-bold">
+                      Stok: {product.stock ?? 0}
+                    </Text>
+                    <Text className="text-xs">
+                      Retail:{" "}
+                      {`${
+                        product.sellPrices?.filter(
+                          (r) => r.type === "RETAIL",
+                        )?.[0]?.minimumPurchase ?? 0
+                      }@ Rp ${formatNumber(
+                        product.sellPrices
+                          ?.filter((r) => r.type === "RETAIL")?.[0]
+                          ?.price ?? 0
+                      )}`}
+                    </Text>
+                    {!!product.sellPrices?.filter(
+                      (r) => r.type === "WHOLESALE",
+                    ).length && (
+                      <Text className="text-xs">
+                        Grosir:{" "}
+                        {`${
+                          product.sellPrices?.filter(
+                            (r) => r.type === "WHOLESALE",
+                          )?.[0]?.minimumPurchase ?? 0
+                        }@ Rp ${formatNumber(
+                          product.sellPrices
+                            ?.filter((r) => r.type === "WHOLESALE")?.[0]
+                            ?.price ?? 0
+                        )}`}
+                      </Text>
+                    )}
+                  </VStack>
+                </HStack>
+              </Pressable>
+            )}
+            ListEmptyComponent={
+              <Box className="p-8 items-center">
+                <Text className="text-slate-400 italic">
+                  Belum ada produk
+                </Text>
+              </Box>
+            }
+          />
           <HStack className="w-full p-4">
             <Button
               size="sm"

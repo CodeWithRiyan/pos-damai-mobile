@@ -3,132 +3,32 @@ import Header from "@/components/header";
 import {
   HStack,
   Text,
-  Toast,
-  ToastTitle,
-  useToast,
   VStack,
 } from "@/components/ui";
 import { Grid, GridItem } from "@/components/ui/grid";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { getErrorMessage } from "@/lib/api/client";
 import { useDeleteProduct, useProduct, useProducts } from "@/lib/api/products";
+import { PriceType, ProductType } from "@/lib/constants";
 import { findSellPrice } from "@/lib/price";
 import { unitSuffixHelper } from "@/lib/unit";
+import { useDeleteEntity } from "@/hooks/use-delete-entity";
+import { singleDeleteConfirm } from "@/lib/utils/delete-confirm";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { Alert, RefreshControl, ScrollView } from "react-native";
+import { RefreshControl, ScrollView } from "react-native";
 
+import { formatRp } from "@/lib/utils/format";
 export default function ProductDetail() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const productId = decodeURIComponent(id as string);
-  console.log(`[DETAIL] productId from URL (decoded): "${productId}"`);
-  const dummy = {
-    _dirty: false,
-    _syncedAt: "2026-02-27T00:52:37.000Z",
-    barcode: "Idmlk",
-    brand: { id: "brand_1771805613440_2xg86mbdz", name: "Indomilk" },
-    brandId: "brand_1771805613440_2xg86mbdz",
-    category: { id: "cat_1771805551659_m44wqzl6k", name: "Minuman" },
-    categoryId: "cat_1771805551659_m44wqzl6k",
-    code: "Idmlk",
-    createdAt: "2026-02-23T23:58:21.000Z",
-    createdBy: "user_owner_001",
-    deletedAt: null,
-    description: "",
-    discount: undefined,
-    discountId: null,
-    id: "prod_1771807377410_ma11p17c4",
-    isActive: true,
-    isFavorite: false,
-    isVariant: false,
-    minimumStock: 100,
-    name: "Indomilk",
-    organizationId: "org_default_001",
-    purchasePrice: 3000,
-    sellPrices: [
-      {
-        _dirty: false,
-        _syncedAt: "2026-02-27T00:52:38.000Z",
-        createdAt: "2026-02-23T23:58:21.000Z",
-        createdBy: "user_owner_001",
-        deletedAt: null,
-        id: "price_1771807407336_48b3teg6e",
-        label: "Retail",
-        minimumPurchase: 1,
-        organizationId: "org_default_001",
-        price: 4000,
-        productId: "prod_1771807377410_ma11p17c4",
-        type: "RETAIL",
-        updatedAt: "2026-02-23T23:58:21.000Z",
-        updatedBy: "user_owner_001",
-      },
-      {
-        _dirty: false,
-        _syncedAt: "2026-02-27T00:52:38.000Z",
-        createdAt: "2026-02-23T23:58:21.000Z",
-        createdBy: "user_owner_001",
-        deletedAt: null,
-        id: "price_1771807407340_x2gfdq7zo",
-        label: "Grosir",
-        minimumPurchase: 1,
-        organizationId: "org_default_001",
-        price: 3000,
-        productId: "prod_1771807377410_ma11p17c4",
-        type: "WHOLESALE",
-        updatedAt: "2026-02-23T23:58:21.000Z",
-        updatedBy: "user_owner_001",
-      },
-    ],
-    stock: 108,
-    supplierId: null,
-    type: "VARIANTS",
-    unit: null,
-    updatedAt: "2026-02-23T23:58:21.000Z",
-    updatedBy: "user_owner_001",
-    variantData: undefined,
-    variants: [
-      {
-        _dirty: false,
-        _syncedAt: "2026-02-27T00:52:39.000Z",
-        code: "Mrh",
-        createdAt: "2026-02-23T23:58:21.000Z",
-        createdBy: null,
-        deletedAt: null,
-        id: "var_1771807407353_ic0qbny2t",
-        name: "Merah",
-        netto: 1,
-        organizationId: "org_default_001",
-        productId: "prod_1771807377410_ma11p17c4",
-        updatedAt: "2026-02-23T23:58:21.000Z",
-        updatedBy: null,
-      },
-      {
-        _dirty: false,
-        _syncedAt: "2026-02-27T00:52:39.000Z",
-        code: "Br",
-        createdAt: "2026-02-23T23:58:21.000Z",
-        createdBy: null,
-        deletedAt: null,
-        id: "var_1771807407357_0nox8eth6",
-        name: "Biru",
-        netto: 1,
-        organizationId: "org_default_001",
-        productId: "prod_1771807377410_ma11p17c4",
-        updatedAt: "2026-02-23T23:58:21.000Z",
-        updatedBy: null,
-      },
-    ],
-  };
-
   const { refetch: refetchProducts } = useProducts();
   const { data: product, refetch: refetchProduct } = useProduct(
     productId || "",
   );
   const deleteMutation = useDeleteProduct();
-  const toast = useToast();
 
   const onRefetch = () => {
     refetchProducts();
@@ -143,59 +43,11 @@ export default function ProductDetail() {
     setRefreshing(false);
   }, [refetchProducts, refetchProduct]);
 
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
-  const handleDeletePress = () => {
-    Alert.alert(
-      "HAPUS PRODUK",
-      `Apakah Anda yakin ingin menghapus produk ${product?.name}? Tindakan ini tidak dapat dibatalkan.`,
-      [
-        { text: "BATAL", style: "cancel" },
-        {
-          text: "HAPUS",
-          style: "destructive",
-          onPress: () => {
-            console.log(
-              `[DETAIL] confirmDelete ENTERED via Alert, productId="${productId}", product.id="${product?.id}"`,
-            );
-            deleteMutation.mutate(productId, {
-              onSuccess: () => {
-                onRefetch();
-                router.back();
-                toast.show({
-                  placement: "top",
-                  render: ({ id }) => (
-                    <Toast
-                      nativeID={`toast-${id}`}
-                      action="success"
-                      variant="solid"
-                    >
-                      <ToastTitle>Produk berhasil dihapus</ToastTitle>
-                    </Toast>
-                  ),
-                });
-              },
-              onError: (error) => {
-                showErrorToast(error);
-              },
-            });
-          },
-        },
-      ],
-    );
-  };
+  const { triggerDelete } = useDeleteEntity({
+    successMessage: "Produk berhasil dihapus",
+    deleteMutation,
+    onSuccess: onRefetch,
+  });
 
   const handleAction = () => {
     showActionDrawer({
@@ -225,8 +77,8 @@ export default function ProductDetail() {
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
-            handleDeletePress();
             hideActionDrawer();
+            triggerDelete(singleDeleteConfirm("produk", productId, product?.name));
           },
         },
       ],
@@ -287,14 +139,14 @@ export default function ProductDetail() {
             </GridItem>
             <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
               <Text className="text-gray-500">Harga Beli</Text>
-              <Text className="font-bold">{`Rp ${product?.purchasePrice?.toLocaleString("id-ID")}`}</Text>
+              <Text className="font-bold">{formatRp(product?.purchasePrice ?? 0)}</Text>
             </GridItem>
-            {product?.unit && (
+            {product?.unit ? (
               <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
                 <Text className="text-gray-500">Satuan</Text>
                 <Text className="font-bold">{product?.unit}</Text>
               </GridItem>
-            )}
+            ) : null}
             <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
               <Text className="text-gray-500">Kategori</Text>
               <Text className="font-bold">
@@ -327,7 +179,7 @@ export default function ProductDetail() {
               <Text className="text-gray-500">Keterangan</Text>
               <Text className="font-bold">{product?.description || "-"}</Text>
             </GridItem>
-            {product?.type === "VARIANTS" && (
+            {product?.type === ProductType.VARIANTS && (
               <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
                 <Text className="text-gray-500">Varian Barcode</Text>
                 {!!product?.variants.length ? (
@@ -344,17 +196,15 @@ export default function ProductDetail() {
             <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
               <Text className="text-gray-500">Perkiraan Keuntungan</Text>
               <Text className="text-success-500 font-bold">
-                {`Rp ${(
-                  findSellPrice({
+                {formatRp(findSellPrice({
                     sellPrices: product?.sellPrices,
-                    type: "RETAIL",
+                    type: PriceType.RETAIL,
                     quantity: 1,
                     unitVariant:
-                      product?.type === "MULTIUNIT"
+                      product?.type === ProductType.MULTIUNIT
                         ? product?.variants.find((v) => v.netto === 1)
                         : undefined,
-                  }) - (product?.purchasePrice || 0)
-                ).toLocaleString("id-ID")}`}
+                  }) - (product?.purchasePrice || 0))}
               </Text>
             </GridItem>
           </Grid>
@@ -368,7 +218,7 @@ export default function ProductDetail() {
                 <GridItem
                   _extra={{
                     className: !!product?.sellPrices.filter(
-                      (f) => f.type === "WHOLESALE",
+                      (f) => f.type === PriceType.WHOLESALE,
                     ).length
                       ? "col-span-1"
                       : "col-span-2",
@@ -377,29 +227,29 @@ export default function ProductDetail() {
                 >
                   <Text className="font-bold pb-2">Harga Retail</Text>
                   {product?.sellPrices
-                    .filter((f) => f.type === "RETAIL")
+                    .filter((f) => f.type === PriceType.RETAIL)
                     .sort((a, b) => b.price - a.price)
                     ?.map((price, index) => (
                       <Text key={index}>{`${
-                        product.type === "MULTIUNIT"
+                        product.type === ProductType.MULTIUNIT
                           ? `${product.variants.find((f) => f.name === price.label)?.netto || 0} ${unitSuffixHelper(product.unit)}`
                           : `${price.minimumPurchase}@`
-                      } Rp ${price.price.toLocaleString("id-ID")}`}</Text>
+                      } ${formatRp(price.price)}`}</Text>
                     ))}
                 </GridItem>
-                {!!product?.sellPrices.filter((f) => f.type === "WHOLESALE")
+                {!!product?.sellPrices.filter((f) => f.type === PriceType.WHOLESALE)
                   .length && (
                   <GridItem
                     _extra={{ className: "col-span-1" }}
                     className="items-center"
                   >
-                    <Text className="font-bold pb-2">{`Harga Grosir${product.type === "MULTIUNIT" ? ` (1 ${unitSuffixHelper(product.unit)})` : ""}`}</Text>
+                    <Text className="font-bold pb-2">{`Harga Grosir${product.type === ProductType.MULTIUNIT ? ` (1 ${unitSuffixHelper(product.unit)})` : ""}`}</Text>
                     {product?.sellPrices
-                      .filter((f) => f.type === "WHOLESALE")
+                      .filter((f) => f.type === PriceType.WHOLESALE)
                       ?.map((price, index) => (
                         <Text key={index}>{`${
                           price.minimumPurchase
-                        }@ Rp ${price.price.toLocaleString("id-ID")}`}</Text>
+                        }@ ${formatRp(price.price)}`}</Text>
                       ))}
                   </GridItem>
                 )}

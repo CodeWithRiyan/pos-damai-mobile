@@ -1,4 +1,4 @@
-import axios, { AxiosError, InternalAxiosRequestConfig, isAxiosError } from 'axios';
+import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig, isAxiosError } from 'axios';
 import { router } from 'expo-router';
 import { authStorageAdapter } from '../storage';
 
@@ -119,6 +119,19 @@ export interface ApiErrorResponse {
   errors?: string[] | Record<string, string[]>;
   success?: boolean;
   statusCode?: number;
+}
+
+// Unwrap nested API response envelopes: { data: { data: T } } -> T
+export function unwrapResponse<T>(response: AxiosResponse<unknown>): T {
+  const body = response.data;
+  if (body && typeof body === 'object' && 'data' in body) {
+    const inner = (body as { data: unknown }).data;
+    if (inner && typeof inner === 'object' && !Array.isArray(inner) && 'data' in inner) {
+      return (inner as { data: T }).data;
+    }
+    return inner as T;
+  }
+  return body as T;
 }
 
 export function getErrorMessage(error: unknown): string {

@@ -21,6 +21,7 @@ import { ScrollView } from "react-native";
 import ReturnPurchasingConfirmForm from "./form";
 import PopupAddProduct from "./popup-add";
 
+import { formatNumber } from "@/lib/utils/format";
 export default function ReturnPurchasingInput() {
   const { cart, setAddProduct, setOpenConfirm } = useReturnPurchasingStore();
   const [search, setSearch] = useState<string>("");
@@ -30,9 +31,6 @@ export default function ReturnPurchasingInput() {
     supplierId,
     search,
   });
-
-  console.log("supplierId", supplierId);
-  console.log("products", products);
 
   const isLoading = isLoadingProduct;
 
@@ -87,7 +85,7 @@ export default function ReturnPurchasingInput() {
                               {item.name || "Unknown"}
                             </Heading>
                             <Text size="xs" className="text-slate-500">
-                              {`Rp ${item.purchasePrice?.toLocaleString("id-ID") || 0}`}
+                              {`Rp ${formatNumber(item.purchasePrice ?? 0)}`}
                             </Text>
                           </VStack>
                           <HStack space="sm">
@@ -132,17 +130,15 @@ export default function ReturnPurchasingInput() {
                         </Heading>
                         <Text size="sm" className="text-slate-500">
                           {item.quantity} x Rp{" "}
-                          {item.product.purchasePrice?.toLocaleString("id-ID")}{" "}
+                          {formatNumber(item.product.purchasePrice ?? 0)}{" "}
                           = Rp{" "}
-                          {(
-                            item.quantity * (item.product.purchasePrice || 0)
-                          ).toLocaleString("id-ID")}
+                          {formatNumber(item.quantity * (item.product.purchasePrice || 0))}
                         </Text>
-                        {item.note && (
+                        {item.note ? (
                           <Text size="sm" className="text-slate-500">
                             {item.note}
                           </Text>
-                        )}
+                        ) : null}
                       </VStack>
                       <HStack space="sm">
                         <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
@@ -163,9 +159,7 @@ export default function ReturnPurchasingInput() {
               >
                 <HStack space="md" className="items-center">
                   <Text size="4xl" className="text-white font-bold">
-                    {cart
-                      .reduce((total, item) => total + item.quantity, 0)
-                      .toLocaleString("id-ID")}
+                    {formatNumber(cart.reduce((total, item) => total + item.quantity, 0))}
                   </Text>
                   <Text size="lg" className="text-white font-bold">
                     ITEM

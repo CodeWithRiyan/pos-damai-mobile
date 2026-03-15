@@ -3,10 +3,10 @@ import { create } from "zustand";
 
 interface DiscountState {
   open: boolean;
-  data?: Discount | null;
+  data: Discount | null;
   onSuccess?: (discount: Discount) => void;
   setOpen: (state: boolean, onSuccess?: (discount: Discount) => void) => void;
-  setData: (data?: Discount | null) => void;
+  setData: (data: Discount | null) => void;
 }
 
 export const useDiscountStore = create<DiscountState>((set) => ({

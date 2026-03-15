@@ -28,7 +28,8 @@ import { VStack } from "@/components/ui/vstack";
 //   useCreateReturnTransaction,
 //   useUpdateReturnTransaction,
 // } from "@/lib/api/return-transaction";
-import { getErrorMessage } from "@/lib/api/client";
+import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
+import { FinanceType, ReturnType, Status } from "@/lib/constants";
 import { useCreateFinance } from "@/lib/api/finances";
 import { useCreateTransactionReturn } from "@/lib/api/return-transaction";
 import { useReturnTransactionStore } from "@/stores/return-transaction";
@@ -65,28 +66,6 @@ export default function ReturnTransactionConfirmForm() {
     defaultValues: initialValues,
   });
 
-  const showSuccessToast = (message: string) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-          <ToastTitle>{message}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-          <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
   const onSubmit: SubmitHandler<ReturnTransactionFormValues> = (
     data: ReturnTransactionFormValues,
   ) => {
@@ -110,10 +89,10 @@ export default function ReturnTransactionConfirmForm() {
 
     createMutation.mutate(returnData, {
       onSuccess: (response) => {
-        showSuccessToast("Retur berhasil disimpan");
+        showSuccessToast(toast, "Retur berhasil disimpan");
         setOpenConfirm(false);
 
-        if (data.returnType === "CASH") {
+        if (data.returnType === ReturnType.CASH) {
           createFinance({
             returnId: response.id,
             totalAmount,
@@ -126,7 +105,7 @@ export default function ReturnTransactionConfirmForm() {
         resetCart();
         form.reset(initialValues);
       },
-      onError: showErrorToast,
+      onError: (error) => showErrorToast(toast, error),
     });
   };
 
@@ -139,13 +118,13 @@ export default function ReturnTransactionConfirmForm() {
   }) => {
     createFinanceMutation.mutate(
       {
-        type: "EXPENSES",
+        type: FinanceType.EXPENSES,
         expensesType: "OTHER_EXPENSES",
         transactionDate: new Date(),
         nominal: totalAmount,
         note: `Retur Ref: ${returnId}`,
         inputToCashdrawer: true,
-        status: "COMPLETED",
+        status: Status.COMPLETED,
       },
       {
         onError: (error) => {

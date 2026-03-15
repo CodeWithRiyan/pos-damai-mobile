@@ -50,8 +50,8 @@ export function useDirtyCount() {
       }
 
       setDirtyCount(total);
-    } catch (error: any) {
-      if (error?.message?.includes('no such table')) {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message?.includes('no such table')) {
         // Silently ignore because this happens during database reset when tables are dropped
         setDirtyCount(0);
         return;

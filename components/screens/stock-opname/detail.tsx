@@ -4,26 +4,16 @@ import { Grid, GridItem } from "@/components/ui/grid";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { useStockOpname } from "@/lib/api/stock-opname";
+import { formatMoney } from "@/lib/utils/format";
 import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
-import { useState } from "react";
 import { ScrollView } from "react-native";
 
 export default function StockOpnameDetail() {
   const { id } = useLocalSearchParams();
   const stockOpnameId = id as string;
 
-  const [showActionsheet, setShowActionsheet] = useState<boolean>(false);
-
   const { data: stockOpname, isLoading } = useStockOpname(stockOpnameId);
-
-  const formatMoney = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
 
   if (isLoading) {
     return (
@@ -47,7 +37,7 @@ export default function StockOpnameDetail() {
         header="DETAIL STOCK OPNAME"
         action={
           <HStack space="sm">
-            <Pressable className="p-6" onPress={() => setShowActionsheet(true)}>
+            <Pressable className="p-6" onPress={() => {}}>
               <SolarIconBold
                 name="MenuDots"
                 size={20}
@@ -93,7 +83,7 @@ export default function StockOpnameDetail() {
           <Text className="text-center text-lg font-bold pt-4">
             Daftar Barang
           </Text>
-          {stockOpname.items?.map((item: any, index: number) => (
+          {stockOpname.items?.map((item, index) => (
             <Pressable
               key={index}
               className="px-4 py-2 border-b border-background-300 active:bg-gray-100"
@@ -132,7 +122,7 @@ export default function StockOpnameDetail() {
                 <GridItem _extra={{ className: "col-span-1" }}>
                   <Text className="text-gray-500">Impact (Rp)</Text>
                   <Text
-                    className={`font-bold ${item.financialImpact < 0 ? "text-error-500" : "text-success-500"}`}
+                    className={`font-bold ${(item.financialImpact ?? 0) < 0 ? "text-error-500" : "text-success-500"}`}
                   >
                     {formatMoney(Math.abs(item.financialImpact || 0))}
                   </Text>

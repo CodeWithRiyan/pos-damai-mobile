@@ -16,17 +16,22 @@ import { Badge, BadgeText } from "@/components/ui/badge";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { useBrand, useBrands, useDeleteBrand } from "@/lib/api/brands";
-import { getErrorMessage } from "@/lib/api/client";
 import {
   Product,
   useProductsByBrand,
   useUnassignProductsFromBrand,
 } from "@/lib/api/products";
+import { showErrorToast } from "@/lib/utils/toast";
 import { useBrandStore } from "@/stores/brand";
+import { useDeleteEntity } from "@/hooks/use-delete-entity";
+import { singleDeleteConfirm } from "@/lib/utils/delete-confirm";
+import { useItemSelection } from "@/hooks/use-item-selection";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ScrollView } from "react-native";
 
+import { PriceType } from "@/lib/constants";
+import { formatRp, formatNumber } from "@/lib/utils/format";
 export default function BrandDetail() {
   const { setOpen, setData } = useBrandStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -35,9 +40,7 @@ export default function BrandDetail() {
   const { id } = useLocalSearchParams();
   const brandId = id as string;
 
-  const [selectedProducts, setSelectedProducts] = useState<Product[] | null>(
-    null,
-  );
+  const { selectedItems: selectedProducts, handleItemPress, clearSelection: clearProductSelection, isSelected: isProductSelected, hasSelection: hasProductSelection } = useItemSelection<Product>();
 
   const { refetch: refetchBrands } = useBrands();
   const { data: brand, refetch: refetchBrand } = useBrand(brandId || "");
@@ -59,18 +62,11 @@ export default function BrandDetail() {
     refetchBrand();
   };
 
-  const handleProductPress = (data: Product) => {
-    if (selectedProducts?.some((r) => r.id === data.id)) {
-      setSelectedProducts(selectedProducts.filter((r) => r.id !== data.id));
-      return;
-    }
-    if (!selectedProducts) {
-      setSelectedProducts([data]);
-      return;
-    }
-
-    setSelectedProducts([...selectedProducts, data]);
-  };
+  const { triggerDelete } = useDeleteEntity({
+    successMessage: "Brand berhasil dihapus",
+    deleteMutation,
+    onSuccess: onRefetch,
+  });
 
   const handleDeleteProductPress = () => {
     const productIds = selectedProducts?.map((m) => m.id) || [];
@@ -95,7 +91,7 @@ export default function BrandDetail() {
           {
             onSuccess: () => {
               hidePopUpConfirm();
-              setSelectedProducts(null);
+              clearProductSelection();
               onRefetch();
               toast.show({
                 placement: "top",
@@ -111,72 +107,13 @@ export default function BrandDetail() {
               });
             },
             onError: (error) => {
-              showErrorToast(error);
+              showErrorToast(toast, error);
               hidePopUpConfirm();
             },
           },
         );
       },
       loading: unassignProductMutation.isPending,
-    });
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
-  const handleDeletePress = () => {
-    showPopUpConfirm({
-      title: "HAPUS PELANGGAN",
-      icon: "warning",
-      description: (
-        <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus brand `}
-          <Text className="font-bold text-slate-900">{brand?.name}</Text>
-          {` ? Tindakan ini tidak dapat dibatalkan.`}
-        </Text>
-      ),
-      showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
-      onOk: () => confirmDelete(),
-      loading: deleteMutation.isPending,
-    });
-  };
-
-  const confirmDelete = async () => {
-    if (!brand) return;
-
-    deleteMutation.mutate(brand.id, {
-      onSuccess: () => {
-        hidePopUpConfirm();
-        onRefetch();
-        router.back();
-
-        toast.show({
-          placement: "top",
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-              <ToastTitle>Brand berhasil dihapus</ToastTitle>
-            </Toast>
-          ),
-        });
-      },
-      onError: (error) => {
-        showErrorToast(error);
-        hidePopUpConfirm();
-      },
     });
   };
 
@@ -188,7 +125,7 @@ export default function BrandDetail() {
           icon: "Pen",
           onPress: () => {
             setOpen(true);
-            setData(brand);
+            setData(brand ?? null);
             hideActionDrawer();
           },
         },
@@ -197,7 +134,7 @@ export default function BrandDetail() {
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
-            handleDeletePress();
+            triggerDelete(singleDeleteConfirm("brand", brand?.id || "", brand?.name));
             hideActionDrawer();
           },
         },
@@ -211,9 +148,9 @@ export default function BrandDetail() {
         header="DETAIL BRAND"
         selectedItemsLength={selectedProducts?.length}
         selectedItemsSuffixLabel="Produk terpilih"
-        onCancelSelectedItems={() => setSelectedProducts(null)}
+        onCancelSelectedItems={() => clearProductSelection()}
         action={
-          !!selectedProducts?.length ? (
+          hasProductSelection ? (
             unassignProductMutation.isPending ? (
               <Box className="p-6">
                 <Spinner size="small" color="#FFFFFF" />
@@ -254,7 +191,7 @@ export default function BrandDetail() {
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Nilai Modal</Text>
               <Text className="font-bold">
-                Rp {totalModal.toLocaleString("id-ID")}
+                Rp {formatNumber(totalModal)}
               </Text>
             </HStack>
           </Box>
@@ -264,16 +201,16 @@ export default function BrandDetail() {
                 <Pressable
                   key={product.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    selectedProducts?.some((r) => r.id === product.id)
+                    isProductSelected(product)
                       ? "bg-gray-100"
                       : ""
                   }`}
                   onPress={() => {
-                    if (!!selectedProducts?.length) {
-                      handleProductPress(product);
+                    if (hasProductSelection) {
+                      handleItemPress(product);
                     }
                   }}
-                  onLongPress={() => handleProductPress(product)}
+                  onLongPress={() => handleItemPress(product)}
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
@@ -288,9 +225,7 @@ export default function BrandDetail() {
                           {product.code}
                         </Text>
                         <Badge size="sm" variant="solid" action="muted">
-                          <BadgeText className="text-xs">{`Harga Beli: Rp ${(
-                            product.purchasePrice ?? 0
-                          ).toLocaleString("id-ID")}`}</BadgeText>
+                          <BadgeText className="text-xs">{`Harga Beli: ${formatRp(product.purchasePrice ?? 0)}`}</BadgeText>
                         </Badge>
                       </VStack>
                     </HStack>
@@ -302,13 +237,13 @@ export default function BrandDetail() {
                         Retail:{" "}
                         {`${
                           product.sellPrices?.filter(
-                            (r) => r.type === "RETAIL",
+                            (r) => r.type === PriceType.RETAIL,
                           )?.[0]?.minimumPurchase ?? 0
-                        }@ Rp ${
+                        }@ Rp ${formatNumber(
                           product.sellPrices
-                            ?.filter((r) => r.type === "RETAIL")?.[0]
-                            ?.price.toLocaleString("id-ID") ?? 0
-                        }`}
+                            ?.filter((r) => r.type === PriceType.RETAIL)?.[0]
+                            ?.price ?? 0
+                        )}`}
                       </Text>
                       {!!product.sellPrices?.filter(
                         (r) => r.type === "WHOLESALE",
@@ -319,11 +254,11 @@ export default function BrandDetail() {
                             product.sellPrices?.filter(
                               (r) => r.type === "WHOLESALE",
                             )?.[0]?.minimumPurchase ?? 0
-                          }@ Rp ${
+                          }@ Rp ${formatNumber(
                             product.sellPrices
                               ?.filter((r) => r.type === "WHOLESALE")?.[0]
-                              ?.price.toLocaleString("id-ID") ?? 0
-                          }`}
+                              ?.price ?? 0
+                          )}`}
                         </Text>
                       )}
                     </VStack>
@@ -342,7 +277,7 @@ export default function BrandDetail() {
             router.navigate(
               `/(main)/management/product-category-brand/brand/select-product/${brand?.id}`,
             );
-            setSelectedProducts(null);
+            clearProductSelection();
           }}
         >
           <Text size="sm" className="text-typography-0 font-bold">

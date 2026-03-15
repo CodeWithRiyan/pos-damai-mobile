@@ -164,7 +164,6 @@ export function useCreateBrand() {
         throw new Error(`Brand dengan nama "${data.name}" sudah ada.`);
       }
 
-      console.log('[CreateBrand] creating for orgId:', orgId, data);
       const id = `brand_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
 
@@ -185,12 +184,10 @@ export function useCreateBrand() {
       };
 
       await db.insert(schema.brands).values(newBrand);
-      console.log('[CreateBrand] inserted:', newBrand);
 
       return newBrand as Brand;
     },
     onSuccess: (newBrand) => {
-      console.log('[CreateBrand] success, invalidating brands query');
       queryClient.invalidateQueries({ queryKey: ['brands', newBrand.organizationId] });
     },
   });

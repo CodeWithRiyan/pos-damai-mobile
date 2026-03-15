@@ -23,9 +23,9 @@ import {
 import { Input, InputField } from "@/components/ui/input";
 import { Radio, RadioGroup, RadioLabel } from "@/components/ui/radio";
 import { Spinner } from "@/components/ui/spinner";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-import { getErrorMessage } from "@/lib/api/client";
+import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 import {
   useCreateDiscount,
   useDiscount,
@@ -38,6 +38,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Percent } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
+import { CalcType } from "@/lib/constants";
 import z from "zod";
 
 export default function DiscountForm() {
@@ -63,7 +64,7 @@ export default function DiscountForm() {
   const initialValues: DiscountFormValues = {
     name: "",
     nominal: 0,
-    type: "PERCENTAGE",
+    type: CalcType.PERCENTAGE,
     startDate: new Date(),
     endDate: new Date(),
   };
@@ -100,28 +101,6 @@ export default function DiscountForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataDiscount, form]);
 
-  const showSuccessToast = (message: string) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-          <ToastTitle>{message}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-          <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
   const onSubmit: SubmitHandler<DiscountFormValues> = (
     data: DiscountFormValues,
   ) => {
@@ -130,20 +109,20 @@ export default function DiscountForm() {
         { ...data, id: dataDiscount.id },
         {
           onSuccess: () => {
-            showSuccessToast("Diskon berhasil diperbarui");
+            showSuccessToast(toast, "Diskon berhasil diperbarui");
             form.reset(initialValues);
             setOpen(false);
             onRefetch();
           },
-          onError: (error: any) => {
-            showErrorToast(error);
+          onError: (error: unknown) => {
+            showErrorToast(toast, error);
           },
         },
       );
     } else {
       createMutation.mutate(data, {
         onSuccess: (newDiscount) => {
-          showSuccessToast("Diskon berhasil ditambahkan");
+          showSuccessToast(toast, "Diskon berhasil ditambahkan");
           onRefetch();
           if (useDiscountStore.getState().onSuccess) {
             useDiscountStore.getState().onSuccess?.(newDiscount);
@@ -151,8 +130,8 @@ export default function DiscountForm() {
           form.reset(initialValues);
           setOpen(false);
         },
-        onError: (error: any) => {
-          showErrorToast(error);
+        onError: (error: unknown) => {
+          showErrorToast(toast, error);
         },
       });
     }

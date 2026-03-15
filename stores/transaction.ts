@@ -1,14 +1,13 @@
 import { Customer } from "@/lib/api/customers";
 import { Product, ProductVariant } from "@/lib/api/products";
+import { PriceType, Status } from "@/lib/constants";
+import { BaseCartItem } from "@/lib/types/cart";
 import { calculateLineItemTotal, findSellPrice } from "@/lib/price";
 import { create } from "zustand";
 
-interface CartItem {
-  product: Product;
+interface CartItem extends BaseCartItem {
   variant?: ProductVariant;
-  quantity: number;
   tempSellPrice?: number;
-  note?: string;
 }
 
 interface CheckoutData {
@@ -53,7 +52,7 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   customer: null,
   cart: [],
   cartTotal: 0,
-  status: "DRAFT",
+  status: Status.DRAFT,
   checkoutData: null,
   purchaseId: null,
   addProduct: null,
@@ -68,13 +67,13 @@ export const useTransactionStore = create<TransactionState>((set) => ({
 
       const updatedCart = state.cart.map((cartItem) => {
         const updateTempSellPrice = () => {
-          if (nextCategory === "RETAIL" && cartItem.variant?.netto) {
+          if (nextCategory === PriceType.RETAIL && cartItem.variant?.netto) {
             return undefined;
-          } else if (nextCategory === "WHOLESALE" && cartItem.variant?.netto) {
+          } else if (nextCategory === PriceType.WHOLESALE && cartItem.variant?.netto) {
             return (
               findSellPrice({
                 sellPrices: cartItem.product.sellPrices,
-                type: "WHOLESALE",
+                type: PriceType.WHOLESALE,
                 quantity: cartItem.quantity,
               }) * cartItem.variant.netto
             );
@@ -83,16 +82,6 @@ export const useTransactionStore = create<TransactionState>((set) => ({
           return cartItem.tempSellPrice;
         };
 
-        console.log(
-          "updateTempSellPrice for",
-          `${cartItem.product.name} - ${cartItem.variant?.name}`,
-          {
-            prevCategory,
-            nextCategory,
-            tempSellPrice: cartItem.tempSellPrice,
-            updatedTempSellPrice: updateTempSellPrice(),
-          },
-        );
         return {
           ...cartItem,
           tempSellPrice: updateTempSellPrice(),
@@ -104,7 +93,7 @@ export const useTransactionStore = create<TransactionState>((set) => ({
           cartItem.tempSellPrice ??
           findSellPrice({
             sellPrices: cartItem.product.sellPrices,
-            type: nextCategory ?? "RETAIL",
+            type: nextCategory ?? PriceType.RETAIL,
             quantity: cartItem.quantity,
             unitVariant: cartItem.variant,
           });

@@ -23,7 +23,6 @@ import { VStack } from "@/components/ui/vstack";
 // import { useBulkDeleteTransaction, Transaction, useTransaction } from "@/lib/api/transaction";
 import BarcodeScanner from "@/components/barcode-scanner";
 import { Button, ButtonText } from "@/components/ui/button";
-import { Grid, GridItem } from "@/components/ui/grid";
 import GridProductLayout from "@/components/ui/layout/grid-product-layout";
 import ListProductLayout from "@/components/ui/layout/list-product-layout";
 import SelectModal from "@/components/ui/select/select-modal";
@@ -33,13 +32,15 @@ import { useProducts } from "@/lib/api/products";
 import { useCurrentShift } from "@/lib/api/shifts";
 import { calculateLineItemTotal, findSellPrice } from "@/lib/price";
 import { useTransactionStore } from "@/stores/transaction";
+import { PriceType, ProductType, Status } from "@/lib/constants";
 import classNames from "classnames";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AlertCircle, PlusIcon } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
-import { LayoutChangeEvent, ScrollView } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { FlatList, LayoutChangeEvent } from "react-native";
 import PopupAddProduct from "./popup-add";
 
+import { formatNumber, formatRp } from "@/lib/utils/format";
 export default function TransactionList() {
   const searchParams = useLocalSearchParams<{
     returnCustomerId: string;
@@ -74,8 +75,8 @@ export default function TransactionList() {
   };
 
   const optionsGroupCustomers =
-    ["WHOLESALE", "RETAIL"].map((category) => ({
-      label: category === "WHOLESALE" ? "GROSIR" : "RETAIL",
+    [PriceType.WHOLESALE, PriceType.RETAIL].map((category) => ({
+      label: category === PriceType.WHOLESALE ? "GROSIR" : "RETAIL",
       options:
         customers
           ?.filter((c) => c.category === category)
@@ -83,16 +84,22 @@ export default function TransactionList() {
         [],
     })) || [];
 
-  const filteredProducts = products?.filter(
-    (p) =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.barcode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.variants?.some(
-        (v) =>
-          v.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          v.code?.toLowerCase().includes(searchQuery.toLowerCase()),
-      ),
+  const filteredProducts = useMemo(
+    () =>
+      products?.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.barcode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.variants?.some(
+            (v) =>
+              v.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              v.code?.toLowerCase().includes(searchQuery.toLowerCase()),
+          ),
+      ) ?? [],
+    [products, searchQuery],
   );
+
+  const numColumns = deviceWidth < 600 ? 2 : deviceWidth < 1080 ? 3 : 4;
 
   useEffect(() => {
     if (returnCustomer) setCustomer(returnCustomer);
@@ -222,63 +229,22 @@ export default function TransactionList() {
               />
             </Pressable>
           </HStack>
-          <ScrollView className="flex-1">
-            {layout === "grid" && (
-              <Grid
-                _extra={{
-                  className:
-                    deviceWidth < 600
-                      ? "grid-cols-2"
-                      : deviceWidth < 1080
-                        ? "grid-cols-3"
-                        : "grid-cols-4",
-                }}
-                gap={16}
-                className="flex-1 p-4"
-              >
-                {filteredProducts?.map((product, index) => {
-                  const productInChart = cart?.find(
-                    (f) => f.product.id === product.id,
-                  );
-
-                  return (
-                    <GridItem key={index} _extra={{ className: "col-span-1" }}>
-                      <GridProductLayout
-                        name={product.name}
-                        price={findSellPrice({
-                          sellPrices: product.sellPrices,
-                          type: customer?.category,
-                          quantity: 1,
-                        })}
-                        quantityInCart={
-                          product.type !== "MULTIUNIT"
-                            ? productInChart?.quantity || 0
-                            : cart
-                                ?.filter((f) => f.product.id === product.id)
-                                .map(
-                                  (m) => m.quantity * (m.variant?.netto || 1),
-                                )
-                                .reduce((prev, curr) => prev + curr, 0)
-                        }
-                        stock={product.stock}
-                        minStock={product.minimumStock}
-                        onPressProduct={() => setAddProduct(product)}
-                      />
-                    </GridItem>
-                  );
-                })}
-              </Grid>
-            )}
-            {layout === "list" && (
-              <VStack className="flex-1">
-                {filteredProducts?.map((product, index) => {
-                  const productInChart = cart?.find(
-                    (f) => f.product.id === product.id,
-                  );
-
-                  return (
-                    <ListProductLayout
-                      key={index}
+          {layout === "grid" ? (
+            <FlatList
+              key={`grid-${numColumns}`}
+              data={filteredProducts}
+              className="flex-1"
+              numColumns={numColumns}
+              contentContainerStyle={{ padding: 16, gap: 16 }}
+              columnWrapperStyle={{ gap: 16 }}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item: product }) => {
+                const productInChart = cart?.find(
+                  (f) => f.product.id === product.id,
+                );
+                return (
+                  <Box className="flex-1">
+                    <GridProductLayout
                       name={product.name}
                       price={findSellPrice({
                         sellPrices: product.sellPrices,
@@ -286,115 +252,169 @@ export default function TransactionList() {
                         quantity: 1,
                       })}
                       quantityInCart={
-                        product.type !== "MULTIUNIT"
+                        product.type !== ProductType.MULTIUNIT
                           ? productInChart?.quantity || 0
                           : cart
                               ?.filter((f) => f.product.id === product.id)
-                              .map((m) => m.quantity * (m.variant?.netto || 1))
+                              .map(
+                                (m) => m.quantity * (m.variant?.netto || 1),
+                              )
                               .reduce((prev, curr) => prev + curr, 0)
                       }
                       stock={product.stock}
+                      minStock={product.minimumStock}
                       onPressProduct={() => setAddProduct(product)}
                     />
-                  );
-                })}
-              </VStack>
-            )}
-          </ScrollView>
+                  </Box>
+                );
+              }}
+              ListEmptyComponent={
+                <Box className="p-8 items-center">
+                  <Text className="text-slate-400 italic">Belum ada produk</Text>
+                </Box>
+              }
+            />
+          ) : (
+            <FlatList
+              key="list"
+              data={filteredProducts}
+              className="flex-1"
+              keyExtractor={(item) => item.id}
+              renderItem={({ item: product }) => {
+                const productInChart = cart?.find(
+                  (f) => f.product.id === product.id,
+                );
+                return (
+                  <ListProductLayout
+                    name={product.name}
+                    price={findSellPrice({
+                      sellPrices: product.sellPrices,
+                      type: customer?.category,
+                      quantity: 1,
+                    })}
+                    quantityInCart={
+                      product.type !== ProductType.MULTIUNIT
+                        ? productInChart?.quantity || 0
+                        : cart
+                            ?.filter((f) => f.product.id === product.id)
+                            .map((m) => m.quantity * (m.variant?.netto || 1))
+                            .reduce((prev, curr) => prev + curr, 0)
+                    }
+                    stock={product.stock}
+                    onPressProduct={() => setAddProduct(product)}
+                  />
+                );
+              }}
+              ListEmptyComponent={
+                <Box className="p-8 items-center">
+                  <Text className="text-slate-400 italic">Belum ada produk</Text>
+                </Box>
+              }
+            />
+          )}
         </VStack>
         <VStack space="lg" className="flex-1">
-          <ScrollView className="flex-1">
-            <VStack className="flex-1">
-              {cart?.map((item, index) => (
-                <Pressable
-                  key={index}
-                  className="relative px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                  onPress={() => {
-                    setAddProduct(item.product, item.variant?.id);
-                    setDeleteItem(null);
-                  }}
-                  onLongPress={() => {
-                    const newDeleteItem =
-                      item.product.type === "MULTIUNIT"
-                        ? item.variant?.id || ""
-                        : item.product.id;
+          <FlatList
+            data={cart}
+            className="flex-1"
+            keyExtractor={(item, index) =>
+              `${item.product.id}-${item.variant?.id || ""}-${index}`
+            }
+            renderItem={({ item, index }) => (
+              <Pressable
+                className="relative px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
+                onPress={() => {
+                  setAddProduct(item.product, item.variant?.id);
+                  setDeleteItem(null);
+                }}
+                onLongPress={() => {
+                  const newDeleteItem =
+                    item.product.type === ProductType.MULTIUNIT
+                      ? item.variant?.id || ""
+                      : item.product.id;
 
-                    if (deleteItem === newDeleteItem) {
-                      setDeleteItem(null);
-                      return;
-                    }
-                    setDeleteItem(newDeleteItem);
-                  }}
-                >
-                  <HStack className="justify-between items-center">
-                    <HStack space="md" className="items-center">
-                      <Box className="size-6 justify-center items-center">
-                        <Heading size="md">{index + 1}</Heading>
-                      </Box>
-                      <VStack className="flex-1">
-                        <Heading size="md" className="line-clamp-2">
-                          {item.variant && item.product.type === "MULTIUNIT"
-                            ? `${item.product.name} - ${item.variant.name}`
-                            : item.product.name}
-                        </Heading>
-                        <Text size="sm" className="text-slate-500">
-                          {`${item.quantity} x Rp ${
-                            item.tempSellPrice
-                              ? item.tempSellPrice.toLocaleString("id-ID")
-                              : findSellPrice({
-                                  sellPrices: item.product.sellPrices,
-                                  type: customer?.category,
-                                  quantity: item.quantity,
-                                  unitVariant: item.variant,
-                                }).toLocaleString("id-ID")
-                          } = Rp ${calculateLineItemTotal({
-                            quantity: item.quantity,
-                            unitPrice:
-                              item.tempSellPrice ||
-                              findSellPrice({
+                  if (deleteItem === newDeleteItem) {
+                    setDeleteItem(null);
+                    return;
+                  }
+                  setDeleteItem(newDeleteItem);
+                }}
+              >
+                <HStack className="justify-between items-center">
+                  <HStack space="md" className="items-center">
+                    <Box className="size-6 justify-center items-center">
+                      <Heading size="md">{index + 1}</Heading>
+                    </Box>
+                    <VStack className="flex-1">
+                      <Heading size="md" className="line-clamp-2">
+                        {item.variant && item.product.type === ProductType.MULTIUNIT
+                          ? `${item.product.name} - ${item.variant.name}`
+                          : item.product.name}
+                      </Heading>
+                      <Text size="sm" className="text-slate-500">
+                        {`${item.quantity} x ${formatRp(
+                          item.tempSellPrice
+                            ? item.tempSellPrice
+                            : findSellPrice({
                                 sellPrices: item.product.sellPrices,
                                 type: customer?.category,
                                 quantity: item.quantity,
                                 unitVariant: item.variant,
-                              }),
-                            discount: item.product.discount,
-                            isManualPrice: !!item.tempSellPrice,
-                          }).toLocaleString("id-ID")}`}
+                              })
+                        )} = ${formatRp(calculateLineItemTotal({
+                          quantity: item.quantity,
+                          unitPrice:
+                            item.tempSellPrice ||
+                            findSellPrice({
+                              sellPrices: item.product.sellPrices,
+                              type: customer?.category,
+                              quantity: item.quantity,
+                              unitVariant: item.variant,
+                            }),
+                          discount: item.product.discount,
+                          isManualPrice: !!item.tempSellPrice,
+                        }))}`}
+                      </Text>
+                      {item.note ? (
+                        <Text size="sm" className="text-slate-500">
+                          {item.note}
                         </Text>
-                        {item.note && (
-                          <Text size="sm" className="text-slate-500">
-                            {item.note}
-                          </Text>
-                        )}
-                      </VStack>
-                      <HStack space="sm">
-                        <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
-                          <Text className="font-bold">{item.quantity}</Text>
-                        </Box>
-                      </HStack>
+                      ) : null}
+                    </VStack>
+                    <HStack space="sm">
+                      <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
+                        <Text className="font-bold">{item.quantity}</Text>
+                      </Box>
                     </HStack>
                   </HStack>
-                  <Pressable
-                    className={classNames(
-                      "absolute right-0 top-0 bottom-0 w-0 bg-error-500 items-center justify-center overflow-hidden transaction-all duration-300",
-                      item.product.type !== "MULTIUNIT" &&
-                        deleteItem === item.product.id &&
-                        "w-16",
-                      item.product.type === "MULTIUNIT" &&
-                        deleteItem === item.variant?.id &&
-                        "w-16",
-                    )}
-                    onPress={() => {
-                      removeCartItem(item.product?.id || "", item.variant?.id);
-                      setDeleteItem(null);
-                    }}
-                  >
-                    <SolarIconBold name="TrashBin2" size={20} color="white" />
-                  </Pressable>
+                </HStack>
+                <Pressable
+                  className={classNames(
+                    "absolute right-0 top-0 bottom-0 w-0 bg-error-500 items-center justify-center overflow-hidden transaction-all duration-300",
+                    item.product.type !== ProductType.MULTIUNIT &&
+                      deleteItem === item.product.id &&
+                      "w-16",
+                    item.product.type === ProductType.MULTIUNIT &&
+                      deleteItem === item.variant?.id &&
+                      "w-16",
+                  )}
+                  onPress={() => {
+                    removeCartItem(item.product?.id || "", item.variant?.id);
+                    setDeleteItem(null);
+                  }}
+                >
+                  <SolarIconBold name="TrashBin2" size={20} color="white" />
                 </Pressable>
-              ))}
-            </VStack>
-          </ScrollView>
+              </Pressable>
+            )}
+            ListEmptyComponent={
+              <Box className="p-8 items-center">
+                <Text className="text-slate-400 italic">
+                  Belum ada barang di keranjang
+                </Text>
+              </Box>
+            }
+          />
           {!!cart.length && (
             <HStack space="md" className="w-full p-4">
               <Pressable
@@ -404,14 +424,12 @@ export default function TransactionList() {
                     pathname: "/(main)/transaction/checkout",
                     params: searchParams,
                   });
-                  setStatus("COMPLETED");
+                  setStatus(Status.COMPLETED);
                 }}
               >
                 <HStack space="md" className="items-center">
                   <Text size="4xl" className="text-white font-bold">
-                    {cart
-                      .reduce((total, item) => total + item.quantity, 0)
-                      .toLocaleString("id-ID")}
+                    {formatNumber(cart.reduce((total, item) => total + item.quantity, 0))}
                   </Text>
                   <Text size="lg" className="text-white font-bold">
                     ITEM
@@ -429,7 +447,7 @@ export default function TransactionList() {
                       pathname: "/(main)/transaction/checkout",
                       params: searchParams,
                     });
-                    setStatus("DRAFT");
+                    setStatus(Status.DRAFT);
                   }}
                 >
                   <SolarIconBold

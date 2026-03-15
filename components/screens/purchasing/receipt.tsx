@@ -20,6 +20,9 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Check, Printer } from "lucide-react-native";
 import { ScrollView } from "react-native";
 
+import { getReceiptActions } from "@/lib/utils/receipt-actions";
+import { PaymentMethod, Status } from "@/lib/constants";
+import { formatRp, formatNumber } from "@/lib/utils/format";
 export default function PurchasingReceipt() {
   const router = useRouter();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -64,29 +67,7 @@ export default function PurchasingReceipt() {
             className="p-6"
             onPress={() => {
               showActionDrawer({
-                actions: [
-                  {
-                    label: "Cetak Struk",
-                    icon: "Printer",
-                    onPress: () => {
-                      hideActionDrawer();
-                    },
-                  },
-                  {
-                    label: "Download",
-                    icon: "Download",
-                    onPress: () => {
-                      hideActionDrawer();
-                    },
-                  },
-                  {
-                    label: "Share",
-                    icon: "Share",
-                    onPress: () => {
-                      hideActionDrawer();
-                    },
-                  },
-                ],
+                actions: getReceiptActions(hideActionDrawer),
               });
             }}
           >
@@ -133,7 +114,7 @@ export default function PurchasingReceipt() {
                   "Pekalongan Timur, Pekalongan"}
               </Text>
               <Text className="text-typography-500">## Struk Pembelian ##</Text>
-              {purchase.status === "DRAFT" && (
+              {purchase.status === Status.DRAFT && (
                 <Text className="text-red-500 font-bold mt-1">(DRAFT)</Text>
               )}
             </VStack>
@@ -167,10 +148,10 @@ export default function PurchasingReceipt() {
                 <Text className="text-typography-500">Metode Pembayaran</Text>
                 <Text className="text-typography-500">
                   {purchase.paymentTypeName ||
-                    (purchase.paymentType === "CASH" ? "Tunai" : "Hutang")}
+                    (purchase.paymentType === PaymentMethod.CASH ? "Tunai" : "Hutang")}
                 </Text>
               </HStack>
-              {purchase.paymentType === "DEBT" && purchase.dueDate && (
+              {purchase.paymentType === PaymentMethod.DEBT && purchase.dueDate && (
                 <HStack className="justify-between items-center">
                   <Text className="text-typography-500">Jatuh Tempo</Text>
                   <Text className="text-typography-500">
@@ -185,21 +166,19 @@ export default function PurchasingReceipt() {
                 <HStack key={item.id} className="justify-between items-center">
                   <VStack className="flex-1 mr-2">
                     <Heading size="sm">{item.productName}</Heading>
-                    {item.note && (
+                    {item.note ? (
                       <Text className="text-typography-500 text-xs italic">
                         {item.note}
                       </Text>
-                    )}
+                    ) : null}
                     <Text className="text-typography-500 text-sm">
                       {item.quantity} x Rp{" "}
-                      {(item.purchasePrice || 0).toLocaleString("id-ID")}
+                      {formatNumber(item.purchasePrice || 0)}
                     </Text>
                   </VStack>
                   <Text className="text-typography-500 font-bold">
                     Rp{" "}
-                    {(item.quantity * (item.purchasePrice || 0)).toLocaleString(
-                      "id-ID",
-                    )}
+                    {formatNumber(item.quantity * (item.purchasePrice || 0))}
                   </Text>
                 </HStack>
               ))}
@@ -209,7 +188,7 @@ export default function PurchasingReceipt() {
               <HStack className="justify-between items-center">
                 <Text className="font-bold">Subtotal</Text>
                 <Text className="font-bold">
-                  {`Rp ${(purchase.totalAmount - (purchase.commission || 0)).toLocaleString("id-ID")}`}
+                  {formatRp(purchase.totalAmount - (purchase.commission || 0))}
                 </Text>
               </HStack>
               {purchase.commission ? (
@@ -218,20 +197,20 @@ export default function PurchasingReceipt() {
                     Biaya Layanan/Admin
                   </Text>
                   <Text className="text-typography-500">
-                    Rp {purchase.commission.toLocaleString("id-ID")}
+                    Rp {formatNumber(purchase.commission)}
                   </Text>
                 </HStack>
               ) : null}
               <HStack className="justify-between items-center">
                 <Text className="font-bold">Total Tagihan</Text>
                 <Text className="font-bold">
-                  Rp {purchase.totalAmount.toLocaleString("id-ID")}
+                  Rp {formatNumber(purchase.totalAmount)}
                 </Text>
               </HStack>
               <HStack className="justify-between items-center">
                 <Text className="font-bold">Uang Dibayarkan</Text>
                 <Text className="font-bold">
-                  Rp {purchase.totalPaid.toLocaleString("id-ID")}
+                  Rp {formatNumber(purchase.totalPaid ?? 0)}
                 </Text>
               </HStack>
               <HStack className="justify-between items-center">
@@ -246,16 +225,12 @@ export default function PurchasingReceipt() {
                 >
                   Rp{" "}
                   {!!purchase.dueDate
-                    ? (
-                        purchase.totalAmount - purchase.totalPaid
-                      ).toLocaleString("id-ID")
-                    : (
-                        purchase.totalPaid - purchase.totalAmount
-                      ).toLocaleString("id-ID")}
+                    ? formatNumber(purchase.totalAmount - purchase.totalPaid)
+                    : formatNumber(purchase.totalPaid - purchase.totalAmount)}
                 </Text>
               </HStack>
             </VStack>
-            {purchase.note && (
+            {purchase.note ? (
               <>
                 <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
                 <VStack space="sm">
@@ -267,7 +242,7 @@ export default function PurchasingReceipt() {
                   </Text>
                 </VStack>
               </>
-            )}
+            ) : null}
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack className="items-center py-2">
               <Text className="text-typography-500">

@@ -1,3 +1,4 @@
+import { InventoryTxType, ReturnType, Status } from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { desc, eq } from "drizzle-orm";
@@ -39,7 +40,6 @@ export interface PurchaseReturnParams {
 }
 
 export const usePurchaseReturns = (params: PurchaseReturnParams | void) => {
-  console.log("usePurchaseReturns called with params:", params);
   const isUsedFilter = !!params?.supplierId;
   const organizationId = useAuthStore(
     (state) => state.profile?.selectedOrganizationId,
@@ -170,14 +170,6 @@ export const useCreatePurchaseReturn = () => {
       const userId = useAuthStore.getState().profile?.id;
       let finalLocalRefId = "";
 
-      console.log("🔍 [RETURN API] Starting return creation:", {
-        returnId,
-        supplierId: data.supplierId,
-        totalAmount: data.totalAmount,
-        returnType: data.returnType,
-        itemCount: data.items?.length || 0,
-      });
-
       await db.transaction(async (tx) => {
         finalLocalRefId = await generateLocalRefId(tx, purchaseReturns, "RTP");
         
@@ -196,20 +188,11 @@ export const useCreatePurchaseReturn = () => {
           createdAt: now,
           updatedAt: now,
         });
-        console.log("✅ [RETURN API] Return header created");
 
         // 2. Create Items and Transactions
         if (data.items) {
           for (const item of data.items) {
             const itemId = `reti_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-            console.log("➕ [RETURN API] Creating item:", {
-              itemId,
-              productId: item.productId,
-              productName: item.productName,
-              quantity: item.quantity,
-              purchasePrice: item.purchasePrice,
-            });
 
             // 2a. Save item
             await tx.insert(purchaseReturnItems).values({
@@ -225,7 +208,6 @@ export const useCreatePurchaseReturn = () => {
               createdAt: now,
               updatedAt: now,
             });
-            console.log("✅ [RETURN API] Item saved");
 
             // 2b. Reduce stock via transaction
             const txIdOut = `itrt_out_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -244,9 +226,9 @@ export const useCreatePurchaseReturn = () => {
               id: txIdOut,
               local_ref_id: txRefIdOut,
               productId: item.productId,
-              type: "RETURN_PURCHASE",
+              type: InventoryTxType.RETURN_PURCHASE,
               quantity: -item.quantity,
-              status: "COMPLETED",
+              status: Status.COMPLETED,
               organizationId,
               createdBy: userId,
               updatedBy: userId,
@@ -256,7 +238,7 @@ export const useCreatePurchaseReturn = () => {
             });
 
             // Leg 2: Replacement item received (Stock IN) - only for ITEM return
-            if (data.returnType === "ITEM") {
+            if (data.returnType === ReturnType.ITEM) {
               const txIdIn = `itrt_in_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
               const txRefIdIn = `${finalLocalRefId}-${item.productId}-in`;
 
@@ -264,9 +246,9 @@ export const useCreatePurchaseReturn = () => {
                 id: txIdIn,
                 local_ref_id: txRefIdIn,
                 productId: item.productId,
-                type: "PURCHASE",
+                type: InventoryTxType.PURCHASE,
                 quantity: item.quantity,
-                status: "COMPLETED",
+                status: Status.COMPLETED,
                 organizationId,
                 createdBy: userId,
                 updatedBy: userId,
@@ -279,7 +261,6 @@ export const useCreatePurchaseReturn = () => {
         }
       });
 
-      console.log("🎉 [RETURN API] Return creation completed successfully");
       return { id: returnId, local_ref_id: finalLocalRefId };
     },
     onSuccess: () => {

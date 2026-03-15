@@ -95,7 +95,7 @@ export function useDeleteOrganization() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiClient.delete<ApiResponse<any>>(`/organizations/${id}`);
+      const response = await apiClient.delete<ApiResponse<void>>(`/organizations/${id}`);
       return response.data.data;
     },
     onError: (error, id) => {

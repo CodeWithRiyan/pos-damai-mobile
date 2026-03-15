@@ -12,17 +12,20 @@ import {
 } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { getErrorMessage } from "@/lib/api/client";
 import {
   useCustomer,
   useCustomers,
   useDeleteCustomer,
   useResetCustomerPoints,
 } from "@/lib/api/customers";
+import { showErrorToast } from "@/lib/utils/toast";
 import { helperCustomerCategory } from "@/lib/customer-category";
+import { useDeleteEntity } from "@/hooks/use-delete-entity";
+import { singleDeleteConfirm } from "@/lib/utils/delete-confirm";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
 
+import { formatNumber } from "@/lib/utils/format";
 export default function CustomerDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -43,64 +46,11 @@ export default function CustomerDetail() {
     refetchCustomer();
   };
 
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
-  const handleDeletePress = () => {
-    showPopUpConfirm({
-      title: "HAPUS PELANGGAN",
-      icon: "warning",
-      description: (
-        <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus pelanggan `}
-          <Text className="font-bold text-slate-900">{customer?.name}</Text>
-          {` ? Tindakan ini tidak dapat dibatalkan.`}
-        </Text>
-      ),
-      showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
-      onOk: () => confirmDelete(),
-      loading: deleteMutation.isPending,
-    });
-  };
-
-  const confirmDelete = async () => {
-    if (!customer) return;
-
-    deleteMutation.mutate(customer.id, {
-      onSuccess: () => {
-        hidePopUpConfirm();
-        onRefetch();
-        router.back();
-
-        toast.show({
-          placement: "top",
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-              <ToastTitle>Pelanggan berhasil dihapus</ToastTitle>
-            </Toast>
-          ),
-        });
-      },
-      onError: (error) => {
-        showErrorToast(error);
-        hidePopUpConfirm();
-      },
-    });
-  };
+  const { triggerDelete } = useDeleteEntity({
+    successMessage: "Pelanggan berhasil dihapus",
+    deleteMutation,
+    onSuccess: onRefetch,
+  });
 
   const handleResetPointPress = () => {
     showPopUpConfirm({
@@ -140,7 +90,7 @@ export default function CustomerDetail() {
         });
       },
       onError: (error) => {
-        showErrorToast(error);
+        showErrorToast(toast, error);
         hidePopUpConfirm();
       },
     });
@@ -173,7 +123,7 @@ export default function CustomerDetail() {
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
-            handleDeletePress();
+            triggerDelete(singleDeleteConfirm("pelanggan", customer?.id || "", customer?.name));
             hideActionDrawer();
           },
         },
@@ -240,13 +190,13 @@ export default function CustomerDetail() {
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Total Omset</Text>
               <Text className="font-bold">
-                Rp {(customer?.totalRevenue || 0).toLocaleString("id-ID")}
+                Rp {formatNumber(customer?.totalRevenue || 0)}
               </Text>
             </VStack>
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Total Keuntungan</Text>
               <Text className="font-bold">
-                Rp {(customer?.totalProfit || 0).toLocaleString("id-ID")}
+                Rp {formatNumber(customer?.totalProfit || 0)}
               </Text>
             </VStack>
           </Box>

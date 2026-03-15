@@ -1,6 +1,5 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
   Box,
   Checkbox,
@@ -12,9 +11,6 @@ import {
   HStack,
   Icon,
   Text,
-  Toast,
-  ToastTitle,
-  useToast,
   VStack,
 } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
@@ -24,10 +20,8 @@ import {
   SolarIconLinear,
 } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
-import { getErrorMessage } from "@/lib/api/client";
 import {
   Payable,
-  useDeletePayable,
   usePayableBySupplier,
 } from "@/lib/api/payable";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -38,8 +32,8 @@ import { CalendarIcon } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView } from "react-native";
 
+import { formatRp } from "@/lib/utils/format";
 export default function PayableDetail({ isReport }: { isReport?: boolean }) {
-  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -48,9 +42,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
   const {
     data: payableList = [],
     isLoading,
-    refetch,
   } = usePayableBySupplier(supplierId);
-  const deleteMutation = useDeletePayable();
 
   const [selectedItems, setSelectedItems] = useState<Payable[] | null>(null);
   const [showTransactionDatePicker, setShowTransactionDatePicker] =
@@ -60,81 +52,12 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
 
   const payable = payableList[0];
 
-  const toast = useToast();
-
   const handlePayablePress = (payable: Payable) => {
-    if (selectedItems?.some((r) => r.id === payable.id)) {
-      setSelectedItems(selectedItems.filter((r) => r.id !== payable.id));
-      return;
-    }
-    if (!selectedItems) {
-      setSelectedItems([payable]);
-      return;
-    }
-
-    setSelectedItems([...selectedItems, payable]);
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
-  const handleDeletePress = (payableToDelete?: Payable) => {
-    const targetPayable = payableToDelete || payable;
-    if (!targetPayable) return;
-
-    showPopUpConfirm({
-      title: "HAPUS HUTANG",
-      icon: "warning",
-      description: (
-        <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus hutang ini? Tindakan ini tidak dapat dibatalkan.`}
-        </Text>
-      ),
-      showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
-      onOk: () => confirmDelete(targetPayable.id),
-    });
-  };
-
-  const confirmDelete = async (id: string) => {
-    deleteMutation.mutate(id, {
-      onSuccess: () => {
-        hidePopUpConfirm();
-        refetch();
-        if (payableList.length <= 1) {
-          router.back();
-        }
-
-        toast.show({
-          placement: "top",
-          render: ({ id: toastId }) => (
-            <Toast
-              nativeID={`toast-${toastId}`}
-              action="success"
-              variant="solid"
-            >
-              <ToastTitle>Hutang berhasil dihapus</ToastTitle>
-            </Toast>
-          ),
-        });
-      },
-      onError: (error) => {
-        showErrorToast(error);
-        hidePopUpConfirm();
-      },
+    setSelectedItems((prev) => {
+      if (prev?.some((r) => r.id === payable.id)) {
+        return prev.filter((r) => r.id !== payable.id);
+      }
+      return [...(prev ?? []), payable];
     });
   };
 
@@ -212,7 +135,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
                   <Text className="text-typography-500 text-sm">
                     Total Belum Lunas
                   </Text>
-                  <Text className="text-error-500 font-bold">{`Rp ${payableList?.reduce((acc, curr) => acc + (curr.nominal - curr.totalRealization), 0).toLocaleString("id-ID")}`}</Text>
+                  <Text className="text-error-500 font-bold">{formatRp(payableList?.reduce((acc, curr) => acc + (curr.nominal - curr.totalRealization), 0) ?? 0)}</Text>
                 </VStack>
               </VStack>
               <VStack className="flex-1 items-end">
@@ -375,7 +298,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
                         {dayjs(payable.createdAt).format("DD/MM/YYYY")}
                       </Heading>
                       <Text size="xs" className="text-blue-500 font-bold">
-                        {`Rp ${payable.nominal.toLocaleString("id-ID")}`}
+                        {formatRp(payable.nominal)}
                       </Text>
                       <Text size="xs" className="text-slate-500">
                         {`JT: ${dayjs(payable.dueDate).format("DD/MM/YYYY")}`}
@@ -398,7 +321,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
                     </HStack>
                     {payable.totalRealization < payable.nominal && (
                       <Text size="xs" className="font-bold text-error-500">
-                        {`Rp ${(payable.nominal - payable.totalRealization).toLocaleString("id-ID")}`}
+                        {formatRp(payable.nominal - payable.totalRealization)}
                       </Text>
                     )}
                   </VStack>

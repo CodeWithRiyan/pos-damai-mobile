@@ -51,8 +51,8 @@ export const useStoreSuppliesStore = create<StoreSuppliesState>((set) => ({
   setOpenConfirm: (state) => set({ openConfirm: state }),
   removeCartItem: (productId, variantId) =>
     set((state) => {
-      const updatedCart = state.cart?.filter(
-        (cartItem) => 
+      const updatedCart = (state.cart ?? []).filter(
+        (cartItem) =>
           !(cartItem.product.id === productId && cartItem.variant?.id === variantId),
       );
 
