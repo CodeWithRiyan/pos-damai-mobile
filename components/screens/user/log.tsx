@@ -7,7 +7,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useUser } from "@/lib/api/users";
 import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
-import { ScrollView } from "react-native";
+import { FlatList } from "react-native";
 
 import { useUserLog } from "@/lib/api/users";
 
@@ -48,39 +48,38 @@ export default function UserLog() {
             </GridItem>
           </Grid>
         </Pressable>
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          <VStack>
-            {dataLog.map((log, i) => (
-              <Pressable
-                key={log.id || i}
-                className="py-3 px-8 border-b border-background-200 active:bg-gray-100"
-              >
-                <Grid _extra={{ className: "grid-cols-2" }}>
-                  <GridItem _extra={{ className: "col-span-1" }}>
-                    <Text>{dayjs(log.date).format("DD-MM-YYYY HH:mm:ss")}</Text>
-                  </GridItem>
-                  <GridItem _extra={{ className: "col-span-1" }}>
-                    <Text>{log.activity}</Text>
-                  </GridItem>
-                </Grid>
-              </Pressable>
-            ))}
-
-            {/* Empty State */}
-            {dataLog.length === 0 && (
-              <VStack className="p-12 items-center justify-center">
-                <SolarIconBoldDuotone
-                  name="UserCircle"
-                  size={64}
-                  color="#CBD5E1"
-                />
-                <Text className="text-typography-400 text-center mt-4">
-                  Log tidak ditemukan
-                </Text>
-              </VStack>
-            )}
-          </VStack>
-        </ScrollView>
+        <FlatList
+          data={dataLog}
+          className="flex-1"
+          keyExtractor={(item, index) => item.id || index.toString()}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item: log }) => (
+            <Pressable
+              className="py-3 px-8 border-b border-background-200 active:bg-gray-100"
+            >
+              <Grid _extra={{ className: "grid-cols-2" }}>
+                <GridItem _extra={{ className: "col-span-1" }}>
+                  <Text>{dayjs(log.date).format("DD-MM-YYYY HH:mm:ss")}</Text>
+                </GridItem>
+                <GridItem _extra={{ className: "col-span-1" }}>
+                  <Text>{log.activity}</Text>
+                </GridItem>
+              </Grid>
+            </Pressable>
+          )}
+          ListEmptyComponent={
+            <VStack className="p-12 items-center justify-center">
+              <SolarIconBoldDuotone
+                name="UserCircle"
+                size={64}
+                color="#CBD5E1"
+              />
+              <Text className="text-typography-400 text-center mt-4">
+                Log tidak ditemukan
+              </Text>
+            </VStack>
+          }
+        />
       </VStack>
     </VStack>
   );

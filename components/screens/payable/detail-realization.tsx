@@ -1,13 +1,9 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
     Box,
     HStack,
     Text,
-    Toast,
-    ToastTitle,
-    useToast,
     VStack,
 } from "@/components/ui";
 import { Grid, GridItem } from "@/components/ui/grid";
@@ -18,18 +14,19 @@ import {
     SolarIconLinear,
 } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
-import { getErrorMessage } from "@/lib/api/client";
+import { useDeleteEntity } from "@/hooks/use-delete-entity";
+import { singleDeleteConfirm } from "@/lib/utils/delete-confirm";
 import { useDeletePayable, usePayableDetail } from "@/lib/api/payable";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
 
+import { formatRp } from "@/lib/utils/format";
 export default function PayableRealizationDetail({
   isReport,
 }: {
   isReport?: boolean;
 }) {
-  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -45,66 +42,10 @@ export default function PayableRealizationDetail({
   const isPayedOff =
     (payable?.totalRealization || 0) === (payable?.nominal || 0);
 
-  const toast = useToast();
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
-  const handleDeletePress = () => {
-    showPopUpConfirm({
-      title: "HAPUS HUTANG",
-      icon: "warning",
-      description: (
-        <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus hutang ini? Tindakan ini tidak dapat dibatalkan.`}
-        </Text>
-      ),
-      showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
-      onOk: () => confirmDelete(),
-    });
-  };
-
-  const confirmDelete = async () => {
-    if (!payableId) return;
-
-    deleteMutation.mutate(payableId, {
-      onSuccess: () => {
-        hidePopUpConfirm();
-        router.back();
-
-        toast.show({
-          placement: "top",
-          render: ({ id: toastId }) => (
-            <Toast
-              nativeID={`toast-${toastId}`}
-              action="success"
-              variant="solid"
-            >
-              <ToastTitle>Hutang berhasil dihapus</ToastTitle>
-            </Toast>
-          ),
-        });
-      },
-      onError: (error) => {
-        showErrorToast(error);
-        hidePopUpConfirm();
-      },
-    });
-  };
+  const { triggerDelete } = useDeleteEntity({
+    successMessage: "Hutang berhasil dihapus",
+    deleteMutation,
+  });
 
   const handleAction = () => {
     showActionDrawer({
@@ -124,7 +65,7 @@ export default function PayableRealizationDetail({
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
-            handleDeletePress();
+            triggerDelete(singleDeleteConfirm("hutang", payableId));
             hideActionDrawer();
           },
         },
@@ -199,14 +140,12 @@ export default function PayableRealizationDetail({
             <HStack space="lg" className="justify-between">
               <VStack className="flex-1">
                 <Text className="text-gray-500 text-sm">Total</Text>
-                <Text className="text-sm font-bold">{`Rp ${payable?.nominal?.toLocaleString("id-ID")}`}</Text>
+                <Text className="text-sm font-bold">{formatRp(payable?.nominal ?? 0)}</Text>
               </VStack>
               <VStack className="flex-1 items-end">
                 <Text className="text-gray-500 text-sm">Belum Dibayar</Text>
                 <Text className="text-sm font-bold">
-                  {`Rp ${(
-                    (payable?.nominal || 0) - (payable?.totalRealization || 0)
-                  ).toLocaleString("id-ID")}`}
+                  {formatRp((payable?.nominal || 0) - (payable?.totalRealization || 0))}
                 </Text>
               </VStack>
             </HStack>
@@ -244,7 +183,7 @@ export default function PayableRealizationDetail({
                   >
                     <Text className="text-gray-500 text-sm">Nominal</Text>
                     <Text className="text-sm font-bold">
-                      {`Rp ${realization.nominal.toLocaleString("id-ID")}`}
+                      {formatRp(realization.nominal)}
                     </Text>
                   </GridItem>
                   <GridItem

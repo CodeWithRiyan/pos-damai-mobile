@@ -20,10 +20,12 @@ import {
   FormControlLabel,
   FormControlLabelText,
 } from "@/components/ui/form-control";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-import { getErrorMessage } from "@/lib/api/client";
 import { useCreateStockOpname } from "@/lib/api/stock-opname";
+import { Status } from "@/lib/constants";
+import { formatMoney } from "@/lib/utils/format";
+import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { useStockOpnameStore } from "@/stores/stock-opname";
@@ -77,7 +79,7 @@ export default function StockOpnameConfirmForm({
           .where(
             and(
               eq(schema.inventoryTransactions.productId, item.product.id),
-              eq(schema.inventoryTransactions.status, "COMPLETED"),
+              eq(schema.inventoryTransactions.status, Status.COMPLETED),
             ),
           );
 
@@ -101,27 +103,6 @@ export default function StockOpnameConfirmForm({
     }
   }, [openConfirm, cart]);
 
-  const showSuccessToast = (message: string) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-          <ToastTitle>{message}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-          <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
 
   const onSubmit: SubmitHandler<StockOpnameFormValues> = (
     data: StockOpnameFormValues,
@@ -129,7 +110,7 @@ export default function StockOpnameConfirmForm({
     const submissionData = {
       date: date,
       note: data.note,
-      items: (cart || []).map((item: any) => ({
+      items: (cart || []).map((item) => ({
         product: { id: item.product.id, name: item.product.name },
         physicalStock: item.physicalStock,
       })),
@@ -137,21 +118,13 @@ export default function StockOpnameConfirmForm({
 
     createMutation.mutate(submissionData, {
       onSuccess: () => {
-        showSuccessToast("Stock Opname berhasil disimpan");
+        showSuccessToast(toast, "Stock Opname berhasil disimpan");
         setOpenConfirm(false);
         resetCart();
         router.back();
       },
-      onError: showErrorToast,
+      onError: (error) => showErrorToast(toast, error),
     });
-  };
-
-  const formatMoney = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
   };
 
   return (

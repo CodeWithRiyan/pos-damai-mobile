@@ -1,3 +1,4 @@
+import { InventoryTxType, ProductType, Status } from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { and, desc, eq, isNull, like, or } from "drizzle-orm";
@@ -65,7 +66,7 @@ export interface Product {
     endDate: Date;
   };
   isVariant?: boolean; // Added for flattened list UI support
-  variantData?: any; // Added for flattened list UI support
+  variantData?: ProductVariant; // Added for flattened list UI support
   originalId?: string; // Added to reference parent
   lastSellPrice?: number; // Last sell price from customer's transaction history (set by usePurchasedProducts)
 }
@@ -84,7 +85,7 @@ export interface CreateProductDTO {
   categoryId: string;
   brandId?: string;
   prices: Omit<ProductPrice, "id">[];
-  variants?: Omit<ProductVariant, "id">[];
+  variants?: (Omit<ProductVariant, "id"> & { id?: string })[];
   discountId?: string | null;
 }
 
@@ -185,7 +186,7 @@ export function useProducts(params: ProductParams | void) {
             .where(
               and(
                 eq(schema.inventoryTransactions.productId, product.id),
-                eq(schema.inventoryTransactions.status, "COMPLETED"),
+                eq(schema.inventoryTransactions.status, Status.COMPLETED),
               ),
             );
 
@@ -193,17 +194,6 @@ export function useProducts(params: ProductParams | void) {
             (sum, tx) => sum + tx.quantity,
             0,
           );
-
-          if (
-            transactions.length > 0 &&
-            product.name === "DEBUG_PRODUCT_NAME"
-          ) {
-            // Optional filter
-            console.log(
-              `📊 [STOCK DEBUG] ${product.name} transactions:`,
-              transactions.map((t) => ({ type: t.type, qty: t.quantity })),
-            );
-          }
 
           return {
             ...product,
@@ -227,7 +217,7 @@ export function useProducts(params: ProductParams | void) {
       );
 
       const flattenedProducts = productsWithPrices.flatMap((product) => {
-        if (product.type === "MULTIUNIT" && params?.forceParentMultiUnit) {
+        if (product.type === ProductType.MULTIUNIT && params?.forceParentMultiUnit) {
           return [
             {
               ...product,
@@ -258,7 +248,7 @@ export function useProducts(params: ProductParams | void) {
         const items: Product[] = [];
         const hasVariants = product.variants && product.variants.length > 0;
 
-        if (product.type === "DEFAULT") {
+        if (product.type === ProductType.DEFAULT) {
           // Parent product is always added for DEFAULT
           items.push({
             ...product,
@@ -279,14 +269,11 @@ export function useProducts(params: ProductParams | void) {
 
         // Add variants/children for MULTIUNIT and VARIANTS if they exist
         if (
-          (product.type === "MULTIUNIT" || product.type === "VARIANTS") &&
+          (product.type === ProductType.MULTIUNIT || product.type === ProductType.VARIANTS) &&
           hasVariants
         ) {
           product.variants.forEach((variant) => {
             const compositeId = `${product.id}-${variant.id}`;
-            console.log(
-              `[FLATTEN] Built variant entry: id=${compositeId}, name=${product.name} - ${variant.name}, variantId=${variant.id}`,
-            );
             const variantProduct: Product = {
               ...product,
               id: compositeId, // Unique ID for list rendering
@@ -313,7 +300,7 @@ export function useProducts(params: ProductParams | void) {
 
         // Fallback: If type is VARIANTS or MULTIUNIT but it has no variants yet, still show the parent
         if (
-          (product.type === "VARIANTS" || product.type === "MULTIUNIT") &&
+          (product.type === ProductType.VARIANTS || product.type === ProductType.MULTIUNIT) &&
           !hasVariants
         ) {
           items.push({
@@ -340,15 +327,15 @@ export function useProducts(params: ProductParams | void) {
         if (params.showByStock === "NO_STOCK") {
           return flattenedProducts.filter(
             (p) => p.stock === 0,
-          ) as unknown as Product[];
+          );
         } else if (params.showByStock === "LOW_STOCK") {
           return flattenedProducts.filter(
             (p) => p.stock < (p.minimumStock || 0),
-          ) as unknown as Product[];
+          );
         }
       }
 
-      return flattenedProducts as unknown as Product[];
+      return flattenedProducts;
     },
     enabled: !!orgId,
   });
@@ -393,7 +380,7 @@ export function useProductsByCategory(categoryId: string) {
             .where(
               and(
                 eq(schema.inventoryTransactions.productId, product.id),
-                eq(schema.inventoryTransactions.status, "COMPLETED"),
+                eq(schema.inventoryTransactions.status, Status.COMPLETED),
               ),
             );
 
@@ -423,7 +410,7 @@ export function useProductsByCategory(categoryId: string) {
         }),
       );
 
-      return productsWithPrices as unknown as Product[];
+      return productsWithPrices as Product[];
     },
     enabled: !!categoryId,
   });
@@ -468,7 +455,7 @@ export function useProductsByBrand(brandId: string) {
             .where(
               and(
                 eq(schema.inventoryTransactions.productId, product.id),
-                eq(schema.inventoryTransactions.status, "COMPLETED"),
+                eq(schema.inventoryTransactions.status, Status.COMPLETED),
               ),
             );
 
@@ -498,7 +485,7 @@ export function useProductsByBrand(brandId: string) {
         }),
       );
 
-      return productsWithPrices as unknown as Product[];
+      return productsWithPrices as Product[];
     },
     enabled: !!brandId,
   });
@@ -543,7 +530,7 @@ export function useProductsBySupplier(supplierId: string) {
             .where(
               and(
                 eq(schema.inventoryTransactions.productId, product.id),
-                eq(schema.inventoryTransactions.status, "COMPLETED"),
+                eq(schema.inventoryTransactions.status, Status.COMPLETED),
               ),
             );
 
@@ -573,7 +560,7 @@ export function useProductsBySupplier(supplierId: string) {
         }),
       );
 
-      return productsWithPrices as unknown as Product[];
+      return productsWithPrices as Product[];
     },
     enabled: !!supplierId,
   });
@@ -588,8 +575,6 @@ export function useProduct(id: string) {
       const baseProductId = id.includes("-var_")
         ? id.substring(0, id.indexOf("-var_"))
         : id;
-      console.log(`[useProduct] id="${id}", baseProductId="${baseProductId}"`);
-
       const productResult = await db
         .select({
           product: schema.products,
@@ -610,7 +595,6 @@ export function useProduct(id: string) {
         .where(eq(schema.products.id, baseProductId))
         .limit(1);
 
-      console.log(`[useProduct] productResult.length=${productResult.length}`);
       if (productResult.length === 0) return undefined;
 
       const { product, category, brand, discount } = productResult[0];
@@ -635,22 +619,11 @@ export function useProduct(id: string) {
         .where(
           and(
             eq(schema.inventoryTransactions.productId, baseProductId),
-            eq(schema.inventoryTransactions.status, "COMPLETED"),
+            eq(schema.inventoryTransactions.status, Status.COMPLETED),
           ),
         );
 
       const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
-
-      console.log(`📊 [STOCK DEBUG] Product ${id} details:`, {
-        transactionCount: transactions.length,
-        types: transactions.map((t) => t.type),
-        totalStock: totalStock,
-        transactions: transactions.map((t) => ({
-          type: t.type,
-          quantity: t.quantity,
-          id: t.id,
-        })),
-      });
 
       // If looking at a specific variant wrapper, inject its data context onto the product obj
       let activeVariantData = undefined;
@@ -686,7 +659,7 @@ export function useProduct(id: string) {
               endDate: discount.endDate,
             }
           : undefined,
-      } as unknown as Product;
+      } as Product;
     },
     enabled: !!id,
   });
@@ -706,7 +679,7 @@ export function useProductLog(productId: string) {
           and(
             eq(schema.inventoryTransactions.organizationId, orgId),
             eq(schema.inventoryTransactions.productId, productId),
-            eq(schema.inventoryTransactions.status, "COMPLETED"),
+            eq(schema.inventoryTransactions.status, Status.COMPLETED),
           ),
         )
         .orderBy(desc(schema.inventoryTransactions.createdAt));
@@ -768,7 +741,7 @@ export function useCreateProduct() {
           for (const variant of variants) {
             await tx.insert(schema.productVariants).values({
               id:
-                (variant as any).id ||
+                variant.id ||
                 `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               ...variant,
               productId: id,
@@ -789,7 +762,7 @@ export function useCreateProduct() {
             id: `invtx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             local_ref_id: `initial_${id}`,
             productId: id,
-            type: "INITIAL_STOCK",
+            type: InventoryTxType.INITIAL_STOCK,
             quantity: productData.stock,
             organizationId: orgId,
             createdBy: userId,
@@ -802,7 +775,7 @@ export function useCreateProduct() {
         }
       });
 
-      return { id, ...data } as any;
+      return { id, ...data };
     },
     onSuccess: (data) => {
       const orgId = useAuthStore.getState().getOrganizationId();
@@ -864,7 +837,7 @@ export function useUpdateProduct() {
           for (const variant of variants) {
             await tx.insert(schema.productVariants).values({
               id:
-                (variant as any).id ||
+                variant.id ||
                 `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               ...variant,
               productId: id,
@@ -896,7 +869,6 @@ export function useDeleteProduct() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      console.log(`[DELETE] mutationFn called with id: "${id}"`);
       const now = new Date();
 
       const userId = useAuthStore.getState().profile?.id;
@@ -906,28 +878,11 @@ export function useDeleteProduct() {
         // Must use indexOf("-var_") specifically, NOT just indexOf("-"),
         // because the productId prefix itself also contains dashes.
         const varSeparatorIndex = id.indexOf("-var_");
-        console.log(`[DELETE] varSeparatorIndex=${varSeparatorIndex}`);
         if (varSeparatorIndex !== -1) {
           // Extract only the variant portion (after the "-" separator)
           const variantIdStr = id.substring(varSeparatorIndex + 1); // e.g. "var_xxx"
-          console.log(`[DELETE] Targeting variant id: "${variantIdStr}"`);
 
           // Verify it exists first
-          const existing = await tx
-            .select()
-            .from(schema.productVariants)
-            .where(eq(schema.productVariants.id, variantIdStr));
-          console.log(
-            `[DELETE] Found matching variant rows: ${existing.length}`,
-            JSON.stringify(
-              existing.map((r) => ({
-                id: r.id,
-                name: r.name,
-                deletedAt: r.deletedAt,
-              })),
-            ),
-          );
-
           const result = await tx
             .update(schema.productVariants)
             .set({
@@ -937,30 +892,8 @@ export function useDeleteProduct() {
               _dirty: true,
             })
             .where(eq(schema.productVariants.id, variantIdStr));
-          console.log(
-            `[DELETE] Variant update result:`,
-            JSON.stringify(result),
-          );
         } else {
           // It's a parent product
-          console.log(`[DELETE] Targeting parent product id: "${id}"`);
-
-          // Verify it exists first
-          const existing = await tx
-            .select()
-            .from(schema.products)
-            .where(eq(schema.products.id, id));
-          console.log(
-            `[DELETE] Found matching product rows: ${existing.length}`,
-            JSON.stringify(
-              existing.map((r) => ({
-                id: r.id,
-                name: r.name,
-                deletedAt: r.deletedAt,
-              })),
-            ),
-          );
-
           const result = await tx
             .update(schema.products)
             .set({
@@ -970,24 +903,16 @@ export function useDeleteProduct() {
               _dirty: true,
             })
             .where(eq(schema.products.id, id));
-          console.log(
-            `[DELETE] Product update result:`,
-            JSON.stringify(result),
-          );
         }
       });
 
       return { id };
     },
     onSuccess: (data) => {
-      console.log(
-        `[DELETE] onSuccess fired for id: "${data.id}", invalidating queries...`,
-      );
       queryClient.invalidateQueries({
         queryKey: ["products"],
         refetchType: "all",
       });
-      console.log(`[DELETE] invalidateQueries called.`);
     },
   });
 }
@@ -1007,9 +932,6 @@ export function useBulkDeleteProduct() {
         if (varSeparatorIndex !== -1) {
           // It's a composite variant ID (e.g. prod_xxx-var_yyy) — delete the variant row
           const variantIdStr = id.substring(varSeparatorIndex + 1);
-          console.log(
-            `[BULK DELETE] Deleting variant: "${variantIdStr}" from composite id: "${id}"`,
-          );
           await db
             .update(schema.productVariants)
             .set({
@@ -1021,7 +943,6 @@ export function useBulkDeleteProduct() {
             .where(eq(schema.productVariants.id, variantIdStr));
         } else {
           // It's a parent product ID
-          console.log(`[BULK DELETE] Deleting parent product: "${id}"`);
           await db
             .update(schema.products)
             .set({

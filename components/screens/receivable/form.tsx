@@ -21,7 +21,7 @@ import {
   VStack,
 } from "@/components/ui";
 import SelectModal from "@/components/ui/select/select-modal";
-import { getErrorMessage } from "@/lib/api/client";
+import { showErrorToast } from "@/lib/utils/toast";
 import {
   useCreateReceivable,
   useReceivableDetail,
@@ -77,20 +77,6 @@ export default function ReceivableForm() {
 
   const toast = useToast();
 
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
   useEffect(() => {
     if (receivableId && receivable) {
       form.reset({
@@ -131,7 +117,7 @@ export default function ReceivableForm() {
             router.back();
           },
           onError: (error) => {
-            showErrorToast(error);
+            showErrorToast(toast, error);
           },
         },
       );
@@ -159,7 +145,7 @@ export default function ReceivableForm() {
             router.back();
           },
           onError: (error) => {
-            showErrorToast(error);
+            showErrorToast(toast, error);
           },
         },
       );

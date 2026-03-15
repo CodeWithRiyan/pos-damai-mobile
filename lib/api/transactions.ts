@@ -1,3 +1,4 @@
+import { DateFilterType, InventoryTxType, PriceType, ProductType, Status } from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { and, desc, eq, isNull, like } from "drizzle-orm";
@@ -15,6 +16,8 @@ export interface Transaction {
   totalAmount: number;
   totalPaid: number;
   commission?: number;
+  totalDiscount?: number;
+  totalProfit?: number;
   paymentTypeId: string;
   paymentTypeName?: string;
   transactionDate: Date;
@@ -39,6 +42,9 @@ export interface TransactionItem {
   variantName?: string;
   quantity: number;
   sellPrice: number;
+  discountAmount: number;
+  purchasePrice: number;
+  profit: number;
   note?: string | null;
 }
 
@@ -116,7 +122,7 @@ export function useTransactions(params?: TransactionFilterParams) {
         let filterStart: Date | undefined;
         let filterEnd: Date | undefined;
 
-        if (params.dateType === "TODAY") {
+        if (params.dateType === DateFilterType.TODAY) {
           filterStart = new Date(
             now.getFullYear(),
             now.getMonth(),
@@ -131,7 +137,7 @@ export function useTransactions(params?: TransactionFilterParams) {
             59,
             999,
           );
-        } else if (params.dateType === "THIS_WEEK") {
+        } else if (params.dateType === DateFilterType.THIS_WEEK) {
           const day = now.getDay();
           const diff = now.getDate() - day + (day === 0 ? -6 : 1);
           filterStart = new Date(now.getFullYear(), now.getMonth(), diff);
@@ -144,7 +150,7 @@ export function useTransactions(params?: TransactionFilterParams) {
             59,
             999,
           );
-        } else if (params.dateType === "THIS_MONTH") {
+        } else if (params.dateType === DateFilterType.THIS_MONTH) {
           filterStart = new Date(now.getFullYear(), now.getMonth(), 1);
           filterEnd = new Date(
             now.getFullYear(),
@@ -155,11 +161,11 @@ export function useTransactions(params?: TransactionFilterParams) {
             59,
             999,
           );
-        } else if (params.dateType === "THIS_YEAR") {
+        } else if (params.dateType === DateFilterType.THIS_YEAR) {
           filterStart = new Date(now.getFullYear(), 0, 1);
           filterEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
         } else if (
-          params.dateType === "CUSTOM" &&
+          params.dateType === DateFilterType.CUSTOM &&
           params.startDate &&
           params.endDate
         ) {
@@ -227,6 +233,36 @@ export function useTransactions(params?: TransactionFilterParams) {
   });
 }
 
+// Get customer IDs that have at least one completed transaction
+export function useCustomerIdsWithTransactions() {
+  const orgId = useAuthStore((state) => state.getOrganizationId());
+
+  return useQuery({
+    queryKey: ["customer-ids-with-transactions", orgId],
+    queryFn: async () => {
+      if (!orgId) return new Set<string>();
+
+      const rows = await db
+        .selectDistinct({ customerId: schema.transactions.customerId })
+        .from(schema.transactions)
+        .where(
+          and(
+            eq(schema.transactions.organizationId, orgId),
+            eq(schema.transactions.status, Status.COMPLETED),
+            isNull(schema.transactions.deletedAt),
+          ),
+        );
+
+      return new Set(
+        rows
+          .map((r) => r.customerId)
+          .filter((id): id is string => id !== null),
+      );
+    },
+    enabled: !!orgId,
+  });
+}
+
 // Get all products purchased by a specific customer
 export function usePurchasedProducts(customerId: string) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
@@ -253,7 +289,7 @@ export function usePurchasedProducts(customerId: string) {
           and(
             eq(schema.transactions.customerId, customerId),
             eq(schema.transactions.organizationId, orgId),
-            eq(schema.transactions.status, "COMPLETED"),
+            eq(schema.transactions.status, Status.COMPLETED),
             isNull(schema.transactions.deletedAt),
           ),
         )
@@ -325,7 +361,7 @@ export function usePurchasedProducts(customerId: string) {
             .where(
               and(
                 eq(schema.inventoryTransactions.productId, product.id),
-                eq(schema.inventoryTransactions.status, "COMPLETED"),
+                eq(schema.inventoryTransactions.status, Status.COMPLETED),
               ),
             );
 
@@ -340,7 +376,7 @@ export function usePurchasedProducts(customerId: string) {
             minimumStock: product.minimumStock ?? 0,
             isActive: !!product.isActive,
             isFavorite: !!product.isFavorite,
-            type: (product.type || "DEFAULT") as
+            type: (product.type || ProductType.DEFAULT) as
               | "DEFAULT"
               | "MULTIUNIT"
               | "VARIANTS",
@@ -440,8 +476,11 @@ export async function fetchTransaction(
       return {
         ...item,
         productName: product[0]?.name || "Unknown",
-        productType: product[0]?.type || "DEFAULT",
+        productType: (product[0]?.type || ProductType.DEFAULT) as Product["type"],
         variantName,
+        discountAmount: item.discountAmount ?? 0,
+        purchasePrice: item.purchasePrice ?? 0,
+        profit: item.profit ?? 0,
       };
     }),
   );
@@ -499,6 +538,8 @@ export function useCreateTransaction() {
           totalAmount: data.totalAmount,
           totalPaid: Number(data.totalPaid) || 0,
           commission: data.commission || 0,
+          totalDiscount: 0,
+          totalProfit: 0,
           paymentTypeId: data.paymentTypeId,
           transactionDate: data.transactionDate,
           status: data.status,
@@ -569,7 +610,7 @@ export function useCreateTransaction() {
             .limit(1);
 
           const statusCompleted =
-            data.status === "COMPLETED" && existing[0]?.status === "DRAFT";
+            data.status === Status.COMPLETED && existing[0]?.status === Status.DRAFT;
 
           if (statusCompleted) {
             const newRefId = await generateLocalRefId(
@@ -580,7 +621,7 @@ export function useCreateTransaction() {
 
             await tx
               .update(schema.transactions)
-              .set({ status: "COMPLETED", local_ref_id: newRefId })
+              .set({ status: Status.COMPLETED, local_ref_id: newRefId })
               .where(eq(schema.transactions.id, data.id));
 
             finalLocalRefId = newRefId;
@@ -588,11 +629,23 @@ export function useCreateTransaction() {
         }
 
         // 2. Create Transaction Items and Inventory Transactions
+        let totalDiscountAcc = 0;
+        let totalProfitAcc = 0;
+
         for (const item of data.items) {
           const discount = item.product.discount;
           const unitPrice = item.tempSellPrice || 0;
           const isManual = !!item.isManualPrice;
           const hasDiscount = !isManual && isDiscountActive(discount);
+
+          // Fetch purchase price for profit calculation
+          const productRow = await tx
+            .select({ purchasePrice: schema.products.purchasePrice })
+            .from(schema.products)
+            .where(eq(schema.products.id, item.product.id))
+            .limit(1);
+          const unitPurchasePrice = productRow[0]?.purchasePrice || 0;
+          const variantNetto = item.variant?.netto || 1;
 
           // We split the item into two entries if it has a discount and quantity > 0
           // Entry 1: 1 quantity with discounted price
@@ -605,27 +658,38 @@ export function useCreateTransaction() {
             // If quantity >= 1, 1 unit is discounted, rest is regular
             // If quantity < 1, the entire fraction is discounted
             const discountedQty = Math.min(1, item.quantity);
+            const discountPerUnit = unitPrice - discountedPrice;
 
             itemsToCreate.push({
               qty: discountedQty,
               price: discountedPrice,
+              discountAmount: discountPerUnit * discountedQty,
             });
 
             if (item.quantity > discountedQty) {
               itemsToCreate.push({
                 qty: item.quantity - discountedQty,
                 price: unitPrice,
+                discountAmount: 0,
               });
             }
           } else {
             itemsToCreate.push({
               qty: item.quantity,
               price: unitPrice,
+              discountAmount: 0,
             });
           }
 
           for (const subItem of itemsToCreate) {
             const itemId = `trans_item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const itemCost = unitPurchasePrice * variantNetto * subItem.qty;
+            const itemRevenue = subItem.price * subItem.qty;
+            const itemProfit = itemRevenue - itemCost;
+
+            totalDiscountAcc += subItem.discountAmount;
+            totalProfitAcc += itemProfit;
+
             await tx.insert(schema.transactionItems).values({
               id: itemId,
               transactionId: transactionId,
@@ -633,6 +697,9 @@ export function useCreateTransaction() {
               variantId: item.variant?.id || null,
               quantity: subItem.qty,
               sellPrice: subItem.price,
+              discountAmount: subItem.discountAmount,
+              purchasePrice: unitPurchasePrice * variantNetto,
+              profit: itemProfit,
               note: item.note || null,
               organizationId: orgId,
               createdBy: userId,
@@ -645,17 +712,16 @@ export function useCreateTransaction() {
           }
 
           // Create inventory transaction (negative quantity for sales)
-          if (data.status === "COMPLETED") {
+          if (data.status === Status.COMPLETED) {
             const invTxId = `inv_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            const variantNetto = item.variant?.netto || 1;
             await tx.insert(schema.inventoryTransactions).values({
               id: invTxId,
               local_ref_id: `${finalLocalRefId}_${item.product.id}_${item.variant?.id || "base"}`,
               productId: item.product.id,
               variantId: item.variant?.id || null,
-              type: "SALE",
+              type: InventoryTxType.SALE,
               quantity: -item.quantity * variantNetto,
-              status: "COMPLETED",
+              status: Status.COMPLETED,
               organizationId: orgId,
               createdBy: userId,
               updatedBy: userId,
@@ -667,8 +733,14 @@ export function useCreateTransaction() {
           }
         }
 
+        // Update transaction with computed totals
+        await tx
+          .update(schema.transactions)
+          .set({ totalDiscount: totalDiscountAcc, totalProfit: totalProfitAcc })
+          .where(eq(schema.transactions.id, transactionId));
+
         // 3. Calculate and Add Customer Points (if applicable)
-        if (data.customerId && data.status === "COMPLETED") {
+        if (data.customerId && data.status === Status.COMPLETED) {
           let isNewOrDraft = true;
           if (data.id) {
             const existingTx = await tx
@@ -676,7 +748,7 @@ export function useCreateTransaction() {
               .from(schema.transactions)
               .where(eq(schema.transactions.id, data.id))
               .limit(1);
-            if (existingTx.length > 0 && existingTx[0].status === "COMPLETED") {
+            if (existingTx.length > 0 && existingTx[0].status === Status.COMPLETED) {
               isNewOrDraft = false;
             }
           }
@@ -713,7 +785,7 @@ export function useCreateTransaction() {
 
                   // Points
                   const categoryPoints =
-                    customer.category === "WHOLESALE"
+                    customer.category === PriceType.WHOLESALE
                       ? p.wholesalePoint
                       : p.retailPoint;
 

@@ -1,3 +1,4 @@
+import { FinanceType, ShiftStatus } from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { and, desc, eq, gte, isNull, lte } from "drizzle-orm";
@@ -77,10 +78,6 @@ export function useShifts() {
       // Join with cashdrawer and user names
       const shiftsWithDetails = await Promise.all(
         shiftsResult.map(async (shift) => {
-          console.log(
-            `[useActiveShift] Shift loaded: ID=${shift.id}, userId=${shift.userId}`,
-          );
-
           const cashDrawer = await db
             .select({ name: schema.cashDrawers.name })
             .from(schema.cashDrawers)
@@ -92,20 +89,6 @@ export function useShifts() {
             .from(schema.users)
             .where(eq(schema.users.id, shift.userId))
             .limit(1);
-
-          console.log(
-            `[useActiveShift] Assigned Cashier User Query result:`,
-            user,
-          );
-
-          // DEBUG: print all users in DB
-          const allUsers = await db
-            .select({ id: schema.users.id, name: schema.users.name })
-            .from(schema.users);
-          console.log(
-            `[useActiveShift] Total users in DB: ${allUsers.length}. Sample:`,
-            allUsers.map((u) => u.name),
-          );
 
           return {
             ...shift,
@@ -135,7 +118,7 @@ export function useActiveShift(cashDrawerId?: string) {
         .where(
           and(
             eq(schema.shifts.cashDrawerId, cashDrawerId),
-            eq(schema.shifts.status, "ACTIVE"),
+            eq(schema.shifts.status, ShiftStatus.ACTIVE),
             eq(schema.shifts.organizationId, orgId),
             isNull(schema.shifts.deletedAt),
           ),
@@ -182,7 +165,7 @@ export function useCurrentShift() {
         .from(schema.shifts)
         .where(
           and(
-            eq(schema.shifts.status, "ACTIVE"),
+            eq(schema.shifts.status, ShiftStatus.ACTIVE),
             eq(schema.shifts.organizationId, orgId),
             isNull(schema.shifts.deletedAt),
           ),
@@ -230,7 +213,7 @@ export function useLastShift(cashDrawerId?: string) {
         .where(
           and(
             eq(schema.shifts.cashDrawerId, cashDrawerId),
-            eq(schema.shifts.status, "CLOSED"),
+            eq(schema.shifts.status, ShiftStatus.CLOSED),
             eq(schema.shifts.organizationId, orgId),
             isNull(schema.shifts.deletedAt),
           ),
@@ -270,7 +253,7 @@ export function useStartShift() {
         .where(
           and(
             eq(schema.shifts.cashDrawerId, data.cashDrawerId),
-            eq(schema.shifts.status, "ACTIVE"),
+            eq(schema.shifts.status, ShiftStatus.ACTIVE),
             eq(schema.shifts.organizationId, orgId),
           ),
         )
@@ -297,7 +280,7 @@ export function useStartShift() {
         finalBalance: null,
         expectedBalance: null,
         difference: null,
-        status: "ACTIVE",
+        status: ShiftStatus.ACTIVE,
         note: data.note || null,
         organizationId: orgId,
         createdBy: userId,
@@ -347,7 +330,7 @@ export function useEndShift() {
           finalBalance: data.finalBalance,
           expectedBalance: expectedBalance,
           difference: difference,
-          status: "CLOSED",
+          status: ShiftStatus.CLOSED,
           note: data.note || shift[0].note,
           updatedBy: useAuthStore.getState().profile?.id,
           updatedAt: now,
@@ -448,7 +431,7 @@ export function useShiftDetail(id: string) {
           ref: f.local_ref_id,
           transactionDate: f.transactionDate,
           type:
-            f.type === "INCOME"
+            f.type === FinanceType.INCOME
               ? "INCOME"
               : (f.expensesType as ShiftTransactionHistory["type"]),
           nominal: f.nominal,

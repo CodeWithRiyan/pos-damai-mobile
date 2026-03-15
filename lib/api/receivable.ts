@@ -1,10 +1,11 @@
 import { db } from '../db';
 import * as schema from '../db/schema';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
 import { User } from './users';
-import { apiClient, ApiResponse } from './client';
+import { apiClient, ApiResponse, unwrapResponse } from './client';
+import { generateLocalId } from '../utils/id';
 import { generateLocalRefId } from '../utils/reference';
 
 export interface ReceivableRealization {
@@ -69,14 +70,6 @@ export interface UpdateReceivableDTO {
   note?: string;
 }
 
-// Helper function to unwrap API responses
-function unwrapResponse<T>(response: any): T {
-  if (response.data && 'data' in response.data) {
-    return response.data.data;
-  }
-  return response.data;
-}
-
 export function useReceivableList() {
   const orgId = useAuthStore(state => state.getOrganizationId());
   return useQuery({
@@ -92,25 +85,37 @@ export function useReceivableList() {
           )
         );
 
+      // Batch-fetch all realizations in a single query instead of N+1
+      const receivableIds = allReceivables.map(r => r.id);
+      const allRealizations = receivableIds.length > 0
+        ? await db
+            .select()
+            .from(schema.receivableRealizations)
+            .where(
+              and(
+                inArray(schema.receivableRealizations.receivableId, receivableIds),
+                isNull(schema.receivableRealizations.deletedAt)
+              )
+            )
+        : [];
+
+      const realizationsByReceivableId = new Map<string, typeof allRealizations>();
+      for (const r of allRealizations) {
+        const existing = realizationsByReceivableId.get(r.receivableId) || [];
+        existing.push(r);
+        realizationsByReceivableId.set(r.receivableId, existing);
+      }
+
       const groupedByUser: Record<string, ReceivableByUser> = {};
 
       for (const receivable of allReceivables) {
-        const realizations = await db
-          .select()
-          .from(schema.receivableRealizations)
-          .where(
-            and(
-              eq(schema.receivableRealizations.receivableId, receivable.id),
-              isNull(schema.receivableRealizations.deletedAt)
-            )
-          );
-        
+        const realizations = realizationsByReceivableId.get(receivable.id) || [];
         const totalRealization = realizations.reduce((sum, r) => sum + r.nominal, 0);
 
         if (!groupedByUser[receivable.userId]) {
           groupedByUser[receivable.userId] = {
             userId: receivable.userId,
-            userName: 'Loading...', // Will be updated below
+            userName: 'Loading...',
             totalReceivable: 0,
             totalRealization: 0,
             nearestDueDate: receivable.dueDate,
@@ -121,7 +126,7 @@ export function useReceivableList() {
         const group = groupedByUser[receivable.userId];
         group.totalReceivable += receivable.nominal;
         group.totalRealization += totalRealization;
-        
+
         if (receivable.dueDate && (!group.nearestDueDate || receivable.dueDate < group.nearestDueDate)) {
           group.nearestDueDate = receivable.dueDate;
         }
@@ -179,37 +184,45 @@ export function useReceivableByUser(userId: string) {
       try {
         const usersResponse = await apiClient.get<ApiResponse<User[]> | User[]>('/users');
         const users = unwrapResponse<User[]>(usersResponse);
-        console.log('[useReceivableByUser] Fetched users:', users.length, 'Looking for userId:', userId);
-        user = users.find(u => u.id === userId);
-        console.log('[useReceivableByUser] Found user:', user ? `${user.firstName} (${user.id})` : 'NOT FOUND');
+        user = users.find(u => u.id === userId) ?? null;
       } catch (error) {
         console.error('Failed to fetch user for receivables:', error);
       }
 
-      const detailedReceivables = await Promise.all(
-        receivables.map(async (receivable) => {
-          const realizations = await db
+      // Batch-fetch all realizations in a single query
+      const receivableIds = receivables.map(r => r.id);
+      const allRealizations = receivableIds.length > 0
+        ? await db
             .select()
             .from(schema.receivableRealizations)
             .where(
               and(
-                eq(schema.receivableRealizations.receivableId, receivable.id),
+                inArray(schema.receivableRealizations.receivableId, receivableIds),
                 isNull(schema.receivableRealizations.deletedAt)
               )
-            );
-          
-          const totalRealization = realizations.reduce((sum, rl) => sum + rl.nominal, 0);
+            )
+        : [];
 
-          return {
-            ...receivable,
-            user,
-            realizations,
-            totalRealization,
-          };
-        })
-      );
+      const realizationsByReceivableId = new Map<string, typeof allRealizations>();
+      for (const r of allRealizations) {
+        const existing = realizationsByReceivableId.get(r.receivableId) || [];
+        existing.push(r);
+        realizationsByReceivableId.set(r.receivableId, existing);
+      }
 
-      return detailedReceivables as unknown as Receivable[];
+      const detailedReceivables = receivables.map((receivable) => {
+        const realizations = realizationsByReceivableId.get(receivable.id) || [];
+        const totalRealization = realizations.reduce((sum, rl) => sum + rl.nominal, 0);
+
+        return {
+          ...receivable,
+          user,
+          realizations,
+          totalRealization,
+        };
+      });
+
+      return detailedReceivables as Receivable[];
     },
     enabled: !!userId && !!orgId,
   });
@@ -234,9 +247,7 @@ export function useReceivableDetail(id: string) {
         try {
           const usersResponse = await apiClient.get<ApiResponse<User[]> | User[]>('/users');
           const users = unwrapResponse<User[]>(usersResponse);
-          console.log('[useReceivableDetail] Fetched users:', users.length, 'Looking for userId:', receivable.userId);
-          user = users.find(u => u.id === receivable.userId);
-          console.log('[useReceivableDetail] Found user:', user ? `${user.firstName} (${user.id})` : 'NOT FOUND');
+          user = users.find(u => u.id === receivable.userId) ?? null;
         } catch (error) {
           console.error('Failed to fetch user for receivable detail:', error);
         }
@@ -258,7 +269,7 @@ export function useReceivableDetail(id: string) {
           user,
           realizations,
           totalRealization,
-        } as unknown as Receivable;
+        } as Receivable;
       },
       enabled: !!id,
     });
@@ -270,7 +281,7 @@ export function useCreateReceivable() {
   return useMutation({
     mutationFn: async (data: CreateReceivableDTO) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      const id = `rec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const id = generateLocalId('rec');
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
 
@@ -307,7 +318,7 @@ export function useCreateReceivableRealization() {
   return useMutation({
     mutationFn: async (data: CreateReceivableRealizationDTO) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      const id = `recrel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const id = generateLocalId('recrel');
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
 

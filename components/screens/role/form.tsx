@@ -17,7 +17,6 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
-import { getErrorMessage } from "@/lib/api/client";
 import {
   Permission,
   useCreateRole,
@@ -33,6 +32,7 @@ import { usePermission } from "@/hooks/use-permission";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import z from "zod";
+import { showErrorToast } from "@/lib/utils/toast";
 
 const roleSchema = z.object({
   name: z.string().min(1, "Nama wajib diisi."),
@@ -73,20 +73,6 @@ export default function RoleForm() {
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   const toast = useToast();
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
 
   useEffect(() => {
     if (roleId && role) {
@@ -135,7 +121,7 @@ export default function RoleForm() {
             });
           },
           onError: (error) => {
-            showErrorToast(error);
+            showErrorToast(toast, error);
           },
         },
       );
@@ -155,7 +141,7 @@ export default function RoleForm() {
           });
         },
         onError: (error) => {
-          showErrorToast(error);
+          showErrorToast(toast, error);
         },
       });
     }

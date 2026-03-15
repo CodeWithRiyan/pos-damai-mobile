@@ -1,6 +1,5 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
 import {
     Box,
     Spinner,
@@ -12,7 +11,6 @@ import {
 } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { getErrorMessage } from "@/lib/api/client";
 import {
     useDeletePaymentType,
     usePaymentType,
@@ -21,14 +19,16 @@ import {
 } from "@/lib/api/payment-types";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import classNames from "classnames";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
 
+import { formatNumber } from "@/lib/utils/format";
+import { showErrorToast } from "@/lib/utils/toast";
+import { useDeleteEntity } from "@/hooks/use-delete-entity";
+import { singleDeleteConfirm } from "@/lib/utils/delete-confirm";
 export default function PaymentTypeDetail() {
   const { setOpen, setData } = usePaymentTypeStore();
-  const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
-  const router = useRouter();
   const { id } = useLocalSearchParams();
   const paymentTypeId = id as string;
 
@@ -47,64 +47,11 @@ export default function PaymentTypeDetail() {
     refetchPaymentType();
   };
 
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
-  const handleDeletePress = () => {
-    showPopUpConfirm({
-      title: "HAPUS JENIS PEMBAYARAN",
-      icon: "warning",
-      description: (
-        <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus jenis pembayaran `}
-          <Text className="font-bold text-slate-900">{paymentType?.name}</Text>
-          {` ? Tindakan ini tidak dapat dibatalkan.`}
-        </Text>
-      ),
-      showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
-      onOk: () => confirmDelete(),
-      loading: isLoading,
-    });
-  };
-
-  const confirmDelete = async () => {
-    if (!paymentType) return;
-
-    deleteMutation.mutate(paymentType.id, {
-      onSuccess: () => {
-        hidePopUpConfirm();
-        onRefetch();
-        router.back();
-
-        toast.show({
-          placement: "top",
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-              <ToastTitle>Jenis pembayaran berhasil dihapus</ToastTitle>
-            </Toast>
-          ),
-        });
-      },
-      onError: (error) => {
-        showErrorToast(error);
-        hidePopUpConfirm();
-      },
-    });
-  };
+  const { triggerDelete } = useDeleteEntity({
+    successMessage: "Jenis pembayaran berhasil dihapus",
+    deleteMutation,
+    onSuccess: onRefetch,
+  });
 
   const handleAction = () => {
     showActionDrawer({
@@ -114,7 +61,7 @@ export default function PaymentTypeDetail() {
           icon: "Pen",
           onPress: () => {
             setOpen(true);
-            setData(paymentType);
+            setData(paymentType ?? null);
             hideActionDrawer();
           },
         },
@@ -123,7 +70,7 @@ export default function PaymentTypeDetail() {
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
-            handleDeletePress();
+            triggerDelete(singleDeleteConfirm("jenis pembayaran", paymentType?.id || "", paymentType?.name));
             hideActionDrawer();
           },
         },
@@ -165,7 +112,7 @@ export default function PaymentTypeDetail() {
               <Text className="text-gray-500">Komisi</Text>
               <Text className="font-bold">
                 {paymentType?.commissionType === "FLAT"
-                  ? `Rp ${paymentType?.commission?.toLocaleString("id-ID") || "-"}`
+                  ? `Rp ${formatNumber(paymentType?.commission ?? 0) || "-"}`
                   : `${paymentType?.commission || "-"}%`}
               </Text>
             </VStack>
@@ -203,7 +150,7 @@ export default function PaymentTypeDetail() {
                   });
                   onRefetch();
                 },
-                onError: showErrorToast,
+                onError: (error) => showErrorToast(toast, error),
               });
             }
           }}

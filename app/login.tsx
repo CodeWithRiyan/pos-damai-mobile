@@ -30,7 +30,7 @@ import { getErrorMessage } from "@/lib/api/client";
 import { SyncEngine } from "@/lib/sync/sync-engine";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Image } from "react-native";
+import { Image } from "expo-image";
 import Animated, { FadeInUp, FadeOutUp } from "react-native-reanimated";
 
 export default function LoginScreen() {
@@ -49,7 +49,6 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
-    console.log("handleLogin triggered", { username, password });
     if (!username || !password) {
       toast.show({
         placement: "top",
@@ -68,12 +67,10 @@ export default function LoginScreen() {
       return;
     }
 
-    console.log("calling loginMutation.mutate");
     loginMutation.mutate(
       { username: username.trimEnd(), password },
       {
         onSuccess: async () => {
-          console.log("Login success, starting sync");
           try {
             setIsSyncing(true);
             setSyncStatus("Synchronizing data...");
@@ -81,7 +78,6 @@ export default function LoginScreen() {
             // Perform initial full sync
             await SyncEngine.sync();
 
-            console.log("Sync success");
             router.replace("/");
           } catch (syncError: any) {
             console.error("Initial sync failed:", syncError);
@@ -110,7 +106,6 @@ export default function LoginScreen() {
           }
         },
         onError: (error: any) => {
-          console.log("Login error callback", error);
           const errorMessage =
             error.response?.data?.message ||
             "Login failed. Please check your credentials.";
@@ -142,7 +137,7 @@ export default function LoginScreen() {
               <Image
                 source={require("../assets/images/logo.png")}
                 style={{ width: 200, height: 66 }}
-                resizeMode="contain"
+                contentFit="contain"
               />
             </Box>
             {/* <Heading size="3xl" className="text-brand-primary text-center">

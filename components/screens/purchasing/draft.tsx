@@ -9,6 +9,7 @@ import {
   Text,
   VStack,
 } from "@/components/ui";
+import { Status } from "@/lib/constants";
 import { usePurchases, fetchPurchase } from "@/lib/api/purchasing";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
@@ -20,6 +21,7 @@ import { useRouter } from "expo-router";
 import { Trash2 } from "lucide-react-native";
 import { ScrollView } from "react-native";
 
+import { formatNumber } from "@/lib/utils/format";
 export default function PurchasingDraft() {
   const router = useRouter();
   const { data: purchases, isLoading } = usePurchases();
@@ -28,7 +30,7 @@ export default function PurchasingDraft() {
   const queryClient = useQueryClient();
 
   // Filter only DRAFT status
-  const drafts = purchases?.filter((p) => p.status === "DRAFT") || [];
+  const drafts = purchases?.filter((p) => p.status === Status.DRAFT) || [];
 
   const handleContinueDraft = async (purchaseId: string) => {
     // We need to fetch the full detail of the purchase to get items
@@ -53,7 +55,7 @@ export default function PurchasingDraft() {
           });
         }
       }
-      setStatus("DRAFT");
+      setStatus(Status.DRAFT);
       setPurchaseId(detail.id);
       router.replace("/(main)/purchasing");
     }
@@ -157,7 +159,7 @@ export default function PurchasingDraft() {
                             Estimasi Total
                           </Text>
                           <Text className="font-bold">
-                            Rp {draft.totalAmount.toLocaleString("id-ID")}
+                            Rp {formatNumber(draft.totalAmount)}
                           </Text>
                         </VStack>
                         <VStack>

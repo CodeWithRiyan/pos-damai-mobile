@@ -16,21 +16,24 @@ import {
 } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { getErrorMessage } from "@/lib/api/client";
 import {
   Product,
   useProductsBySupplier,
   useUnassignProductsFromSupplier,
 } from "@/lib/api/products";
+import { showErrorToast } from "@/lib/utils/toast";
 import {
   useDeleteSupplier,
   useSupplier,
   useSuppliers,
 } from "@/lib/api/suppliers";
+import { useDeleteEntity } from "@/hooks/use-delete-entity";
+import { singleDeleteConfirm } from "@/lib/utils/delete-confirm";
+import { useItemSelection } from "@/hooks/use-item-selection";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
 import { ScrollView } from "react-native";
 
+import { formatRp } from "@/lib/utils/format";
 export default function SupplierDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -38,9 +41,7 @@ export default function SupplierDetail() {
   const { id } = useLocalSearchParams();
   const supplierId = id as string;
 
-  const [selectedProducts, setSelectedProducts] = useState<Product[] | null>(
-    null,
-  );
+  const { selectedItems: selectedProducts, handleItemPress, clearSelection: clearProductSelection, isSelected: isProductSelected, hasSelection: hasProductSelection } = useItemSelection<Product>();
 
   const { refetch: refetchSuppliers } = useSuppliers();
   const { data: supplier, refetch: refetchSupplier } = useSupplier(
@@ -56,24 +57,17 @@ export default function SupplierDetail() {
     refetchSupplier();
   };
 
-  const handleProductPress = (data: Product) => {
-    if (selectedProducts?.some((r) => r.id === data.id)) {
-      setSelectedProducts(selectedProducts.filter((r) => r.id !== data.id));
-      return;
-    }
-    if (!selectedProducts) {
-      setSelectedProducts([data]);
-      return;
-    }
-
-    setSelectedProducts([...selectedProducts, data]);
-  };
+  const { triggerDelete } = useDeleteEntity({
+    successMessage: "Supplier berhasil dihapus",
+    deleteMutation,
+    onSuccess: onRefetch,
+  });
 
   const handleDeleteProductPress = () => {
     const productIds = selectedProducts?.map((m) => m.id) || [];
 
     showPopUpConfirm({
-      title: `HAPUS PRODUK DARI ${supplier?.name.toUpperCase()}`,
+      title: `HAPUS PRODUK DARI ${supplier?.name?.toUpperCase() ?? ""}`,
       icon: "warning",
       description: (
         <Text className="text-slate-500">
@@ -92,7 +86,7 @@ export default function SupplierDetail() {
           {
             onSuccess: () => {
               hidePopUpConfirm();
-              setSelectedProducts(null);
+              clearProductSelection();
               onRefetch();
               toast.show({
                 placement: "top",
@@ -108,72 +102,13 @@ export default function SupplierDetail() {
               });
             },
             onError: (error) => {
-              showErrorToast(error);
+              showErrorToast(toast, error);
               hidePopUpConfirm();
             },
           },
         );
       },
       loading: unassignProductMutation.isPending,
-    });
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
-  const handleDeletePress = () => {
-    showPopUpConfirm({
-      title: "HAPUS PRODUK",
-      icon: "warning",
-      description: (
-        <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus produk `}
-          <Text className="font-bold text-slate-900">{supplier?.name}</Text>
-          {` ? Tindakan ini tidak dapat dibatalkan.`}
-        </Text>
-      ),
-      showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
-      onOk: () => confirmDelete(),
-      loading: deleteMutation.isPending,
-    });
-  };
-
-  const confirmDelete = async () => {
-    if (!supplier) return;
-
-    deleteMutation.mutate(supplier.id, {
-      onSuccess: () => {
-        hidePopUpConfirm();
-        onRefetch();
-        router.back();
-
-        toast.show({
-          placement: "top",
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-              <ToastTitle>Supplier berhasil dihapus</ToastTitle>
-            </Toast>
-          ),
-        });
-      },
-      onError: (error) => {
-        showErrorToast(error);
-        hidePopUpConfirm();
-      },
     });
   };
 
@@ -195,7 +130,7 @@ export default function SupplierDetail() {
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
-            handleDeletePress();
+            triggerDelete(singleDeleteConfirm("supplier", supplier?.id || "", supplier?.name));
             hideActionDrawer();
           },
         },
@@ -208,7 +143,7 @@ export default function SupplierDetail() {
       <Header
         header="DETAIL SUPPLIER"
         action={
-          !!selectedProducts?.length ? (
+          hasProductSelection ? (
             unassignProductMutation.isPending ? (
               <Box className="p-6">
                 <Spinner size="small" color="#FFFFFF" />
@@ -257,16 +192,16 @@ export default function SupplierDetail() {
                 <Pressable
                   key={product.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    selectedProducts?.some((r) => r.id === product.id)
+                    isProductSelected(product)
                       ? "bg-gray-100"
                       : ""
                   }`}
                   onPress={() => {
-                    if (!!selectedProducts?.length) {
-                      handleProductPress(product);
+                    if (hasProductSelection) {
+                      handleItemPress(product);
                     }
                   }}
-                  onLongPress={() => handleProductPress(product)}
+                  onLongPress={() => handleItemPress(product)}
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
@@ -297,24 +232,24 @@ export default function SupplierDetail() {
                           product.sellPrices?.filter(
                             (r) => r.type === "RETAIL",
                           )?.[0]?.minimumPurchase
-                        }@ Rp ${product.sellPrices
+                        }@ ${formatRp(product.sellPrices
                           ?.filter((r) => r.type === "RETAIL")?.[0]
-                          .price.toLocaleString("id-ID")}`}
+                          ?.price ?? 0)}`}
                       </Text>
-                      {!!product.sellPrices?.filter(
+                      {product.sellPrices?.filter(
                         (r) => r.type === "WHOLESALE",
-                      ).length && (
+                      ).length ? (
                         <Text className="text-xs">
                           Grosir:{" "}
                           {`${
                             product.sellPrices?.filter(
                               (r) => r.type === "WHOLESALE",
                             )?.[0]?.minimumPurchase
-                          }@ Rp ${product.sellPrices
+                          }@ ${formatRp(product.sellPrices
                             ?.filter((r) => r.type === "WHOLESALE")?.[0]
-                            .price.toLocaleString("id-ID")}`}
+                            ?.price ?? 0)}`}
                         </Text>
-                      )}
+                      ) : null}
                     </VStack>
                   </HStack>
                 </Pressable>

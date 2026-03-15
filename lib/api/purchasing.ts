@@ -1,3 +1,4 @@
+import { InventoryTxType, PaymentMethod, Status } from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { and, desc, eq, isNull, like } from "drizzle-orm";
@@ -144,7 +145,7 @@ export async function fetchPurchase(id: string): Promise<Purchase | null> {
     .from(schema.inventoryTransactions)
     .where(
       and(
-        eq(schema.inventoryTransactions.type, "PURCHASE"),
+        eq(schema.inventoryTransactions.type, InventoryTxType.PURCHASE),
         eq(
           schema.inventoryTransactions.organizationId,
           purchase.organizationId,
@@ -179,7 +180,7 @@ export async function fetchPurchase(id: string): Promise<Purchase | null> {
   return {
     ...purchase,
     supplierName: supplier[0]?.name || "Unknown",
-    paymentTypeName: paymentType[0]?.name || (purchase.paymentType === "CASH" ? "Tunai" : "Hutang"),
+    paymentTypeName: paymentType[0]?.name || (purchase.paymentType === PaymentMethod.CASH ? "Tunai" : "Hutang"),
     items: itemsWithProductNames,
   } as Purchase;
 }
@@ -236,7 +237,7 @@ export function useCreatePurchasing() {
             .limit(1);
 
           const statusCompleted =
-            data.status === "COMPLETED" && existing[0]?.status === "DRAFT";
+            data.status === Status.COMPLETED && existing[0]?.status === Status.DRAFT;
 
           if (statusCompleted) {
             finalLocalRefId = await generateLocalRefId(
@@ -253,7 +254,7 @@ export function useCreatePurchasing() {
           supplierId: data.supplierId,
           totalAmount: data.totalPurchase,
           totalPaid: data.totalPaid,
-          paymentType: data.isPayable ? "DEBT" : "CASH",
+          paymentType: data.isPayable ? PaymentMethod.DEBT : PaymentMethod.CASH,
           paymentTypeId: data.paymentMethodId,
           commission: data.commission || 0,
           status: data.status,
@@ -297,7 +298,7 @@ export function useCreatePurchasing() {
             id: txId,
             local_ref_id: `${finalLocalRefId}_${item.product.id}`,
             productId: item.product.id,
-            type: "PURCHASE",
+            type: InventoryTxType.PURCHASE,
             quantity: item.quantity,
             status: data.status,
             note: item.note || "",
@@ -311,7 +312,7 @@ export function useCreatePurchasing() {
           });
 
           // 3. Update Product purchasePrice and link supplierId if status is COMPLETED
-          if (data.status === "COMPLETED") {
+          if (data.status === Status.COMPLETED) {
             const [dbProduct] = await tx
               .select({
                 purchasePrice: schema.products.purchasePrice,
@@ -322,7 +323,7 @@ export function useCreatePurchasing() {
               .limit(1);
 
             if (dbProduct) {
-              const updates: any = {};
+              const updates: { purchasePrice?: number; supplierId?: string } = {};
               if (item.newPurchasePrice !== dbProduct.purchasePrice) {
                 updates.purchasePrice = item.newPurchasePrice;
               }
@@ -362,10 +363,6 @@ export function useCreatePurchasing() {
             _dirty: true,
             _syncedAt: null,
           });
-          console.log(
-            `[useCreatePurchasing] Created payable ${payableId} for purchase ${purchaseId}, amount: ${data.totalPurchase}`,
-          );
-
           // 5. Create Payable Realization as DP if totalPaid < totalPurchase
           const totalPaidNum = Number(data.totalPaid) || 0;
           if (totalPaidNum > 0 && totalPaidNum < data.totalPurchase) {
@@ -385,9 +382,6 @@ export function useCreatePurchasing() {
               _dirty: true,
               _syncedAt: null,
             });
-            console.log(
-              `[useCreatePurchasing] Created payable realization (DP) ${realizationId} for payable ${payableId}, amount: ${totalPaidNum}`,
-            );
           }
         }
       });

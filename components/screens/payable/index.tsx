@@ -34,13 +34,15 @@ import {
   usePayableList,
 } from "@/lib/api/payable";
 import { exportPayables } from "@/lib/utils/excel";
+import { showErrorToast } from "@/lib/utils/toast";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
 import { CalendarIcon } from "lucide-react-native";
 import React, { useState } from "react";
-import { ScrollView } from "react-native";
+import { FlatList } from "react-native";
 
+import { formatRp } from "@/lib/utils/format";
 export default function PayableList({ isReport }: { isReport?: boolean }) {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -80,31 +82,11 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
   };
 
   const handlePayablePress = (payable: PayableBySupplier) => {
-    if (selectedItems?.some((r) => r.supplierId === payable.supplierId)) {
-      setSelectedItems(
-        selectedItems.filter((r) => r.supplierId !== payable.supplierId),
-      );
-      return;
-    }
-    if (!selectedItems) {
-      setSelectedItems([payable]);
-      return;
-    }
-
-    setSelectedItems([...selectedItems, payable]);
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
+    setSelectedItems((prev) => {
+      if (prev?.some((r) => r.supplierId === payable.supplierId)) {
+        return prev.filter((r) => r.supplierId !== payable.supplierId);
+      }
+      return [...(prev ?? []), payable];
     });
   };
 
@@ -151,7 +133,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
         });
       },
       onError: (error) => {
-        showErrorToast(error);
+        showErrorToast(toast, error);
         hidePopUpConfirm();
       },
     });
@@ -279,13 +261,12 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
                   Total Belum Lunas
                 </Text>
                 <Heading size="xl" className="text-error-500">
-                  {`Rp ${payableBySupplier
+                  {formatRp(payableBySupplier
                     .reduce(
                       (acc, curr) =>
                         acc + (curr.totalPayable - curr.totalRealization),
                       0,
-                    )
-                    .toLocaleString("id-ID")}`}
+                    ))}
                 </Heading>
               </VStack>
               <VStack className="flex-1 items-end">
@@ -338,95 +319,91 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
               </Checkbox>
             </HStack>
           </VStack>
-          <ScrollView className="flex-1">
-            <VStack>
-              {payableBySupplier
-                ?.filter((r) =>
-                  statuses.includes(
-                    r.totalPayable - r.totalRealization > 0
-                      ? "Belum Lunas"
-                      : "Lunas",
-                  ),
-                )
-                ?.filter((r) =>
-                  r.supplierName
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase()),
-                )
-                ?.map((payable) => (
-                  <Pressable
-                    key={payable.supplierId}
-                    className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                      selectedItems?.some(
-                        (r) => r.supplierId === payable.supplierId,
-                      )
-                        ? "bg-gray-100"
-                        : ""
-                    }`}
-                    onPress={() => {
-                      if (!!selectedItems?.length) {
-                        handlePayablePress(payable);
-                      } else {
-                        router.navigate(
-                          `/(main)/management/payable-receivable/payable/detail/${payable.supplierId}` as any,
-                        );
-                        setSelectedItems(null);
-                        console.log(
-                          `/(main)/management/payable-receivable/payable/detail/${payable.supplierId}`,
-                        );
-                      }
-                    }}
-                    onLongPress={() => !isReport && handlePayablePress(payable)}
-                  >
-                    <HStack className="justify-between items-center">
-                      <HStack space="md" className="items-center">
-                        <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
-                          <Text className="text-brand-primary font-bold">
-                            {payable.supplierName.substring(0, 1).toUpperCase()}
-                          </Text>
-                        </Box>
-                        <VStack>
-                          <Heading size="sm">{payable.supplierName}</Heading>
-                          <Text size="xs" className="text-slate-500">
-                            {dayjs(payable.nearestDueDate).format("DD/MM/YYYY")}
-                          </Text>
-                          <Text size="xs" className="text-blue-500">
-                            {`Rp ${payable.totalPayable.toLocaleString("id-ID")}`}
-                          </Text>
-                        </VStack>
-                      </HStack>
-                      <VStack className="items-end">
-                        <HStack space="xs" className="items-center">
-                          <Box
-                            className={`w-2 h-2 rounded-full${payable.totalRealization < payable.totalPayable ? " bg-red-500" : " bg-green-500"}`}
-                          />
-                          <Text
-                            size="xs"
-                            className="text-brand-primary text-sm font-bold"
-                          >
-                            {payable.totalRealization < payable.totalPayable
-                              ? "Belum Lunas"
-                              : "Lunas"}
-                          </Text>
-                        </HStack>
-                        {payable.totalRealization < payable.totalPayable && (
-                          <Text size="xs" className="font-bold text-error-500">
-                            {`Rp ${(payable.totalPayable - payable.totalRealization).toLocaleString("id-ID")}`}
-                          </Text>
-                        )}
-                      </VStack>
-                    </HStack>
-                  </Pressable>
-                ))}
-              {payableBySupplier?.length === 0 && (
-                <Box className="p-8 items-center">
-                  <Text className="text-slate-400 italic">
-                    No payable found
-                  </Text>
-                </Box>
+          <FlatList
+            data={payableBySupplier
+              ?.filter((r) =>
+                statuses.includes(
+                  r.totalPayable - r.totalRealization > 0
+                    ? "Belum Lunas"
+                    : "Lunas",
+                ),
+              )
+              ?.filter((r) =>
+                r.supplierName
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase()),
               )}
-            </VStack>
-          </ScrollView>
+            className="flex-1"
+            keyExtractor={(payable) => payable.supplierId}
+            renderItem={({ item: payable }) => (
+              <Pressable
+                className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                  selectedItems?.some(
+                    (r) => r.supplierId === payable.supplierId,
+                  )
+                    ? "bg-gray-100"
+                    : ""
+                }`}
+                onPress={() => {
+                  if (!!selectedItems?.length) {
+                    handlePayablePress(payable);
+                  } else {
+                    router.navigate(
+                      `/(main)/management/payable-receivable/payable/detail/${payable.supplierId}` as any,
+                    );
+                    setSelectedItems(null);
+                  }
+                }}
+                onLongPress={() => !isReport && handlePayablePress(payable)}
+              >
+                <HStack className="justify-between items-center">
+                  <HStack space="md" className="items-center">
+                    <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
+                      <Text className="text-brand-primary font-bold">
+                        {payable.supplierName.substring(0, 1).toUpperCase()}
+                      </Text>
+                    </Box>
+                    <VStack>
+                      <Heading size="sm">{payable.supplierName}</Heading>
+                      <Text size="xs" className="text-slate-500">
+                        {dayjs(payable.nearestDueDate).format("DD/MM/YYYY")}
+                      </Text>
+                      <Text size="xs" className="text-blue-500">
+                        {formatRp(payable.totalPayable)}
+                      </Text>
+                    </VStack>
+                  </HStack>
+                  <VStack className="items-end">
+                    <HStack space="xs" className="items-center">
+                      <Box
+                        className={`w-2 h-2 rounded-full${payable.totalRealization < payable.totalPayable ? " bg-red-500" : " bg-green-500"}`}
+                      />
+                      <Text
+                        size="xs"
+                        className="text-brand-primary text-sm font-bold"
+                      >
+                        {payable.totalRealization < payable.totalPayable
+                          ? "Belum Lunas"
+                          : "Lunas"}
+                      </Text>
+                    </HStack>
+                    {payable.totalRealization < payable.totalPayable && (
+                      <Text size="xs" className="font-bold text-error-500">
+                        {formatRp(payable.totalPayable - payable.totalRealization)}
+                      </Text>
+                    )}
+                  </VStack>
+                </HStack>
+              </Pressable>
+            )}
+            ListEmptyComponent={
+              <Box className="p-8 items-center">
+                <Text className="text-slate-400 italic">
+                  No payable found
+                </Text>
+              </Box>
+            }
+          />
         </VStack>
       </Box>
     </Box>

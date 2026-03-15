@@ -1,11 +1,29 @@
 import { db } from '../db';
 import * as schema from '../db/schema';
 import { eq, inArray } from 'drizzle-orm';
+import type { SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
 import { apiClient } from '../api/client';
 import { storageAdapter } from '../storage';
 import { useAuthStore } from '@/stores/auth';
 import { useSyncQueueStore } from '@/stores/sync-queue-store';
 import { queryClient } from '@/providers/query-provider';
+
+interface SyncRecord {
+  [key: string]: unknown;
+  id?: string;
+  local_ref_id?: string;
+  deletedAt?: Date | string | null;
+  organizationId?: string;
+}
+
+interface SyncPushResult {
+  id: string;
+  server_id: string;
+}
+
+interface SyncPushResults {
+  [key: string]: SyncPushResult[];
+}
 
 export class SyncEngine {
   /**
@@ -16,7 +34,6 @@ export class SyncEngine {
     try {
       // 1. Context Fetch (Verify online and get orgId)
       // apiClient already has the token interceptor
-      console.log('!!!! SYNC STARTING - STEP 1');
       const profileResponse = await apiClient.get('/auth/profile');
       
       const body = profileResponse?.data;
@@ -28,7 +45,6 @@ export class SyncEngine {
       }
 
       const organizationIdForSync = currentUser.selectedOrganizationId;
-      console.log('!!!! SELECTED ORG ID:', organizationIdForSync);
       
       if (!organizationIdForSync) {
         throw new Error('No organizationId found on user profile');
@@ -79,7 +95,7 @@ export class SyncEngine {
 
       // 3. Apply Pull Data (Master Data - Server Wins)
       // Mapping server keys to local schema keys if they differ
-      const tableMap: Record<string, any> = {
+      const tableMap: Record<string, SQLiteTable & { id?: SQLiteColumn<any>; local_ref_id?: SQLiteColumn<any> }> = {
         categories: schema.categories,
         brands: schema.brands,
         products: schema.products,
@@ -119,7 +135,7 @@ export class SyncEngine {
             continue;
           }
 
-          for (const record of (records as any[])) {
+          for (const record of (records as SyncRecord[])) {
             // Convert ISO strings back to Date objects for Drizzle timestamp columns
             const processedRecord = { ...record };
             for (const key in processedRecord) {
@@ -155,10 +171,10 @@ export class SyncEngine {
               };
 
               // Determine conflict target (prefer local_ref_id if available as it is the stable reference)
-              const target = table.local_ref_id || table.id;
+              const target = (table.local_ref_id || table.id)!;
               
               // Strip nested relationships from server data to prevent Drizzle/SQLite errors
-              const { items, realizations, ...valuesToInsert } = values as any;
+              const { items, realizations, ...valuesToInsert } = values as SyncRecord & { items?: unknown; realizations?: unknown };
 
               await tx.insert(table).values(valuesToInsert).onConflictDoUpdate({
                 target: target,
@@ -179,11 +195,12 @@ export class SyncEngine {
       
       return { success: true };
 
-    } catch (error: any) {
-      if (error.response) {
-        console.error('[Sync] Engine error (Response):', JSON.stringify(error.response.data, null, 2));
+    } catch (error: unknown) {
+      const err = error as Error & { response?: { data: unknown }; message: string };
+      if (err.response) {
+        console.error('[Sync] Engine error (Response):', JSON.stringify(err.response.data, null, 2));
       }
-      console.error('[Sync] Engine error:', error.message);
+      console.error('[Sync] Engine error:', err.message);
       throw error;
     }
   }
@@ -504,13 +521,15 @@ export class SyncEngine {
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
         deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
       })),
-      salesTransactions: allSalesTransactions.map(({ _dirty, _syncedAt, transactionDate, createdAt, updatedAt, deletedAt, totalAmount, totalPaid, commission, ...rest }) => ({
+      salesTransactions: allSalesTransactions.map(({ _dirty, _syncedAt, transactionDate, createdAt, updatedAt, deletedAt, totalAmount, totalPaid, commission, totalDiscount, totalProfit, ...rest }) => ({
         ...rest,
         customerId: rest.customerId || undefined,
         note: rest.note || undefined,
         totalAmount: typeof totalAmount === 'number' ? totalAmount : Number(totalAmount) || 0,
         totalPaid: typeof totalPaid === 'number' ? totalPaid : Number(totalPaid) || 0,
         commission: typeof commission === 'number' ? commission : Number(commission) || 0,
+        totalDiscount: typeof totalDiscount === 'number' ? totalDiscount : Number(totalDiscount) || 0,
+        totalProfit: typeof totalProfit === 'number' ? totalProfit : Number(totalProfit) || 0,
         transactionDate: transactionDate ? transactionDate.toISOString() : undefined,
         createdAt: createdAt ? createdAt.toISOString() : undefined,
         updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
@@ -521,6 +540,9 @@ export class SyncEngine {
           note: iRest.note || undefined,
           quantity: typeof iRest.quantity === 'number' ? iRest.quantity : Number(iRest.quantity) || 0,
           sellPrice: typeof iRest.sellPrice === 'number' ? iRest.sellPrice : Number(iRest.sellPrice) || 0,
+          discountAmount: typeof iRest.discountAmount === 'number' ? iRest.discountAmount : Number(iRest.discountAmount) || 0,
+          purchasePrice: typeof iRest.purchasePrice === 'number' ? iRest.purchasePrice : Number(iRest.purchasePrice) || 0,
+          profit: typeof iRest.profit === 'number' ? iRest.profit : Number(iRest.profit) || 0,
           createdAt: createdAt ? createdAt.toISOString() : undefined,
           updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
           deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
@@ -544,14 +566,11 @@ export class SyncEngine {
         })),
       })),
     };
-    console.log('pushPayload', pushPayload);
-
     const pushRes = await apiClient.post('/sync/push', pushPayload);
-    console.log('pushRes', pushRes.data.data);
 
     // Backend wraps response in StandardResponse { data: { ... }, ... }
     if (pushRes.data && pushRes.data.data) {
-      const results = pushRes.data.data;
+      const results = pushRes.data.data as SyncPushResults;
       
       await db.transaction(async (tx) => {
         // Mark master data as synced

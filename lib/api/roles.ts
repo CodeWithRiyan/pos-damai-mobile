@@ -1,6 +1,6 @@
 import { useSyncQueueStore } from "@/stores/sync-queue-store";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiClient, ApiResponse, isConnectionError } from "./client";
+import { apiClient, ApiResponse, isConnectionError, unwrapResponse } from "./client";
 
 export interface Permission {
   id: string;
@@ -33,25 +33,6 @@ export interface UpdateRoleDTO {
   name?: string;
   description?: string;
   permissionIds?: string[];
-}
-
-// Helper to unwrap API responses safely
-function unwrapResponse<T>(response: any): T {
-  // Axios response.data is the root
-  let data = response.data;
-
-  // If we have data.data, use it (common for wrapped responses)
-  if (data && data.data !== undefined) {
-    data = data.data;
-  }
-
-  // Some endpoints wrap again: { data: { data: [...] } }
-  // OR the inner data object itself has a data field
-  if (data && data.data !== undefined && !Array.isArray(data)) {
-    data = data.data;
-  }
-
-  return data;
 }
 
 // Get all roles
@@ -151,10 +132,10 @@ export function useDeleteRole() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiClient.delete<ApiResponse<any> | any>(
+      const response = await apiClient.delete<ApiResponse<void>>(
         `/roles/${id}`
       );
-      return unwrapResponse<any>(response);
+      return unwrapResponse<void>(response);
     },
     onError: (error, id) => {
       if (isConnectionError(error)) {
@@ -174,11 +155,11 @@ export function useBulkDeleteRole() {
   return useMutation({
     mutationFn: async (data: { ids: string[] }) => {
       // Fix: Pass data inside config object
-      const response = await apiClient.delete<ApiResponse<any> | any>(
+      const response = await apiClient.delete<ApiResponse<void>>(
         "/roles/bulk",
         { data }
       );
-      return unwrapResponse<any>(response);
+      return unwrapResponse<void>(response);
     },
     onError: (error, data) => {
       if (isConnectionError(error)) {

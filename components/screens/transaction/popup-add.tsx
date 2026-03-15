@@ -37,11 +37,13 @@ import {
 import { ProductVariant } from "@/lib/api/products";
 import { findSellPrice } from "@/lib/price";
 import { useTransactionStore } from "@/stores/transaction";
+import { PriceType, ProductType } from "@/lib/constants";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
+import { formatRp } from "@/lib/utils/format";
 export default function PopupAddProduct() {
   const toast = useToast();
   const {
@@ -60,7 +62,7 @@ export default function PopupAddProduct() {
           item.product.id === addProduct?.id &&
           item.variant?.id === addProductVariantId,
       )
-    : !addProductVariantId && addProduct?.type !== "MULTIUNIT"
+    : !addProductVariantId && addProduct?.type !== ProductType.MULTIUNIT
       ? cart.find((item) => item.product.id === addProduct?.id)
       : undefined;
 
@@ -91,7 +93,7 @@ export default function PopupAddProduct() {
         data.isTempSellPrice &&
         data.tempSellPrice <
           (currentProductInCart?.product.purchasePrice || 0) &&
-        currentProductInCart?.product.type !== "MULTIUNIT"
+        currentProductInCart?.product.type !== ProductType.MULTIUNIT
       ) {
         ctx.addIssue({
           code: "custom",
@@ -143,7 +145,7 @@ export default function PopupAddProduct() {
       form.reset({
         quantity: currentProductInCart?.quantity || 1,
         isTempSellPrice:
-          customer?.category === "WHOLESALE" &&
+          customer?.category === PriceType.WHOLESALE &&
           currentProductInCart.variant?.netto !== 1
             ? false
             : !!currentProductInCart?.tempSellPrice,
@@ -155,10 +157,6 @@ export default function PopupAddProduct() {
           addProduct?.variants.find((item) => item.netto === 1)?.id ||
           null,
       });
-      console.log(
-        "variantUnitId",
-        addProduct?.variants.find((item) => item.netto === 1)?.id,
-      );
     } else {
       form.reset(initialValues);
     }
@@ -168,7 +166,7 @@ export default function PopupAddProduct() {
   const onSubmit: SubmitHandler<AddProductFormValues> = (
     data: AddProductFormValues,
   ) => {
-    if (addProduct?.type === "MULTIUNIT" && !data.variantUnitId) {
+    if (addProduct?.type === ProductType.MULTIUNIT && !data.variantUnitId) {
       toast.show({
         placement: "top",
         render: ({ id }) => {
@@ -183,7 +181,7 @@ export default function PopupAddProduct() {
       return;
     }
 
-    if (addProduct?.type === "MULTIUNIT") {
+    if (addProduct?.type === ProductType.MULTIUNIT) {
       const selectedVariant = addProduct.variants.find(
         (item) => item.id === data.variantUnitId,
       );
@@ -201,7 +199,7 @@ export default function PopupAddProduct() {
           return data.tempSellPrice;
         }
         if (
-          customer?.category === "WHOLESALE" &&
+          customer?.category === PriceType.WHOLESALE &&
           variantNetto != null &&
           variantNetto !== 1
         ) {
@@ -281,7 +279,6 @@ export default function PopupAddProduct() {
             : 0;
 
         const finalQty = existingQty + quantity;
-        console.log("variant: ", variant);
         addCartItem({
           product: addProduct,
           quantity: finalQty,
@@ -334,11 +331,10 @@ export default function PopupAddProduct() {
                     {addProduct?.code}
                   </Text>
                 </VStack>
-                {addProduct?.type !== "MULTIUNIT" && (
+                {addProduct?.type !== ProductType.MULTIUNIT && (
                   <HStack space="sm">
                     <Heading size="md">
-                      {`Rp ${(
-                        tempSellPrice ||
+                      {formatRp(tempSellPrice ||
                         findSellPrice({
                           sellPrices: addProduct?.sellPrices || [],
                           type: customer?.category,
@@ -346,15 +342,14 @@ export default function PopupAddProduct() {
                           unitVariant: addProduct?.variants.find(
                             (f) => f.id === variantUnitId,
                           ),
-                        })
-                      ).toLocaleString("id-ID")}`}
+                        }))}
                     </Heading>
                   </HStack>
                 )}
               </HStack>
             </HStack>
             <VStack space="lg" className="px-4">
-              {addProduct?.type === "MULTIUNIT" && (
+              {addProduct?.type === ProductType.MULTIUNIT && (
                 <Controller
                   name="variantUnitId"
                   control={form.control}
@@ -374,7 +369,7 @@ export default function PopupAddProduct() {
                         }}
                       >
                         <VStack space="sm">
-                          {variantUnitOptions.map((variant: any) => (
+                          {variantUnitOptions.map((variant) => (
                             <Radio
                               key={variant.value}
                               value={variant.value}

@@ -27,7 +27,7 @@ import SelectModal from "@/components/ui/select/select-modal";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { useBrands } from "@/lib/api/brands";
 import { useCategories } from "@/lib/api/categories";
-import { getErrorMessage } from "@/lib/api/client";
+import { showErrorToast } from "@/lib/utils/toast";
 import { Discount, useDeleteDiscount, useDiscounts } from "@/lib/api/discounts";
 import {
   CreateProductDTO,
@@ -54,6 +54,7 @@ import {
 } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
+import { PriceType, ProductType } from "@/lib/constants";
 
 export default function ProductForm() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -117,7 +118,7 @@ export default function ProductForm() {
     })
     .superRefine((data, ctx) => {
       // Validasi khusus type MULTIUNIT
-      if (data.type === "MULTIUNIT") {
+      if (data.type === ProductType.MULTIUNIT) {
         if (!data.unit) {
           ctx.addIssue({
             code: "custom",
@@ -170,7 +171,7 @@ export default function ProductForm() {
       }
 
       // Validasi khusus type VARIANTS
-      if (data.type === "VARIANTS") {
+      if (data.type === ProductType.VARIANTS) {
         if (!data.variants || data.variants.length === 0) {
           ctx.addIssue({
             code: "custom",
@@ -180,7 +181,7 @@ export default function ProductForm() {
         }
       }
 
-      if (data.type !== "MULTIUNIT") {
+      if (data.type !== ProductType.MULTIUNIT) {
         // Validasi retail price wajib diisi jika bukan MULTIUNIT
         if (data.retailPrice.length === 0) {
           ctx.addIssue({
@@ -247,7 +248,7 @@ export default function ProductForm() {
   const initialValues: ProductFormValues = {
     name: "",
     code: "",
-    type: "DEFAULT",
+    type: ProductType.DEFAULT,
     unit: null,
     categoryId: "",
     brandId: "",
@@ -336,29 +337,15 @@ export default function ProductForm() {
   const toast = useToast();
 
   const productTypeOptions = [
-    { label: "DEFAULT", value: "DEFAULT" },
-    { label: "MULTIUNIT", value: "MULTIUNIT" },
-    { label: "VARIAN", value: "VARIANTS" },
+    { label: "DEFAULT", value: ProductType.DEFAULT },
+    { label: "MULTIUNIT", value: ProductType.MULTIUNIT },
+    { label: "VARIAN", value: ProductType.VARIANTS },
   ];
 
   const productUnitOptions = [
     { label: "KILOGRAM", value: "KILOGRAM" },
     { label: "LITER", value: "LITER" },
   ];
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
 
   useEffect(() => {
     setNettoInput(
@@ -382,9 +369,9 @@ export default function ProductForm() {
         purchasePrice: product.purchasePrice,
         stock: product.stock,
         minimumStock: product.minimumStock,
-        variants: product.type === "VARIANTS" ? product.variants : null,
+        variants: product.type === ProductType.VARIANTS ? product.variants : null,
         unitVariants:
-          product.type === "MULTIUNIT"
+          product.type === ProductType.MULTIUNIT
             ? product.variants?.map((v) => {
                 const matchingPrice = product.sellPrices.find(
                   (p) => p.label === v.name,
@@ -399,9 +386,9 @@ export default function ProductForm() {
                 };
               })
             : null,
-        retailPrice: product.sellPrices.filter((r: any) => r.type === "RETAIL"),
+        retailPrice: product.sellPrices.filter((r) => r.type === PriceType.RETAIL),
         wholesalePrice: product.sellPrices.filter(
-          (r: any) => r.type === "WHOLESALE",
+          (r) => r.type === PriceType.WHOLESALE,
         ),
         discountId: product.discountId || "",
         isActive: product.isActive,
@@ -463,7 +450,7 @@ export default function ProductForm() {
         });
       },
       onError: (error) => {
-        showErrorToast(error);
+        showErrorToast(toast, error);
         hidePopUpConfirm();
       },
     });
@@ -473,12 +460,12 @@ export default function ProductForm() {
     data: ProductFormValues,
   ) => {
     const prices =
-      data.type === "MULTIUNIT"
+      data.type === ProductType.MULTIUNIT
         ? [
             ...(data.unitVariants || [])
               .sort((a, b) => b.retailPrice - a.retailPrice)
               .map((uv) => ({
-                type: "RETAIL" as const,
+                type: PriceType.RETAIL,
                 label: `${uv.netto} ${unitSuffixHelper(data.unit)}`,
                 price: uv.retailPrice,
                 minimumPurchase: 1,
@@ -487,7 +474,7 @@ export default function ProductForm() {
               .sort((a, b) => b.price - a.price)
               .map((p) => ({
                 ...p,
-                type: "WHOLESALE" as const,
+                type: PriceType.WHOLESALE,
                 label: "Grosir",
               })),
           ]
@@ -496,20 +483,20 @@ export default function ProductForm() {
               .sort((a, b) => b.price - a.price)
               .map((p) => ({
                 ...p,
-                type: "RETAIL" as const,
+                type: PriceType.RETAIL,
                 label: "Retail",
               })),
             ...data.wholesalePrice
               .sort((a, b) => b.price - a.price)
               .map((p) => ({
                 ...p,
-                type: "WHOLESALE" as const,
+                type: PriceType.WHOLESALE,
                 label: "Grosir",
               })),
           ];
 
     const variantsPayload =
-      data.type === "MULTIUNIT"
+      data.type === ProductType.MULTIUNIT
         ? (data.unitVariants || [])
             .sort((a, b) => {
               if (a.netto === 1) return -1; // a selalu di atas jika netto = 1
@@ -548,7 +535,7 @@ export default function ProductForm() {
           });
         },
         onError: (error) => {
-          showErrorToast(error);
+          showErrorToast(toast, error);
         },
       });
     } else {
@@ -573,7 +560,7 @@ export default function ProductForm() {
           });
         },
         onError: (error) => {
-          showErrorToast(error);
+          showErrorToast(toast, error);
         },
       });
     }
@@ -855,7 +842,7 @@ export default function ProductForm() {
               </FormControl>
             )}
           />
-          {selectedType === "MULTIUNIT" && (
+          {selectedType === ProductType.MULTIUNIT && (
             <>
               <Controller
                 control={form.control}
@@ -865,7 +852,7 @@ export default function ProductForm() {
                   fieldState: { error },
                 }) => (
                   <FormControl
-                    isRequired={selectedType === "MULTIUNIT"}
+                    isRequired={selectedType === ProductType.MULTIUNIT}
                     isInvalid={!!error}
                   >
                     <FormControlLabel>
@@ -1181,7 +1168,7 @@ export default function ProductForm() {
           )}
 
           {/* VARIANTS SECTION */}
-          {selectedType === "VARIANTS" && (
+          {selectedType === ProductType.VARIANTS && (
             <VStack space="sm">
               <Text className="font-bold text-typography-700">
                 Varian Produk
@@ -1298,7 +1285,7 @@ export default function ProductForm() {
           )}
 
           {/* RETAIL PRICE SECTION */}
-          {selectedType !== "MULTIUNIT" && (
+          {selectedType !== ProductType.MULTIUNIT && (
             <VStack space="sm">
               <Text className="font-bold text-typography-700">
                 Harga Retail

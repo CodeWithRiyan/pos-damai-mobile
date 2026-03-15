@@ -12,6 +12,7 @@ import {
 import { useTransactions, fetchTransaction } from "@/lib/api/transactions";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
+import { Status } from "@/lib/constants";
 import { useTransactionStore } from "@/stores/transaction";
 import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -20,6 +21,7 @@ import { useRouter } from "expo-router";
 import { Trash2 } from "lucide-react-native";
 import { ScrollView } from "react-native";
 
+import { formatNumber } from "@/lib/utils/format";
 export default function TransactionDraft() {
   const router = useRouter();
   const { data: transactions, isLoading } = useTransactions();
@@ -28,7 +30,7 @@ export default function TransactionDraft() {
   const queryClient = useQueryClient();
 
   // Filter only DRAFT status
-  const drafts = transactions?.filter((t) => t.status === "DRAFT") || [];
+  const drafts = transactions?.filter((t) => t.status === Status.DRAFT) || [];
 
   const handleContinueDraft = async (transactionId: string) => {
     // We need to fetch the full detail of the transaction to get items
@@ -65,7 +67,7 @@ export default function TransactionDraft() {
           });
         }
       }
-      setStatus("DRAFT");
+      setStatus(Status.DRAFT);
       setPurchaseId(detail.id);
       router.replace("/(main)/transaction");
     }
@@ -164,7 +166,7 @@ export default function TransactionDraft() {
                             Estimasi Total
                           </Text>
                           <Text className="font-bold">
-                            Rp {draft.totalAmount.toLocaleString("id-ID")}
+                            Rp {formatNumber(draft.totalAmount)}
                           </Text>
                         </VStack>
                         <VStack>

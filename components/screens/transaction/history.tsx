@@ -29,13 +29,15 @@ import { formatDisplayRefId } from "@/lib/utils/reference";
 import classNames from "classnames";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { DateFilterType, Status } from "@/lib/constants";
 import React, { useMemo, useState } from "react";
-import { ScrollView } from "react-native";
+import { FlatList, ScrollView } from "react-native";
 import TransactionFilter, {
   TransactionFilterFormValues,
   transactionFilterInitialValues,
 } from "./filter";
 
+import { formatRp, formatNumber } from "@/lib/utils/format";
 interface ChartCategory {
   name: string;
   code: string;
@@ -75,14 +77,14 @@ export default function TransactionHistory({
   const [searchQuery, setSearchQuery] = useState("");
 
   const completedTransactions = useMemo(
-    () => allTransactions?.filter((t) => t.status === "COMPLETED") ?? [],
+    () => allTransactions?.filter((t) => t.status === Status.COMPLETED) ?? [],
     [allTransactions],
   );
 
   const groupingChartData = useMemo(() => {
     const now = dayjs();
-    const isToday = transactionFilter.dateType === "TODAY";
-    const isThisYear = transactionFilter.dateType === "THIS_YEAR";
+    const isToday = transactionFilter.dateType === DateFilterType.TODAY;
+    const isThisYear = transactionFilter.dateType === DateFilterType.THIS_YEAR;
 
     // Build the full list of keys to display (filling gaps with 0)
     const allKeys: string[] = [];
@@ -100,16 +102,16 @@ export default function TransactionHistory({
     } else {
       let start: dayjs.Dayjs;
       let end: dayjs.Dayjs;
-      if (transactionFilter.dateType === "THIS_WEEK") {
+      if (transactionFilter.dateType === DateFilterType.THIS_WEEK) {
         const day = now.day();
         const diff = day === 0 ? -6 : 1 - day;
         start = now.startOf("day").add(diff, "day");
         end = now.startOf("day");
-      } else if (transactionFilter.dateType === "THIS_MONTH") {
+      } else if (transactionFilter.dateType === DateFilterType.THIS_MONTH) {
         start = now.startOf("month");
         end = now.startOf("day");
       } else if (
-        transactionFilter.dateType === "CUSTOM" &&
+        transactionFilter.dateType === DateFilterType.CUSTOM &&
         transactionFilter.startDate &&
         transactionFilter.endDate
       ) {
@@ -151,7 +153,7 @@ export default function TransactionHistory({
       grouped.set(key, {
         totalTransaction: existing.totalTransaction + 1,
         gmv: existing.gmv + t.totalAmount,
-        profit: existing.profit + (t.totalAmount - (t.commission ?? 0)),
+        profit: existing.profit + (t.totalProfit ?? 0),
       });
     }
 
@@ -186,14 +188,14 @@ export default function TransactionHistory({
       0,
     );
     const totalProfit = completedTransactions.reduce(
-      (sum, t) => sum + (t.totalAmount - (t.commission ?? 0)),
+      (sum, t) => sum + (t.totalProfit ?? 0),
       0,
     );
 
     const value = completedTransactions.reduce((sum, t) => {
       if (item.code === "totalTransaction") return sum + 1;
       if (item.code === "gmv") return sum + t.totalAmount;
-      return sum + (t.totalAmount - (t.commission ?? 0));
+      return sum + (t.totalProfit ?? 0);
     }, 0);
 
     const profitPercentage =
@@ -203,9 +205,9 @@ export default function TransactionHistory({
   });
 
   const chartData = groupingChartData.map((d) => {
-    const isToday = transactionFilter.dateType === "TODAY";
-    const isThisYear = transactionFilter.dateType === "THIS_YEAR";
-    
+    const isToday = transactionFilter.dateType === DateFilterType.TODAY;
+    const isThisYear = transactionFilter.dateType === DateFilterType.THIS_YEAR;
+
     // For TODAY keys are "YYYY-MM-DD HH"; for THIS_YEAR keys are "YYYY-MM"; for other types keys are "YYYY-MM-DD"
     const parsed = isToday
       ? dayjs(d.date, "YYYY-MM-DD HH")
@@ -232,10 +234,10 @@ export default function TransactionHistory({
           : parsed.format("DD MMM YYYY"),
       pointerValue:
         chartCategory === "totalTransaction"
-          ? d.totalTransaction.toLocaleString("id-ID")
+          ? formatNumber(d.totalTransaction)
           : chartCategory === "gmv"
-            ? `Rp ${d.gmv.toLocaleString("id-ID")}`
-            : `Rp ${d.profit.toLocaleString("id-ID")}`,
+            ? formatRp(d.gmv)
+            : formatRp(d.profit),
     };
   });
 
@@ -308,7 +310,7 @@ export default function TransactionHistory({
                           <Text className="text-sm text-white">{o.name}</Text>
                           <Text className="text-sm text-white">
                             {o.type === "currency" ? "Rp " : ""}
-                            {o.value.toLocaleString("id-ID")}
+                            {formatNumber(o.value)}
                             {o.code === "profit"
                               ? ` (${o.profitPercentage}%)`
                               : ""}
@@ -354,89 +356,91 @@ export default function TransactionHistory({
         <GridItem
           _extra={{ className: isReport ? "col-span-1" : "col-span-2" }}
         >
-          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-            {!transactions || transactions.length === 0 ? (
+          <FlatList
+            data={transactions}
+            className="flex-1"
+            showsVerticalScrollIndicator={false}
+            keyExtractor={(transaction) => transaction.id}
+            renderItem={({ item: transaction }) => {
+              const date = transaction.createdAt
+                ? dayjs(transaction.createdAt)
+                : dayjs();
+              return (
+                <Pressable
+                  className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
+                  onPress={() =>
+                    router.navigate({
+                      pathname: "/(main)/transaction/receipt/[id]",
+                      params: { id: transaction.id },
+                    })
+                  }
+                >
+                  <HStack space="xl" className="items-center">
+                    <VStack>
+                      <Text className="text-typography-500 font-bold">
+                        {date.format("HH:mm:ss")}
+                      </Text>
+                      <HStack space="sm" className="items-center">
+                        <Heading size="4xl">{date.format("DD")}</Heading>
+                        <VStack>
+                          <Text className="text-typography-500 font-bold">
+                            {date.format("MMM")}
+                          </Text>
+                          <Text className="text-typography-500 font-bold">
+                            {date.format("YYYY")}
+                          </Text>
+                        </VStack>
+                      </HStack>
+                    </VStack>
+                    <VStack space="sm" className="flex-1">
+                      <HStack className="justify-between">
+                        <VStack>
+                          <Text className="text-typography-400 text-xs">
+                            Total
+                          </Text>
+                          <Text className="font-bold">
+                            Rp{" "}
+                            {formatNumber(transaction.totalAmount ?? 0)}
+                          </Text>
+                        </VStack>
+                        <VStack>
+                          <Text className="text-typography-400 text-xs">
+                            Pelanggan
+                          </Text>
+                          <Text className="font-bold">
+                            {transaction.customerName}
+                          </Text>
+                        </VStack>
+                        <VStack>
+                          <Text className="text-typography-400 text-xs">
+                            Pembayaran
+                          </Text>
+                          <Text className="font-bold">
+                            {transaction.paymentTypeName}
+                          </Text>
+                        </VStack>
+                      </HStack>
+                      <HStack className="justify-between">
+                        <Text className="text-typography-400 font-bold">
+                          No:{" "}
+                          {formatDisplayRefId(transaction.local_ref_id) ||
+                            transaction.id}
+                        </Text>
+                      </HStack>
+                    </VStack>
+                    <Text className="text-typography-400 text-lg">›</Text>
+                  </HStack>
+                </Pressable>
+              );
+            }}
+            ListEmptyComponent={
               <Box className="flex-1 justify-center items-center py-10">
                 <Text className="text-gray-500">
                   Belum ada histori transaksi
                 </Text>
               </Box>
-            ) : (
-              transactions.map((transaction) => {
-                const date = transaction.createdAt
-                  ? dayjs(transaction.createdAt)
-                  : dayjs();
-                return (
-                  <Pressable
-                    key={transaction.id}
-                    className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
-                    onPress={() =>
-                      router.navigate({
-                        pathname: "/(main)/transaction/receipt/[id]",
-                        params: { id: transaction.id },
-                      })
-                    }
-                  >
-                    <HStack space="xl" className="items-center">
-                      <VStack>
-                        <Text className="text-typography-500 font-bold">
-                          {date.format("HH:mm:ss")}
-                        </Text>
-                        <HStack space="sm" className="items-center">
-                          <Heading size="4xl">{date.format("DD")}</Heading>
-                          <VStack>
-                            <Text className="text-typography-500 font-bold">
-                              {date.format("MMM")}
-                            </Text>
-                            <Text className="text-typography-500 font-bold">
-                              {date.format("YYYY")}
-                            </Text>
-                          </VStack>
-                        </HStack>
-                      </VStack>
-                      <VStack space="sm" className="flex-1">
-                        <HStack className="justify-between">
-                          <VStack>
-                            <Text className="text-typography-400 text-xs">
-                              Total
-                            </Text>
-                            <Text className="font-bold">
-                              Rp{" "}
-                              {transaction.totalAmount.toLocaleString("id-ID")}
-                            </Text>
-                          </VStack>
-                          <VStack>
-                            <Text className="text-typography-400 text-xs">
-                              Pelanggan
-                            </Text>
-                            <Text className="font-bold">
-                              {transaction.customerName}
-                            </Text>
-                          </VStack>
-                          <VStack>
-                            <Text className="text-typography-400 text-xs">
-                              Pembayaran
-                            </Text>
-                            <Text className="font-bold">
-                              {transaction.paymentTypeName}
-                            </Text>
-                          </VStack>
-                        </HStack>
-                        <HStack className="justify-between">
-                          <Text className="text-typography-400 font-bold">
-                            No:{" "}
-                            {formatDisplayRefId(transaction.local_ref_id) ||
-                              transaction.id}
-                          </Text>
-                        </HStack>
-                      </VStack>
-                      <Text className="text-typography-400 text-lg">›</Text>
-                    </HStack>
-                  </Pressable>
-                );
-              })
-            )}
-          </ScrollView>
+            }
+          />
         </GridItem>
       </Grid>
     </VStack>

@@ -18,22 +18,13 @@ import { useProductSuppliers } from "@/lib/api/product-suppliers";
 import { useProduct } from "@/lib/api/products";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ScrollView } from "react-native";
 
+import { formatNumber } from "@/lib/utils/format";
 export default function ProductSuppliersList() {
   const router = useRouter();
   const { productId } = useLocalSearchParams<{ productId: string }>();
-
-  console.log(
-    "[ProductSuppliersList] ========== COMPONENT RENDERED ==========",
-  );
-  console.log(
-    "[ProductSuppliersList] Component rendered with productId:",
-    productId,
-  );
-  console.log("[ProductSuppliersList] productId type:", typeof productId);
-  console.log("[ProductSuppliersList] productId is truthy:", !!productId);
 
   const { data: product, isLoading: isLoadingProduct } = useProduct(
     productId || "",
@@ -41,35 +32,7 @@ export default function ProductSuppliersList() {
   const {
     data: suppliers = [],
     isLoading: isLoadingSuppliers,
-    error,
-    isError,
-    isFetching,
-    status,
   } = useProductSuppliers(productId || "");
-
-  console.log("[ProductSuppliersList] Query status:", status);
-  console.log("[ProductSuppliersList] Suppliers data:", suppliers);
-  console.log("[ProductSuppliersList] Suppliers length:", suppliers.length);
-  console.log("[ProductSuppliersList] isLoading:", isLoadingSuppliers);
-  console.log("[ProductSuppliersList] isFetching:", isFetching);
-  console.log("[ProductSuppliersList] isError:", isError);
-  console.log("[ProductSuppliersList] error:", error);
-
-  React.useEffect(() => {
-    console.log(
-      "[ProductSuppliersList] useEffect - suppliers updated:",
-      suppliers.length,
-    );
-    console.log(
-      "[ProductSuppliersList] useEffect - suppliers:",
-      JSON.stringify(suppliers, null, 2),
-    );
-  }, [suppliers]);
-
-  React.useEffect(() => {
-    console.log("[ProductSuppliersList] useEffect - MOUNT");
-    return () => console.log("[ProductSuppliersList] useEffect - UNMOUNT");
-  }, []);
 
   const [search, setSearch] = useState("");
 
@@ -83,14 +46,7 @@ export default function ProductSuppliersList() {
     );
   }, [suppliers, search]);
 
-  console.log(
-    "[ProductSuppliersList] filteredSuppliers length:",
-    filteredSuppliers.length,
-  );
-  console.log("[ProductSuppliersList] isLoading:", isLoading);
-
   if (isLoading) {
-    console.log("[ProductSuppliersList] Rendering loading state...");
     return (
       <Box className="flex-1 justify-center items-center bg-white">
         <Spinner size="large" />
@@ -153,7 +109,7 @@ export default function ProductSuppliersList() {
                       <Heading size="sm">{supplier.supplierName}</Heading>
                       <Text size="xs" className="text-typography-500">
                         {supplier.totalQuantity} pcs · Rp{" "}
-                        {supplier.totalValue.toLocaleString("id-ID")}
+                        {formatNumber(supplier.totalValue)}
                       </Text>
                       <Text size="xs" className="text-typography-400">
                         Terakhir:{" "}

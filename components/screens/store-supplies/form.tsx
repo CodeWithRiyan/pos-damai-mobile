@@ -20,9 +20,9 @@ import {
   FormControlLabel,
   FormControlLabelText,
 } from "@/components/ui/form-control";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-import { getErrorMessage } from "@/lib/api/client";
+import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 import { useCreateStoreSupply } from "@/lib/api/store-supplies";
 import { useStoreSuppliesStore } from "@/stores/store-supplies";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -61,28 +61,6 @@ export default function StoreSuppliesConfirmForm({
   const createMutation = useCreateStoreSupply();
   const isLoading = createMutation.isPending;
 
-  const showSuccessToast = (message: string) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-          <ToastTitle>{message}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-          <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
   const onSubmit: SubmitHandler<StoreSuppliesFormValues> = (
     data: StoreSuppliesFormValues,
   ) => {
@@ -97,12 +75,12 @@ export default function StoreSuppliesConfirmForm({
 
     createMutation.mutate(submissionData, {
       onSuccess: () => {
-        showSuccessToast("Kebutuhan Toko berhasil disimpan");
+        showSuccessToast(toast, "Kebutuhan Toko berhasil disimpan");
         setOpenConfirm(false);
         resetCart();
         router.back();
       },
-      onError: showErrorToast,
+      onError: (error) => showErrorToast(toast, error),
     });
   };
 

@@ -1,6 +1,7 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import { usePopUpConfirm } from "@/components/pop-up-confirm";
+import { useBulkDeleteEntity } from "@/hooks/use-bulk-delete-entity";
 import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
@@ -19,19 +20,21 @@ import {
   useCreateCustomer,
   useCustomers,
 } from "@/lib/api/customers";
+import { bulkDeleteConfirm } from "@/lib/utils/delete-confirm";
 import { exportCustomers, importCustomers } from "@/lib/utils/excel";
+import { showErrorToast } from "@/lib/utils/toast";
+import { useItemSelection } from "@/hooks/use-item-selection";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
-import { ScrollView } from "react-native";
+import React, { useCallback } from "react";
+import { FlatList } from "react-native";
 
+import { formatNumber } from "@/lib/utils/format";
 export default function CustomerList({ isReport }: { isReport?: boolean }) {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useCustomers();
-  const [selectedItems, setSelectedItems] = useState<
-    CustomerWithStats[] | null
-  >(null);
+  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } = useItemSelection<CustomerWithStats>();
 
   useFocusEffect(
     useCallback(() => {
@@ -42,6 +45,12 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
   const customers = data || [];
 
   const deleteMutation = useBulkDeleteCustomer();
+  const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({
+    successMessage: "Pelanggan berhasil dihapus",
+    deleteMutation,
+    onSuccess: () => refetch(),
+    clearSelection,
+  });
   const resetPointMutation = useBulkResetCustomerPoints();
   const createMutation = useCreateCustomer();
   const toast = useToast();
@@ -95,31 +104,8 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
     }
   };
 
-  const handleItemPress = (item: CustomerWithStats) => {
-    if (selectedItems?.some((r) => r.id === item.id)) {
-      setSelectedItems(selectedItems.filter((r) => r.id !== item.id));
-      return;
-    }
-    if (!selectedItems) {
-      setSelectedItems([item]);
-      return;
-    }
-    setSelectedItems([...selectedItems, item]);
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={"toast-" + id} action="error" variant="solid">
-          <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
   const handleAdd = () => {
-    setSelectedItems(null);
+    clearSelection();
     router.push("/(main)/management/customer-supplier/customer/add");
   };
 
@@ -152,7 +138,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
       { ids },
       {
         onSuccess: () => {
-          setSelectedItems(null);
+          clearSelection();
           hidePopUpConfirm();
           refetch();
 
@@ -166,57 +152,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
           });
         },
         onError: (error) => {
-          showErrorToast(error);
-          hidePopUpConfirm();
-        },
-      },
-    );
-  };
-
-  const handleDeletePress = () => {
-    const ids = selectedItems?.map((m) => m.id) || [];
-
-    showPopUpConfirm({
-      title: "HAPUS PELANGGAN",
-      icon: "warning",
-      description: (
-        <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus `}
-          <Text className="font-bold text-slate-900">{ids?.length}</Text>
-          {` pelanggan? Tindakan ini tidak dapat dibatalkan.`}
-        </Text>
-      ),
-      showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
-      onOk: () => confirmDelete(ids),
-      loading: deleteMutation.isPending,
-    });
-  };
-
-  const confirmDelete = async (ids: string[]) => {
-    if (!ids.length) return;
-
-    deleteMutation.mutate(
-      { ids },
-      {
-        onSuccess: () => {
-          setSelectedItems(null);
-          hidePopUpConfirm();
-          refetch();
-
-          toast.show({
-            placement: "top",
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Pelanggan berhasil dihapus</ToastTitle>
-              </Toast>
-            ),
-          });
-        },
-        onError: (error) => {
-          showErrorToast(error);
+          showErrorToast(toast, error);
           hidePopUpConfirm();
         },
       },
@@ -238,12 +174,12 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
         isGoBack
         selectedItemsLength={selectedItems?.length}
         selectedItemsSuffixLabel="Pelanggan terpilih"
-        onCancelSelectedItems={() => setSelectedItems(null)}
+        onCancelSelectedItems={clearSelection}
         action={
           !isReport && (
             <HStack space="sm" className="w-[72px]">
-              {!!selectedItems?.length ? (
-                deleteMutation.isPending ? (
+              {hasSelection ? (
+                isBulkDeleting ? (
                   <Box className="p-6">
                     <Spinner size="small" color="#FFFFFF" />
                   </Box>
@@ -267,7 +203,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
                             icon: "TrashBin2",
                             theme: "red",
                             onPress: () => {
-                              handleDeletePress();
+                              triggerBulkDelete(bulkDeleteConfirm("pelanggan", selectedItems));
                               hideActionDrawer();
                             },
                           },
@@ -312,70 +248,68 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
       />
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
-          <ScrollView className="flex-1">
-            <VStack>
-              {customers.map((item) => (
-                <Pressable
-                  key={item.id}
-                  className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    selectedItems?.some((r) => r.id === item.id)
-                      ? "bg-gray-100"
-                      : ""
-                  }`}
-                  onPress={() => {
-                    if (!!selectedItems?.length) {
-                      handleItemPress(item);
-                    } else {
-                      router.navigate(
-                        `/(main)/management/customer-supplier/customer/detail/${item.id}` as any,
-                      );
-                      setSelectedItems(null);
-                    }
-                  }}
-                  onLongPress={() => !isReport && handleItemPress(item)}
-                >
-                  <HStack className="justify-between items-center">
-                    <HStack space="md" className="items-center">
-                      <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
-                        <Text className="text-brand-primary font-bold">
-                          {item.name.substring(0, 1).toUpperCase()}
-                        </Text>
-                      </Box>
-                      <VStack>
-                        <Heading size="sm">{item.name}</Heading>
-                        <Text size="xs" className="text-slate-500">
-                          {item.code}
-                        </Text>
-                      </VStack>
-                    </HStack>
-                    <VStack className="items-end">
-                      <Text className="text-brand-primary text-sm font-bold">
-                        {item.points || 0} Poin
+          <FlatList
+            data={customers}
+            className="flex-1"
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <Pressable
+                className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                  isSelected(item) ? "bg-gray-100" : ""
+                }`}
+                onPress={() => {
+                  if (hasSelection) {
+                    handleItemPress(item);
+                  } else {
+                    router.navigate(
+                      `/(main)/management/customer-supplier/customer/detail/${item.id}` as any,
+                    );
+                    clearSelection();
+                  }
+                }}
+                onLongPress={() => !isReport && handleItemPress(item)}
+              >
+                <HStack className="justify-between items-center">
+                  <HStack space="md" className="items-center">
+                    <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
+                      <Text className="text-brand-primary font-bold">
+                        {item.name.substring(0, 1).toUpperCase()}
                       </Text>
-                      <Text className="text-xs">
-                        Total Transaksi: {item.totalTransactions || 0}
-                      </Text>
-                      <Text className="text-xs">
-                        Total Omset: Rp{" "}
-                        {(item.totalRevenue || 0).toLocaleString("id-ID")}
-                      </Text>
-                      <Text className="text-xs">
-                        Total Keuntungan: Rp{" "}
-                        {(item.totalProfit || 0).toLocaleString("id-ID")}
+                    </Box>
+                    <VStack>
+                      <Heading size="sm">{item.name}</Heading>
+                      <Text size="xs" className="text-slate-500">
+                        {item.code}
                       </Text>
                     </VStack>
                   </HStack>
-                </Pressable>
-              ))}
-              {customers?.length === 0 && (
-                <Box className="p-8 items-center">
-                  <Text className="text-slate-400 italic">
-                    Tidak ada pelanggan
-                  </Text>
-                </Box>
-              )}
-            </VStack>
-          </ScrollView>
+                  <VStack className="items-end">
+                    <Text className="text-brand-primary text-sm font-bold">
+                      {item.points || 0} Poin
+                    </Text>
+                    <Text className="text-xs">
+                      Total Transaksi: {item.totalTransactions || 0}
+                    </Text>
+                    <Text className="text-xs">
+                      Total Omset: Rp{" "}
+                      {formatNumber(item.totalRevenue || 0)}
+                    </Text>
+                    <Text className="text-xs">
+                      Total Keuntungan: Rp{" "}
+                      {formatNumber(item.totalProfit || 0)}
+                    </Text>
+                  </VStack>
+                </HStack>
+              </Pressable>
+            )}
+            ListEmptyComponent={
+              <Box className="p-8 items-center">
+                <Text className="text-slate-400 italic">
+                  Tidak ada pelanggan
+                </Text>
+              </Box>
+            }
+          />
           {!isReport && (
             <HStack className="w-full p-4">
               <Button

@@ -25,6 +25,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView } from "react-native";
 
+import { formatNumber } from "@/lib/utils/format";
 type TypeState = "IN" | "OUT";
 
 export const helperInOut = (
@@ -178,7 +179,7 @@ export default function ShiftDetailRecap() {
                         Total Transaksi
                       </Text>
                       <Text className="font-bold">
-                        Rp {trx.nominal.toLocaleString("id-ID")}
+                        Rp {formatNumber(trx.nominal)}
                       </Text>
                     </VStack>
                     {trx.type !== "INITIAL" ? (

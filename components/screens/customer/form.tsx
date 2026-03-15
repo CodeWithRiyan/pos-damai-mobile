@@ -12,9 +12,9 @@ import { HStack } from "@/components/ui/hstack";
 import { Input, InputField, InputSlot } from "@/components/ui/input";
 import SelectModal from "@/components/ui/select/select-modal";
 import { Spinner } from "@/components/ui/spinner";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-import { getErrorMessage } from "@/lib/api/client";
+import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 import {
   useCreateCustomer,
   useCustomer,
@@ -25,6 +25,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
+import { PriceType } from "@/lib/constants";
 import z from "zod";
 
 export default function CustomerForm() {
@@ -47,7 +48,7 @@ export default function CustomerForm() {
   const initialValues: CustomerFormValues = {
     name: "",
     code: "",
-    category: "RETAIL",
+    category: PriceType.RETAIL,
     phone: "",
     address: "",
   };
@@ -56,7 +57,7 @@ export default function CustomerForm() {
     resolver: zodResolver(customerSchema),
     defaultValues: initialValues,
   });
-  const isRetail = form.watch("category") === "RETAIL";
+  const isRetail = form.watch("category") === PriceType.RETAIL;
 
   const { data: customer, isLoading: loadingCustomer } = useCustomer(id || "");
   const createMutation = useCreateCustomer();
@@ -82,28 +83,6 @@ export default function CustomerForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customer, customerId, form]);
 
-  const showSuccessToast = (message: string) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-          <ToastTitle>{message}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-          <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-        </Toast>
-      ),
-    });
-  };
-
   const onSubmit: SubmitHandler<CustomerFormValues> = (
     data: CustomerFormValues,
   ) => {
@@ -116,10 +95,10 @@ export default function CustomerForm() {
         },
         {
           onSuccess: () => {
-            showSuccessToast("Pelanggan berhasil diperbarui");
+            showSuccessToast(toast, "Pelanggan berhasil diperbarui");
             router.back();
           },
-          onError: showErrorToast,
+          onError: (error) => showErrorToast(toast, error),
         },
       );
     } else {
@@ -130,11 +109,11 @@ export default function CustomerForm() {
         },
         {
           onSuccess: () => {
-            showSuccessToast("Pelanggan berhasil ditambahkan");
+            showSuccessToast(toast, "Pelanggan berhasil ditambahkan");
             form.reset(initialValues);
             router.back();
           },
-          onError: showErrorToast,
+          onError: (error) => showErrorToast(toast, error),
         },
       );
     }

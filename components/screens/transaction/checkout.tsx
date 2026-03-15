@@ -40,10 +40,12 @@ import {
 } from "@/lib/price";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { useTransactionStore } from "@/stores/transaction";
+import { CalcType, FinanceType, Status } from "@/lib/constants";
 import classNames from "classnames";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Check, PlusIcon } from "lucide-react-native";
 
+import { formatRp, formatNumber } from "@/lib/utils/format";
 // Payment types are now loaded from the database via usePaymentTypes hook
 
 export default function TransactionCheckoutForm() {
@@ -78,12 +80,21 @@ export default function TransactionCheckoutForm() {
         .min(0, "Total pembelian harus lebih besar atau sama dengan 0"),
       totalPaid: z.string(),
       status: z.string(),
-      paymentTypeId: z.string().min(1, "Metode pembayaran harus dipilih"),
+      paymentTypeId: z.string(),
       note: z.string(),
     })
     .superRefine((data, ctx) => {
+      if (!returnCustomerId && data.paymentTypeId.length < 1) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Metode pembayaran harus dipilih",
+          path: ["paymentTypeId"],
+        });
+      }
+    })
+    .superRefine((data, ctx) => {
       if (
-        data.status === "COMPLETED" &&
+        data.status === Status.COMPLETED &&
         !returnCustomerId &&
         Number(data.totalPaid || "0") < data.totalPurchase
       ) {
@@ -94,7 +105,7 @@ export default function TransactionCheckoutForm() {
         });
       }
       if (
-        data.status === "COMPLETED" &&
+        data.status === Status.COMPLETED &&
         returnCustomerId &&
         Number(data.totalPaid || "0") + (returnData?.totalAmount || 0) <
           data.totalPurchase
@@ -112,7 +123,7 @@ export default function TransactionCheckoutForm() {
   const initialValues: TransactionFormValues = {
     totalPurchase: 0,
     totalPaid: "",
-    status: "DRAFT",
+    status: Status.DRAFT,
     paymentTypeId: "",
     note: "",
   };
@@ -131,7 +142,7 @@ export default function TransactionCheckoutForm() {
     const pt = paymentTypesData?.find((p) => p.id === paymentTypeId);
     if (pt && cartTotal) {
       comm =
-        pt.commissionType === "PERCENTAGE"
+        pt.commissionType === CalcType.PERCENTAGE
           ? (cartTotal * pt.commission) / 100
           : pt.commission;
     }
@@ -184,9 +195,15 @@ export default function TransactionCheckoutForm() {
     if (returnCustomer && returnData) {
       const totalPaid = returnData.totalAmount - grandTotal;
 
+      // Return item exchange always uses cash payment
+      const cashPaymentType = paymentTypesData?.find(
+        (pt) =>
+          pt.name.toLowerCase() === "cash" ||
+          pt.name.toLowerCase() === "tunai",
+      );
       form.setValue(
         "paymentTypeId",
-        paymentTypesData?.find((pt) => pt.isDefault)?.id || "",
+        cashPaymentType?.id || paymentTypesData?.[0]?.id || "",
       );
       form.setValue("totalPaid", totalPaid > 0 ? totalPaid.toString() : "0");
     }
@@ -278,7 +295,7 @@ export default function TransactionCheckoutForm() {
           note: data.note || "",
         });
 
-        if (status === "DRAFT") {
+        if (status === Status.DRAFT) {
           router.push("/(main)/transaction");
         } else {
           if (returnId) {
@@ -303,13 +320,13 @@ export default function TransactionCheckoutForm() {
   const createFinance = () => {
     createFinanceMutation.mutate(
       {
-        type: excessAndLackAmount > 0 ? "EXPENSES" : "INCOME",
+        type: excessAndLackAmount > 0 ? FinanceType.EXPENSES : FinanceType.INCOME,
         expensesType: excessAndLackAmount > 0 ? "OTHER_EXPENSES" : undefined,
         transactionDate: new Date(),
         nominal: Math.abs(excessAndLackAmount),
         note: `Retur Ref: ${returnData?.local_ref_id}`,
         inputToCashdrawer: true,
-        status: "COMPLETED",
+        status: Status.COMPLETED,
       },
       {
         onSuccess: (responseData) => {
@@ -340,7 +357,7 @@ export default function TransactionCheckoutForm() {
   return (
     <VStack className="flex-1 bg-white">
       <Header
-        header={status === "DRAFT" ? "SIMPAN DRAFT" : "CHECKOUT"}
+        header={status === Status.DRAFT ? "SIMPAN DRAFT" : "CHECKOUT"}
         isGoBack
         action={
           <HStack space="md" className="pr-4">
@@ -395,8 +412,8 @@ export default function TransactionCheckoutForm() {
                       )}
                     >
                       {!returnCustomerId
-                        ? customer.points.toLocaleString("id-ID")
-                        : `Rp ${(returnData?.totalAmount || 0).toLocaleString("id-ID")}`}
+                        ? formatNumber(customer.points ?? 0)
+                        : formatRp(returnData?.totalAmount || 0)}
                     </Text>
                   </VStack>
                 </HStack>
@@ -406,22 +423,22 @@ export default function TransactionCheckoutForm() {
                   Total Tagihan
                 </Text>
                 <Heading size="3xl" className="font-bold text-center">
-                  {`Rp ${totalPurchase.toLocaleString("id-ID")}`}
+                  {formatRp(totalPurchase)}
                 </Heading>
                 {totalDiscount > 0 && (
                   <Text className="text-success-600 mt-2 font-bold">
-                    Total Diskon Rp {totalDiscount.toLocaleString("id-ID")}
+                    Total Diskon Rp {formatNumber(totalDiscount)}
                   </Text>
                 )}
                 {commission > 0 && (
                   <Text className="text-warning-600 mt-2 font-bold">
                     *Termasuk tambahan biaya Rp{" "}
-                    {commission.toLocaleString("id-ID")}
+                    {formatNumber(commission)}
                   </Text>
                 )}
               </HStack>
               <VStack space="lg" className="p-4">
-                {returnCustomerId && (
+                {!!returnCustomerId && (
                   <HStack
                     space="sm"
                     className={classNames(
@@ -439,7 +456,7 @@ export default function TransactionCheckoutForm() {
                         excessAndLackAmount < 0 && "text-error-500",
                       )}
                     >
-                      {`Rp ${Math.abs(excessAndLackAmount).toLocaleString("id-ID")}`}
+                      {formatRp(Math.abs(excessAndLackAmount))}
                     </Text>
                   </HStack>
                 )}
@@ -511,7 +528,7 @@ export default function TransactionCheckoutForm() {
             </VStack>
           </ScrollView>
         </VStack>
-        {status === "COMPLETED" && excessAndLackAmount < 0 && (
+        {status === Status.COMPLETED && excessAndLackAmount < 0 && (
           <VStack className="flex-1">
             <ScrollView className="flex-1">
               <VStack className="flex-1">
@@ -519,15 +536,13 @@ export default function TransactionCheckoutForm() {
                   <Heading size="3xl" className="font-bold">
                     Rp{" "}
                     {totalPaid
-                      ? parseFloat(totalPaid).toLocaleString("id-ID")
+                      ? formatNumber(parseFloat(totalPaid))
                       : "0"}
                   </Heading>
                   {Number(totalPaid) > form.getValues("totalPurchase") && (
                     <Text className="text-success-500 font-bold mt-2">
-                      Kembalian: Rp{" "}
-                      {(
-                        Number(totalPaid) - form.getValues("totalPurchase")
-                      ).toLocaleString("id-ID")}
+                      Kembalian:{" "}
+                      {formatRp(Number(totalPaid) - form.getValues("totalPurchase"))}
                     </Text>
                   )}
                 </HStack>

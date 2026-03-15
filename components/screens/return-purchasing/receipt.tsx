@@ -9,6 +9,9 @@ import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
 
+import { getReceiptActions } from "@/lib/utils/receipt-actions";
+import { ReturnType } from "@/lib/constants";
+import { formatNumber, formatRp } from "@/lib/utils/format";
 export default function ReturnPurchasingReceipt() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -49,29 +52,7 @@ export default function ReturnPurchasingReceipt() {
             className="p-6"
             onPress={() => {
               showActionDrawer({
-                actions: [
-                  {
-                    label: "Cetak Struk",
-                    icon: "Printer",
-                    onPress: () => {
-                      hideActionDrawer();
-                    },
-                  },
-                  {
-                    label: "Download",
-                    icon: "Download",
-                    onPress: () => {
-                      hideActionDrawer();
-                    },
-                  },
-                  {
-                    label: "Share",
-                    icon: "Share",
-                    onPress: () => {
-                      hideActionDrawer();
-                    },
-                  },
-                ],
+                actions: getReceiptActions(hideActionDrawer),
               });
             }}
           >
@@ -130,15 +111,11 @@ export default function ReturnPurchasingReceipt() {
                   <VStack className="flex-1 mr-2">
                     <Heading size="sm">{item.productName}</Heading>
                     <Text className="text-typography-500 text-sm">
-                      {item.quantity} x Rp{" "}
-                      {(item.purchasePrice || 0).toLocaleString("id-ID")}
+                      {item.quantity} x {formatRp(item.purchasePrice || 0)}
                     </Text>
                   </VStack>
                   <Text className="text-typography-500 font-bold">
-                    Rp{" "}
-                    {(item.quantity * (item.purchasePrice || 0)).toLocaleString(
-                      "id-ID",
-                    )}
+                    {formatRp(item.quantity * (item.purchasePrice || 0))}
                   </Text>
                 </HStack>
               ))}
@@ -148,13 +125,13 @@ export default function ReturnPurchasingReceipt() {
               <HStack className="justify-between items-center">
                 <Text className="font-bold">Total</Text>
                 <Text className="font-bold">
-                  Rp {returnData.totalAmount.toLocaleString("id-ID")}
+                  Rp {formatNumber(returnData.totalAmount ?? 0)}
                 </Text>
               </HStack>
               <HStack className="justify-between items-center">
                 <Text className="text-typography-500">Tipe Pengembalian</Text>
                 <Text className="text-typography-500">
-                  {returnData.returnType === "CASH" ? "Uang" : "Tukar Barang"}
+                  {returnData.returnType === ReturnType.CASH ? "Uang" : "Tukar Barang"}
                 </Text>
               </HStack>
               <HStack className="justify-between items-center">

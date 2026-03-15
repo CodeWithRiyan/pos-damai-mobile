@@ -81,9 +81,9 @@ export function SyncConfirmationModal({
           <Text>
             You have {queue.length} pending {queue.length === 1 ? 'change' : 'changes'} to sync with the server.
           </Text>
-          {error && (
+          {error ? (
             <Text className="mt-2 text-error-500">{error}</Text>
-          )}
+          ) : null}
         </ModalBody>
         <ModalFooter>
           <Button

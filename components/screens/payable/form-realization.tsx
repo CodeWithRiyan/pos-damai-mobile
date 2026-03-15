@@ -26,11 +26,11 @@ import {
 } from "@/components/ui";
 import SelectModal from "@/components/ui/select/select-modal";
 import { SolarIconBoldDuotone } from "@/components/ui/solar-icon-wrapper";
-import { getErrorMessage } from "@/lib/api/client";
 import {
   useCreatePayableRealization,
   usePayableBySupplier,
 } from "@/lib/api/payable";
+import { showErrorToast } from "@/lib/utils/toast";
 import { usePaymentTypes } from "@/lib/api/payment-types";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,6 +43,7 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
 
+import { formatRp } from "@/lib/utils/format";
 export default function PayableRealizationForm() {
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
 
@@ -110,20 +111,6 @@ export default function PayableRealizationForm() {
 
   const toast = useToast();
 
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
   const onSubmit: SubmitHandler<PayableRealizationFormValues> = async (
     data: PayableRealizationFormValues,
   ) => {
@@ -153,7 +140,7 @@ export default function PayableRealizationForm() {
             });
             router.back();
           },
-          onError: (error) => showErrorToast(error),
+          onError: (error) => showErrorToast(toast, error),
         },
       );
     } else {
@@ -194,7 +181,7 @@ export default function PayableRealizationForm() {
               <VStack className="flex-1 items-end">
                 <Text className="text-gray-500 text-sm">Belum Dibayar</Text>
                 <Text className="text-sm font-bold text-error-500">
-                  {`Rp ${(totalPayable - totalRealization).toLocaleString("id-ID")}`}
+                  {formatRp(totalPayable - totalRealization)}
                 </Text>
               </VStack>
             </HStack>
@@ -216,7 +203,7 @@ export default function PayableRealizationForm() {
                     Sisa yang harus dibayar
                   </Text>
                   <Text className="text-sm font-bold text-error-500">
-                    {`Rp ${(totalPayable - totalRealization).toLocaleString("id-ID")}`}
+                    {formatRp(totalPayable - totalRealization)}
                   </Text>
                 </VStack>
                 <Text className="text-gray-500 text-sm">
@@ -283,7 +270,6 @@ export default function PayableRealizationForm() {
                   size="md"
                   onChange={(v) => {
                     onChange(v);
-                    console.log("Remaining total:", remainingTotal);
                     if (v) {
                       form.setValue("nominal", remainingTotal);
                     }

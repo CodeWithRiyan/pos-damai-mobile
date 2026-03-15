@@ -14,7 +14,7 @@ import { VStack } from "@/components/ui/vstack";
 import { ProductListItem, useProducts } from "@/lib/api/products";
 import { CheckIcon } from "lucide-react-native";
 import React, { useState } from "react";
-import { ScrollView } from "react-native";
+import { FlatList } from "react-native";
 
 export default function SelectingProductList({
   usedFor,
@@ -52,16 +52,12 @@ export default function SelectingProductList({
         : products;
 
   const handlePress = (item: ProductListItem) => {
-    if (newSelectedItems.some((r) => r.id === item.id)) {
-      setNewSelectedItems(newSelectedItems.filter((r) => r.id !== item.id));
-      return;
-    }
-    if (!newSelectedItems) {
-      setNewSelectedItems([item]);
-      return;
-    }
-
-    setNewSelectedItems([...newSelectedItems, item]);
+    setNewSelectedItems((prev) => {
+      if (prev.some((r) => r.id === item.id)) {
+        return prev.filter((r) => r.id !== item.id);
+      }
+      return [...prev, item];
+    });
   };
 
   return (
@@ -76,62 +72,62 @@ export default function SelectingProductList({
       />
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
-          <ScrollView className="flex-1">
-            <VStack>
-              {filteredProduct?.map((product) => (
-                <Pressable
-                  key={product.id}
-                  className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    newSelectedItems.some((r) => r.id === product.id)
-                      ? "bg-gray-100"
-                      : ""
-                  }`}
-                  onPress={() => handlePress(product)}
-                >
-                  <HStack className="justify-between items-center">
-                    <HStack space="md" className="items-center">
-                      <Checkbox
-                        value={newSelectedItems
-                          .some((r) => r.id === product.id)
-                          .toString()}
-                        isChecked={newSelectedItems.some(
-                          (r) => r.id === product.id,
-                        )}
-                        size="md"
-                      >
-                        <CheckboxIndicator>
-                          <CheckboxIcon as={CheckIcon} />
-                        </CheckboxIndicator>
-                      </Checkbox>
-                      <Box className="w-10 h-10 rounded-lg bg-primary-200 items-center justify-center">
-                        <Text className="text-primary-500 font-bold">
-                          {product.name.substring(0, 1).toUpperCase()}
-                        </Text>
-                      </Box>
-                      <VStack>
-                        <Heading size="sm">{product.name}</Heading>
-                        <Text size="xs" className="text-slate-500">
-                          {product.code}
-                        </Text>
-                      </VStack>
-                    </HStack>
-                    <VStack className="items-end">
-                      <Text className="text-brand-primary text-sm font-bold">
-                        Stok: {product.stock ?? 0}
+          <FlatList
+            data={filteredProduct}
+            className="flex-1"
+            keyExtractor={(product) => product.id}
+            renderItem={({ item: product }) => (
+              <Pressable
+                className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                  newSelectedItems.some((r) => r.id === product.id)
+                    ? "bg-gray-100"
+                    : ""
+                }`}
+                onPress={() => handlePress(product)}
+              >
+                <HStack className="justify-between items-center">
+                  <HStack space="md" className="items-center">
+                    <Checkbox
+                      value={newSelectedItems
+                        .some((r) => r.id === product.id)
+                        .toString()}
+                      isChecked={newSelectedItems.some(
+                        (r) => r.id === product.id,
+                      )}
+                      size="md"
+                    >
+                      <CheckboxIndicator>
+                        <CheckboxIcon as={CheckIcon} />
+                      </CheckboxIndicator>
+                    </Checkbox>
+                    <Box className="w-10 h-10 rounded-lg bg-primary-200 items-center justify-center">
+                      <Text className="text-primary-500 font-bold">
+                        {product.name.substring(0, 1).toUpperCase()}
+                      </Text>
+                    </Box>
+                    <VStack>
+                      <Heading size="sm">{product.name}</Heading>
+                      <Text size="xs" className="text-slate-500">
+                        {product.code}
                       </Text>
                     </VStack>
                   </HStack>
-                </Pressable>
-              ))}
-              {products?.length === 0 && (
-                <Box className="p-8 items-center">
-                  <Text className="text-slate-400 italic">
-                    No products found
-                  </Text>
-                </Box>
-              )}
-            </VStack>
-          </ScrollView>
+                  <VStack className="items-end">
+                    <Text className="text-brand-primary text-sm font-bold">
+                      Stok: {product.stock ?? 0}
+                    </Text>
+                  </VStack>
+                </HStack>
+              </Pressable>
+            )}
+            ListEmptyComponent={
+              <Box className="p-8 items-center">
+                <Text className="text-slate-400 italic">
+                  No products found
+                </Text>
+              </Box>
+            }
+          />
           <HStack className="w-full p-4">
             <Pressable
               className="w-full flex px-4 h-10 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"

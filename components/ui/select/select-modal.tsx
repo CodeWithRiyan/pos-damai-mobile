@@ -174,11 +174,11 @@ export default function SelectModal({
                       <Text className="flex-1 text-md leading-5 text-typography-700 font-normal font-body text-left mx-2">
                         {option.label}
                       </Text>
-                      {option.desc && (
+                      {option.desc ? (
                         <Text className="flex-1 text-sm leading-4 text-typography-500 font-normal font-body text-left mx-2">
                           {option.desc}
                         </Text>
-                      )}
+                      ) : null}
                     </VStack>
                     {option.value === value && (
                       <Icon as={CheckIcon} className="text-primary-500" />
@@ -225,11 +225,11 @@ export default function SelectModal({
                           <Text className="flex-1 text-md leading-5 text-typography-700 font-normal font-body text-left mx-2">
                             {option.label}
                           </Text>
-                          {option.desc && (
+                          {option.desc ? (
                             <Text className="flex-1 text-sm leading-4 text-typography-500 font-normal font-body text-left mx-2">
                               {option.desc}
                             </Text>
-                          )}
+                          ) : null}
                         </VStack>
                         {option.value === value && (
                           <Icon as={CheckIcon} className="text-primary-500" />

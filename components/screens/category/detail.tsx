@@ -20,17 +20,21 @@ import {
   useCategory,
   useDeleteCategory,
 } from "@/lib/api/categories";
-import { getErrorMessage } from "@/lib/api/client";
+import { showErrorToast } from "@/lib/utils/toast";
 import {
   Product,
   useProductsByCategory,
   useUnassignProductsFromCategory,
 } from "@/lib/api/products";
 import { useCategoryStore } from "@/stores/category";
+import { useDeleteEntity } from "@/hooks/use-delete-entity";
+import { singleDeleteConfirm } from "@/lib/utils/delete-confirm";
+import { useItemSelection } from "@/hooks/use-item-selection";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ScrollView } from "react-native";
 
+import { formatRp, formatNumber } from "@/lib/utils/format";
 export default function CategoryDetail() {
   const { setOpen, setData } = useCategoryStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -39,9 +43,7 @@ export default function CategoryDetail() {
   const { id } = useLocalSearchParams();
   const categoryId = id as string;
 
-  const [selectedProducts, setSelectedProducts] = useState<Product[] | null>(
-    null,
-  );
+  const { selectedItems: selectedProducts, handleItemPress, clearSelection: clearProductSelection, isSelected: isProductSelected, hasSelection: hasProductSelection } = useItemSelection<Product>();
 
   const { refetch: refetchCategorys } = useCategories();
   const { data: category, refetch: refetchCategory } = useCategory(
@@ -63,24 +65,17 @@ export default function CategoryDetail() {
     refetchCategory();
   };
 
-  const handleProductPress = (data: Product) => {
-    if (selectedProducts?.some((r) => r.id === data.id)) {
-      setSelectedProducts(selectedProducts.filter((r) => r.id !== data.id));
-      return;
-    }
-    if (!selectedProducts) {
-      setSelectedProducts([data]);
-      return;
-    }
-
-    setSelectedProducts([...selectedProducts, data]);
-  };
+  const { triggerDelete } = useDeleteEntity({
+    successMessage: "Kategori berhasil dihapus",
+    deleteMutation,
+    onSuccess: onRefetch,
+  });
 
   const handleDeleteProductPress = () => {
     const productIds = selectedProducts?.map((m) => m.id) || [];
 
     showPopUpConfirm({
-      title: `HAPUS PRODUK DARI ${category?.name.toUpperCase()}`,
+      title: `HAPUS PRODUK DARI ${category?.name?.toUpperCase() ?? ""}`,
       icon: "warning",
       description: (
         <Text className="text-slate-500">
@@ -99,7 +94,7 @@ export default function CategoryDetail() {
           {
             onSuccess: () => {
               hidePopUpConfirm();
-              setSelectedProducts(null);
+              clearProductSelection();
               onRefetch();
               toast.show({
                 placement: "top",
@@ -115,72 +110,13 @@ export default function CategoryDetail() {
               });
             },
             onError: (error) => {
-              showErrorToast(error);
+              showErrorToast(toast, error);
               hidePopUpConfirm();
             },
           },
         );
       },
       loading: unassignProductMutation.isPending,
-    });
-  };
-
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
-  const handleDeletePress = () => {
-    showPopUpConfirm({
-      title: "HAPUS KATEGORI",
-      icon: "warning",
-      description: (
-        <Text className="text-slate-500">
-          {`Apakah Anda yakin ingin menghapus kategori `}
-          <Text className="font-bold text-slate-900">{category?.name}</Text>
-          {` ? Tindakan ini tidak dapat dibatalkan.`}
-        </Text>
-      ),
-      showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
-      onOk: () => confirmDelete(),
-      loading: deleteMutation.isPending,
-    });
-  };
-
-  const confirmDelete = async () => {
-    if (!category) return;
-
-    deleteMutation.mutate(category.id, {
-      onSuccess: () => {
-        hidePopUpConfirm();
-        onRefetch();
-        router.back();
-
-        toast.show({
-          placement: "top",
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-              <ToastTitle>Kategori berhasil dihapus</ToastTitle>
-            </Toast>
-          ),
-        });
-      },
-      onError: (error) => {
-        showErrorToast(error);
-        hidePopUpConfirm();
-      },
     });
   };
 
@@ -192,7 +128,7 @@ export default function CategoryDetail() {
           icon: "Pen",
           onPress: () => {
             setOpen(true);
-            setData(category);
+            setData(category ?? null);
             hideActionDrawer();
           },
         },
@@ -201,7 +137,7 @@ export default function CategoryDetail() {
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
-            handleDeletePress();
+            triggerDelete(singleDeleteConfirm("kategori", category?.id || "", category?.name));
             hideActionDrawer();
           },
         },
@@ -215,9 +151,9 @@ export default function CategoryDetail() {
         header="DETAIL KATEGORI"
         selectedItemsLength={selectedProducts?.length}
         selectedItemsSuffixLabel="Produk terpilih"
-        onCancelSelectedItems={() => setSelectedProducts(null)}
+        onCancelSelectedItems={() => clearProductSelection()}
         action={
-          !!selectedProducts?.length ? (
+          hasProductSelection ? (
             unassignProductMutation.isPending ? (
               <Box className="p-6">
                 <Spinner size="small" color="#FFFFFF" />
@@ -266,7 +202,7 @@ export default function CategoryDetail() {
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Nilai Modal</Text>
               <Text className="font-bold">
-                Rp {totalModal.toLocaleString("id-ID")}
+                Rp {formatNumber(totalModal)}
               </Text>
             </HStack>
           </Box>
@@ -276,16 +212,16 @@ export default function CategoryDetail() {
                 <Pressable
                   key={product.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    selectedProducts?.some((r) => r.id === product.id)
+                    isProductSelected(product)
                       ? "bg-gray-100"
                       : ""
                   }`}
                   onPress={() => {
-                    if (!!selectedProducts?.length) {
-                      handleProductPress(product);
+                    if (hasProductSelection) {
+                      handleItemPress(product);
                     }
                   }}
-                  onLongPress={() => handleProductPress(product)}
+                  onLongPress={() => handleItemPress(product)}
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
@@ -316,24 +252,24 @@ export default function CategoryDetail() {
                           product.sellPrices?.filter(
                             (r) => r.type === "RETAIL",
                           )?.[0]?.minimumPurchase
-                        }@ Rp ${product.sellPrices
+                        }@ ${formatRp(product.sellPrices
                           ?.filter((r) => r.type === "RETAIL")?.[0]
-                          .price.toLocaleString("id-ID")}`}
+                          ?.price ?? 0)}`}
                       </Text>
-                      {!!product.sellPrices?.filter(
+                      {product.sellPrices?.filter(
                         (r) => r.type === "WHOLESALE",
-                      ).length && (
+                      ).length ? (
                         <Text className="text-xs">
                           Grosir:{" "}
                           {`${
                             product.sellPrices?.filter(
                               (r) => r.type === "WHOLESALE",
                             )?.[0]?.minimumPurchase
-                          }@ Rp ${product.sellPrices
+                          }@ ${formatRp(product.sellPrices
                             ?.filter((r) => r.type === "WHOLESALE")?.[0]
-                            .price.toLocaleString("id-ID")}`}
+                            ?.price ?? 0)}`}
                         </Text>
-                      )}
+                      ) : null}
                     </VStack>
                   </HStack>
                 </Pressable>
@@ -350,7 +286,7 @@ export default function CategoryDetail() {
             router.navigate(
               `/(main)/management/product-category-brand/category/select-product/${category?.id}`,
             );
-            setSelectedProducts(null);
+            clearProductSelection();
           }}
         >
           <Text size="sm" className="text-typography-0 font-bold">

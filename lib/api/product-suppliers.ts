@@ -28,15 +28,7 @@ export function useProductSuppliers(productId: string) {
   return useQuery({
     queryKey: ["product-suppliers", productId, orgId],
     queryFn: async () => {
-      console.log(
-        "[useProductSuppliers] Starting query for productId:",
-        productId,
-        "orgId:",
-        orgId,
-      );
-
       if (!productId || !orgId) {
-        console.log("[useProductSuppliers] Missing productId or orgId");
         return [];
       }
 
@@ -54,15 +46,6 @@ export function useProductSuppliers(productId: string) {
           ),
         );
 
-      console.log(
-        "[useProductSuppliers] Found transactions:",
-        transactions.length,
-      );
-      console.log(
-        "[useProductSuppliers] Transactions:",
-        JSON.stringify(transactions, null, 2),
-      );
-
       if (transactions.length === 0) return [];
 
       // Extract purchase refs from transaction local_ref_id
@@ -74,19 +57,8 @@ export function useProductSuppliers(productId: string) {
           // Remove _{productId} from the end
           const purchaseRef = tx.local_ref_id.replace(`_${productId}`, "");
           purchaseRefs.add(purchaseRef);
-          console.log(
-            "[useProductSuppliers] Extracted purchaseRef:",
-            purchaseRef,
-            "from",
-            tx.local_ref_id,
-          );
         }
       });
-
-      console.log(
-        "[useProductSuppliers] Purchase refs:",
-        Array.from(purchaseRefs),
-      );
 
       if (purchaseRefs.size === 0) return [];
 
@@ -102,28 +74,9 @@ export function useProductSuppliers(productId: string) {
           ),
         );
 
-      console.log("[useProductSuppliers] Found purchases:", purchases.length);
-      console.log(
-        "[useProductSuppliers] Purchases:",
-        JSON.stringify(
-          purchases.map((p) => ({
-            id: p.id,
-            local_ref_id: p.local_ref_id,
-            supplierId: p.supplierId,
-          })),
-          null,
-          2,
-        ),
-      );
-
       // Filter purchases by local_ref_id
       const relevantPurchases = purchases.filter(
         (p) => p.local_ref_id && purchaseRefs.has(p.local_ref_id),
-      );
-
-      console.log(
-        "[useProductSuppliers] Relevant purchases:",
-        relevantPurchases.length,
       );
 
       // Group by supplierId
@@ -146,7 +99,6 @@ export function useProductSuppliers(productId: string) {
         .limit(1);
 
       const currentPrice = productData[0]?.purchasePrice || 0;
-      console.log("[useProductSuppliers] Current product price:", currentPrice);
 
       for (const purchase of relevantPurchases) {
         if (!purchase.supplierId) continue;
@@ -168,14 +120,6 @@ export function useProductSuppliers(productId: string) {
           tx.local_ref_id?.startsWith(purchase.local_ref_id + "_"),
         );
 
-        console.log(
-          "[useProductSuppliers] Purchase",
-          purchase.id,
-          "has",
-          purchaseTxs.length,
-          "transactions",
-        );
-
         for (const tx of purchaseTxs) {
           supplierData.totalQuantity += tx.quantity;
           supplierData.totalValue += tx.quantity * currentPrice;
@@ -193,8 +137,6 @@ export function useProductSuppliers(productId: string) {
         // Track unique purchases
         supplierData.purchaseIds.add(purchase.id);
       }
-
-      console.log("[useProductSuppliers] Supplier map size:", supplierMap.size);
 
       // Get supplier names and build final result
       const result: ProductSupplier[] = [];
@@ -223,8 +165,6 @@ export function useProductSuppliers(productId: string) {
           new Date(a.lastPurchaseDate).getTime(),
       );
 
-      console.log("[useProductSuppliers] Final result:", result);
-
       return result;
     },
     enabled: !!productId && !!orgId,
@@ -242,19 +182,7 @@ export function useProductSupplierTransactions(
   return useQuery({
     queryKey: ["product-supplier-transactions", productId, supplierId, orgId],
     queryFn: async () => {
-      console.log(
-        "[useProductSupplierTransactions] Starting query for productId:",
-        productId,
-        "supplierId:",
-        supplierId,
-        "orgId:",
-        orgId,
-      );
-
       if (!productId || !supplierId || !orgId) {
-        console.log(
-          "[useProductSupplierTransactions] Missing required parameters",
-        );
         return [];
       }
 
@@ -272,11 +200,6 @@ export function useProductSupplierTransactions(
           ),
         );
 
-      console.log(
-        "[useProductSupplierTransactions] Found transactions:",
-        transactions.length,
-      );
-
       if (transactions.length === 0) return [];
 
       // Extract purchase refs from transaction local_ref_id
@@ -287,11 +210,6 @@ export function useProductSupplierTransactions(
           purchaseRefs.add(purchaseRef);
         }
       });
-
-      console.log(
-        "[useProductSupplierTransactions] Purchase refs:",
-        Array.from(purchaseRefs),
-      );
 
       if (purchaseRefs.size === 0) return [];
 
@@ -308,19 +226,9 @@ export function useProductSupplierTransactions(
           ),
         );
 
-      console.log(
-        "[useProductSupplierTransactions] Found purchases for supplier:",
-        purchases.length,
-      );
-
       // Filter purchases by local_ref_id
       const relevantPurchases = purchases.filter(
         (p) => p.local_ref_id && purchaseRefs.has(p.local_ref_id),
-      );
-
-      console.log(
-        "[useProductSupplierTransactions] Relevant purchases:",
-        relevantPurchases.length,
       );
 
       // Get current product price for calculation
@@ -358,12 +266,6 @@ export function useProductSupplierTransactions(
         (a, b) =>
           new Date(b.purchaseDate).getTime() -
           new Date(a.purchaseDate).getTime(),
-      );
-
-      console.log(
-        "[useProductSupplierTransactions] Final result:",
-        result.length,
-        "transactions",
       );
 
       return result;

@@ -83,7 +83,7 @@ export default function AreaChart({
           pointerConfig={{
             activatePointersOnLongPress: true,
             pointerColor: "blue",
-            pointerLabelComponent: (items: any) => {
+            pointerLabelComponent: (items: { index: number; value: number; pointerLabel: string; pointerValue: string }[]) => {
               const item = items[0];
               const isFirst = item.index === 0;
               const isSecond = item.index === 1;

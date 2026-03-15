@@ -16,7 +16,7 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
-import { getErrorMessage } from "@/lib/api/client";
+import { showErrorToast } from "@/lib/utils/toast";
 import {
   CreateSupplierDTO,
   UpdateSupplierDTO,
@@ -69,20 +69,6 @@ export default function SupplierForm() {
 
   const toast = useToast();
 
-  const showErrorToast = (error: unknown) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(error)}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
-  };
-
   useEffect(() => {
     if (supplierId && supplier) {
       form.reset({
@@ -129,7 +115,7 @@ export default function SupplierForm() {
           });
         },
         onError: (error) => {
-          showErrorToast(error);
+          showErrorToast(toast, error);
         },
       });
     } else {
@@ -149,7 +135,7 @@ export default function SupplierForm() {
           });
         },
         onError: (error) => {
-          showErrorToast(error);
+          showErrorToast(toast, error);
         },
       });
     }

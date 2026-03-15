@@ -38,7 +38,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   rehydrate: () => {
     const profile = getProfileFromStorage();
-    console.log('[AuthStore] Rehydrating profile:', profile?.selectedOrganizationId || 'no profile found');
     if (profile) {
       set({ profile });
     }
