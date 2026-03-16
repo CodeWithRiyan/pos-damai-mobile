@@ -53,7 +53,7 @@ export default function TransactionDraft() {
             .select()
             .from(schema.productPrices)
             .where(eq(schema.productPrices.productId, fullProduct.id));
-          
+
           addCartItem({
             product: {
               ...fullProduct,
@@ -61,8 +61,7 @@ export default function TransactionDraft() {
               variants: [],
               code: fullProduct.barcode,
             } as any,
-            tempSellPrice:
-              item.sellPrice || prices?.[0]?.price || 0,
+            tempSellPrice: item.sellPrice || prices?.[0]?.price || 0,
             quantity: item.quantity,
           });
         }
@@ -90,9 +89,12 @@ export default function TransactionDraft() {
             .delete(schema.inventoryTransactions)
             .where(
               and(
-                eq(schema.inventoryTransactions.organizationId, existing[0].organizationId),
-                like(schema.inventoryTransactions.local_ref_id, `${refId}_%`)
-              )
+                eq(
+                  schema.inventoryTransactions.organizationId,
+                  existing[0].organizationId,
+                ),
+                like(schema.inventoryTransactions.local_ref_id, `${refId}_%`),
+              ),
             );
         }
       }

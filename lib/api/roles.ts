@@ -1,6 +1,11 @@
 import { useSyncQueueStore } from "@/stores/sync-queue-store";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiClient, ApiResponse, isConnectionError, unwrapResponse } from "./client";
+import {
+  apiClient,
+  ApiResponse,
+  isConnectionError,
+  unwrapResponse,
+} from "./client";
 
 export interface Permission {
   id: string;
@@ -41,7 +46,7 @@ export function useRoles() {
     queryKey: ["roles"],
     queryFn: async () => {
       const response = await apiClient.get<ApiResponse<Role[]> | Role[]>(
-        "/roles"
+        "/roles",
       );
       const data = unwrapResponse<Role[]>(response);
       return Array.isArray(data) ? data : [];
@@ -69,7 +74,7 @@ export function useRole(id: string) {
     queryKey: ["roles", id],
     queryFn: async () => {
       const response = await apiClient.get<ApiResponse<Role> | Role>(
-        `/roles/${id}`
+        `/roles/${id}`,
       );
       return unwrapResponse<Role>(response);
     },
@@ -85,7 +90,7 @@ export function useCreateRole() {
     mutationFn: async (data: CreateRoleDTO) => {
       const response = await apiClient.post<ApiResponse<Role> | Role>(
         "/roles",
-        data
+        data,
       );
       return unwrapResponse<Role>(response);
     },
@@ -110,7 +115,7 @@ export function useUpdateRole() {
       const { id, ...rest } = data;
       const response = await apiClient.put<ApiResponse<Role> | Role>(
         `/roles/${id}`,
-        rest
+        rest,
       );
       return unwrapResponse<Role>(response);
     },
@@ -133,7 +138,7 @@ export function useDeleteRole() {
   return useMutation({
     mutationFn: async (id: string) => {
       const response = await apiClient.delete<ApiResponse<void>>(
-        `/roles/${id}`
+        `/roles/${id}`,
       );
       return unwrapResponse<void>(response);
     },
@@ -157,7 +162,7 @@ export function useBulkDeleteRole() {
       // Fix: Pass data inside config object
       const response = await apiClient.delete<ApiResponse<void>>(
         "/roles/bulk",
-        { data }
+        { data },
       );
       return unwrapResponse<void>(response);
     },

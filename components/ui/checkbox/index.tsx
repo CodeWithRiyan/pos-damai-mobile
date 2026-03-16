@@ -238,6 +238,5 @@ export {
   CheckboxGroup,
   CheckboxIcon,
   CheckboxIndicator,
-  CheckboxLabel
+  CheckboxLabel,
 };
-

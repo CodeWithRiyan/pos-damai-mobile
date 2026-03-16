@@ -41,7 +41,7 @@ interface ChartCategory {
 
 const chartCategoryDefinitions: ChartCategory[] = [
   { name: "Total Transaksi", code: "totalTransaction", type: "fixed" },
-  { name: "Pengeluaran", code: "totalExpenses", type: "currency" },
+  { name: "Pengeluaran", code: "expenses", type: "currency" },
 ];
 
 export default function PurchasingHistory({
@@ -64,6 +64,7 @@ export default function PurchasingHistory({
     dateType: purchasingFilter.dateType,
     startDate: purchasingFilter.startDate,
     endDate: purchasingFilter.endDate,
+    search: purchasingFilter.search || undefined,
   });
 
   const completedPurchasing = useMemo(
@@ -71,7 +72,6 @@ export default function PurchasingHistory({
     [allPurchases],
   );
 
-  // TODO: pastikan data pada tampilan chart sudah benar
   const groupingChartData = useMemo(() => {
     const now = dayjs();
     const isToday = purchasingFilter.dateType === DateFilterType.TODAY;
@@ -127,7 +127,6 @@ export default function PurchasingHistory({
       { totalTransaction: number; expenses: number }
     >();
     for (const t of completedPurchasing) {
-      // const d = dayjs(t.createdAt ?? t.transactionDate);
       const d = dayjs(t.createdAt);
       let key: string;
       if (isToday) {
@@ -173,11 +172,6 @@ export default function PurchasingHistory({
   ];
 
   const chartCategoryOptions = chartCategoryDefinitions.map((item) => {
-    const totalExpenses = completedPurchasing.reduce(
-      (sum, t) => sum + t.totalAmount,
-      0,
-    );
-
     const value = completedPurchasing.reduce((sum, t) => {
       if (item.code === "totalTransaction") return sum + 1;
       return sum + t.totalAmount;
@@ -217,17 +211,7 @@ export default function PurchasingHistory({
     };
   });
 
-  // TODO: jika perlu, pindahkan filtersearch ke dalam parameter usePurchases agar filtering dilakukan di server, bukan di client
-  const purchasing =
-    completedPurchasing.filter(
-      (t) =>
-        (formatDisplayRefId(t.local_ref_id) || t.id)
-          .toLowerCase()
-          .includes(purchasingFilter.search.toLowerCase()) ||
-        t.supplierName
-          ?.toLowerCase()
-          .includes(purchasingFilter.search.toLowerCase()),
-    ) || [];
+  const purchasing = completedPurchasing;
 
   if (isLoading) {
     return (

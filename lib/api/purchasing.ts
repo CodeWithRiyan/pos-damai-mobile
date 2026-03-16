@@ -1,10 +1,15 @@
-import { InventoryTxType, PaymentMethod, Status } from "@/lib/constants";
+import {
+  DateFilterType,
+  InventoryTxType,
+  PaymentMethod,
+  Status,
+} from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { and, desc, eq, isNull, like } from "drizzle-orm";
 import { db } from "../db";
 import * as schema from "../db/schema";
-import { generateLocalRefId } from "../utils/reference";
+import { formatDisplayRefId, generateLocalRefId } from "../utils/reference";
 
 export interface Purchase {
   id: string;
@@ -57,7 +62,6 @@ export interface CreatePurchasingDTO {
   }[];
 }
 
-// TODO: terapkan params pada query untuk filter data langsung dari DB, bukan filter di client
 export interface PurchasingFilterParams {
   supplierId?: string;
   userId?: string;
@@ -66,6 +70,7 @@ export interface PurchasingFilterParams {
   startDate?: Date;
   endDate?: Date;
   showReturnData?: boolean;
+  search?: string;
 }
 
 // Get all purchases from local SQLite
@@ -80,14 +85,102 @@ export function usePurchases(params: PurchasingFilterParams | void) {
     conditions.push(eq(schema.purchases.supplierId, params.supplierId));
   }
 
+  if (params?.userId) {
+    conditions.push(eq(schema.purchases.createdBy, params.userId));
+  }
+
   return useQuery({
     queryKey: ["purchases", orgId, params],
     queryFn: async () => {
-      const purchaseResult = await db
+      let purchaseResult = await db
         .select()
         .from(schema.purchases)
         .where(and(...conditions))
         .orderBy(desc(schema.purchases.createdAt));
+
+      // Apply date filter in JS (since SQLite timestamps are integers)
+      if (params?.dateType) {
+        const now = new Date();
+        let filterStart: Date | undefined;
+        let filterEnd: Date | undefined;
+
+        if (params.dateType === DateFilterType.TODAY) {
+          filterStart = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+          );
+          filterEnd = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            23,
+            59,
+            59,
+            999,
+          );
+        } else if (params.dateType === DateFilterType.THIS_WEEK) {
+          const day = now.getDay();
+          const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+          filterStart = new Date(now.getFullYear(), now.getMonth(), diff);
+          filterEnd = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            diff + 6,
+            23,
+            59,
+            59,
+            999,
+          );
+        } else if (params.dateType === DateFilterType.THIS_MONTH) {
+          filterStart = new Date(now.getFullYear(), now.getMonth(), 1);
+          filterEnd = new Date(
+            now.getFullYear(),
+            now.getMonth() + 1,
+            0,
+            23,
+            59,
+            59,
+            999,
+          );
+        } else if (params.dateType === DateFilterType.THIS_YEAR) {
+          filterStart = new Date(now.getFullYear(), 0, 1);
+          filterEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+        } else if (
+          params.dateType === DateFilterType.CUSTOM &&
+          params.startDate &&
+          params.endDate
+        ) {
+          filterStart = new Date(
+            params.startDate.getFullYear(),
+            params.startDate.getMonth(),
+            params.startDate.getDate(),
+          );
+          filterEnd = new Date(
+            params.endDate.getFullYear(),
+            params.endDate.getMonth(),
+            params.endDate.getDate(),
+            23,
+            59,
+            59,
+            999,
+          );
+        }
+
+        if (filterStart && filterEnd) {
+          purchaseResult = purchaseResult.filter((p) => {
+            const date = p.createdAt;
+            return date && date >= filterStart! && date <= filterEnd!;
+          });
+        }
+      }
+
+      // Apply paymentTypeId filter
+      if (params?.paymentTypeIds && params.paymentTypeIds.length > 0) {
+        purchaseResult = purchaseResult.filter((p) =>
+          params.paymentTypeIds!.includes(p.paymentTypeId || ""),
+        );
+      }
 
       // Join with supplier names
       const purchasesWithSupplier = await Promise.all(
@@ -104,6 +197,17 @@ export function usePurchases(params: PurchasingFilterParams | void) {
           };
         }),
       );
+
+      // Apply search filter
+      if (params?.search && params.search.trim()) {
+        const term = params.search.toLowerCase();
+        return (purchasesWithSupplier as Purchase[]).filter(
+          (p) =>
+            (formatDisplayRefId(p.local_ref_id) || p.id)
+              .toLowerCase()
+              .includes(term) || p.supplierName?.toLowerCase().includes(term),
+        );
+      }
 
       return purchasesWithSupplier as Purchase[];
     },

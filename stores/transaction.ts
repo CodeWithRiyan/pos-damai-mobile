@@ -69,7 +69,10 @@ export const useTransactionStore = create<TransactionState>((set) => ({
         const updateTempSellPrice = () => {
           if (nextCategory === PriceType.RETAIL && cartItem.variant?.netto) {
             return undefined;
-          } else if (nextCategory === PriceType.WHOLESALE && cartItem.variant?.netto) {
+          } else if (
+            nextCategory === PriceType.WHOLESALE &&
+            cartItem.variant?.netto
+          ) {
             return (
               findSellPrice({
                 sellPrices: cartItem.product.sellPrices,

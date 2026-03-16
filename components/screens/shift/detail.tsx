@@ -114,37 +114,49 @@ export default function ShiftDetail() {
           {!!totals.payableRealization && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Pembayaran Hutang</Text>
-              <Text className="font-bold text-error-500">{formatRp(totals.payableRealization)}</Text>
+              <Text className="font-bold text-error-500">
+                {formatRp(totals.payableRealization)}
+              </Text>
             </HStack>
           )}
           {!!totals.supplies && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Beli Barang</Text>
-              <Text className="font-bold text-error-500">{formatRp(totals.supplies)}</Text>
+              <Text className="font-bold text-error-500">
+                {formatRp(totals.supplies)}
+              </Text>
             </HStack>
           )}
           {!!totals.equipment1 && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Perlengkapan</Text>
-              <Text className="font-bold text-error-500">{formatRp(totals.equipment1)}</Text>
+              <Text className="font-bold text-error-500">
+                {formatRp(totals.equipment1)}
+              </Text>
             </HStack>
           )}
           {!!totals.equipment2 && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Peralatan</Text>
-              <Text className="font-bold text-error-500">{formatRp(totals.equipment2)}</Text>
+              <Text className="font-bold text-error-500">
+                {formatRp(totals.equipment2)}
+              </Text>
             </HStack>
           )}
           {!!totals.cashDeposit && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Setor Tunai</Text>
-              <Text className="font-bold text-error-500">{formatRp(totals.cashDeposit)}</Text>
+              <Text className="font-bold text-error-500">
+                {formatRp(totals.cashDeposit)}
+              </Text>
             </HStack>
           )}
           {!!totals.otherExpenses && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Pengeluaran Lainnya</Text>
-              <Text className="font-bold text-error-500">{formatRp(totals.otherExpenses)}</Text>
+              <Text className="font-bold text-error-500">
+                {formatRp(totals.otherExpenses)}
+              </Text>
             </HStack>
           )}
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-background-100">
@@ -156,7 +168,9 @@ export default function ShiftDetail() {
               <Icon as={PlusCircle} size="md" />
               <Text className="text-typography-600">Saldo Awal</Text>
             </HStack>
-            <Text className="font-bold">{formatRp(detailShift?.initialBalance ?? 0)}</Text>
+            <Text className="font-bold">
+              {formatRp(detailShift?.initialBalance ?? 0)}
+            </Text>
           </HStack>
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-success-100">
             <Text className="text-typography-600 font-bold">
@@ -168,7 +182,9 @@ export default function ShiftDetail() {
             <Text className="text-typography-600 font-bold">
               Penerimaan Aktual
             </Text>
-            <Text className="font-bold">{formatRp(detailShift?.actualBalance || 0)}</Text>
+            <Text className="font-bold">
+              {formatRp(detailShift?.actualBalance || 0)}
+            </Text>
           </HStack>
         </VStack>
         <VStack space="sm" className="p-4">

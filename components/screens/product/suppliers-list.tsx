@@ -29,10 +29,8 @@ export default function ProductSuppliersList() {
   const { data: product, isLoading: isLoadingProduct } = useProduct(
     productId || "",
   );
-  const {
-    data: suppliers = [],
-    isLoading: isLoadingSuppliers,
-  } = useProductSuppliers(productId || "");
+  const { data: suppliers = [], isLoading: isLoadingSuppliers } =
+    useProductSuppliers(productId || "");
 
   const [search, setSearch] = useState("");
 

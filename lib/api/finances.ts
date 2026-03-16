@@ -53,8 +53,8 @@ export function useFinances() {
         .where(
           and(
             eq(schema.finances.organizationId, orgId),
-            isNull(schema.finances.deletedAt)
-          )
+            isNull(schema.finances.deletedAt),
+          ),
         )
         .orderBy(desc(schema.finances.transactionDate));
       return results as Finance[];
@@ -73,7 +73,7 @@ export function useFinance(id?: string) {
         .from(schema.finances)
         .where(eq(schema.finances.id, id))
         .limit(1);
-      
+
       if (results.length === 0) return null;
       return results[0] as Finance;
     },
@@ -91,12 +91,20 @@ export function useCreateFinance() {
 
       const now = new Date();
       const financeId = data.id || `fin_${Date.now()}`;
-      
-      const existing = data.id 
-        ? await db.select({ r: schema.finances.local_ref_id }).from(schema.finances).where(eq(schema.finances.id, data.id)).limit(1)
+
+      const existing = data.id
+        ? await db
+            .select({ r: schema.finances.local_ref_id })
+            .from(schema.finances)
+            .where(eq(schema.finances.id, data.id))
+            .limit(1)
         : [];
-      
-      const localRefId = existing.length > 0 ? existing[0].r : (data.local_ref_id || await generateLocalRefId(db, schema.finances, "FIN"));
+
+      const localRefId =
+        existing.length > 0
+          ? existing[0].r
+          : data.local_ref_id ||
+            (await generateLocalRefId(db, schema.finances, "FIN"));
 
       const profile = useAuthStore.getState().profile;
       const userId = profile?.id || null;
@@ -139,7 +147,9 @@ export function useCreateFinance() {
     onSuccess: (responseData) => {
       queryClient.invalidateQueries({ queryKey: ["finances"] });
       if (responseData?.id) {
-          queryClient.invalidateQueries({ queryKey: ["finances", responseData.id] });
+        queryClient.invalidateQueries({
+          queryKey: ["finances", responseData.id],
+        });
       }
     },
   });
@@ -162,7 +172,7 @@ export function useDeleteFinance() {
           _dirty: true,
         })
         .where(eq(schema.finances.id, id));
-      
+
       return { id };
     },
     onSuccess: () => {

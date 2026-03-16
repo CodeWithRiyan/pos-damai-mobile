@@ -39,7 +39,13 @@ export default function PaymentTypeList() {
   const router = useRouter();
   const { data, isLoading: isLoadingPaymentTypes, refetch } = usePaymentTypes();
   const deleteMutation = useBulkDeletePaymentType();
-  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } = useItemSelection<PaymentType>();
+  const {
+    selectedItems,
+    handleItemPress,
+    clearSelection,
+    isSelected,
+    hasSelection,
+  } = useItemSelection<PaymentType>();
   const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({
     successMessage: "Jenis pembayaran berhasil dihapus",
     deleteMutation,
@@ -136,7 +142,11 @@ export default function PaymentTypeList() {
               ) : (
                 <Pressable
                   className="p-6"
-                  onPress={() => triggerBulkDelete(bulkDeleteConfirm("jenis pembayaran", selectedItems))}
+                  onPress={() =>
+                    triggerBulkDelete(
+                      bulkDeleteConfirm("jenis pembayaran", selectedItems),
+                    )
+                  }
                 >
                   <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
                 </Pressable>
@@ -227,14 +237,13 @@ export default function PaymentTypeList() {
                     </Text>
                     <VStack className="items-end">
                       <Text size="xs">
-                        {item.commissionType === 'FLAT'
+                        {item.commissionType === "FLAT"
                           ? formatRp(item.commission ?? 0)
                           : `${item.commission ?? 0}%`}
                       </Text>
                       <Badge size="sm" variant="solid" action="muted">
                         <BadgeText className="text-xs">
-                          Minimal: Rp{" "}
-                          {formatNumber(item.minimalAmount ?? 0)}
+                          Minimal: Rp {formatNumber(item.minimalAmount ?? 0)}
                         </BadgeText>
                       </Badge>
                     </VStack>

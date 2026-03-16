@@ -217,7 +217,10 @@ export function useProducts(params: ProductParams | void) {
       );
 
       const flattenedProducts = productsWithPrices.flatMap((product) => {
-        if (product.type === ProductType.MULTIUNIT && params?.forceParentMultiUnit) {
+        if (
+          product.type === ProductType.MULTIUNIT &&
+          params?.forceParentMultiUnit
+        ) {
           return [
             {
               ...product,
@@ -269,7 +272,8 @@ export function useProducts(params: ProductParams | void) {
 
         // Add variants/children for MULTIUNIT and VARIANTS if they exist
         if (
-          (product.type === ProductType.MULTIUNIT || product.type === ProductType.VARIANTS) &&
+          (product.type === ProductType.MULTIUNIT ||
+            product.type === ProductType.VARIANTS) &&
           hasVariants
         ) {
           product.variants.forEach((variant) => {
@@ -300,7 +304,8 @@ export function useProducts(params: ProductParams | void) {
 
         // Fallback: If type is VARIANTS or MULTIUNIT but it has no variants yet, still show the parent
         if (
-          (product.type === ProductType.VARIANTS || product.type === ProductType.MULTIUNIT) &&
+          (product.type === ProductType.VARIANTS ||
+            product.type === ProductType.MULTIUNIT) &&
           !hasVariants
         ) {
           items.push({
@@ -325,9 +330,7 @@ export function useProducts(params: ProductParams | void) {
 
       if (params?.showByStock) {
         if (params.showByStock === "NO_STOCK") {
-          return flattenedProducts.filter(
-            (p) => p.stock === 0,
-          );
+          return flattenedProducts.filter((p) => p.stock === 0);
         } else if (params.showByStock === "LOW_STOCK") {
           return flattenedProducts.filter(
             (p) => p.stock < (p.minimumStock || 0),

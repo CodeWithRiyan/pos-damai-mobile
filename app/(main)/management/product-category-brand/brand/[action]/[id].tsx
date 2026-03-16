@@ -5,8 +5,7 @@ import { useLocalSearchParams } from "expo-router";
 export default function BrandActionScreen() {
   const { action } = useLocalSearchParams();
 
-  if (action === "select-product")
-    return <SelectProductInBrand />;
+  if (action === "select-product") return <SelectProductInBrand />;
 
   return <BrandDetail />;
 }

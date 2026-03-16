@@ -294,6 +294,5 @@ export {
   SelectSectionHeaderText,
   SelectSectionList,
   SelectTrigger,
-  SelectVirtualizedList
+  SelectVirtualizedList,
 };
-

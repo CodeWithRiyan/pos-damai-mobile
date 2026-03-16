@@ -122,9 +122,7 @@ export default function SelectingProductList({
             )}
             ListEmptyComponent={
               <Box className="p-8 items-center">
-                <Text className="text-slate-400 italic">
-                  No products found
-                </Text>
+                <Text className="text-slate-400 italic">No products found</Text>
               </Box>
             }
           />

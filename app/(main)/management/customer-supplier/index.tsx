@@ -2,8 +2,8 @@ import Header from "@/components/header";
 import { Box, Text, VStack } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import {
-    SolarIconLinear,
-    SolarIconLinearProps
+  SolarIconLinear,
+  SolarIconLinearProps,
 } from "@/components/ui/solar-icon-wrapper";
 import { Link } from "expo-router";
 import { ScrollView } from "react-native";
@@ -28,10 +28,7 @@ export default function ConsumerSupplierScreen() {
 
   return (
     <Box className="flex-1 bg-white">
-      <Header
-        header="PELANGGAN DAN SUPPLIER"
-        isGoBack
-      />
+      <Header header="PELANGGAN DAN SUPPLIER" isGoBack />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack>

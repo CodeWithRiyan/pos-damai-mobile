@@ -1,9 +1,9 @@
-import { create } from 'zustand';
-import { storage } from '../lib/storage';
+import { create } from "zustand";
+import { storage } from "../lib/storage";
 
 export interface QueuedOperation {
   id: string;
-  type: 'create' | 'update' | 'delete';
+  type: "create" | "update" | "delete";
   endpoint: string;
   data: unknown;
   timestamp: number;
@@ -13,7 +13,7 @@ interface SyncQueueState {
   queue: QueuedOperation[];
   isSyncing: boolean;
   lastSyncAt: number | null;
-  addToQueue: (operation: Omit<QueuedOperation, 'id' | 'timestamp'>) => void;
+  addToQueue: (operation: Omit<QueuedOperation, "id" | "timestamp">) => void;
   removeFromQueue: (id: string) => void;
   clearQueue: () => void;
   setIsSyncing: (syncing: boolean) => void;
@@ -21,8 +21,8 @@ interface SyncQueueState {
   loadQueue: () => void;
 }
 
-const QUEUE_STORAGE_KEY = 'sync_queue';
-const LAST_SYNC_AT_KEY = 'lastSyncAt_ts';
+const QUEUE_STORAGE_KEY = "sync_queue";
+const LAST_SYNC_AT_KEY = "lastSyncAt_ts";
 
 export const useSyncQueueStore = create<SyncQueueState>((set, get) => ({
   queue: [],
@@ -75,7 +75,7 @@ export const useSyncQueueStore = create<SyncQueueState>((set, get) => ({
         const parsed = JSON.parse(stored) as QueuedOperation[];
         set({ queue: parsed });
       } catch (error) {
-        console.error('Failed to parse sync queue:', error);
+        console.error("Failed to parse sync queue:", error);
         storage.remove(QUEUE_STORAGE_KEY);
       }
     }

@@ -256,9 +256,7 @@ export default function TransactionList() {
                           ? productInChart?.quantity || 0
                           : cart
                               ?.filter((f) => f.product.id === product.id)
-                              .map(
-                                (m) => m.quantity * (m.variant?.netto || 1),
-                              )
+                              .map((m) => m.quantity * (m.variant?.netto || 1))
                               .reduce((prev, curr) => prev + curr, 0)
                       }
                       stock={product.stock}
@@ -270,7 +268,9 @@ export default function TransactionList() {
               }}
               ListEmptyComponent={
                 <Box className="p-8 items-center">
-                  <Text className="text-slate-400 italic">Belum ada produk</Text>
+                  <Text className="text-slate-400 italic">
+                    Belum ada produk
+                  </Text>
                 </Box>
               }
             />
@@ -307,7 +307,9 @@ export default function TransactionList() {
               }}
               ListEmptyComponent={
                 <Box className="p-8 items-center">
-                  <Text className="text-slate-400 italic">Belum ada produk</Text>
+                  <Text className="text-slate-400 italic">
+                    Belum ada produk
+                  </Text>
                 </Box>
               }
             />
@@ -347,7 +349,8 @@ export default function TransactionList() {
                     </Box>
                     <VStack className="flex-1">
                       <Heading size="md" className="line-clamp-2">
-                        {item.variant && item.product.type === ProductType.MULTIUNIT
+                        {item.variant &&
+                        item.product.type === ProductType.MULTIUNIT
                           ? `${item.product.name} - ${item.variant.name}`
                           : item.product.name}
                       </Heading>
@@ -360,20 +363,22 @@ export default function TransactionList() {
                                 type: customer?.category,
                                 quantity: item.quantity,
                                 unitVariant: item.variant,
-                              })
-                        )} = ${formatRp(calculateLineItemTotal({
-                          quantity: item.quantity,
-                          unitPrice:
-                            item.tempSellPrice ||
-                            findSellPrice({
-                              sellPrices: item.product.sellPrices,
-                              type: customer?.category,
-                              quantity: item.quantity,
-                              unitVariant: item.variant,
-                            }),
-                          discount: item.product.discount,
-                          isManualPrice: !!item.tempSellPrice,
-                        }))}`}
+                              }),
+                        )} = ${formatRp(
+                          calculateLineItemTotal({
+                            quantity: item.quantity,
+                            unitPrice:
+                              item.tempSellPrice ||
+                              findSellPrice({
+                                sellPrices: item.product.sellPrices,
+                                type: customer?.category,
+                                quantity: item.quantity,
+                                unitVariant: item.variant,
+                              }),
+                            discount: item.product.discount,
+                            isManualPrice: !!item.tempSellPrice,
+                          }),
+                        )}`}
                       </Text>
                       {item.note ? (
                         <Text size="sm" className="text-slate-500">
@@ -429,7 +434,9 @@ export default function TransactionList() {
               >
                 <HStack space="md" className="items-center">
                   <Text size="4xl" className="text-white font-bold">
-                    {formatNumber(cart.reduce((total, item) => total + item.quantity, 0))}
+                    {formatNumber(
+                      cart.reduce((total, item) => total + item.quantity, 0),
+                    )}
                   </Text>
                   <Text size="lg" className="text-white font-bold">
                     ITEM

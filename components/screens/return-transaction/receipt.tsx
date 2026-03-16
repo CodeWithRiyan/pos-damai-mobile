@@ -228,9 +228,7 @@ export default function ReturnTransactionReceipt() {
                     <Heading size="sm">{item.productName}</Heading>
                     <Text className="text-typography-500 text-sm">
                       {item.quantity} x Rp{" "}
-                      <Text className="text-[10px]">
-                        {(item.sellPrice || 0)}
-                      </Text>
+                      <Text className="text-[10px]">{item.sellPrice || 0}</Text>
                     </Text>
                   </VStack>
                   <VStack className="items-end min-w-[50px]">
@@ -252,7 +250,9 @@ export default function ReturnTransactionReceipt() {
               <HStack className="justify-between items-center mt-1">
                 <Text className="text-typography-500">Tipe Pengembalian</Text>
                 <Text className="text-typography-500">
-                  {returnData.returnType === ReturnType.CASH ? "Uang" : "Tukar Barang"}
+                  {returnData.returnType === ReturnType.CASH
+                    ? "Uang"
+                    : "Tukar Barang"}
                 </Text>
               </HStack>
               <HStack className="justify-between items-center mt-1">
@@ -287,18 +287,16 @@ export default function ReturnTransactionReceipt() {
                         <VStack className="flex-1 mr-2">
                           <Heading size="sm">
                             {group.productName}
-                            {group.productType === ProductType.MULTIUNIT && group.variantName
+                            {group.productType === ProductType.MULTIUNIT &&
+                            group.variantName
                               ? ` - ${group.variantName}`
                               : ""}
                           </Heading>
                           <Text className="text-typography-500 text-sm">
-                            {group.quantity} x Rp{" "}
-                            {(group.regularPrice ?? 0)}
+                            {group.quantity} x Rp {group.regularPrice ?? 0}
                           </Text>
                         </VStack>
-                        <Text>
-                          Rp {formatNumber(group.total ?? 0)}
-                        </Text>
+                        <Text>Rp {formatNumber(group.total ?? 0)}</Text>
                       </HStack>
                       {group.totalDiscount > 0 && (
                         <HStack className="justify-between items-center pl-2">
@@ -317,7 +315,8 @@ export default function ReturnTransactionReceipt() {
                 <VStack space="sm">
                   {(() => {
                     const txTotalDiscount = transaction.totalDiscount ?? 0;
-                    const txSubtotalGross = (transaction.totalAmount ?? 0) + txTotalDiscount;
+                    const txSubtotalGross =
+                      (transaction.totalAmount ?? 0) + txTotalDiscount;
                     const txAmount = transaction.totalAmount ?? 0;
                     const retAmount = returnData.totalAmount ?? 0;
                     const txPaid = transaction.totalPaid ?? 0;
@@ -326,9 +325,7 @@ export default function ReturnTransactionReceipt() {
                       <>
                         <HStack className="justify-between items-center">
                           <Text className="font-bold">Subtotal</Text>
-                          <Text>
-                            {formatRp(txSubtotalGross)}
-                          </Text>
+                          <Text>{formatRp(txSubtotalGross)}</Text>
                         </HStack>
                         {txTotalDiscount > 0 && (
                           <HStack className="justify-between items-center">
@@ -370,15 +367,11 @@ export default function ReturnTransactionReceipt() {
                           <>
                             <HStack className="justify-between items-center">
                               <Text className="font-bold">Uang Dibayarkan</Text>
-                              <Text>
-                                {formatRp(txPaid - retAmount)}
-                              </Text>
+                              <Text>{formatRp(txPaid - retAmount)}</Text>
                             </HStack>
                             <HStack className="justify-between items-center">
                               <Text className="font-bold">Kembalian</Text>
-                              <Text>
-                                {formatRp(txPaid - txAmount)}
-                              </Text>
+                              <Text>{formatRp(txPaid - txAmount)}</Text>
                             </HStack>
                           </>
                         )}

@@ -67,6 +67,7 @@ export default function TransactionHistory({
     dateType: transactionFilter.dateType,
     startDate: transactionFilter.startDate,
     endDate: transactionFilter.endDate,
+    search: transactionFilter.search || undefined,
   });
 
   const completedTransactions = useMemo(
@@ -234,17 +235,7 @@ export default function TransactionHistory({
     };
   });
 
-  // TODO: jika perlu, pindahkan filtersearch ke dalam parameter useTransactions agar filtering dilakukan di server, bukan di client
-  const transactions =
-    completedTransactions.filter(
-      (t) =>
-        (formatDisplayRefId(t.local_ref_id) || t.id)
-          .toLowerCase()
-          .includes(transactionFilter.search.toLowerCase()) ||
-        t.customerName
-          ?.toLowerCase()
-          .includes(transactionFilter.search.toLowerCase()),
-    ) || [];
+  const transactions = completedTransactions;
 
   if (isLoading) {
     return (
@@ -275,7 +266,7 @@ export default function TransactionHistory({
             <TransactionFilter
               filterValues={transactionFilter}
               onFilter={(data) => {
-                setTransactionFilter(data)
+                setTransactionFilter(data);
                 setIsFilterExpanded(false);
               }}
             />

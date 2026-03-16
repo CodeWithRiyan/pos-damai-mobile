@@ -225,10 +225,13 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
                   Total Belum Lunas
                 </Text>
                 <Heading size="xl" className="text-error-500">
-                  {formatRp(receivableByUser.reduce(
-                    (sum, r) => sum + (r.totalReceivable - r.totalRealization),
-                    0,
-                  ))}
+                  {formatRp(
+                    receivableByUser.reduce(
+                      (sum, r) =>
+                        sum + (r.totalReceivable - r.totalRealization),
+                      0,
+                    ),
+                  )}
                 </Heading>
               </VStack>
               <VStack className="flex-1 items-end">
@@ -320,9 +323,8 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
                   <HStack space="md" className="items-center">
                     <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
                       <Text className="text-brand-primary font-bold">
-                        {receivable.userName
-                          ?.substring(0, 1)
-                          .toUpperCase() || "?"}
+                        {receivable.userName?.substring(0, 1).toUpperCase() ||
+                          "?"}
                       </Text>
                     </Box>
                     <VStack>
@@ -357,7 +359,10 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
                     {receivable.totalRealization <
                       receivable.totalReceivable && (
                       <Text size="xs" className="font-bold text-error-500">
-                        {formatRp(receivable.totalReceivable - receivable.totalRealization)}
+                        {formatRp(
+                          receivable.totalReceivable -
+                            receivable.totalRealization,
+                        )}
                       </Text>
                     )}
                   </VStack>

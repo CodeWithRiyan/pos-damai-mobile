@@ -1,7 +1,12 @@
 import { useSyncQueueStore } from "@/stores/sync-queue-store";
 import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiClient, ApiResponse, isConnectionError, unwrapResponse } from "./client";
+import {
+  apiClient,
+  ApiResponse,
+  isConnectionError,
+  unwrapResponse,
+} from "./client";
 import { Role } from "./roles";
 import { db } from "../db";
 import * as schema from "../db/schema";
@@ -37,7 +42,7 @@ export interface User {
       updatedBy: string | null;
       expiresAt: string | null;
       role: Role;
-    }
+    },
   ];
 }
 
@@ -63,7 +68,7 @@ export function useUsers() {
     queryKey: ["users"],
     queryFn: async () => {
       const response = await apiClient.get<ApiResponse<User[]> | User[]>(
-        "/users"
+        "/users",
       );
       const data = unwrapResponse<User[]>(response);
       return Array.isArray(data) ? data : [];
@@ -77,7 +82,7 @@ export function useUser(id: string) {
     queryKey: ["users", id],
     queryFn: async () => {
       const response = await apiClient.get<ApiResponse<User> | User>(
-        `/users/${id}`
+        `/users/${id}`,
       );
       return unwrapResponse<User>(response);
     },
@@ -93,7 +98,7 @@ export function useCreateUser() {
     mutationFn: async (data: CreateUserDTO) => {
       const response = await apiClient.post<ApiResponse<User> | User>(
         "/users",
-        data
+        data,
       );
       return unwrapResponse<User>(response);
     },
@@ -118,7 +123,7 @@ export function useUpdateUser() {
       const { id, ...rest } = data;
       const response = await apiClient.put<ApiResponse<User> | User>(
         `/users/${id}`,
-        rest
+        rest,
       );
       return unwrapResponse<User>(response);
     },
@@ -141,7 +146,7 @@ export function useDeleteUser() {
   return useMutation({
     mutationFn: async (id: string) => {
       const response = await apiClient.delete<ApiResponse<void>>(
-        `/users/${id}`
+        `/users/${id}`,
       );
       return unwrapResponse<void>(response);
     },
@@ -165,7 +170,7 @@ export function useBulkDeleteUser() {
       // Fix: Pass data inside config object
       const response = await apiClient.delete<ApiResponse<void>>(
         "/users/bulk",
-        { data }
+        { data },
       );
       return unwrapResponse<void>(response);
     },
@@ -204,10 +209,10 @@ export function useUserLog(userId: string) {
         .where(
           and(
             eq(schema.shifts.userId, userId),
-            eq(schema.shifts.organizationId, orgId)
-          )
+            eq(schema.shifts.organizationId, orgId),
+          ),
         );
-      
+
       shifts.forEach((s) => {
         if (s.startTime) {
           logs.push({
@@ -234,10 +239,10 @@ export function useUserLog(userId: string) {
         .where(
           and(
             eq(schema.transactions.createdBy, userId),
-            eq(schema.transactions.organizationId, orgId)
-          )
+            eq(schema.transactions.organizationId, orgId),
+          ),
         );
-      
+
       transactions.forEach((t) => {
         logs.push({
           id: t.id,
@@ -254,10 +259,10 @@ export function useUserLog(userId: string) {
         .where(
           and(
             eq(schema.purchases.createdBy, userId),
-            eq(schema.purchases.organizationId, orgId)
-          )
+            eq(schema.purchases.organizationId, orgId),
+          ),
         );
-      
+
       purchases.forEach((p) => {
         logs.push({
           id: p.id,
@@ -274,10 +279,10 @@ export function useUserLog(userId: string) {
         .where(
           and(
             eq(schema.finances.createdBy, userId),
-            eq(schema.finances.organizationId, orgId)
-          )
+            eq(schema.finances.organizationId, orgId),
+          ),
         );
-      
+
       finances.forEach((f) => {
         logs.push({
           id: f.id,

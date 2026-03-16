@@ -11,7 +11,7 @@ import { and, desc, eq, isNull, like } from "drizzle-orm";
 import { db } from "../db";
 import * as schema from "../db/schema";
 import { getDiscountedPrice, isDiscountActive } from "../price";
-import { generateLocalRefId } from "../utils/reference";
+import { formatDisplayRefId, generateLocalRefId } from "../utils/reference";
 import { Product } from "./products";
 
 export interface Transaction {
@@ -91,6 +91,7 @@ export interface TransactionFilterParams {
   startDate?: Date;
   endDate?: Date;
   showReturnData?: boolean;
+  search?: string;
 }
 
 // Get all transactions from local SQLite
@@ -232,6 +233,17 @@ export function useTransactions(params?: TransactionFilterParams) {
           };
         }),
       );
+
+      // Apply search filter
+      if (params?.search && params.search.trim()) {
+        const term = params.search.toLowerCase();
+        return (transactionsWithDetails as Transaction[]).filter(
+          (t) =>
+            (formatDisplayRefId(t.local_ref_id) || t.id)
+              .toLowerCase()
+              .includes(term) || t.customerName?.toLowerCase().includes(term),
+        );
+      }
 
       return transactionsWithDetails as Transaction[];
     },

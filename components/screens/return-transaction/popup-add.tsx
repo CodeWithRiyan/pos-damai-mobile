@@ -137,10 +137,11 @@ export default function PopupAddProduct() {
                 <HStack space="sm">
                   <Heading size="md">
                     Rp{" "}
-                    {formatNumber((
+                    {formatNumber(
                       addProduct?.lastSellPrice ??
-                      addProduct?.sellPrices?.[0]?.price
-                    ) ?? 0)}
+                        addProduct?.sellPrices?.[0]?.price ??
+                        0,
+                    )}
                   </Heading>
                 </HStack>
               </HStack>

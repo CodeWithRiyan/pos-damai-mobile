@@ -404,14 +404,15 @@ export type StockOpnameItemRow = typeof stockOpnameItems.$inferSelect;
 export type PayableRow = typeof payables.$inferSelect;
 export type PayableRealizationRow = typeof payableRealizations.$inferSelect;
 export type ReceivableRow = typeof receivables.$inferSelect;
-export type ReceivableRealizationRow = typeof receivableRealizations.$inferSelect;
+export type ReceivableRealizationRow =
+  typeof receivableRealizations.$inferSelect;
 export type TransactionRow = typeof transactions.$inferSelect;
 export type TransactionItemRow = typeof transactionItems.$inferSelect;
 export type TransactionReturnRow = typeof transactionReturns.$inferSelect;
-export type TransactionReturnItemRow = typeof transactionReturnItems.$inferSelect;
+export type TransactionReturnItemRow =
+  typeof transactionReturnItems.$inferSelect;
 export type CashDrawerRow = typeof cashDrawers.$inferSelect;
 export type FinanceRow = typeof finances.$inferSelect;
 export type ShiftRow = typeof shifts.$inferSelect;
 export type StoreSupplyRow = typeof storeSupplies.$inferSelect;
 export type StoreSupplyItemRow = typeof storeSupplyItems.$inferSelect;
-

@@ -15,7 +15,7 @@ import {
   Pressable,
   Spinner,
   Text,
-  VStack
+  VStack,
 } from "@/components/ui";
 import SelectModal from "@/components/ui/select/select-modal";
 import { useCashDrawers } from "@/lib/api/cashdrawers";

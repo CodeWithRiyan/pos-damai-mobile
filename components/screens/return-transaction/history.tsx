@@ -116,7 +116,9 @@ export default function ReturnTransactionHistory({
           }}
           ListEmptyComponent={
             <VStack className="items-center py-10">
-              <Text className="text-typography-400">Belum ada riwayat retur</Text>
+              <Text className="text-typography-400">
+                Belum ada riwayat retur
+              </Text>
             </VStack>
           }
         />

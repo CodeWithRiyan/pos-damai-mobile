@@ -209,13 +209,13 @@ export default function TransactionReceipt() {
                     <VStack className="flex-1 mr-2">
                       <Heading size="sm">
                         {group.productName}
-                        {group.productType === ProductType.MULTIUNIT && group.variantName
+                        {group.productType === ProductType.MULTIUNIT &&
+                        group.variantName
                           ? ` - ${group.variantName}`
                           : ""}
                       </Heading>
                       <Text className="text-typography-500 text-sm">
-                        {group.quantity} x Rp{" "}
-                        {(group.regularPrice ?? 0)}
+                        {group.quantity} x Rp {group.regularPrice ?? 0}
                       </Text>
                     </VStack>
                     <Text className="text-typography-500 font-bold">
@@ -278,7 +278,10 @@ export default function TransactionReceipt() {
               <HStack className="justify-between items-center">
                 <Text className="font-bold">Kembalian</Text>
                 <Text className="font-bold">
-                  {formatRp((transaction.totalPaid ?? 0) - (transaction.totalAmount ?? 0))}
+                  {formatRp(
+                    (transaction.totalPaid ?? 0) -
+                      (transaction.totalAmount ?? 0),
+                  )}
                 </Text>
               </HStack>
             </VStack>

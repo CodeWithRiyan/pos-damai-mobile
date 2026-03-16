@@ -253,6 +253,5 @@ export {
   ModalCloseButton,
   ModalContent,
   ModalFooter,
-  ModalHeader
+  ModalHeader,
 };
-

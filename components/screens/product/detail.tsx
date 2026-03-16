@@ -1,10 +1,6 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
-import {
-  HStack,
-  Text,
-  VStack,
-} from "@/components/ui";
+import { HStack, Text, VStack } from "@/components/ui";
 import { Grid, GridItem } from "@/components/ui/grid";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
@@ -78,7 +74,9 @@ export default function ProductDetail() {
           theme: "red",
           onPress: () => {
             hideActionDrawer();
-            triggerDelete(singleDeleteConfirm("produk", productId, product?.name));
+            triggerDelete(
+              singleDeleteConfirm("produk", productId, product?.name),
+            );
           },
         },
       ],
@@ -139,7 +137,9 @@ export default function ProductDetail() {
             </GridItem>
             <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
               <Text className="text-gray-500">Harga Beli</Text>
-              <Text className="font-bold">{formatRp(product?.purchasePrice ?? 0)}</Text>
+              <Text className="font-bold">
+                {formatRp(product?.purchasePrice ?? 0)}
+              </Text>
             </GridItem>
             {product?.unit ? (
               <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
@@ -196,7 +196,8 @@ export default function ProductDetail() {
             <GridItem _extra={{ className: "col-span-1" }} className="pr-4">
               <Text className="text-gray-500">Perkiraan Keuntungan</Text>
               <Text className="text-success-500 font-bold">
-                {formatRp(findSellPrice({
+                {formatRp(
+                  findSellPrice({
                     sellPrices: product?.sellPrices,
                     type: PriceType.RETAIL,
                     quantity: 1,
@@ -204,7 +205,8 @@ export default function ProductDetail() {
                       product?.type === ProductType.MULTIUNIT
                         ? product?.variants.find((v) => v.netto === 1)
                         : undefined,
-                  }) - (product?.purchasePrice || 0))}
+                  }) - (product?.purchasePrice || 0),
+                )}
               </Text>
             </GridItem>
           </Grid>
@@ -237,8 +239,9 @@ export default function ProductDetail() {
                       } ${formatRp(price.price)}`}</Text>
                     ))}
                 </GridItem>
-                {!!product?.sellPrices.filter((f) => f.type === PriceType.WHOLESALE)
-                  .length && (
+                {!!product?.sellPrices.filter(
+                  (f) => f.type === PriceType.WHOLESALE,
+                ).length && (
                   <GridItem
                     _extra={{ className: "col-span-1" }}
                     className="items-center"

@@ -40,7 +40,13 @@ export default function CategoryList() {
   const { data: productCounts, refetch: refetchCounts } =
     useProductCountsByCategory();
   const { data: capitalValues } = useCapitalValueByCategory();
-  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } = useItemSelection<Category>();
+  const {
+    selectedItems,
+    handleItemPress,
+    clearSelection,
+    isSelected,
+    hasSelection,
+  } = useItemSelection<Category>();
 
   const categories = data || [];
 
@@ -132,7 +138,11 @@ export default function CategoryList() {
               ) : (
                 <Pressable
                   className="p-6"
-                  onPress={() => triggerBulkDelete(bulkDeleteConfirm("kategori", selectedItems))}
+                  onPress={() =>
+                    triggerBulkDelete(
+                      bulkDeleteConfirm("kategori", selectedItems),
+                    )
+                  }
                 >
                   <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
                 </Pressable>
@@ -188,9 +198,7 @@ export default function CategoryList() {
             renderItem={({ item }) => (
               <Pressable
                 className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                  isSelected(item)
-                    ? "bg-gray-100"
-                    : ""
+                  isSelected(item) ? "bg-gray-100" : ""
                 }`}
                 onPress={() => {
                   if (hasSelection) {
@@ -225,9 +233,7 @@ export default function CategoryList() {
                     </Text>
                     <Text size="xs">
                       Rp{" "}
-                      {(capitalValues?.[item.id] ?? 0).toLocaleString(
-                        "id-ID",
-                      )}
+                      {(capitalValues?.[item.id] ?? 0).toLocaleString("id-ID")}
                     </Text>
                   </VStack>
                 </HStack>
