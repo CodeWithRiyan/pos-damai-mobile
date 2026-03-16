@@ -9,6 +9,7 @@ import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
 import SelectModal from "@/components/ui/select/select-modal";
 import { VStack } from "@/components/ui/vstack";
 import { usePaymentTypes } from "@/lib/api/payment-types";
+import { useSuppliers } from "@/lib/api/suppliers";
 import { useUsers } from "@/lib/api/users";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -20,9 +21,10 @@ import z from "zod";
 
 // ─── Schema ────────────────────────────────────────────────────────────────
 
-const transactionFilterSchema = z
+const purchasingFilterSchema = z
   .object({
     search: z.string(),
+    supplierId: z.string(),
     userId: z.string(),
     paymentTypeIds: z.array(z.string()),
     dateType: z.enum([
@@ -46,12 +48,11 @@ const transactionFilterSchema = z
     },
   );
 
-export type TransactionFilterFormValues = z.infer<
-  typeof transactionFilterSchema
->;
+export type PurchasingFilterFormValues = z.infer<typeof purchasingFilterSchema>;
 
-export const transactionFilterInitialValues: TransactionFilterFormValues = {
+export const purchasingFilterInitialValues: PurchasingFilterFormValues = {
   search: "",
+  supplierId: "",
   userId: "",
   paymentTypeIds: [],
   dateType: "TODAY",
@@ -87,22 +88,23 @@ function Divider() {
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
-export default function TransactionFilter({
+export default function PurchasingFilter({
   onFilter,
   filterValues,
 }: {
-  onFilter: (data: TransactionFilterFormValues) => void;
-  filterValues: TransactionFilterFormValues;
+  onFilter: (data: PurchasingFilterFormValues) => void;
+  filterValues: PurchasingFilterFormValues;
 }) {
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
 
+  const { data: suppliers } = useSuppliers();
   const { data: users } = useUsers();
   const { data: paymentTypes } = usePaymentTypes();
 
-  const form = useForm<TransactionFilterFormValues>({
-    resolver: zodResolver(transactionFilterSchema),
-    defaultValues: transactionFilterInitialValues,
+  const form = useForm<PurchasingFilterFormValues>({
+    resolver: zodResolver(purchasingFilterSchema),
+    defaultValues: purchasingFilterInitialValues,
   });
 
   const dateType = form.watch("dateType");
@@ -135,12 +137,12 @@ export default function TransactionFilter({
     }
   }, [startDate, dateType, form]);
 
-  const onSubmit: SubmitHandler<TransactionFilterFormValues> = (data) => {
+  const onSubmit: SubmitHandler<PurchasingFilterFormValues> = (data) => {
     onFilter(data);
   };
 
   const handleReset = () => {
-    form.reset(transactionFilterInitialValues);
+    form.reset(purchasingFilterInitialValues);
     if (paymentTypes) {
       form.setValue(
         "paymentTypeIds",
@@ -148,7 +150,7 @@ export default function TransactionFilter({
       );
     }
     onFilter({
-      ...transactionFilterInitialValues,
+      ...purchasingFilterInitialValues,
       paymentTypeIds: paymentTypes?.map((pt) => pt.id) ?? [],
     });
   };
@@ -183,7 +185,7 @@ export default function TransactionFilter({
               </InputSlot>
               <InputField
                 value={value}
-                placeholder="Cari no. transaksi atau nama customer"
+                placeholder="Cari no. transaksi"
                 onChangeText={onChange}
                 onBlur={onBlur}
                 returnKeyType="search"
@@ -198,6 +200,40 @@ export default function TransactionFilter({
           </FormControl>
         )}
       />
+
+      <Divider />
+
+      {/* ── Supplier ── */}
+      <VStack space="xs">
+        <SectionLabel>Supplier</SectionLabel>
+        <Controller
+          control={form.control}
+          name="supplierId"
+          render={({ field: { onChange, value }, fieldState: { error } }) => (
+            <FormControl isInvalid={!!error}>
+              <SelectModal
+                value={value}
+                placeholder="Semua supplier"
+                showSearch={false}
+                options={[
+                  { label: "Semua supplier", value: "" },
+                  ...(suppliers?.map((sup) => ({
+                    label: sup.name,
+                    value: sup.id,
+                  })) ?? []),
+                ]}
+                className="w-full"
+                onChange={onChange}
+              />
+              {error && (
+                <FormControlError>
+                  <FormControlErrorText>{error.message}</FormControlErrorText>
+                </FormControlError>
+              )}
+            </FormControl>
+          )}
+        />
+      </VStack>
 
       <Divider />
 
@@ -463,7 +499,7 @@ export default function TransactionFilter({
         </TouchableOpacity>
         <TouchableOpacity
           activeOpacity={0.8}
-          className="flex-2 flex-[2] rounded-lg h-10 flex-row justify-center items-center bg-primary-500"
+          className="flex-[2] rounded-lg h-10 flex-row justify-center items-center bg-primary-500"
           onPress={form.handleSubmit(onSubmit)}
         >
           <Text className="text-sm text-white font-bold">Terapkan Filter</Text>

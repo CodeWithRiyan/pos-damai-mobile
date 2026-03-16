@@ -6,11 +6,11 @@ import { SolarIconLinear } from "./solar-icon-wrapper";
 
 export default function InputVirtualKeyboard({
   nominal = "0",
-  totalAmount = "0",
+  exactChange = "0",
   onChange,
 }: {
   nominal?: string;
-  totalAmount?: string;
+  exactChange?: string;
   onChange?: (value: string) => void;
 }) {
   const [useShortcut, setUseShortcut] = useState<boolean>(false);
@@ -20,7 +20,7 @@ export default function InputVirtualKeyboard({
         <GridItem _extra={{ className: "col-span-1" }}>
           <Pressable
             className="h-16 w-full items-center justify-center bg-primary-100 active:bg-primary-200"
-            onPress={() => onChange?.(totalAmount)}
+            onPress={() => onChange?.(exactChange)}
           >
             <Heading size="lg" className="text-primary-500 font-bold">
               UANG PAS

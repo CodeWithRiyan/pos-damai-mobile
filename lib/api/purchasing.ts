@@ -57,8 +57,19 @@ export interface CreatePurchasingDTO {
   }[];
 }
 
+// TODO: terapkan params pada query untuk filter data langsung dari DB, bukan filter di client
+export interface PurchasingFilterParams {
+  supplierId?: string;
+  userId?: string;
+  paymentTypeIds?: string[];
+  dateType?: "TODAY" | "THIS_WEEK" | "THIS_MONTH" | "THIS_YEAR" | "CUSTOM";
+  startDate?: Date;
+  endDate?: Date;
+  showReturnData?: boolean;
+}
+
 // Get all purchases from local SQLite
-export function usePurchases(params: { supplierId?: string } | void) {
+export function usePurchases(params: PurchasingFilterParams | void) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   const conditions = [
     eq(schema.purchases.organizationId, orgId),
@@ -70,7 +81,7 @@ export function usePurchases(params: { supplierId?: string } | void) {
   }
 
   return useQuery({
-    queryKey: ["purchases", orgId, params?.supplierId],
+    queryKey: ["purchases", orgId, params],
     queryFn: async () => {
       const purchaseResult = await db
         .select()
@@ -180,7 +191,9 @@ export async function fetchPurchase(id: string): Promise<Purchase | null> {
   return {
     ...purchase,
     supplierName: supplier[0]?.name || "Unknown",
-    paymentTypeName: paymentType[0]?.name || (purchase.paymentType === PaymentMethod.CASH ? "Tunai" : "Hutang"),
+    paymentTypeName:
+      paymentType[0]?.name ||
+      (purchase.paymentType === PaymentMethod.CASH ? "Tunai" : "Hutang"),
     items: itemsWithProductNames,
   } as Purchase;
 }
@@ -237,7 +250,8 @@ export function useCreatePurchasing() {
             .limit(1);
 
           const statusCompleted =
-            data.status === Status.COMPLETED && existing[0]?.status === Status.DRAFT;
+            data.status === Status.COMPLETED &&
+            existing[0]?.status === Status.DRAFT;
 
           if (statusCompleted) {
             finalLocalRefId = await generateLocalRefId(
@@ -323,7 +337,8 @@ export function useCreatePurchasing() {
               .limit(1);
 
             if (dbProduct) {
-              const updates: { purchasePrice?: number; supplierId?: string } = {};
+              const updates: { purchasePrice?: number; supplierId?: string } =
+                {};
               if (item.newPurchasePrice !== dbProduct.purchasePrice) {
                 updates.purchasePrice = item.newPurchasePrice;
               }
