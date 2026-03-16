@@ -20,9 +20,9 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Check, Printer } from "lucide-react-native";
 import { ScrollView } from "react-native";
 
-import { getReceiptActions } from "@/lib/utils/receipt-actions";
 import { PaymentMethod, Status } from "@/lib/constants";
-import { formatRp, formatNumber } from "@/lib/utils/format";
+import { formatNumber, formatRp } from "@/lib/utils/format";
+import { getReceiptActions } from "@/lib/utils/receipt-actions";
 export default function PurchasingReceipt() {
   const router = useRouter();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -81,7 +81,7 @@ export default function PurchasingReceipt() {
         }
       />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <Box className="p-4 flex-1">
+        <VStack space="md" className="p-4 flex-1">
           {isSuccess === "true" && (
             <HStack space="md" className="w-full">
               <Pressable
@@ -148,17 +148,20 @@ export default function PurchasingReceipt() {
                 <Text className="text-typography-500">Metode Pembayaran</Text>
                 <Text className="text-typography-500">
                   {purchase.paymentTypeName ||
-                    (purchase.paymentType === PaymentMethod.CASH ? "Tunai" : "Hutang")}
+                    (purchase.paymentType === PaymentMethod.CASH
+                      ? "Tunai"
+                      : "Hutang")}
                 </Text>
               </HStack>
-              {purchase.paymentType === PaymentMethod.DEBT && purchase.dueDate && (
-                <HStack className="justify-between items-center">
-                  <Text className="text-typography-500">Jatuh Tempo</Text>
-                  <Text className="text-typography-500">
-                    {dayjs(purchase.dueDate).format("DD/MM/YYYY")}
-                  </Text>
-                </HStack>
-              )}
+              {purchase.paymentType === PaymentMethod.DEBT &&
+                purchase.dueDate && (
+                  <HStack className="justify-between items-center">
+                    <Text className="text-typography-500">Jatuh Tempo</Text>
+                    <Text className="text-typography-500">
+                      {dayjs(purchase.dueDate).format("DD/MM/YYYY")}
+                    </Text>
+                  </HStack>
+                )}
             </VStack>
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack space="md">
@@ -177,8 +180,7 @@ export default function PurchasingReceipt() {
                     </Text>
                   </VStack>
                   <Text className="text-typography-500 font-bold">
-                    Rp{" "}
-                    {formatNumber(item.quantity * (item.purchasePrice || 0))}
+                    Rp {formatNumber(item.quantity * (item.purchasePrice || 0))}
                   </Text>
                 </HStack>
               ))}
@@ -250,7 +252,7 @@ export default function PurchasingReceipt() {
               </Text>
             </VStack>
           </VStack>
-        </Box>
+        </VStack>
       </ScrollView>
     </VStack>
   );

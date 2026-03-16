@@ -1,5 +1,5 @@
-import { formatRp } from "@/lib/utils/format";
 import { Box, Heading, HStack, Pressable, Text, VStack } from "@/components/ui";
+import { formatRp } from "@/lib/utils/format";
 
 export default function ListProductLayout({
   name,
@@ -10,8 +10,8 @@ export default function ListProductLayout({
 }: {
   name: string;
   price: number;
-  quantityInCart: number;
-  stock: number;
+  quantityInCart?: number;
+  stock?: number;
   onPressProduct: () => void;
 }) {
   return (
@@ -35,12 +35,16 @@ export default function ListProductLayout({
             </Text>
           </VStack>
           <HStack space="sm">
-            <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
-              <Text className="font-bold">{quantityInCart}</Text>
-            </Box>
-            <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
-              <Text className="text-typography-0 font-bold">{stock}</Text>
-            </Box>
+            {quantityInCart !== undefined && (
+              <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
+                <Text className="font-bold">{quantityInCart}</Text>
+              </Box>
+            )}
+            {stock !== undefined && (
+              <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
+                <Text className="text-typography-0 font-bold">{stock}</Text>
+              </Box>
+            )}
           </HStack>
         </HStack>
       </HStack>

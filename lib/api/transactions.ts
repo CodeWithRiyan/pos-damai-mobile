@@ -1,4 +1,10 @@
-import { DateFilterType, InventoryTxType, PriceType, ProductType, Status } from "@/lib/constants";
+import {
+  DateFilterType,
+  InventoryTxType,
+  PriceType,
+  ProductType,
+  Status,
+} from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { and, desc, eq, isNull, like } from "drizzle-orm";
@@ -80,7 +86,7 @@ export interface CreateTransactionDTO {
 export interface TransactionFilterParams {
   customerId?: string;
   userId?: string;
-  paymentTypeId?: string[];
+  paymentTypeIds?: string[];
   dateType?: "TODAY" | "THIS_WEEK" | "THIS_MONTH" | "THIS_YEAR" | "CUSTOM";
   startDate?: Date;
   endDate?: Date;
@@ -194,9 +200,9 @@ export function useTransactions(params?: TransactionFilterParams) {
       }
 
       // Apply paymentTypeId filter
-      if (params?.paymentTypeId && params.paymentTypeId.length > 0) {
+      if (params?.paymentTypeIds && params.paymentTypeIds.length > 0) {
         transactionResult = transactionResult.filter((t) =>
-          params.paymentTypeId!.includes(t.paymentTypeId),
+          params.paymentTypeIds!.includes(t.paymentTypeId),
         );
       }
 
@@ -254,9 +260,7 @@ export function useCustomerIdsWithTransactions() {
         );
 
       return new Set(
-        rows
-          .map((r) => r.customerId)
-          .filter((id): id is string => id !== null),
+        rows.map((r) => r.customerId).filter((id): id is string => id !== null),
       );
     },
     enabled: !!orgId,
@@ -476,7 +480,8 @@ export async function fetchTransaction(
       return {
         ...item,
         productName: product[0]?.name || "Unknown",
-        productType: (product[0]?.type || ProductType.DEFAULT) as Product["type"],
+        productType: (product[0]?.type ||
+          ProductType.DEFAULT) as Product["type"],
         variantName,
         discountAmount: item.discountAmount ?? 0,
         purchasePrice: item.purchasePrice ?? 0,
@@ -610,7 +615,8 @@ export function useCreateTransaction() {
             .limit(1);
 
           const statusCompleted =
-            data.status === Status.COMPLETED && existing[0]?.status === Status.DRAFT;
+            data.status === Status.COMPLETED &&
+            existing[0]?.status === Status.DRAFT;
 
           if (statusCompleted) {
             const newRefId = await generateLocalRefId(
@@ -748,7 +754,10 @@ export function useCreateTransaction() {
               .from(schema.transactions)
               .where(eq(schema.transactions.id, data.id))
               .limit(1);
-            if (existingTx.length > 0 && existingTx[0].status === Status.COMPLETED) {
+            if (
+              existingTx.length > 0 &&
+              existingTx[0].status === Status.COMPLETED
+            ) {
               isNewOrDraft = false;
             }
           }

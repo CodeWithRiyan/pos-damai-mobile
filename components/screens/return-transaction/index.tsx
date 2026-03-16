@@ -29,6 +29,7 @@ export default function PurchasingCustomerList() {
 
   const isLoading = loadingCustomers || loadingTx;
 
+  // TODO: Fix Error Blank Screen Here
   const filteredCustomers = isLoading
     ? []
     : (customers ?? []).filter(
