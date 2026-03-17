@@ -164,9 +164,9 @@ export default function TransactionCheckoutForm() {
     }, 0);
 
     return {
-      commission: comm,
-      grandTotal: cartTotal + comm,
-      totalDiscount: discount,
+      commission: Math.round(comm),
+      grandTotal: Math.round(cartTotal + comm),
+      totalDiscount: Math.round(discount),
     };
   }, [cartTotal, paymentTypesData, paymentTypeId, cart, customer]);
 
@@ -434,12 +434,12 @@ export default function TransactionCheckoutForm() {
                 </Heading>
                 {totalDiscount > 0 && (
                   <Text className="text-success-600 mt-2 font-bold">
-                    Total Diskon Rp {formatNumber(totalDiscount)}
+                    {`Total Diskon Rp ${formatNumber(totalDiscount)}`}
                   </Text>
                 )}
                 {commission > 0 && (
                   <Text className="text-warning-600 mt-2 font-bold">
-                    *Termasuk tambahan biaya Rp {formatNumber(commission)}
+                    {`*Termasuk tambahan biaya Rp ${formatNumber(commission)}`}
                   </Text>
                 )}
               </HStack>

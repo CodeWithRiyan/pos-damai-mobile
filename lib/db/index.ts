@@ -1,10 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Application from "expo-application";
 import { drizzle } from "drizzle-orm/expo-sqlite";
 import { migrate } from "drizzle-orm/expo-sqlite/migrator";
+import * as Application from "expo-application";
 import * as SQLite from "expo-sqlite";
-import * as schema from "./schema";
 import migrations from "../../drizzle/migrations.js";
+import * as schema from "./schema";
 
 const expoDb = SQLite.openDatabaseSync("pos_damai.db");
 export const db = drizzle(expoDb, { schema });

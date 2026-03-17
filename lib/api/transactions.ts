@@ -275,7 +275,8 @@ export function useCustomerIdsWithTransactions() {
   return useQuery({
     queryKey: ["customer-ids-with-transactions", orgId],
     queryFn: async () => {
-      if (!orgId) return new Set<string>();
+      console.log("orgId in useCustomerIdsWithTransactions:", orgId);
+      if (!orgId) return [];
 
       const rows = await db
         .selectDistinct({ customerId: schema.transactions.customerId })
@@ -288,9 +289,14 @@ export function useCustomerIdsWithTransactions() {
           ),
         );
 
-      return new Set(
-        rows.map((r) => r.customerId).filter((id): id is string => id !== null),
-      );
+      console.log("data: ", rows);
+
+      const returnData = rows
+        .map((r) => r.customerId)
+        .filter((id): id is string => id !== null);
+
+      console.log("Fetched customer IDs with transactions:", returnData);
+      return returnData;
     },
     enabled: !!orgId,
   });
@@ -883,6 +889,9 @@ export function useCreateTransaction() {
       if (responseData.customerId) {
         queryClient.invalidateQueries({
           queryKey: ["customers", responseData.customerId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["customer-ids-with-transactions", orgId],
         });
       }
       if (responseData.returnId) {
