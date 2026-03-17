@@ -1,18 +1,26 @@
-import { DateFilterType, InventoryTxType, PriceType, ProductType, Status } from "@/lib/constants";
+import {
+  DateFilterType,
+  InventoryTxType,
+  PriceType,
+  ProductType,
+  Status,
+} from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { and, desc, eq, isNull, like } from "drizzle-orm";
 import { db } from "../db";
 import * as schema from "../db/schema";
 import { getDiscountedPrice, isDiscountActive } from "../price";
-import { generateLocalRefId } from "../utils/reference";
+import { formatDisplayRefId, generateLocalRefId } from "../utils/reference";
 import { Product } from "./products";
 
 export interface Transaction {
   id: string;
   local_ref_id: string | null;
   customerId: string | null;
+  employeeId?: string | null;
   customerName?: string;
+  employeeName?: string;
   totalAmount: number;
   totalPaid: number;
   commission?: number;
@@ -51,6 +59,7 @@ export interface TransactionItem {
 export interface CreateTransactionDTO {
   id?: string;
   customerId?: string;
+  employeeId?: string;
   totalAmount: number;
   totalPaid: number;
   commission?: number;
@@ -80,11 +89,12 @@ export interface CreateTransactionDTO {
 export interface TransactionFilterParams {
   customerId?: string;
   userId?: string;
-  paymentTypeId?: string[];
+  paymentTypeIds?: string[];
   dateType?: "TODAY" | "THIS_WEEK" | "THIS_MONTH" | "THIS_YEAR" | "CUSTOM";
   startDate?: Date;
   endDate?: Date;
   showReturnData?: boolean;
+  search?: string;
 }
 
 // Get all transactions from local SQLite
@@ -194,13 +204,13 @@ export function useTransactions(params?: TransactionFilterParams) {
       }
 
       // Apply paymentTypeId filter
-      if (params?.paymentTypeId && params.paymentTypeId.length > 0) {
+      if (params?.paymentTypeIds && params.paymentTypeIds.length > 0) {
         transactionResult = transactionResult.filter((t) =>
-          params.paymentTypeId!.includes(t.paymentTypeId),
+          params.paymentTypeIds!.includes(t.paymentTypeId),
         );
       }
 
-      // Join with customer and payment type names
+      // Join with customer, employee, and payment type names
       const transactionsWithDetails = await Promise.all(
         transactionResult.map(async (transaction) => {
           let customerName = "Walk-in Customer";
@@ -213,6 +223,19 @@ export function useTransactions(params?: TransactionFilterParams) {
             customerName = customer[0]?.name || "Unknown";
           }
 
+          let employeeName: string | undefined;
+          if (transaction.employeeId) {
+            const employee = await db
+              .select({ name: schema.users.name })
+              .from(schema.users)
+              .where(eq(schema.users.id, transaction.employeeId))
+              .limit(1);
+            employeeName = employee[0]?.name;
+            customerName = employeeName
+              ? `Karyawan: ${employeeName}`
+              : "Karyawan";
+          }
+
           const paymentType = await db
             .select({ name: schema.paymentTypes.name })
             .from(schema.paymentTypes)
@@ -222,10 +245,22 @@ export function useTransactions(params?: TransactionFilterParams) {
           return {
             ...transaction,
             customerName,
+            employeeName,
             paymentTypeName: paymentType[0]?.name || "Unknown",
           };
         }),
       );
+
+      // Apply search filter
+      if (params?.search && params.search.trim()) {
+        const term = params.search.toLowerCase();
+        return (transactionsWithDetails as Transaction[]).filter(
+          (t) =>
+            (formatDisplayRefId(t.local_ref_id) || t.id)
+              .toLowerCase()
+              .includes(term) || t.customerName?.toLowerCase().includes(term),
+        );
+      }
 
       return transactionsWithDetails as Transaction[];
     },
@@ -254,9 +289,7 @@ export function useCustomerIdsWithTransactions() {
         );
 
       return new Set(
-        rows
-          .map((r) => r.customerId)
-          .filter((id): id is string => id !== null),
+        rows.map((r) => r.customerId).filter((id): id is string => id !== null),
       );
     },
     enabled: !!orgId,
@@ -441,6 +474,18 @@ export async function fetchTransaction(
     customerName = customer[0]?.name || "Unknown";
   }
 
+  // Get employee name
+  let employeeName: string | undefined;
+  if (transaction.employeeId) {
+    const employee = await db
+      .select({ name: schema.users.name })
+      .from(schema.users)
+      .where(eq(schema.users.id, transaction.employeeId))
+      .limit(1);
+    employeeName = employee[0]?.name;
+    customerName = employeeName ? `Karyawan: ${employeeName}` : "Karyawan";
+  }
+
   // Get payment type name
   const paymentType = await db
     .select({ name: schema.paymentTypes.name })
@@ -476,7 +521,8 @@ export async function fetchTransaction(
       return {
         ...item,
         productName: product[0]?.name || "Unknown",
-        productType: (product[0]?.type || ProductType.DEFAULT) as Product["type"],
+        productType: (product[0]?.type ||
+          ProductType.DEFAULT) as Product["type"],
         variantName,
         discountAmount: item.discountAmount ?? 0,
         purchasePrice: item.purchasePrice ?? 0,
@@ -488,6 +534,7 @@ export async function fetchTransaction(
   return {
     ...transaction,
     customerName,
+    employeeName,
     paymentTypeName: paymentType[0]?.name || "Unknown",
     items: itemsWithProductNames,
   } as Transaction;
@@ -535,6 +582,7 @@ export function useCreateTransaction() {
           id: transactionId,
           local_ref_id: localRefId,
           customerId: data.customerId || null,
+          employeeId: data.employeeId || null,
           totalAmount: data.totalAmount,
           totalPaid: Number(data.totalPaid) || 0,
           commission: data.commission || 0,
@@ -610,7 +658,8 @@ export function useCreateTransaction() {
             .limit(1);
 
           const statusCompleted =
-            data.status === Status.COMPLETED && existing[0]?.status === Status.DRAFT;
+            data.status === Status.COMPLETED &&
+            existing[0]?.status === Status.DRAFT;
 
           if (statusCompleted) {
             const newRefId = await generateLocalRefId(
@@ -748,7 +797,10 @@ export function useCreateTransaction() {
               .from(schema.transactions)
               .where(eq(schema.transactions.id, data.id))
               .limit(1);
-            if (existingTx.length > 0 && existingTx[0].status === Status.COMPLETED) {
+            if (
+              existingTx.length > 0 &&
+              existingTx[0].status === Status.COMPLETED
+            ) {
               isNewOrDraft = false;
             }
           }
@@ -831,6 +883,11 @@ export function useCreateTransaction() {
       if (responseData.customerId) {
         queryClient.invalidateQueries({
           queryKey: ["customers", responseData.customerId],
+        });
+      }
+      if (responseData.returnId) {
+        queryClient.invalidateQueries({
+          queryKey: ["transactions", "returnId", responseData.returnId],
         });
       }
     },

@@ -1,4 +1,9 @@
-import { InventoryTxType, PriceType, ReturnType, Status } from "@/lib/constants";
+import {
+  InventoryTxType,
+  PriceType,
+  ReturnType,
+  Status,
+} from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { desc, eq } from "drizzle-orm";
@@ -46,7 +51,9 @@ async function calcEarnedPoints(
   items: { productId: string; quantity: number; sellPrice: number }[],
   customerCategory: string | null,
 ): Promise<{ points: number; revenue: number; profit: number }> {
-  let points = 0, revenue = 0, profit = 0;
+  let points = 0,
+    revenue = 0,
+    profit = 0;
   for (const item of items) {
     const [row] = await tx
       .select({
@@ -59,16 +66,21 @@ async function calcEarnedPoints(
       .where(eq(products.id, item.productId))
       .limit(1);
     if (row) {
-      const catPoints = customerCategory === PriceType.WHOLESALE ? row.wholesalePoint : row.retailPoint;
-      points  += (catPoints ?? 0) * item.quantity;
+      const catPoints =
+        customerCategory === PriceType.WHOLESALE
+          ? row.wholesalePoint
+          : row.retailPoint;
+      points += (catPoints ?? 0) * item.quantity;
       revenue += item.sellPrice * item.quantity;
-      profit  += (item.sellPrice - (row.purchasePrice ?? 0)) * item.quantity;
+      profit += (item.sellPrice - (row.purchasePrice ?? 0)) * item.quantity;
     }
   }
   return { points, revenue, profit };
 }
 
-export const useTransactionReturns = (params: TransactionReturnParams | void) => {
+export const useTransactionReturns = (
+  params: TransactionReturnParams | void,
+) => {
   const isUsedFilter = !!params?.customerId;
   const organizationId = useAuthStore(
     (state) => state.profile?.selectedOrganizationId,
@@ -95,7 +107,9 @@ export const useTransactionReturns = (params: TransactionReturnParams | void) =>
 
       const retData = retdat.map((r) => ({
         ...r,
-        customerName: r.customerId ? customerMap.get(r.customerId) || "Walk-in Customer" : "Walk-in Customer",
+        customerName: r.customerId
+          ? customerMap.get(r.customerId) || "Walk-in Customer"
+          : "Walk-in Customer",
       }));
 
       const filteredRetData = retData.filter(
@@ -142,7 +156,7 @@ export const useTransactionReturn = (id: string) => {
       }
 
       // Get creator name
-      let createdByName = 'Admin';
+      let createdByName = "Admin";
       if (returnRecord.createdBy) {
         const creatorResult = await db
           .select({ name: users.name })
@@ -195,18 +209,30 @@ export const useCreateTransactionReturn = () => {
 
   return useMutation({
     mutationFn: async (
-      data: Omit<ReturnTransaction, "id" | "local_ref_id" | "createdAt" | "updatedAt" | "createdBy" | "updatedBy">,
+      data: Omit<
+        ReturnTransaction,
+        | "id"
+        | "local_ref_id"
+        | "createdAt"
+        | "updatedAt"
+        | "createdBy"
+        | "updatedBy"
+      >,
     ) => {
       if (!organizationId) throw new Error("Organization ID is required");
 
       const returnId = `tret_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
       let finalLocalRefId = "";
 
       await db.transaction(async (tx) => {
-        finalLocalRefId = await generateLocalRefId(tx, transactionReturns, "RTS");
+        finalLocalRefId = await generateLocalRefId(
+          tx,
+          transactionReturns,
+          "RTS",
+        );
 
         // 1. Create Return Header
         await tx.insert(transactionReturns).values({
@@ -297,15 +323,28 @@ export const useCreateTransactionReturn = () => {
             .where(eq(customers.id, data.customerId))
             .limit(1);
           if (cust) {
-            const returned = await calcEarnedPoints(tx, data.items ?? [], cust.category);
+            const returned = await calcEarnedPoints(
+              tx,
+              data.items ?? [],
+              cust.category,
+            );
             if (data.returnType === ReturnType.CASH) {
               await tx
                 .update(customers)
                 .set({
-                  points:            Math.max(0, (cust.points            ?? 0) - returned.points),
-                  totalTransactions: Math.max(0, (cust.totalTransactions ?? 0) - 1),
-                  totalRevenue:      Math.max(0, (cust.totalRevenue      ?? 0) - returned.revenue),
-                  totalProfit:       Math.max(0, (cust.totalProfit       ?? 0) - returned.profit),
+                  points: Math.max(0, (cust.points ?? 0) - returned.points),
+                  totalTransactions: Math.max(
+                    0,
+                    (cust.totalTransactions ?? 0) - 1,
+                  ),
+                  totalRevenue: Math.max(
+                    0,
+                    (cust.totalRevenue ?? 0) - returned.revenue,
+                  ),
+                  totalProfit: Math.max(
+                    0,
+                    (cust.totalProfit ?? 0) - returned.profit,
+                  ),
                   _dirty: true,
                 })
                 .where(eq(customers.id, cust.id));

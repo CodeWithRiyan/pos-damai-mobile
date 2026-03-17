@@ -11,11 +11,7 @@ import {
 } from "../api/customers";
 import { PayableBySupplier } from "../api/payable";
 import { CreatePaymentTypeDTO, PaymentType } from "../api/payment-types";
-import {
-  CreateProductDTO,
-  Product,
-  ProductPrice,
-} from "../api/products";
+import { CreateProductDTO, Product, ProductPrice } from "../api/products";
 import { Role } from "../api/roles";
 import { CreateSupplierDTO, Supplier } from "../api/suppliers";
 import { CreateUserDTO, User } from "../api/users";
@@ -159,9 +155,9 @@ export async function importCustomers(): Promise<CreateCustomerDTO[] | null> {
       return {
         name: str(r["Nama"]),
         code: str(r["Kode"]) || undefined,
-        category: (
-          category === "WHOLESALE" ? "WHOLESALE" : "RETAIL"
-        ) as CustomerCategory,
+        category: (category === "WHOLESALE"
+          ? "WHOLESALE"
+          : "RETAIL") as CustomerCategory,
         phone: str(r["Telepon"]) || undefined,
         address: str(r["Alamat"]) || undefined,
       };
@@ -182,8 +178,7 @@ export async function exportPayables(
     "Jatuh Tempo Terdekat": p.nearestDueDate
       ? new Date(p.nearestDueDate).toLocaleDateString("id-ID")
       : "-",
-    Status:
-      p.totalRealization >= p.totalPayable ? "Lunas" : "Belum Lunas",
+    Status: p.totalRealization >= p.totalPayable ? "Lunas" : "Belum Lunas",
     Telepon: p.phone ?? "",
     Alamat: p.address ?? "",
   }));

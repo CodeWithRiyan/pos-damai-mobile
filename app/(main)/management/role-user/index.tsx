@@ -3,7 +3,7 @@ import { Box, Text, VStack } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import {
   SolarIconLinear,
-  SolarIconLinearProps
+  SolarIconLinearProps,
 } from "@/components/ui/solar-icon-wrapper";
 import { Link } from "expo-router";
 import { ScrollView } from "react-native";

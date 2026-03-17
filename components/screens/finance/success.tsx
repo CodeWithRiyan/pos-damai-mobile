@@ -12,7 +12,7 @@ export default function FinanceTransactionSuccess() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: finance, isLoading } = useFinance(id);
-  const profile = useAuthStore(state => state.profile);
+  const profile = useAuthStore((state) => state.profile);
 
   if (isLoading) {
     return (
@@ -37,8 +37,10 @@ export default function FinanceTransactionSuccess() {
           <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-500 text-lg">Transaksi</Text>
-              <Text className={`font-bold text-lg ${finance?.type === 'INCOME' ? 'text-success-500' : 'text-error-500'}`}>
-                {finance?.type === 'INCOME' ? 'Masuk' : 'Keluar'}
+              <Text
+                className={`font-bold text-lg ${finance?.type === "INCOME" ? "text-success-500" : "text-error-500"}`}
+              >
+                {finance?.type === "INCOME" ? "Masuk" : "Keluar"}
               </Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
@@ -46,16 +48,20 @@ export default function FinanceTransactionSuccess() {
                 Total Transaksi
               </Text>
               <Text className="font-bold text-lg">
-                {finance?.nominal ? formatRp(finance.nominal) : 'Rp 0'}
+                {finance?.nominal ? formatRp(finance.nominal) : "Rp 0"}
               </Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-500 text-lg">Kasir / Admin</Text>
-              <Text className="font-bold text-lg">{profile?.name || 'Admin'}</Text>
+              <Text className="font-bold text-lg">
+                {profile?.name || "Admin"}
+              </Text>
             </HStack>
             <VStack className="w-full flex-row justify-between">
               <Text className="text-typography-500 text-lg">Catatan</Text>
-              <Text className="font-bold text-lg text-right">{finance?.note || '-'}</Text>
+              <Text className="font-bold text-lg text-right">
+                {finance?.note || "-"}
+              </Text>
             </VStack>
           </Box>
           <VStack space="md" className="w-full p-4">

@@ -130,9 +130,10 @@ export default function ReturnPurchasingInput() {
                         </Heading>
                         <Text size="sm" className="text-slate-500">
                           {item.quantity} x Rp{" "}
-                          {formatNumber(item.product.purchasePrice ?? 0)}{" "}
-                          = Rp{" "}
-                          {formatNumber(item.quantity * (item.product.purchasePrice || 0))}
+                          {formatNumber(item.product.purchasePrice ?? 0)} = Rp{" "}
+                          {formatNumber(
+                            item.quantity * (item.product.purchasePrice || 0),
+                          )}
                         </Text>
                         {item.note ? (
                           <Text size="sm" className="text-slate-500">
@@ -159,7 +160,9 @@ export default function ReturnPurchasingInput() {
               >
                 <HStack space="md" className="items-center">
                   <Text size="4xl" className="text-white font-bold">
-                    {formatNumber(cart.reduce((total, item) => total + item.quantity, 0))}
+                    {formatNumber(
+                      cart.reduce((total, item) => total + item.quantity, 0),
+                    )}
                   </Text>
                   <Text size="lg" className="text-white font-bold">
                     ITEM

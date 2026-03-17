@@ -41,7 +41,13 @@ export default function SupplierDetail() {
   const { id } = useLocalSearchParams();
   const supplierId = id as string;
 
-  const { selectedItems: selectedProducts, handleItemPress, clearSelection: clearProductSelection, isSelected: isProductSelected, hasSelection: hasProductSelection } = useItemSelection<Product>();
+  const {
+    selectedItems: selectedProducts,
+    handleItemPress,
+    clearSelection: clearProductSelection,
+    isSelected: isProductSelected,
+    hasSelection: hasProductSelection,
+  } = useItemSelection<Product>();
 
   const { refetch: refetchSuppliers } = useSuppliers();
   const { data: supplier, refetch: refetchSupplier } = useSupplier(
@@ -96,7 +102,9 @@ export default function SupplierDetail() {
                     action="success"
                     variant="solid"
                   >
-                    <ToastTitle>Produk berhasil dihapus dari supplier</ToastTitle>
+                    <ToastTitle>
+                      Produk berhasil dihapus dari supplier
+                    </ToastTitle>
                   </Toast>
                 ),
               });
@@ -130,7 +138,13 @@ export default function SupplierDetail() {
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
-            triggerDelete(singleDeleteConfirm("supplier", supplier?.id || "", supplier?.name));
+            triggerDelete(
+              singleDeleteConfirm(
+                "supplier",
+                supplier?.id || "",
+                supplier?.name,
+              ),
+            );
             hideActionDrawer();
           },
         },
@@ -192,9 +206,7 @@ export default function SupplierDetail() {
                 <Pressable
                   key={product.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    isProductSelected(product)
-                      ? "bg-gray-100"
-                      : ""
+                    isProductSelected(product) ? "bg-gray-100" : ""
                   }`}
                   onPress={() => {
                     if (hasProductSelection) {
@@ -232,22 +244,25 @@ export default function SupplierDetail() {
                           product.sellPrices?.filter(
                             (r) => r.type === "RETAIL",
                           )?.[0]?.minimumPurchase
-                        }@ ${formatRp(product.sellPrices
-                          ?.filter((r) => r.type === "RETAIL")?.[0]
-                          ?.price ?? 0)}`}
+                        }@ ${formatRp(
+                          product.sellPrices?.filter(
+                            (r) => r.type === "RETAIL",
+                          )?.[0]?.price ?? 0,
+                        )}`}
                       </Text>
-                      {product.sellPrices?.filter(
-                        (r) => r.type === "WHOLESALE",
-                      ).length ? (
+                      {product.sellPrices?.filter((r) => r.type === "WHOLESALE")
+                        .length ? (
                         <Text className="text-xs">
                           Grosir:{" "}
                           {`${
                             product.sellPrices?.filter(
                               (r) => r.type === "WHOLESALE",
                             )?.[0]?.minimumPurchase
-                          }@ ${formatRp(product.sellPrices
-                            ?.filter((r) => r.type === "WHOLESALE")?.[0]
-                            ?.price ?? 0)}`}
+                          }@ ${formatRp(
+                            product.sellPrices?.filter(
+                              (r) => r.type === "WHOLESALE",
+                            )?.[0]?.price ?? 0,
+                          )}`}
                         </Text>
                       ) : null}
                     </VStack>

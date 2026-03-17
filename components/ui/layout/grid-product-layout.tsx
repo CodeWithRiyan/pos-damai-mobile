@@ -1,4 +1,3 @@
-import { formatRp } from "@/lib/utils/format";
 import {
   Badge,
   BadgeText,
@@ -8,6 +7,7 @@ import {
   Text,
   VStack,
 } from "@/components/ui";
+import { formatRp } from "@/lib/utils/format";
 
 export default function GridProductLayout({
   name,
@@ -19,8 +19,8 @@ export default function GridProductLayout({
 }: {
   name: string;
   price: number;
-  quantityInCart: number;
-  stock: number;
+  quantityInCart?: number;
+  stock?: number;
   minStock?: number;
   onPressProduct: () => void;
 }) {
@@ -35,18 +35,20 @@ export default function GridProductLayout({
             {name.charAt(0).toUpperCase()}
           </Heading>
           {/* Badge Stok & Keranjang */}
-          <Badge
-            action={
-              stock > minStock
-                ? "info"
-                : stock < minStock && stock > 0
-                  ? "warning"
-                  : "error"
-            }
-            className="absolute bottom-1 left-1"
-          >
-            <BadgeText>Stok: {stock}</BadgeText>
-          </Badge>
+          {stock !== undefined && (
+            <Badge
+              action={
+                stock > minStock
+                  ? "info"
+                  : stock < minStock && stock > 0
+                    ? "warning"
+                    : "error"
+              }
+              className="absolute bottom-1 left-1"
+            >
+              <BadgeText>Stok: {stock}</BadgeText>
+            </Badge>
+          )}
         </Box>
 
         {/* Info Produk */}
@@ -60,7 +62,7 @@ export default function GridProductLayout({
         </VStack>
 
         {/* Indikator Keranjang (hanya muncul jika > 0) */}
-        {quantityInCart > 0 && (
+        {quantityInCart !== undefined && quantityInCart > 0 && (
           <Box className="absolute top-1 right-1 bg-orange-500 size-6 rounded-md items-center justify-center">
             <Text size="xs" className="text-white font-bold">
               {quantityInCart}

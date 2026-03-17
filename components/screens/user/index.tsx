@@ -14,7 +14,12 @@ import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { getErrorMessage } from "@/lib/api/client";
 import { useRoles } from "@/lib/api/roles";
-import { useBulkDeleteUser, useCreateUser, User, useUsers } from "@/lib/api/users";
+import {
+  useBulkDeleteUser,
+  useCreateUser,
+  User,
+  useUsers,
+} from "@/lib/api/users";
 import { bulkDeleteConfirm } from "@/lib/utils/delete-confirm";
 import { exportUsers, importUsers } from "@/lib/utils/excel";
 import { showSuccessToast } from "@/lib/utils/toast";
@@ -28,7 +33,13 @@ export default function UserList() {
   const router = useRouter();
   const { data, isLoading, refetch } = useUsers();
   const { data: rolesData } = useRoles();
-  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } = useItemSelection<User>();
+  const {
+    selectedItems,
+    handleItemPress,
+    clearSelection,
+    isSelected,
+    hasSelection,
+  } = useItemSelection<User>();
 
   const users = data || [];
   const roles = rolesData || [];
@@ -118,7 +129,11 @@ export default function UserList() {
               ) : (
                 <Pressable
                   className="p-6"
-                  onPress={() => triggerBulkDelete(bulkDeleteConfirm("karyawan", selectedItems))}
+                  onPress={() =>
+                    triggerBulkDelete(
+                      bulkDeleteConfirm("karyawan", selectedItems),
+                    )
+                  }
                 >
                   <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
                 </Pressable>

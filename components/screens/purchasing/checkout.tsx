@@ -1,30 +1,30 @@
 import Header from "@/components/header";
 import {
-    Box,
-    Checkbox,
-    CheckboxIcon,
-    CheckboxIndicator,
-    CheckboxLabel,
-    CheckIcon,
-    FormControl,
-    FormControlError,
-    FormControlErrorText,
-    Heading,
-    HStack,
-    Icon,
-    Pressable,
-    Spinner,
-    Text,
-    Textarea,
-    TextareaInput,
-    Toast,
-    ToastTitle,
-    useToast,
-    VStack,
+  Box,
+  Checkbox,
+  CheckboxIcon,
+  CheckboxIndicator,
+  CheckboxLabel,
+  CheckIcon,
+  FormControl,
+  FormControlError,
+  FormControlErrorText,
+  Heading,
+  HStack,
+  Icon,
+  Pressable,
+  Spinner,
+  Text,
+  Textarea,
+  TextareaInput,
+  Toast,
+  ToastTitle,
+  useToast,
+  VStack,
 } from "@/components/ui";
 import { CreatePurchasingDTO, useCreatePurchasing } from "@/lib/api/purchasing";
-import { showErrorToast } from "@/lib/utils/toast";
 import { useSuppliers } from "@/lib/api/suppliers";
+import { showErrorToast } from "@/lib/utils/toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -44,7 +44,7 @@ import dayjs from "dayjs";
 import { ArrowRight, CalendarIcon, Check, PlusIcon } from "lucide-react-native";
 
 import { Status } from "@/lib/constants";
-import { formatRp, formatNumber } from "@/lib/utils/format";
+import { formatNumber, formatRp } from "@/lib/utils/format";
 const purchasingSchema = z
   .object({
     totalPurchase: z
@@ -580,22 +580,22 @@ export default function PurchasingCheckoutForm() {
               <VStack className="flex-1">
                 <HStack className="justify-center p-6 flex-col items-center">
                   <Heading size="3xl" className="font-bold">
-                    Rp{" "}
-                    {totalPaid
-                      ? formatNumber(parseFloat(totalPaid))
-                      : "0"}
+                    Rp {totalPaid ? formatNumber(parseFloat(totalPaid)) : "0"}
                   </Heading>
                   {Number(totalPaid) > (form.getValues("totalPurchase") ?? 0) &&
                     !form.getValues("isPayable") && (
                       <Text className="text-success-500 font-bold mt-2">
                         Kembalian:{" "}
-                        {formatRp(Number(totalPaid) - (form.getValues("totalPurchase") ?? 0))}
+                        {formatRp(
+                          Number(totalPaid) -
+                            (form.getValues("totalPurchase") ?? 0),
+                        )}
                       </Text>
                     )}
                 </HStack>
                 <InputVirtualKeyboard
                   nominal={totalPaid}
-                  totalAmount={grandTotal.toString()}
+                  exactChange={grandTotal.toString()}
                   onChange={(value) => form.setValue("totalPaid", value)}
                 />
               </VStack>

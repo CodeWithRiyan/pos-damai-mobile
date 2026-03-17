@@ -1,17 +1,12 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
-import {
-    Box,
-    HStack,
-    Text,
-    VStack,
-} from "@/components/ui";
+import { Box, HStack, Text, VStack } from "@/components/ui";
 import { Grid, GridItem } from "@/components/ui/grid";
 import { Pressable } from "@/components/ui/pressable";
 import {
-    SolarIconBold,
-    SolarIconBoldDuotone,
-    SolarIconLinear,
+  SolarIconBold,
+  SolarIconBoldDuotone,
+  SolarIconLinear,
 } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { useDeleteEntity } from "@/hooks/use-delete-entity";
@@ -140,12 +135,16 @@ export default function PayableRealizationDetail({
             <HStack space="lg" className="justify-between">
               <VStack className="flex-1">
                 <Text className="text-gray-500 text-sm">Total</Text>
-                <Text className="text-sm font-bold">{formatRp(payable?.nominal ?? 0)}</Text>
+                <Text className="text-sm font-bold">
+                  {formatRp(payable?.nominal ?? 0)}
+                </Text>
               </VStack>
               <VStack className="flex-1 items-end">
                 <Text className="text-gray-500 text-sm">Belum Dibayar</Text>
                 <Text className="text-sm font-bold">
-                  {formatRp((payable?.nominal || 0) - (payable?.totalRealization || 0))}
+                  {formatRp(
+                    (payable?.nominal || 0) - (payable?.totalRealization || 0),
+                  )}
                 </Text>
               </VStack>
             </HStack>

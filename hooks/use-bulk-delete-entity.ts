@@ -5,7 +5,10 @@ import { ReactNode, useCallback } from "react";
 
 interface UseBulkDeleteEntityOptions {
   successMessage: string;
-  deleteMutation: { mutate: (payload: any, options: any) => void; isPending: boolean };
+  deleteMutation: {
+    mutate: (payload: any, options: any) => void;
+    isPending: boolean;
+  };
   onSuccess?: () => void;
   clearSelection?: () => void;
 }
@@ -57,7 +60,15 @@ export function useBulkDeleteEntity({
         loading: deleteMutation.isPending,
       });
     },
-    [deleteMutation, hidePopUpConfirm, showPopUpConfirm, toast, successMessage, onSuccess, clearSelection],
+    [
+      deleteMutation,
+      hidePopUpConfirm,
+      showPopUpConfirm,
+      toast,
+      successMessage,
+      onSuccess,
+      clearSelection,
+    ],
   );
 
   return { triggerBulkDelete, isBulkDeleting: deleteMutation.isPending };

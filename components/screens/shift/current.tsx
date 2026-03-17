@@ -72,13 +72,17 @@ export default function CurrentShift() {
               <Icon as={PlusCircle} size="md" />
               <Text className="text-typography-600">Saldo Awal</Text>
             </HStack>
-            <Text className="font-bold">{formatRp(currentShift?.initialBalance ?? 0)}</Text>
+            <Text className="font-bold">
+              {formatRp(currentShift?.initialBalance ?? 0)}
+            </Text>
           </HStack>
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-blue-100">
             <Text className="text-typography-600 font-bold">
               Total pendapatan dari sistem
             </Text>
-            <Text className="font-bold">{formatRp(currentShift?.initialBalance ?? 0)}</Text>
+            <Text className="font-bold">
+              {formatRp(currentShift?.initialBalance ?? 0)}
+            </Text>
           </HStack>
         </VStack>
       </ScrollView>

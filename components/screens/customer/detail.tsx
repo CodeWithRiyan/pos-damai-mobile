@@ -123,7 +123,13 @@ export default function CustomerDetail() {
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
-            triggerDelete(singleDeleteConfirm("pelanggan", customer?.id || "", customer?.name));
+            triggerDelete(
+              singleDeleteConfirm(
+                "pelanggan",
+                customer?.id || "",
+                customer?.name,
+              ),
+            );
             hideActionDrawer();
           },
         },

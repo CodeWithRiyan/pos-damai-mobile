@@ -107,7 +107,7 @@ export const usePurchaseReturn = (id: string) => {
         .limit(1);
 
       // Get creator name
-      let createdByName = 'Admin';
+      let createdByName = "Admin";
       if (returnRecord.createdBy) {
         const creatorResult = await db
           .select({ name: users.name })
@@ -160,19 +160,27 @@ export const useCreatePurchaseReturn = () => {
 
   return useMutation({
     mutationFn: async (
-      data: Omit<ReturnPurchasing, "id" | "local_ref_id" | "createdAt" | "updatedAt" | "createdBy" | "updatedBy">,
+      data: Omit<
+        ReturnPurchasing,
+        | "id"
+        | "local_ref_id"
+        | "createdAt"
+        | "updatedAt"
+        | "createdBy"
+        | "updatedBy"
+      >,
     ) => {
       if (!organizationId) throw new Error("Organization ID is required");
 
       const returnId = `ret_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
       let finalLocalRefId = "";
 
       await db.transaction(async (tx) => {
         finalLocalRefId = await generateLocalRefId(tx, purchaseReturns, "RTP");
-        
+
         // 1. Create Return Header
         await tx.insert(purchaseReturns).values({
           id: returnId,

@@ -573,7 +573,7 @@ export {
   ChevronsLeftIcon,
   ChevronsRightIcon,
   ChevronsUpDownIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
 };
 
 const CircleIcon = createIcon({

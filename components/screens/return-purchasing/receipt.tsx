@@ -131,7 +131,9 @@ export default function ReturnPurchasingReceipt() {
               <HStack className="justify-between items-center">
                 <Text className="text-typography-500">Tipe Pengembalian</Text>
                 <Text className="text-typography-500">
-                  {returnData.returnType === ReturnType.CASH ? "Uang" : "Tukar Barang"}
+                  {returnData.returnType === ReturnType.CASH
+                    ? "Uang"
+                    : "Tukar Barang"}
                 </Text>
               </HStack>
               <HStack className="justify-between items-center">

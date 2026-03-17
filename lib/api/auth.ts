@@ -77,7 +77,7 @@ export function useLogin() {
     mutationFn: async (credentials: LoginCredentials) => {
       const response = await apiClient.post<LoginResponse>(
         "/auth/login",
-        credentials
+        credentials,
       );
       return response.data;
     },

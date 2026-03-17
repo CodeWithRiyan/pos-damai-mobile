@@ -1,10 +1,15 @@
-import { InventoryTxType, PaymentMethod, Status } from "@/lib/constants";
+import {
+  DateFilterType,
+  InventoryTxType,
+  PaymentMethod,
+  Status,
+} from "@/lib/constants";
 import { useAuthStore } from "@/stores/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { and, desc, eq, isNull, like } from "drizzle-orm";
 import { db } from "../db";
 import * as schema from "../db/schema";
-import { generateLocalRefId } from "../utils/reference";
+import { formatDisplayRefId, generateLocalRefId } from "../utils/reference";
 
 export interface Purchase {
   id: string;
@@ -57,8 +62,19 @@ export interface CreatePurchasingDTO {
   }[];
 }
 
+export interface PurchasingFilterParams {
+  supplierId?: string;
+  userId?: string;
+  paymentTypeIds?: string[];
+  dateType?: "TODAY" | "THIS_WEEK" | "THIS_MONTH" | "THIS_YEAR" | "CUSTOM";
+  startDate?: Date;
+  endDate?: Date;
+  showReturnData?: boolean;
+  search?: string;
+}
+
 // Get all purchases from local SQLite
-export function usePurchases(params: { supplierId?: string } | void) {
+export function usePurchases(params: PurchasingFilterParams | void) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   const conditions = [
     eq(schema.purchases.organizationId, orgId),
@@ -69,14 +85,102 @@ export function usePurchases(params: { supplierId?: string } | void) {
     conditions.push(eq(schema.purchases.supplierId, params.supplierId));
   }
 
+  if (params?.userId) {
+    conditions.push(eq(schema.purchases.createdBy, params.userId));
+  }
+
   return useQuery({
-    queryKey: ["purchases", orgId, params?.supplierId],
+    queryKey: ["purchases", orgId, params],
     queryFn: async () => {
-      const purchaseResult = await db
+      let purchaseResult = await db
         .select()
         .from(schema.purchases)
         .where(and(...conditions))
         .orderBy(desc(schema.purchases.createdAt));
+
+      // Apply date filter in JS (since SQLite timestamps are integers)
+      if (params?.dateType) {
+        const now = new Date();
+        let filterStart: Date | undefined;
+        let filterEnd: Date | undefined;
+
+        if (params.dateType === DateFilterType.TODAY) {
+          filterStart = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+          );
+          filterEnd = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            23,
+            59,
+            59,
+            999,
+          );
+        } else if (params.dateType === DateFilterType.THIS_WEEK) {
+          const day = now.getDay();
+          const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+          filterStart = new Date(now.getFullYear(), now.getMonth(), diff);
+          filterEnd = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            diff + 6,
+            23,
+            59,
+            59,
+            999,
+          );
+        } else if (params.dateType === DateFilterType.THIS_MONTH) {
+          filterStart = new Date(now.getFullYear(), now.getMonth(), 1);
+          filterEnd = new Date(
+            now.getFullYear(),
+            now.getMonth() + 1,
+            0,
+            23,
+            59,
+            59,
+            999,
+          );
+        } else if (params.dateType === DateFilterType.THIS_YEAR) {
+          filterStart = new Date(now.getFullYear(), 0, 1);
+          filterEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+        } else if (
+          params.dateType === DateFilterType.CUSTOM &&
+          params.startDate &&
+          params.endDate
+        ) {
+          filterStart = new Date(
+            params.startDate.getFullYear(),
+            params.startDate.getMonth(),
+            params.startDate.getDate(),
+          );
+          filterEnd = new Date(
+            params.endDate.getFullYear(),
+            params.endDate.getMonth(),
+            params.endDate.getDate(),
+            23,
+            59,
+            59,
+            999,
+          );
+        }
+
+        if (filterStart && filterEnd) {
+          purchaseResult = purchaseResult.filter((p) => {
+            const date = p.createdAt;
+            return date && date >= filterStart! && date <= filterEnd!;
+          });
+        }
+      }
+
+      // Apply paymentTypeId filter
+      if (params?.paymentTypeIds && params.paymentTypeIds.length > 0) {
+        purchaseResult = purchaseResult.filter((p) =>
+          params.paymentTypeIds!.includes(p.paymentTypeId || ""),
+        );
+      }
 
       // Join with supplier names
       const purchasesWithSupplier = await Promise.all(
@@ -93,6 +197,17 @@ export function usePurchases(params: { supplierId?: string } | void) {
           };
         }),
       );
+
+      // Apply search filter
+      if (params?.search && params.search.trim()) {
+        const term = params.search.toLowerCase();
+        return (purchasesWithSupplier as Purchase[]).filter(
+          (p) =>
+            (formatDisplayRefId(p.local_ref_id) || p.id)
+              .toLowerCase()
+              .includes(term) || p.supplierName?.toLowerCase().includes(term),
+        );
+      }
 
       return purchasesWithSupplier as Purchase[];
     },
@@ -180,7 +295,9 @@ export async function fetchPurchase(id: string): Promise<Purchase | null> {
   return {
     ...purchase,
     supplierName: supplier[0]?.name || "Unknown",
-    paymentTypeName: paymentType[0]?.name || (purchase.paymentType === PaymentMethod.CASH ? "Tunai" : "Hutang"),
+    paymentTypeName:
+      paymentType[0]?.name ||
+      (purchase.paymentType === PaymentMethod.CASH ? "Tunai" : "Hutang"),
     items: itemsWithProductNames,
   } as Purchase;
 }
@@ -237,7 +354,8 @@ export function useCreatePurchasing() {
             .limit(1);
 
           const statusCompleted =
-            data.status === Status.COMPLETED && existing[0]?.status === Status.DRAFT;
+            data.status === Status.COMPLETED &&
+            existing[0]?.status === Status.DRAFT;
 
           if (statusCompleted) {
             finalLocalRefId = await generateLocalRefId(
@@ -323,7 +441,8 @@ export function useCreatePurchasing() {
               .limit(1);
 
             if (dbProduct) {
-              const updates: { purchasePrice?: number; supplierId?: string } = {};
+              const updates: { purchasePrice?: number; supplierId?: string } =
+                {};
               if (item.newPurchasePrice !== dbProduct.purchasePrice) {
                 updates.purchasePrice = item.newPurchasePrice;
               }

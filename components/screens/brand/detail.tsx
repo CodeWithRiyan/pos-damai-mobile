@@ -40,7 +40,13 @@ export default function BrandDetail() {
   const { id } = useLocalSearchParams();
   const brandId = id as string;
 
-  const { selectedItems: selectedProducts, handleItemPress, clearSelection: clearProductSelection, isSelected: isProductSelected, hasSelection: hasProductSelection } = useItemSelection<Product>();
+  const {
+    selectedItems: selectedProducts,
+    handleItemPress,
+    clearSelection: clearProductSelection,
+    isSelected: isProductSelected,
+    hasSelection: hasProductSelection,
+  } = useItemSelection<Product>();
 
   const { refetch: refetchBrands } = useBrands();
   const { data: brand, refetch: refetchBrand } = useBrand(brandId || "");
@@ -134,7 +140,9 @@ export default function BrandDetail() {
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
-            triggerDelete(singleDeleteConfirm("brand", brand?.id || "", brand?.name));
+            triggerDelete(
+              singleDeleteConfirm("brand", brand?.id || "", brand?.name),
+            );
             hideActionDrawer();
           },
         },
@@ -190,9 +198,7 @@ export default function BrandDetail() {
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Nilai Modal</Text>
-              <Text className="font-bold">
-                Rp {formatNumber(totalModal)}
-              </Text>
+              <Text className="font-bold">Rp {formatNumber(totalModal)}</Text>
             </HStack>
           </Box>
           <Box className="pr-4">
@@ -201,9 +207,7 @@ export default function BrandDetail() {
                 <Pressable
                   key={product.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    isProductSelected(product)
-                      ? "bg-gray-100"
-                      : ""
+                    isProductSelected(product) ? "bg-gray-100" : ""
                   }`}
                   onPress={() => {
                     if (hasProductSelection) {
@@ -240,9 +244,9 @@ export default function BrandDetail() {
                             (r) => r.type === PriceType.RETAIL,
                           )?.[0]?.minimumPurchase ?? 0
                         }@ Rp ${formatNumber(
-                          product.sellPrices
-                            ?.filter((r) => r.type === PriceType.RETAIL)?.[0]
-                            ?.price ?? 0
+                          product.sellPrices?.filter(
+                            (r) => r.type === PriceType.RETAIL,
+                          )?.[0]?.price ?? 0,
                         )}`}
                       </Text>
                       {!!product.sellPrices?.filter(
@@ -255,9 +259,9 @@ export default function BrandDetail() {
                               (r) => r.type === "WHOLESALE",
                             )?.[0]?.minimumPurchase ?? 0
                           }@ Rp ${formatNumber(
-                            product.sellPrices
-                              ?.filter((r) => r.type === "WHOLESALE")?.[0]
-                              ?.price ?? 0
+                            product.sellPrices?.filter(
+                              (r) => r.type === "WHOLESALE",
+                            )?.[0]?.price ?? 0,
                           )}`}
                         </Text>
                       )}

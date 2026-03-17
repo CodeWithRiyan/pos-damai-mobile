@@ -18,19 +18,23 @@ export interface Supplier {
   _dirty?: boolean | null;
 }
 
-export type CreateSupplierDTO = Omit<Supplier, "id" | "createdAt" | "updatedAt" | "organizationId" | "_dirty">;
+export type CreateSupplierDTO = Omit<
+  Supplier,
+  "id" | "createdAt" | "updatedAt" | "organizationId" | "_dirty"
+>;
 export type UpdateSupplierDTO = Partial<CreateSupplierDTO> & { id: string };
 
-
 export function useSuppliers() {
-  const orgId = useAuthStore(state => state.getOrganizationId());
+  const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
     queryKey: ["suppliers", orgId],
     queryFn: async () => {
       const result = await db
         .select()
         .from(suppliers)
-        .where(and(eq(suppliers.organizationId, orgId), isNull(suppliers.deletedAt)));
+        .where(
+          and(eq(suppliers.organizationId, orgId), isNull(suppliers.deletedAt)),
+        );
       return result as Supplier[];
     },
     enabled: !!orgId,
@@ -59,7 +63,7 @@ export function useCreateSupplier() {
       const orgId = useAuthStore.getState().getOrganizationId();
       const id = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date();
-      
+
       const userId = useAuthStore.getState().profile?.id;
 
       const newSupplier = {
@@ -77,7 +81,9 @@ export function useCreateSupplier() {
       return newSupplier;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["suppliers", data.organizationId] });
+      queryClient.invalidateQueries({
+        queryKey: ["suppliers", data.organizationId],
+      });
     },
   });
 }

@@ -33,6 +33,7 @@ import { useCreateFinance } from "@/lib/api/finances";
 import { usePaymentTypes } from "@/lib/api/payment-types";
 import { useTransactionReturn } from "@/lib/api/return-transaction";
 import { useCreateTransaction } from "@/lib/api/transactions";
+import { CalcType, FinanceType, Status } from "@/lib/constants";
 import {
   findSellPrice,
   getDiscountedPrice,
@@ -40,12 +41,11 @@ import {
 } from "@/lib/price";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import { useTransactionStore } from "@/stores/transaction";
-import { CalcType, FinanceType, Status } from "@/lib/constants";
 import classNames from "classnames";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Check, PlusIcon } from "lucide-react-native";
 
-import { formatRp, formatNumber } from "@/lib/utils/format";
+import { formatNumber, formatRp } from "@/lib/utils/format";
 // Payment types are now loaded from the database via usePaymentTypes hook
 
 export default function TransactionCheckoutForm() {
@@ -60,9 +60,9 @@ export default function TransactionCheckoutForm() {
   const { data: returnData } = useTransactionReturn(returnId || "");
   const { data: user } = useCurrentUser();
   const { data: paymentTypesData } = usePaymentTypes();
-  const { customer, cart, cartTotal, status, setCheckoutData } =
+  const { customer, employee, cart, cartTotal, status, setCheckoutData } =
     useTransactionStore();
-  const { resetCart, setCustomer } = useTransactionStore();
+  const { resetCart, setCustomer, setEmployee } = useTransactionStore();
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
 
   // Map payment types to select options
@@ -198,8 +198,7 @@ export default function TransactionCheckoutForm() {
       // Return item exchange always uses cash payment
       const cashPaymentType = paymentTypesData?.find(
         (pt) =>
-          pt.name.toLowerCase() === "cash" ||
-          pt.name.toLowerCase() === "tunai",
+          pt.name.toLowerCase() === "cash" || pt.name.toLowerCase() === "tunai",
       );
       form.setValue(
         "paymentTypeId",
@@ -239,7 +238,8 @@ export default function TransactionCheckoutForm() {
           : Number(data.totalPaid || "0") + (returnData?.totalAmount || 0),
         commission: commission,
         paymentTypeId: data.paymentTypeId,
-        customerId: customer?.id || "",
+        customerId: employee ? undefined : customer?.id || "",
+        employeeId: employee?.id,
         returnId: returnId || undefined,
         transactionDate: new Date(),
         status: status,
@@ -290,6 +290,7 @@ export default function TransactionCheckoutForm() {
           totalItems: cartTotal,
           totalPaid: data.totalPaid,
           customerId: customer?.id || "",
+          employeeId: employee?.id,
           transactionDate: new Date(),
           status: status,
           note: data.note || "",
@@ -311,6 +312,7 @@ export default function TransactionCheckoutForm() {
         }
         resetCart();
         setCustomer(null);
+        setEmployee(null);
       }
     } catch (error) {
       console.error("[onSubmit] Error creating transaction:", error);
@@ -320,7 +322,8 @@ export default function TransactionCheckoutForm() {
   const createFinance = () => {
     createFinanceMutation.mutate(
       {
-        type: excessAndLackAmount > 0 ? FinanceType.EXPENSES : FinanceType.INCOME,
+        type:
+          excessAndLackAmount > 0 ? FinanceType.EXPENSES : FinanceType.INCOME,
         expensesType: excessAndLackAmount > 0 ? "OTHER_EXPENSES" : undefined,
         transactionDate: new Date(),
         nominal: Math.abs(excessAndLackAmount),
@@ -384,38 +387,42 @@ export default function TransactionCheckoutForm() {
         <VStack className="flex-1 border-r border-gray-300">
           <ScrollView className="flex-1">
             <VStack className="flex-1">
-              {customer && (
+              {(customer || employee) && (
                 <HStack space="sm" className="px-4 py-3 bg-primary-100">
                   <HStack space="sm" className="items-center">
                     <SolarIconBoldDuotone
                       name="UserCircle"
                       size={24}
-                      color="#3b82f6"
+                      color={employee ? "#f59e0b" : "#3b82f6"}
                     />
                     <VStack>
                       <Text className="text-primary-500 font-bold">
-                        {customer.name}
+                        {employee ? employee.name : customer?.name}
                       </Text>
                       <Text className="text-typography-500 text-sm font-bold">
-                        {customer.code}
+                        {employee
+                          ? `Karyawan - ${employee.username}`
+                          : customer?.code}
                       </Text>
                     </VStack>
                   </HStack>
-                  <VStack className="flex-1 items-end">
-                    <Text className="text-typography-500 text-sm font-bold">
-                      {!returnCustomerId ? "Poin" : "Total Retur"}
-                    </Text>
-                    <Text
-                      className={classNames(
-                        "text-sm font-bold text-success-500",
-                        returnCustomerId && "text-error-500",
-                      )}
-                    >
-                      {!returnCustomerId
-                        ? formatNumber(customer.points ?? 0)
-                        : formatRp(returnData?.totalAmount || 0)}
-                    </Text>
-                  </VStack>
+                  {customer && !employee && (
+                    <VStack className="flex-1 items-end">
+                      <Text className="text-typography-500 text-sm font-bold">
+                        {!returnCustomerId ? "Poin" : "Total Retur"}
+                      </Text>
+                      <Text
+                        className={classNames(
+                          "text-sm font-bold text-success-500",
+                          returnCustomerId && "text-error-500",
+                        )}
+                      >
+                        {!returnCustomerId
+                          ? formatNumber(customer.points ?? 0)
+                          : formatRp(returnData?.totalAmount || 0)}
+                      </Text>
+                    </VStack>
+                  )}
                 </HStack>
               )}
               <HStack className="justify-center p-6 flex-col items-center">
@@ -432,8 +439,7 @@ export default function TransactionCheckoutForm() {
                 )}
                 {commission > 0 && (
                   <Text className="text-warning-600 mt-2 font-bold">
-                    *Termasuk tambahan biaya Rp{" "}
-                    {formatNumber(commission)}
+                    *Termasuk tambahan biaya Rp {formatNumber(commission)}
                   </Text>
                 )}
               </HStack>
@@ -534,21 +540,24 @@ export default function TransactionCheckoutForm() {
               <VStack className="flex-1">
                 <HStack className="justify-center p-6 flex-col items-center">
                   <Heading size="3xl" className="font-bold">
-                    Rp{" "}
-                    {totalPaid
-                      ? formatNumber(parseFloat(totalPaid))
-                      : "0"}
+                    Rp {totalPaid ? formatNumber(parseFloat(totalPaid)) : "0"}
                   </Heading>
                   {Number(totalPaid) > form.getValues("totalPurchase") && (
                     <Text className="text-success-500 font-bold mt-2">
                       Kembalian:{" "}
-                      {formatRp(Number(totalPaid) - form.getValues("totalPurchase"))}
+                      {formatRp(
+                        Number(totalPaid) - form.getValues("totalPurchase"),
+                      )}
                     </Text>
                   )}
                 </HStack>
                 <InputVirtualKeyboard
                   nominal={totalPaid}
-                  totalAmount={grandTotal.toString()}
+                  exactChange={
+                    !returnId
+                      ? grandTotal.toString()
+                      : Math.abs(excessAndLackAmount).toString()
+                  }
                   onChange={(value) => form.setValue("totalPaid", value)}
                 />
               </VStack>

@@ -1,6 +1,6 @@
-import { Button, ButtonText } from '@/components/ui/button';
-import { Heading } from '@/components/ui/heading';
-import { CloseIcon, Icon } from '@/components/ui/icon';
+import { Button, ButtonText } from "@/components/ui/button";
+import { Heading } from "@/components/ui/heading";
+import { CloseIcon, Icon } from "@/components/ui/icon";
 import {
   Modal,
   ModalBackdrop,
@@ -9,11 +9,11 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-} from '@/components/ui/modal';
-import { Text } from '@/components/ui/text';
-import { apiClient } from '@/lib/api/client';
-import { useSyncQueueStore } from '@/stores/sync-queue-store';
-import { useState } from 'react';
+} from "@/components/ui/modal";
+import { Text } from "@/components/ui/text";
+import { apiClient } from "@/lib/api/client";
+import { useSyncQueueStore } from "@/stores/sync-queue-store";
+import { useState } from "react";
 
 interface SyncConfirmationModalProps {
   isOpen: boolean;
@@ -29,7 +29,7 @@ export function SyncConfirmationModal({
   const setIsSyncing = useSyncQueueStore((state) => state.setIsSyncing);
   const removeFromQueue = useSyncQueueStore((state) => state.removeFromQueue);
   const setLastSyncAt = useSyncQueueStore((state) => state.setLastSyncAt);
-  
+
   const [error, setError] = useState<string | null>(null);
 
   const handleSync = async () => {
@@ -42,13 +42,13 @@ export function SyncConfirmationModal({
         const { endpoint, data, type } = operation;
 
         switch (type) {
-          case 'create':
+          case "create":
             await apiClient.post(endpoint, data);
             break;
-          case 'update':
+          case "update":
             await apiClient.put(endpoint, data);
             break;
-          case 'delete':
+          case "delete":
             await apiClient.delete(endpoint);
             break;
         }
@@ -60,8 +60,8 @@ export function SyncConfirmationModal({
       setLastSyncAt(Date.now());
       onClose();
     } catch (err) {
-      setError('Failed to sync some operations. Please try again.');
-      console.error('Sync error:', err);
+      setError("Failed to sync some operations. Please try again.");
+      console.error("Sync error:", err);
     } finally {
       setIsSyncing(false);
     }
@@ -79,11 +79,10 @@ export function SyncConfirmationModal({
         </ModalHeader>
         <ModalBody>
           <Text>
-            You have {queue.length} pending {queue.length === 1 ? 'change' : 'changes'} to sync with the server.
+            You have {queue.length} pending{" "}
+            {queue.length === 1 ? "change" : "changes"} to sync with the server.
           </Text>
-          {error ? (
-            <Text className="mt-2 text-error-500">{error}</Text>
-          ) : null}
+          {error ? <Text className="mt-2 text-error-500">{error}</Text> : null}
         </ModalBody>
         <ModalFooter>
           <Button
@@ -101,9 +100,7 @@ export function SyncConfirmationModal({
             onPress={handleSync}
             disabled={isSyncing || queue.length === 0}
           >
-            <ButtonText>
-              {isSyncing ? 'Syncing...' : 'Sync Now'}
-            </ButtonText>
+            <ButtonText>{isSyncing ? "Syncing..." : "Sync Now"}</ButtonText>
           </Button>
         </ModalFooter>
       </ModalContent>

@@ -4,10 +4,10 @@ import { useLocalSearchParams } from "expo-router";
 
 export default function ProductActionScreen() {
   const { action } = useLocalSearchParams<{ action: string; id: string }>();
-  
+
   if (action === "edit") {
     return <ProductForm />;
   }
-  
+
   return <ProductDetail />;
 }

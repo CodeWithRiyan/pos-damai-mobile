@@ -24,12 +24,13 @@ export const useStockOpnameStore = create<StockOpnameState>((set) => ({
   addProductVariantId: null,
   openConfirm: false,
   cart: [],
-  setAddProduct: (state, variantId) => set({ addProduct: state, addProductVariantId: variantId || null }),
+  setAddProduct: (state, variantId) =>
+    set({ addProduct: state, addProductVariantId: variantId || null }),
   addCartItem: (item) =>
     set((state) => {
       const existingItemIndex = state.cart?.findIndex(
-        (cartItem) => 
-          cartItem.product.id === item.product.id && 
+        (cartItem) =>
+          cartItem.product.id === item.product.id &&
           cartItem.variant?.id === item.variant?.id,
       );
 
@@ -53,7 +54,10 @@ export const useStockOpnameStore = create<StockOpnameState>((set) => ({
     set((state) => {
       const updatedCart = (state.cart ?? []).filter(
         (cartItem) =>
-          !(cartItem.product.id === productId && cartItem.variant?.id === variantId),
+          !(
+            cartItem.product.id === productId &&
+            cartItem.variant?.id === variantId
+          ),
       );
 
       return { cart: updatedCart };

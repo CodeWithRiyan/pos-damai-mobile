@@ -369,7 +369,8 @@ export default function ProductForm() {
         purchasePrice: product.purchasePrice,
         stock: product.stock,
         minimumStock: product.minimumStock,
-        variants: product.type === ProductType.VARIANTS ? product.variants : null,
+        variants:
+          product.type === ProductType.VARIANTS ? product.variants : null,
         unitVariants:
           product.type === ProductType.MULTIUNIT
             ? product.variants?.map((v) => {
@@ -386,7 +387,9 @@ export default function ProductForm() {
                 };
               })
             : null,
-        retailPrice: product.sellPrices.filter((r) => r.type === PriceType.RETAIL),
+        retailPrice: product.sellPrices.filter(
+          (r) => r.type === PriceType.RETAIL,
+        ),
         wholesalePrice: product.sellPrices.filter(
           (r) => r.type === PriceType.WHOLESALE,
         ),

@@ -59,7 +59,10 @@ export default function ProductLog() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header={`LOG PRODUK ${product?.name?.toUpperCase() ?? ""}`} isGoBack />
+      <Header
+        header={`LOG PRODUK ${product?.name?.toUpperCase() ?? ""}`}
+        isGoBack
+      />
 
       <VStack className="flex-1">
         {/* Log List */}
@@ -82,12 +85,12 @@ export default function ProductLog() {
           keyExtractor={(item, index) => item.id || index.toString()}
           showsVerticalScrollIndicator={false}
           renderItem={({ item: log }) => (
-            <Pressable
-              className="py-3 px-8 border-b border-background-200 active:bg-gray-100"
-            >
+            <Pressable className="py-3 px-8 border-b border-background-200 active:bg-gray-100">
               <Grid _extra={{ className: "grid-cols-12" }}>
                 <GridItem _extra={{ className: "col-span-5" }}>
-                  <Text>{dayjs(log.createdAt).format("DD-MM-YYYY HH:mm:ss")}</Text>
+                  <Text>
+                    {dayjs(log.createdAt).format("DD-MM-YYYY HH:mm:ss")}
+                  </Text>
                 </GridItem>
                 <GridItem _extra={{ className: "col-span-5" }}>
                   <Text>{activityHelper(log)}</Text>

@@ -24,9 +24,10 @@ export default function PurchasingSupplierList() {
   const [search, setSearch] = useState("");
   const router = useRouter();
 
-  const filteredSuppliers = suppliers?.filter(
-    (s) => !search || s.name.toLowerCase().includes(search.toLowerCase()),
-  ) ?? [];
+  const filteredSuppliers =
+    suppliers?.filter(
+      (s) => !search || s.name.toLowerCase().includes(search.toLowerCase()),
+    ) ?? [];
 
   return (
     <Box className="flex-1 bg-white">

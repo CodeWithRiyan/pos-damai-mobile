@@ -185,7 +185,9 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
                         {
                           label: "Import Data",
                           icon: "Import",
-                          onPress: () => { hideActionDrawer(); },
+                          onPress: () => {
+                            hideActionDrawer();
+                          },
                         },
                       ],
                     });
@@ -261,12 +263,13 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
                   Total Belum Lunas
                 </Text>
                 <Heading size="xl" className="text-error-500">
-                  {formatRp(payableBySupplier
-                    .reduce(
+                  {formatRp(
+                    payableBySupplier.reduce(
                       (acc, curr) =>
                         acc + (curr.totalPayable - curr.totalRealization),
                       0,
-                    ))}
+                    ),
+                  )}
                 </Heading>
               </VStack>
               <VStack className="flex-1 items-end">
@@ -389,7 +392,9 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
                     </HStack>
                     {payable.totalRealization < payable.totalPayable && (
                       <Text size="xs" className="font-bold text-error-500">
-                        {formatRp(payable.totalPayable - payable.totalRealization)}
+                        {formatRp(
+                          payable.totalPayable - payable.totalRealization,
+                        )}
                       </Text>
                     )}
                   </VStack>
@@ -398,9 +403,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
             )}
             ListEmptyComponent={
               <Box className="p-8 items-center">
-                <Text className="text-slate-400 italic">
-                  No payable found
-                </Text>
+                <Text className="text-slate-400 italic">No payable found</Text>
               </Box>
             }
           />

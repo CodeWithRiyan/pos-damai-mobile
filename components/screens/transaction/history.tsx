@@ -5,15 +5,10 @@ import Header from "@/components/header";
 import {
   Heading,
   HStack,
-  Input,
-  InputField,
-  InputIcon,
-  InputSlot,
   Pressable,
   Radio,
   RadioGroup,
   RadioLabel,
-  SearchIcon,
   Text,
   VStack,
 } from "@/components/ui";
@@ -25,11 +20,11 @@ import {
 } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { useTransactions } from "@/lib/api/transactions";
+import { DateFilterType, Status } from "@/lib/constants";
 import { formatDisplayRefId } from "@/lib/utils/reference";
 import classNames from "classnames";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { DateFilterType, Status } from "@/lib/constants";
 import React, { useMemo, useState } from "react";
 import { FlatList, ScrollView } from "react-native";
 import TransactionFilter, {
@@ -37,7 +32,7 @@ import TransactionFilter, {
   transactionFilterInitialValues,
 } from "./filter";
 
-import { formatRp, formatNumber } from "@/lib/utils/format";
+import { formatNumber, formatRp } from "@/lib/utils/format";
 interface ChartCategory {
   name: string;
   code: string;
@@ -52,16 +47,15 @@ const chartCategoryDefinitions: ChartCategory[] = [
 
 export default function TransactionHistory({
   isReport,
-  showSearch = true,
 }: {
   isReport?: boolean;
-  showSearch?: boolean;
 }) {
   const { customerId } = useLocalSearchParams<{ customerId: string }>();
   const header =
     isReport && !customerId ? "LAPORAN PENJUALAN" : "RIWAYAT TRANSAKSI";
   const router = useRouter();
 
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [transactionFilter, setTransactionFilter] =
     useState<TransactionFilterFormValues>(transactionFilterInitialValues);
   const [chartCategory, setChartCategory] = useState("totalTransaction");
@@ -69,12 +63,12 @@ export default function TransactionHistory({
   const { data: allTransactions, isLoading } = useTransactions({
     customerId,
     userId: transactionFilter.userId || undefined,
-    paymentTypeId: transactionFilter.paymentTypeId ? [transactionFilter.paymentTypeId] : undefined,
+    paymentTypeIds: transactionFilter.paymentTypeIds || [],
     dateType: transactionFilter.dateType,
     startDate: transactionFilter.startDate,
     endDate: transactionFilter.endDate,
+    search: transactionFilter.search || undefined,
   });
-  const [searchQuery, setSearchQuery] = useState("");
 
   const completedTransactions = useMemo(
     () => allTransactions?.filter((t) => t.status === Status.COMPLETED) ?? [],
@@ -214,7 +208,7 @@ export default function TransactionHistory({
       : isThisYear
         ? dayjs(d.date, "YYYY-MM")
         : dayjs(d.date, "YYYY-MM-DD");
-    
+
     return {
       value:
         chartCategory === "totalTransaction"
@@ -225,12 +219,12 @@ export default function TransactionHistory({
       label: isToday
         ? parsed.format("HH")
         : isThisYear
-          ? parsed.format("MM")  // Show month number (01-12)
+          ? parsed.format("MM") // Show month number (01-12)
           : parsed.format("DD"),
       pointerLabel: isToday
         ? parsed.format("HH:00")
         : isThisYear
-          ? parsed.format("MMMM YYYY")  // Show "January 2026" in tooltip
+          ? parsed.format("MMMM YYYY") // Show "January 2026" in tooltip
           : parsed.format("DD MMM YYYY"),
       pointerValue:
         chartCategory === "totalTransaction"
@@ -241,14 +235,7 @@ export default function TransactionHistory({
     };
   });
 
-  const transactions =
-    completedTransactions.filter(
-      (t) =>
-        (formatDisplayRefId(t.local_ref_id) || t.id)
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        t.customerName?.toLowerCase().includes(searchQuery.toLowerCase()),
-    ) || [];
+  const transactions = completedTransactions;
 
   if (isLoading) {
     return (
@@ -264,24 +251,28 @@ export default function TransactionHistory({
   return (
     <VStack className="flex-1 bg-white">
       <Header header={header} isGoBack />
-      <VStack space="md" className="p-4 shadow-lg bg-background-0 items-center">
-        {showSearch ? (
-          <Input className="w-full border border-background-300 rounded-lg h-10">
-            <InputSlot className="pl-3">
-              <InputIcon as={SearchIcon} />
-            </InputSlot>
-            <InputField
-              placeholder={`Cari no transaksi${!customerId ? " atau nama pelanggan" : ""}`}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
+      <ScrollView
+        className="bg-background-0 shadow-lg flex-none"
+        showsVerticalScrollIndicator={false}
+      >
+        <VStack space="md" className="p-4 items-center">
+          <FilterAccordion
+            title={
+              isReport ? "Filter Laporan Penjualan" : "Filter Riwayat Transaksi"
+            }
+            isExpanded={isFilterExpanded}
+            onToggle={() => setIsFilterExpanded((prev) => !prev)}
+          >
+            <TransactionFilter
+              filterValues={transactionFilter}
+              onFilter={(data) => {
+                setTransactionFilter(data);
+                setIsFilterExpanded(false);
+              }}
             />
-          </Input>
-        ) : (
-          <FilterAccordion title="Filter Laporan Penjualan">
-            <TransactionFilter onFilter={setTransactionFilter} />
           </FilterAccordion>
-        )}
-      </VStack>
+        </VStack>
+      </ScrollView>
       <Grid _extra={{ className: "grid-cols-2" }} className="flex-1">
         {isReport && (
           <GridItem _extra={{ className: "col-span-1" }}>
@@ -399,8 +390,7 @@ export default function TransactionHistory({
                             Total
                           </Text>
                           <Text className="font-bold">
-                            Rp{" "}
-                            {formatNumber(transaction.totalAmount ?? 0)}
+                            Rp {formatNumber(transaction.totalAmount ?? 0)}
                           </Text>
                         </VStack>
                         <VStack>

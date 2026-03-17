@@ -1,6 +1,6 @@
-import { useSyncQueueStore } from '@/stores/sync-queue-store';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { apiClient, ApiResponse, isConnectionError } from './client';
+import { useSyncQueueStore } from "@/stores/sync-queue-store";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiClient, ApiResponse, isConnectionError } from "./client";
 
 export interface Organization {
   id: string;
@@ -26,9 +26,10 @@ export interface UpdateOrganizationDTO {
 // Get all organizations
 export function useOrganizations() {
   return useQuery({
-    queryKey: ['organizations'],
+    queryKey: ["organizations"],
     queryFn: async () => {
-      const response = await apiClient.get<ApiResponse<Organization[]>>('/organizations');
+      const response =
+        await apiClient.get<ApiResponse<Organization[]>>("/organizations");
       return response.data.data;
     },
   });
@@ -37,9 +38,11 @@ export function useOrganizations() {
 // Get single organization
 export function useOrganization(id: string) {
   return useQuery({
-    queryKey: ['organizations', id],
+    queryKey: ["organizations", id],
     queryFn: async () => {
-      const response = await apiClient.get<ApiResponse<Organization>>(`/organizations/${id}`);
+      const response = await apiClient.get<ApiResponse<Organization>>(
+        `/organizations/${id}`,
+      );
       return response.data.data;
     },
     enabled: !!id,
@@ -52,14 +55,17 @@ export function useCreateOrganization() {
 
   return useMutation({
     mutationFn: async (data: CreateOrganizationDTO) => {
-      const response = await apiClient.post<ApiResponse<Organization>>('/organizations', data);
+      const response = await apiClient.post<ApiResponse<Organization>>(
+        "/organizations",
+        data,
+      );
       return response.data.data;
     },
     onError: (error, variables) => {
       if (isConnectionError(error)) {
         addToQueue({
-          type: 'create',
-          endpoint: '/organizations',
+          type: "create",
+          endpoint: "/organizations",
           data: variables,
         });
       }
@@ -74,13 +80,16 @@ export function useUpdateOrganization() {
   return useMutation({
     mutationFn: async (data: UpdateOrganizationDTO) => {
       const { id, ...rest } = data;
-      const response = await apiClient.put<ApiResponse<Organization>>(`/organizations/${id}`, rest);
+      const response = await apiClient.put<ApiResponse<Organization>>(
+        `/organizations/${id}`,
+        rest,
+      );
       return response.data.data;
     },
     onError: (error, variables) => {
       if (isConnectionError(error)) {
         addToQueue({
-          type: 'update',
+          type: "update",
           endpoint: `/organizations/${variables.id}`,
           data: variables,
         });
@@ -95,13 +104,15 @@ export function useDeleteOrganization() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiClient.delete<ApiResponse<void>>(`/organizations/${id}`);
+      const response = await apiClient.delete<ApiResponse<void>>(
+        `/organizations/${id}`,
+      );
       return response.data.data;
     },
     onError: (error, id) => {
       if (isConnectionError(error)) {
         addToQueue({
-          type: 'delete',
+          type: "delete",
           endpoint: `/organizations/${id}`,
           data: null,
         });

@@ -162,6 +162,13 @@
       "when": 1773900000000,
       "tag": "0022_add_discount_profit_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1773705538684,
+      "tag": "0023_outgoing_fixer",
+      "breakpoints": true
     }
   ]
 }

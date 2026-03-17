@@ -54,9 +54,7 @@ export default function UserLog() {
           keyExtractor={(item, index) => item.id || index.toString()}
           showsVerticalScrollIndicator={false}
           renderItem={({ item: log }) => (
-            <Pressable
-              className="py-3 px-8 border-b border-background-200 active:bg-gray-100"
-            >
+            <Pressable className="py-3 px-8 border-b border-background-200 active:bg-gray-100">
               <Grid _extra={{ className: "grid-cols-2" }}>
                 <GridItem _extra={{ className: "col-span-1" }}>
                   <Text>{dayjs(log.date).format("DD-MM-YYYY HH:mm:ss")}</Text>

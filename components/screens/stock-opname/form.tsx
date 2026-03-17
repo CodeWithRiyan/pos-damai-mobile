@@ -103,7 +103,6 @@ export default function StockOpnameConfirmForm({
     }
   }, [openConfirm, cart]);
 
-
   const onSubmit: SubmitHandler<StockOpnameFormValues> = (
     data: StockOpnameFormValues,
   ) => {

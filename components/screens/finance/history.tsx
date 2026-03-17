@@ -91,9 +91,7 @@ export default function FinanceHistory() {
         className="flex-1"
         keyExtractor={(item) => item.id}
         renderItem={({ item: purchase }) => {
-          const date = purchase.createdAt
-            ? dayjs(purchase.createdAt)
-            : dayjs();
+          const date = purchase.createdAt ? dayjs(purchase.createdAt) : dayjs();
           return (
             <Pressable
               className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
@@ -148,7 +146,8 @@ export default function FinanceHistory() {
                   </HStack>
                   <HStack className="justify-between">
                     <Text className="text-typography-400 font-bold">
-                      No: {formatDisplayRefId(purchase.local_ref_id) || purchase.id}
+                      No:{" "}
+                      {formatDisplayRefId(purchase.local_ref_id) || purchase.id}
                     </Text>
                   </HStack>
                 </VStack>
