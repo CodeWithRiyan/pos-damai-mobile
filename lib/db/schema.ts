@@ -263,6 +263,7 @@ export const transactions = sqliteTable("transactions", {
   id: text("id").primaryKey(),
   local_ref_id: text("local_ref_id").unique(),
   customerId: text("customerId"),
+  employeeId: text("employeeId"),
   totalAmount: real("totalAmount").notNull(),
   totalPaid: real("totalPaid").notNull(),
   commission: real("commission").default(0),

@@ -181,9 +181,11 @@ export default function TransactionReceipt() {
                 </Text>
               </HStack>
               <HStack className="justify-between items-center">
-                <Text className="text-typography-500">Pelanggan</Text>
                 <Text className="text-typography-500">
-                  {transaction.customerName}
+                  {transaction.employeeId ? "Karyawan" : "Pelanggan"}
+                </Text>
+                <Text className="text-typography-500">
+                  {transaction.employeeName || transaction.customerName}
                 </Text>
               </HStack>
 
@@ -197,7 +199,8 @@ export default function TransactionReceipt() {
             <VStack>
               <HStack className="justify-between items-center mt-1">
                 <Text className="text-typography-500">
-                  Pelanggan: {transaction.customerName}
+                  {transaction.employeeId ? "Karyawan" : "Pelanggan"}:{" "}
+                  {transaction.employeeName || transaction.customerName}
                 </Text>
               </HStack>
             </VStack>

@@ -963,6 +963,7 @@ export class SyncEngine {
         }) => ({
           ...rest,
           customerId: rest.customerId || undefined,
+          employeeId: rest.employeeId || undefined,
           note: rest.note || undefined,
           totalAmount:
             typeof totalAmount === "number"

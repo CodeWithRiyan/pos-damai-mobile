@@ -60,9 +60,9 @@ export default function TransactionCheckoutForm() {
   const { data: returnData } = useTransactionReturn(returnId || "");
   const { data: user } = useCurrentUser();
   const { data: paymentTypesData } = usePaymentTypes();
-  const { customer, cart, cartTotal, status, setCheckoutData } =
+  const { customer, employee, cart, cartTotal, status, setCheckoutData } =
     useTransactionStore();
-  const { resetCart, setCustomer } = useTransactionStore();
+  const { resetCart, setCustomer, setEmployee } = useTransactionStore();
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
 
   // Map payment types to select options
@@ -238,7 +238,8 @@ export default function TransactionCheckoutForm() {
           : Number(data.totalPaid || "0") + (returnData?.totalAmount || 0),
         commission: commission,
         paymentTypeId: data.paymentTypeId,
-        customerId: customer?.id || "",
+        customerId: employee ? undefined : customer?.id || "",
+        employeeId: employee?.id,
         returnId: returnId || undefined,
         transactionDate: new Date(),
         status: status,
@@ -289,6 +290,7 @@ export default function TransactionCheckoutForm() {
           totalItems: cartTotal,
           totalPaid: data.totalPaid,
           customerId: customer?.id || "",
+          employeeId: employee?.id,
           transactionDate: new Date(),
           status: status,
           note: data.note || "",
@@ -310,6 +312,7 @@ export default function TransactionCheckoutForm() {
         }
         resetCart();
         setCustomer(null);
+        setEmployee(null);
       }
     } catch (error) {
       console.error("[onSubmit] Error creating transaction:", error);
@@ -384,38 +387,42 @@ export default function TransactionCheckoutForm() {
         <VStack className="flex-1 border-r border-gray-300">
           <ScrollView className="flex-1">
             <VStack className="flex-1">
-              {customer && (
+              {(customer || employee) && (
                 <HStack space="sm" className="px-4 py-3 bg-primary-100">
                   <HStack space="sm" className="items-center">
                     <SolarIconBoldDuotone
                       name="UserCircle"
                       size={24}
-                      color="#3b82f6"
+                      color={employee ? "#f59e0b" : "#3b82f6"}
                     />
                     <VStack>
                       <Text className="text-primary-500 font-bold">
-                        {customer.name}
+                        {employee ? employee.name : customer?.name}
                       </Text>
                       <Text className="text-typography-500 text-sm font-bold">
-                        {customer.code}
+                        {employee
+                          ? `Karyawan - ${employee.username}`
+                          : customer?.code}
                       </Text>
                     </VStack>
                   </HStack>
-                  <VStack className="flex-1 items-end">
-                    <Text className="text-typography-500 text-sm font-bold">
-                      {!returnCustomerId ? "Poin" : "Total Retur"}
-                    </Text>
-                    <Text
-                      className={classNames(
-                        "text-sm font-bold text-success-500",
-                        returnCustomerId && "text-error-500",
-                      )}
-                    >
-                      {!returnCustomerId
-                        ? formatNumber(customer.points ?? 0)
-                        : formatRp(returnData?.totalAmount || 0)}
-                    </Text>
-                  </VStack>
+                  {customer && !employee && (
+                    <VStack className="flex-1 items-end">
+                      <Text className="text-typography-500 text-sm font-bold">
+                        {!returnCustomerId ? "Poin" : "Total Retur"}
+                      </Text>
+                      <Text
+                        className={classNames(
+                          "text-sm font-bold text-success-500",
+                          returnCustomerId && "text-error-500",
+                        )}
+                      >
+                        {!returnCustomerId
+                          ? formatNumber(customer.points ?? 0)
+                          : formatRp(returnData?.totalAmount || 0)}
+                      </Text>
+                    </VStack>
+                  )}
                 </HStack>
               )}
               <HStack className="justify-center p-6 flex-col items-center">

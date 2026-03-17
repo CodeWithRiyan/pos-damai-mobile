@@ -10,7 +10,7 @@ import {
 import { Role } from "./roles";
 import { db } from "../db";
 import * as schema from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 export interface User {
   id: string;
   email: string | null;
@@ -183,6 +183,27 @@ export function useBulkDeleteUser() {
         });
       }
     },
+  });
+}
+
+// Get all users from local SQLite (offline-first)
+export function useLocalUsers() {
+  const orgId = useAuthStore((state) => state.getOrganizationId());
+
+  return useQuery({
+    queryKey: ["local-users", orgId],
+    queryFn: async () => {
+      return db
+        .select()
+        .from(schema.users)
+        .where(
+          and(
+            eq(schema.users.organizationId, orgId),
+            isNull(schema.users.deletedAt),
+          ),
+        );
+    },
+    enabled: !!orgId,
   });
 }
 
