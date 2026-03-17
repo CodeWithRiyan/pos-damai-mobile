@@ -17,29 +17,46 @@ import { Spinner } from "@/components/ui/spinner";
 import { useCustomers } from "@/lib/api/customers";
 import { useCustomerIdsWithTransactions } from "@/lib/api/transactions";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import { FlatList } from "react-native";
+import React, { useCallback, useState } from "react";
+import { FlatList, RefreshControl } from "react-native";
 
 export default function PurchasingCustomerList() {
-  const { data: customers, isLoading: loadingCustomers } = useCustomers();
-  const { data: customerIdsWithTx, isLoading: loadingTx } =
-    useCustomerIdsWithTransactions();
+  const {
+    data: customers,
+    isLoading: loadingCustomers,
+    refetch: refetchCustomers,
+  } = useCustomers();
+  const {
+    data: customerIdsWithTx,
+    isLoading: loadingTx,
+    refetch: refetchTx,
+  } = useCustomerIdsWithTransactions();
   const [search, setSearch] = useState("");
   const router = useRouter();
 
   const isLoading = loadingCustomers || loadingTx;
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetchCustomers();
+    await refetchTx();
+    setRefreshing(false);
+  }, [refetchCustomers, refetchTx]);
 
   const filteredCustomers =
-    isLoading || !customerIdsWithTx
+    isLoading || !Array.isArray(customerIdsWithTx)
       ? []
       : (customers ?? []).filter(
           (s) =>
-            customerIdsWithTx.has(s.id) &&
+            customerIdsWithTx.includes(s.id) &&
             (!search || s.name.toLowerCase().includes(search.toLowerCase())),
         );
 
   const hasNoCustomersWithTx =
-    !isLoading && customerIdsWithTx && customerIdsWithTx.size === 0;
+    !isLoading &&
+    Array.isArray(customerIdsWithTx) &&
+    customerIdsWithTx.length === 0;
 
   return (
     <Box className="flex-1 bg-white">
@@ -76,6 +93,9 @@ export default function PurchasingCustomerList() {
         <FlatList
           data={filteredCustomers}
           className="flex-1"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
           keyExtractor={(customer) => customer.id}
           renderItem={({ item: customer }) => (
             <Pressable
