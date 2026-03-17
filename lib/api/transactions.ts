@@ -885,6 +885,11 @@ export function useCreateTransaction() {
           queryKey: ["customers", responseData.customerId],
         });
       }
+      if (responseData.returnId) {
+        queryClient.invalidateQueries({
+          queryKey: ["transactions", "returnId", responseData.returnId],
+        });
+      }
     },
   });
 }
