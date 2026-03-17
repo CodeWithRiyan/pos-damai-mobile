@@ -12,12 +12,11 @@ import {
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
-import { Spinner } from "@/components/ui/spinner";
 import { usePurchasedProducts } from "@/lib/api/transactions";
 import { useReturnTransactionStore } from "@/stores/return-transaction";
 import { useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
-import { FlatList, ScrollView } from "react-native";
+import { FlatList } from "react-native";
 import ReturnTransactionConfirmForm from "./form";
 import PopupAddProduct from "./popup-add";
 
@@ -123,7 +122,7 @@ export default function ReturnTransactionInput() {
               ListEmptyComponent={
                 <Box className="p-8 items-center">
                   <Text className="text-slate-400 italic">
-                    Belum ada produk
+                    Tidak ada produk yang dibeli dari customer ini
                   </Text>
                 </Box>
               }
@@ -150,103 +149,14 @@ export default function ReturnTransactionInput() {
               ListEmptyComponent={
                 <Box className="p-8 items-center">
                   <Text className="text-slate-400 italic">
-                    Belum ada produk
+                    Tidak ada produk yang dibeli dari customer ini
                   </Text>
                 </Box>
               }
             />
           )}
-          <ScrollView className="flex-1">
-            <VStack className="flex-1">
-              {isLoading ? (
-                <VStack className="items-center py-10">
-                  <Spinner />
-                </VStack>
-              ) : !products.length ? (
-                <VStack className="items-center py-10">
-                  <Text className="text-gray-400">
-                    Tidak ada produk yang dibeli dari customer ini
-                  </Text>
-                </VStack>
-              ) : (
-                products
-                  .filter(
-                    (p) =>
-                      !search ||
-                      p.name.toLowerCase().includes(search.toLowerCase()) ||
-                      p.barcode?.toLowerCase().includes(search.toLowerCase()),
-                  )
-                  .map((item, index) => {
-                    return (
-                      <Pressable
-                        key={index}
-                        className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                        onPress={() => setAddProduct(item)}
-                      >
-                        <HStack className="justify-between items-center">
-                          <HStack space="md" className="items-center">
-                            <Box className="size-16 rounded-lg bg-primary-200 items-center justify-center">
-                              <Heading className="text-primary-500 font-bold">
-                                {item.name?.charAt(0).toUpperCase() || "?"}
-                              </Heading>
-                            </Box>
-                            <VStack className="flex-1">
-                              <Heading size="sm" className="line-clamp-2">
-                                {item.name || "Unknown"}
-                              </Heading>
-                              <Text size="xs" className="text-slate-500">
-                                {`Rp ${formatNumber(item.lastSellPrice ?? item.sellPrices?.[0]?.price ?? 0)}`}
-                              </Text>
-                            </VStack>
-                          </HStack>
-                        </HStack>
-                      </Pressable>
-                    );
-                  })
-              )}
-            </VStack>
-          </ScrollView>
         </VStack>
         <VStack space="lg" className="flex-1">
-          <ScrollView className="flex-1">
-            <VStack className="flex-1">
-              {cart?.map((item, index) => (
-                <Pressable
-                  key={item.product.id}
-                  className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                  onPress={() => setAddProduct(item.product)}
-                >
-                  <HStack className="justify-between items-center">
-                    <HStack space="md" className="items-center">
-                      <Box className="size-6 justify-center items-center">
-                        <Heading size="md">{index + 1}</Heading>
-                      </Box>
-                      <VStack className="flex-1">
-                        <Heading size="md" className="line-clamp-2">
-                          {item.product.name}
-                        </Heading>
-                        <Text size="sm" className="text-slate-500">
-                          {item.quantity} x Rp{" "}
-                          {formatNumber(item.sellPrice ?? 0)} = Rp{" "}
-                          {formatNumber(item.quantity * (item.sellPrice || 0))}
-                        </Text>
-                        {item.note ? (
-                          <Text size="sm" className="text-slate-500">
-                            {item.note}
-                          </Text>
-                        ) : null}
-                      </VStack>
-                      <HStack space="sm">
-                        <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
-                          <Text className="font-bold">{item.quantity}</Text>
-                        </Box>
-                      </HStack>
-                    </HStack>
-                  </HStack>
-                </Pressable>
-              ))}
-            </VStack>
-          </ScrollView>
           <FlatList
             data={cart}
             className="flex-1"

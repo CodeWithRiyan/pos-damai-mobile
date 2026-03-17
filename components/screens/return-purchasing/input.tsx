@@ -12,18 +12,25 @@ import {
 import { Box } from "@/components/ui/box";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
-import { Spinner } from "@/components/ui/spinner";
 import { useProducts } from "@/lib/api/products";
 import { useReturnPurchasingStore } from "@/stores/return-purchasing";
 import { useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
-import { ScrollView } from "react-native";
+import { FlatList, LayoutChangeEvent, ScrollView } from "react-native";
 import ReturnPurchasingConfirmForm from "./form";
 import PopupAddProduct from "./popup-add";
 
+import GridProductLayout from "@/components/ui/layout/grid-product-layout";
+import ListProductLayout from "@/components/ui/layout/list-product-layout";
+import {
+  SolarIconBold,
+  SolarIconOutline,
+} from "@/components/ui/solar-icon-wrapper";
 import { formatNumber } from "@/lib/utils/format";
+import classNames from "classnames";
 export default function ReturnPurchasingInput() {
-  const { cart, setAddProduct, setOpenConfirm } = useReturnPurchasingStore();
+  const { cart, setAddProduct, setOpenConfirm, removeCartItem, resetCart } =
+    useReturnPurchasingStore();
   const [search, setSearch] = useState<string>("");
   const { supplierId } = useLocalSearchParams<{ supplierId: string }>();
   const { data: products = [], isLoading: isLoadingProduct } = useProducts({
@@ -31,12 +38,39 @@ export default function ReturnPurchasingInput() {
     supplierId,
     search,
   });
+  const [layout, setLayout] = useState<"list" | "grid">("list");
+  const [deviceWidth, setDeviceWidth] = useState<number>(0);
+  const [deleteItem, setDeleteItem] = useState<string | null>(null);
 
   const isLoading = isLoadingProduct;
+  const isDirty = !!cart.length;
+  const numColumns = deviceWidth < 600 ? 2 : deviceWidth < 1080 ? 3 : 4;
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    const { width } = event.nativeEvent.layout;
+    setDeviceWidth(width);
+  };
 
   return (
-    <Box className="flex-1 bg-white">
-      <Header header="RETUR PEMBELIAN" isGoBack />
+    <Box className="flex-1 bg-white" onLayout={handleLayout}>
+      <Header
+        header="RETUR PEMBELIAN"
+        isGoBack
+        action={
+          isDirty && (
+            <HStack space="sm" className="pr-4">
+              <Pressable
+                className="size-10 items-center justify-center"
+                onPress={() => {
+                  resetCart();
+                }}
+              >
+                <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+              </Pressable>
+            </HStack>
+          )
+        }
+      />
       <HStack className="flex-1 bg-white">
         <VStack className="flex-1 border-r border-gray-300">
           <HStack
@@ -52,63 +86,80 @@ export default function ReturnPurchasingInput() {
                 onChangeText={setSearch}
               />
             </Input>
+
+            <Pressable
+              className="relative size-10 items-center justify-center text-typography-500"
+              onPress={() => setLayout(layout === "grid" ? "list" : "grid")}
+            >
+              <SolarIconOutline
+                name={layout === "grid" ? "Widget" : "Server"}
+                size={20}
+                color="#6b7280"
+              />
+            </Pressable>
           </HStack>
-          <ScrollView className="flex-1">
-            <VStack className="flex-1">
-              {isLoading ? (
-                <VStack className="items-center py-10">
-                  <Spinner />
-                </VStack>
-              ) : !products.length ? (
-                <VStack className="items-center py-10">
-                  <Text className="text-gray-400">
-                    Tidak ada produk yang dibeli dari supplier ini
+          {layout === "grid" ? (
+            <FlatList
+              key={`grid-${numColumns}`}
+              data={products}
+              className="flex-1"
+              numColumns={numColumns}
+              contentContainerStyle={{ padding: 16, gap: 16 }}
+              columnWrapperStyle={{ gap: 16 }}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item: product }) => {
+                return (
+                  <Box className="flex-1">
+                    <GridProductLayout
+                      name={product.name}
+                      price={product.purchasePrice ?? 0}
+                      quantityInCart={
+                        cart?.find((f) => f.product.id === product.id)
+                          ?.quantity || 0
+                      }
+                      stock={product.stock}
+                      onPressProduct={() => setAddProduct(product)}
+                    />
+                  </Box>
+                );
+              }}
+              ListEmptyComponent={
+                <Box className="p-8 items-center">
+                  <Text className="text-slate-400 italic">
+                    Tidak ada produk yang dibeli dari customer ini
                   </Text>
-                </VStack>
-              ) : (
-                products.map((item, index) => {
-                  return (
-                    <Pressable
-                      key={index}
-                      className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                      onPress={() => setAddProduct(item)}
-                    >
-                      <HStack className="justify-between items-center">
-                        <HStack space="md" className="items-center">
-                          <Box className="size-16 rounded-lg bg-primary-200 items-center justify-center">
-                            <Heading className="text-primary-500 font-bold">
-                              {item.name?.charAt(0).toUpperCase() || "?"}
-                            </Heading>
-                          </Box>
-                          <VStack className="flex-1">
-                            <Heading size="sm" className="line-clamp-2">
-                              {item.name || "Unknown"}
-                            </Heading>
-                            <Text size="xs" className="text-slate-500">
-                              {`Rp ${formatNumber(item.purchasePrice ?? 0)}`}
-                            </Text>
-                          </VStack>
-                          <HStack space="sm">
-                            <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
-                              <Text className="font-bold">
-                                {cart?.find((f) => f.product.id === item.id)
-                                  ?.quantity || 0}
-                              </Text>
-                            </Box>
-                            <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
-                              <Text className="text-typography-0 font-bold">
-                                {item.stock}
-                              </Text>
-                            </Box>
-                          </HStack>
-                        </HStack>
-                      </HStack>
-                    </Pressable>
-                  );
-                })
-              )}
-            </VStack>
-          </ScrollView>
+                </Box>
+              }
+            />
+          ) : (
+            <FlatList
+              key="list"
+              data={products}
+              className="flex-1"
+              keyExtractor={(item) => item.id}
+              renderItem={({ item: product }) => {
+                return (
+                  <ListProductLayout
+                    name={product.name}
+                    price={product.purchasePrice ?? 0}
+                    quantityInCart={
+                      cart?.find((f) => f.product.id === product.id)
+                        ?.quantity || 0
+                    }
+                    stock={product.stock}
+                    onPressProduct={() => setAddProduct(product)}
+                  />
+                );
+              }}
+              ListEmptyComponent={
+                <Box className="p-8 items-center">
+                  <Text className="text-slate-400 italic">
+                    Tidak ada produk yang dibeli dari customer ini
+                  </Text>
+                </Box>
+              }
+            />
+          )}
         </VStack>
         <VStack space="lg" className="flex-1">
           <ScrollView className="flex-1">
@@ -117,7 +168,19 @@ export default function ReturnPurchasingInput() {
                 <Pressable
                   key={item.product.id}
                   className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                  onPress={() => setAddProduct(item.product)}
+                  onPress={() => {
+                    setAddProduct(item.product);
+                    setDeleteItem(null);
+                  }}
+                  onLongPress={() => {
+                    const newDeleteItem = item.product.id;
+
+                    if (deleteItem === newDeleteItem) {
+                      setDeleteItem(null);
+                      return;
+                    }
+                    setDeleteItem(newDeleteItem);
+                  }}
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
@@ -148,6 +211,18 @@ export default function ReturnPurchasingInput() {
                       </HStack>
                     </HStack>
                   </HStack>
+                  <Pressable
+                    className={classNames(
+                      "absolute right-0 top-0 bottom-0 w-0 bg-error-500 items-center justify-center overflow-hidden transaction-all duration-300",
+                      deleteItem === item.product.id && "w-16",
+                    )}
+                    onPress={() => {
+                      removeCartItem(item.product?.id || "");
+                      setDeleteItem(null);
+                    }}
+                  >
+                    <SolarIconBold name="TrashBin2" size={20} color="white" />
+                  </Pressable>
                 </Pressable>
               ))}
             </VStack>
