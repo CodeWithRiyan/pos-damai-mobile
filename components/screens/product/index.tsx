@@ -58,7 +58,13 @@ export default function ProductList() {
     categoryId,
     forceParent: true,
   });
-  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } = useItemSelection<Product>();
+  const {
+    selectedItems,
+    handleItemPress,
+    clearSelection,
+    isSelected,
+    hasSelection,
+  } = useItemSelection<Product>();
 
   const { data: categoriesData } = useCategories();
   const categories = categoriesData || [];
@@ -328,14 +334,13 @@ export default function ProductList() {
                           (r) => r.type === "RETAIL",
                         )?.[0]?.minimumPurchase ?? 0
                       }@ Rp ${formatNumber(
-                        product.sellPrices
-                          ?.filter((r) => r.type === "RETAIL")?.[0]
-                          ?.price ?? 0
+                        product.sellPrices?.filter(
+                          (r) => r.type === "RETAIL",
+                        )?.[0]?.price ?? 0,
                       )}`}
                     </Text>
-                    {!!product.sellPrices?.filter(
-                      (r) => r.type === "WHOLESALE",
-                    ).length && (
+                    {!!product.sellPrices?.filter((r) => r.type === "WHOLESALE")
+                      .length && (
                       <Text className="text-xs">
                         Grosir:{" "}
                         {`${
@@ -343,9 +348,9 @@ export default function ProductList() {
                             (r) => r.type === "WHOLESALE",
                           )?.[0]?.minimumPurchase ?? 0
                         }@ Rp ${formatNumber(
-                          product.sellPrices
-                            ?.filter((r) => r.type === "WHOLESALE")?.[0]
-                            ?.price ?? 0
+                          product.sellPrices?.filter(
+                            (r) => r.type === "WHOLESALE",
+                          )?.[0]?.price ?? 0,
                         )}`}
                       </Text>
                     )}
@@ -355,9 +360,7 @@ export default function ProductList() {
             )}
             ListEmptyComponent={
               <Box className="p-8 items-center">
-                <Text className="text-slate-400 italic">
-                  Belum ada produk
-                </Text>
+                <Text className="text-slate-400 italic">Belum ada produk</Text>
               </Box>
             }
           />

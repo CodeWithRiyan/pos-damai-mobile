@@ -124,7 +124,15 @@ export default function ReceivableDetail() {
                   <Text className="text-typography-500 text-sm">
                     Total Belum Lunas
                   </Text>
-                  <Text className="text-error-500 font-bold">{formatRp(receivableList?.reduce((acc, curr) => acc + (curr.nominal - curr.totalRealization), 0) ?? 0)}</Text>
+                  <Text className="text-error-500 font-bold">
+                    {formatRp(
+                      receivableList?.reduce(
+                        (acc, curr) =>
+                          acc + (curr.nominal - curr.totalRealization),
+                        0,
+                      ) ?? 0,
+                    )}
+                  </Text>
                 </VStack>
               </VStack>
               <VStack className="flex-1 items-end">
@@ -307,7 +315,9 @@ export default function ReceivableDetail() {
                     </HStack>
                     {receivable.totalRealization < receivable.nominal && (
                       <Text size="xs" className="font-bold text-error-500">
-                        {formatRp(receivable.nominal - receivable.totalRealization)}
+                        {formatRp(
+                          receivable.nominal - receivable.totalRealization,
+                        )}
                       </Text>
                     )}
                   </VStack>

@@ -1,14 +1,14 @@
-import { db } from '../db';
-import * as schema from '../db/schema';
-import { and, eq, isNull } from 'drizzle-orm';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/stores/auth';
+import { db } from "../db";
+import * as schema from "../db/schema";
+import { and, eq, isNull } from "drizzle-orm";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@/stores/auth";
 
 export interface Discount {
   id: string;
   name: string;
   nominal: number;
-  type: 'FLAT' | 'PERCENTAGE';
+  type: "FLAT" | "PERCENTAGE";
   startDate: Date;
   endDate: Date;
   organizationId: string;
@@ -21,7 +21,7 @@ export interface Discount {
 export interface CreateDiscountDTO {
   name: string;
   nominal: number;
-  type: 'FLAT' | 'PERCENTAGE';
+  type: "FLAT" | "PERCENTAGE";
   startDate: Date;
   endDate: Date;
 }
@@ -30,12 +30,11 @@ export interface UpdateDiscountDTO extends Partial<CreateDiscountDTO> {
   id: string;
 }
 
-
 // Get all discounts
 export function useDiscounts() {
-  const orgId = useAuthStore(state => state.getOrganizationId());
+  const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ['discounts', orgId],
+    queryKey: ["discounts", orgId],
     queryFn: async () => {
       const result = await db
         .select()
@@ -43,8 +42,8 @@ export function useDiscounts() {
         .where(
           and(
             eq(schema.discounts.organizationId, orgId),
-            isNull(schema.discounts.deletedAt)
-          )
+            isNull(schema.discounts.deletedAt),
+          ),
         );
       return result as Discount[];
     },
@@ -54,7 +53,7 @@ export function useDiscounts() {
 // Get single discount
 export function useDiscount(id: string) {
   return useQuery({
-    queryKey: ['discount', id],
+    queryKey: ["discount", id],
     queryFn: async () => {
       if (!id) return null;
       const result = await db
@@ -101,7 +100,9 @@ export function useCreateDiscount() {
       return newDiscount as Discount;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['discounts', data.organizationId] });
+      queryClient.invalidateQueries({
+        queryKey: ["discounts", data.organizationId],
+      });
     },
   });
 }
@@ -131,8 +132,8 @@ export function useUpdateDiscount() {
     },
     onSuccess: (data) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['discounts', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['discount', data.id] });
+      queryClient.invalidateQueries({ queryKey: ["discounts", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["discount", data.id] });
     },
   });
 }
@@ -159,7 +160,7 @@ export function useDeleteDiscount() {
     },
     onSuccess: () => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['discounts', orgId] });
+      queryClient.invalidateQueries({ queryKey: ["discounts", orgId] });
     },
   });
 }

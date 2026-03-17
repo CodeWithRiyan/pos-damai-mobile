@@ -1,21 +1,21 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
 import {
-    Box,
-    Spinner,
-    Text,
-    Toast,
-    ToastTitle,
-    useToast,
-    VStack,
+  Box,
+  Spinner,
+  Text,
+  Toast,
+  ToastTitle,
+  useToast,
+  VStack,
 } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import {
-    useDeletePaymentType,
-    usePaymentType,
-    usePaymentTypes,
-    useSetDefaultPaymentType,
+  useDeletePaymentType,
+  usePaymentType,
+  usePaymentTypes,
+  useSetDefaultPaymentType,
 } from "@/lib/api/payment-types";
 import { usePaymentTypeStore } from "@/stores/payment-type";
 import classNames from "classnames";
@@ -70,7 +70,13 @@ export default function PaymentTypeDetail() {
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
-            triggerDelete(singleDeleteConfirm("jenis pembayaran", paymentType?.id || "", paymentType?.name));
+            triggerDelete(
+              singleDeleteConfirm(
+                "jenis pembayaran",
+                paymentType?.id || "",
+                paymentType?.name,
+              ),
+            );
             hideActionDrawer();
           },
         },

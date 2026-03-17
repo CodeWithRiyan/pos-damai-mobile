@@ -43,18 +43,18 @@ export default function RootLayout() {
   useEffect(() => {
     const init = async () => {
       await initializeStorage();
-      
+
       // Check for version update and potentially reset DB
       const wasReset = await checkAndResetDbOnUpdate();
       if (!wasReset) {
-         // Only initialize if we didn't just reset (resetDb re-initializes internally)
-         await initializeDb(); 
+        // Only initialize if we didn't just reset (resetDb re-initializes internally)
+        await initializeDb();
       }
 
       // Rehydrate auth store after storage is ready
       const { useAuthStore } = await import("@/stores/auth");
       useAuthStore.getState().rehydrate();
-      
+
       setIsStorageReady(true);
       setIsMounted(true);
     };

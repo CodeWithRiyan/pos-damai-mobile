@@ -24,6 +24,7 @@ import m0019 from './0019_mushy_northstar.sql';
 import m0020 from './0020_real_robin_chapel.sql';
 import m0021 from './0021_mute_quicksilver.sql';
 import m0022 from './0022_add_discount_profit_fields.sql';
+import m0023 from './0023_outgoing_fixer.sql';
 
   export default {
     journal,
@@ -50,6 +51,8 @@ m0018,
 m0019,
 m0020,
 m0021,
-m0022
+m0022,
+m0023
     }
   }
+  

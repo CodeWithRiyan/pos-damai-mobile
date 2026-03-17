@@ -29,14 +29,17 @@ export default function PurchasingCustomerList() {
 
   const isLoading = loadingCustomers || loadingTx;
 
-  // TODO: Fix Error Blank Screen Here
-  const filteredCustomers = isLoading
-    ? []
-    : (customers ?? []).filter(
-        (s) =>
-          customerIdsWithTx?.has(s.id) &&
-          (!search || s.name.toLowerCase().includes(search.toLowerCase())),
-      );
+  const filteredCustomers =
+    isLoading || !customerIdsWithTx
+      ? []
+      : (customers ?? []).filter(
+          (s) =>
+            customerIdsWithTx.has(s.id) &&
+            (!search || s.name.toLowerCase().includes(search.toLowerCase())),
+        );
+
+  const hasNoCustomersWithTx =
+    !isLoading && customerIdsWithTx && customerIdsWithTx.size === 0;
 
   return (
     <Box className="flex-1 bg-white">
@@ -97,9 +100,15 @@ export default function PurchasingCustomerList() {
             </Pressable>
           )}
           ListEmptyComponent={
-            isLoading ? (
+            isLoading || !customerIdsWithTx ? (
               <VStack className="items-center py-10">
                 <Spinner />
+              </VStack>
+            ) : hasNoCustomersWithTx ? (
+              <VStack className="items-center py-10">
+                <Text className="text-gray-400">
+                  Belum ada pelanggan dengan transaksi selesai
+                </Text>
               </VStack>
             ) : (
               <VStack className="items-center py-10">

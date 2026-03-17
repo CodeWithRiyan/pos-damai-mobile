@@ -8,9 +8,7 @@ import { Button, ButtonText } from "@/components/ui/button";
 import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
 import { Pressable } from "@/components/ui/pressable";
-import {
-  SolarIconBold
-} from "@/components/ui/solar-icon-wrapper";
+import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
@@ -42,7 +40,13 @@ export default function BrandList() {
   const { data: productCounts, refetch: refetchCounts } =
     useProductCountsByBrand();
   const { data: capitalValues } = useCapitalValueByBrand();
-  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } = useItemSelection<Brand>();
+  const {
+    selectedItems,
+    handleItemPress,
+    clearSelection,
+    isSelected,
+    hasSelection,
+  } = useItemSelection<Brand>();
 
   const brands = data || [];
 
@@ -134,7 +138,9 @@ export default function BrandList() {
               ) : (
                 <Pressable
                   className="p-6"
-                  onPress={() => triggerBulkDelete(bulkDeleteConfirm("brand", selectedItems))}
+                  onPress={() =>
+                    triggerBulkDelete(bulkDeleteConfirm("brand", selectedItems))
+                  }
                 >
                   <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
                 </Pressable>
@@ -190,9 +196,7 @@ export default function BrandList() {
             renderItem={({ item }) => (
               <Pressable
                 className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                  isSelected(item)
-                    ? "bg-gray-100"
-                    : ""
+                  isSelected(item) ? "bg-gray-100" : ""
                 }`}
                 onPress={() => {
                   if (hasSelection) {
@@ -223,9 +227,7 @@ export default function BrandList() {
                     </Text>
                     <Text size="xs">
                       Rp{" "}
-                      {(capitalValues?.[item.id] ?? 0).toLocaleString(
-                        "id-ID",
-                      )}
+                      {(capitalValues?.[item.id] ?? 0).toLocaleString("id-ID")}
                     </Text>
                   </VStack>
                 </HStack>

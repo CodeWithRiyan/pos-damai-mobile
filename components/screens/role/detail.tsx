@@ -1,11 +1,6 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
-import {
-    Box,
-    HStack,
-    Text,
-    VStack,
-} from "@/components/ui";
+import { Box, HStack, Text, VStack } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import useBreakpoint from "@/hooks/use-breakpoint";
@@ -56,7 +51,9 @@ export default function RoleDetail() {
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
-            triggerDelete(singleDeleteConfirm("role", role?.id || "", role?.name));
+            triggerDelete(
+              singleDeleteConfirm("role", role?.id || "", role?.name),
+            );
             hideActionDrawer();
           },
         },

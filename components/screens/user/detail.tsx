@@ -1,11 +1,6 @@
 import { useActionDrawer } from "@/components/action-drawer";
 import Header from "@/components/header";
-import {
-    Box,
-    HStack,
-    Text,
-    VStack,
-} from "@/components/ui";
+import { Box, HStack, Text, VStack } from "@/components/ui";
 import { Pressable } from "@/components/ui/pressable";
 import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
 import { useDeleteEntity } from "@/hooks/use-delete-entity";
@@ -54,7 +49,9 @@ export default function UserDetail() {
           icon: "TrashBin2",
           theme: "red",
           onPress: () => {
-            triggerDelete(singleDeleteConfirm("karyawan", user?.id || "", user?.username));
+            triggerDelete(
+              singleDeleteConfirm("karyawan", user?.id || "", user?.username),
+            );
             hideActionDrawer();
           },
         },

@@ -15,7 +15,7 @@ export default function SelectProductInCategory() {
   const { id } = useLocalSearchParams();
   const categoryId = id as string;
   const { data, refetch } = useCategory(categoryId);
-  const { data: products } = useProducts();
+  const { data: products } = useProducts({ forceParent: true });
   const assignMutation = useAssignProductsToCategory();
   const isLoading = assignMutation.isPending;
 

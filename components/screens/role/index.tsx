@@ -24,7 +24,13 @@ export default function RoleList() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useRoles();
-  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } = useItemSelection<Role>();
+  const {
+    selectedItems,
+    handleItemPress,
+    clearSelection,
+    isSelected,
+    hasSelection,
+  } = useItemSelection<Role>();
 
   const roles = data || [];
 
@@ -84,7 +90,9 @@ export default function RoleList() {
               ) : (
                 <Pressable
                   className="p-6"
-                  onPress={() => triggerBulkDelete(bulkDeleteConfirm("role", selectedItems))}
+                  onPress={() =>
+                    triggerBulkDelete(bulkDeleteConfirm("role", selectedItems))
+                  }
                 >
                   <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
                 </Pressable>
@@ -103,7 +111,9 @@ export default function RoleList() {
                       {
                         label: "Import Data",
                         icon: "Import",
-                        onPress: () => { hideActionDrawer(); },
+                        onPress: () => {
+                          hideActionDrawer();
+                        },
                       },
                     ],
                   });

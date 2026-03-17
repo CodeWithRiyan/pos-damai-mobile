@@ -222,7 +222,9 @@ export default function PurchasingList() {
               >
                 <HStack space="md" className="items-center">
                   <Text size="4xl" className="text-white font-bold">
-                    {formatNumber(cart.reduce((total, item) => total + item.quantity, 0))}
+                    {formatNumber(
+                      cart.reduce((total, item) => total + item.quantity, 0),
+                    )}
                   </Text>
                   <Text size="lg" className="text-white font-bold">
                     ITEM

@@ -20,10 +20,7 @@ import {
   SolarIconLinear,
 } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  Payable,
-  usePayableBySupplier,
-} from "@/lib/api/payable";
+import { Payable, usePayableBySupplier } from "@/lib/api/payable";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import classNames from "classnames";
 import dayjs from "dayjs";
@@ -39,10 +36,8 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
   const params = useLocalSearchParams();
   const supplierId = params.supplierId as string;
 
-  const {
-    data: payableList = [],
-    isLoading,
-  } = usePayableBySupplier(supplierId);
+  const { data: payableList = [], isLoading } =
+    usePayableBySupplier(supplierId);
 
   const [selectedItems, setSelectedItems] = useState<Payable[] | null>(null);
   const [showTransactionDatePicker, setShowTransactionDatePicker] =
@@ -135,7 +130,15 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
                   <Text className="text-typography-500 text-sm">
                     Total Belum Lunas
                   </Text>
-                  <Text className="text-error-500 font-bold">{formatRp(payableList?.reduce((acc, curr) => acc + (curr.nominal - curr.totalRealization), 0) ?? 0)}</Text>
+                  <Text className="text-error-500 font-bold">
+                    {formatRp(
+                      payableList?.reduce(
+                        (acc, curr) =>
+                          acc + (curr.nominal - curr.totalRealization),
+                        0,
+                      ) ?? 0,
+                    )}
+                  </Text>
                 </VStack>
               </VStack>
               <VStack className="flex-1 items-end">

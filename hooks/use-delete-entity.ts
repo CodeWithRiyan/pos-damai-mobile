@@ -6,7 +6,10 @@ import { ReactNode, useCallback } from "react";
 
 interface UseDeleteEntityOptions {
   successMessage: string;
-  deleteMutation: { mutate: (id: string, options: any) => void; isPending: boolean };
+  deleteMutation: {
+    mutate: (id: string, options: any) => void;
+    isPending: boolean;
+  };
   onSuccess?: () => void;
   goBack?: boolean;
 }
@@ -54,7 +57,16 @@ export function useDeleteEntity({
         loading: deleteMutation.isPending,
       });
     },
-    [deleteMutation, hidePopUpConfirm, showPopUpConfirm, toast, successMessage, onSuccess, goBack, router],
+    [
+      deleteMutation,
+      hidePopUpConfirm,
+      showPopUpConfirm,
+      toast,
+      successMessage,
+      onSuccess,
+      goBack,
+      router,
+    ],
   );
 
   return { triggerDelete, isDeleting: deleteMutation.isPending };

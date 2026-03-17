@@ -21,10 +21,12 @@ export function PermissionGuard({
 
   if (!permissions) return <>{children}</>;
 
-  const permissionList = Array.isArray(permissions) ? permissions : [permissions];
-  
+  const permissionList = Array.isArray(permissions)
+    ? permissions
+    : [permissions];
+
   let hasAccess = false;
-  
+
   if (all) {
     hasAccess = hasAllPermissions(permissionList);
   } else {
@@ -41,7 +43,11 @@ export function PermissionGuard({
 
   return (
     <Center className="flex-1 p-6">
-      <SolarIconBoldDuotone name="ShieldCross" size={64} className="text-red-500 mb-4" />
+      <SolarIconBoldDuotone
+        name="ShieldCross"
+        size={64}
+        className="text-red-500 mb-4"
+      />
       <Text className="text-xl font-bold text-gray-800 mb-2 text-center">
         Akses Ditolak
       </Text>

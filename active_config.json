@@ -1,8 +1,6 @@
 {
   "settings": {
-    "import/ignore": [
-      "node_modules[\\\\/]+@?react-native"
-    ],
+    "import/ignore": ["node_modules[\\\\/]+@?react-native"],
     "import/extensions": [
       ".android.cjs",
       ".android.mjs",
@@ -82,16 +80,9 @@
       },
       "typescript": true
     },
-    "import/external-module-folders": [
-      "node_modules",
-      "node_modules/@types"
-    ],
+    "import/external-module-folders": ["node_modules", "node_modules/@types"],
     "import/parsers": {
-      "@typescript-eslint/parser": [
-        ".ts",
-        ".tsx",
-        ".d.ts"
-      ]
+      "@typescript-eslint/parser": [".ts", ".tsx", ".d.ts"]
     },
     "react": {
       "version": "detect"
@@ -101,49 +92,20 @@
     "reportUnusedDisableDirectives": 1
   },
   "rules": {
-    "import/no-unresolved": [
-      0
-    ],
-    "import/named": [
-      0
-    ],
-    "import/namespace": [
-      0
-    ],
-    "import/default": [
-      0
-    ],
-    "import/export": [
-      2
-    ],
-    "import/no-named-as-default": [
-      1
-    ],
-    "import/no-named-as-default-member": [
-      1
-    ],
-    "import/no-duplicates": [
-      1
-    ],
-    "eqeqeq": [
-      1,
-      "smart"
-    ],
-    "no-dupe-args": [
-      2
-    ],
-    "no-dupe-class-members": [
-      0
-    ],
-    "no-dupe-keys": [
-      2
-    ],
-    "no-duplicate-case": [
-      2
-    ],
-    "no-empty-character-class": [
-      1
-    ],
+    "import/no-unresolved": [0],
+    "import/named": [0],
+    "import/namespace": [0],
+    "import/default": [0],
+    "import/export": [2],
+    "import/no-named-as-default": [1],
+    "import/no-named-as-default-member": [1],
+    "import/no-duplicates": [1],
+    "eqeqeq": [1, "smart"],
+    "no-dupe-args": [2],
+    "no-dupe-class-members": [0],
+    "no-dupe-keys": [2],
+    "no-duplicate-case": [2],
+    "no-empty-character-class": [1],
     "no-empty-pattern": [
       1,
       {
@@ -156,9 +118,7 @@
         "exceptions": []
       }
     ],
-    "no-extra-bind": [
-      1
-    ],
+    "no-extra-bind": [1],
     "no-redeclare": [
       0,
       {
@@ -171,9 +131,7 @@
         "typeof": false
       }
     ],
-    "no-unreachable": [
-      1
-    ],
+    "no-unreachable": [1],
     "no-unsafe-negation": [
       1,
       {
@@ -190,9 +148,7 @@
         "ignoreDirectives": false
       }
     ],
-    "no-unused-labels": [
-      1
-    ],
+    "no-unused-labels": [1],
     "no-unused-vars": [
       0,
       {
@@ -203,13 +159,8 @@
         "caughtErrorsIgnorePattern": "^_"
       }
     ],
-    "no-with": [
-      1
-    ],
-    "unicode-bom": [
-      1,
-      "never"
-    ],
+    "no-with": [1],
+    "unicode-bom": [1, "never"],
     "use-isnan": [
       2,
       {
@@ -223,24 +174,16 @@
         "requireStringLiterals": false
       }
     ],
-    "import/first": [
-      1
-    ],
-    "no-var": [
-      2
-    ],
+    "import/first": [1],
+    "no-var": [2],
     "@typescript-eslint/array-type": [
       1,
       {
         "default": "array"
       }
     ],
-    "@typescript-eslint/no-empty-object-type": [
-      1
-    ],
-    "@typescript-eslint/no-wrapper-object-types": [
-      1
-    ],
+    "@typescript-eslint/no-empty-object-type": [1],
+    "@typescript-eslint/no-wrapper-object-types": [1],
     "@typescript-eslint/consistent-type-assertions": [
       1,
       {
@@ -248,15 +191,9 @@
         "objectLiteralTypeAssertions": "allow"
       }
     ],
-    "@typescript-eslint/no-extra-non-null-assertion": [
-      1
-    ],
-    "@typescript-eslint/no-dupe-class-members": [
-      2
-    ],
-    "@typescript-eslint/no-redeclare": [
-      1
-    ],
+    "@typescript-eslint/no-extra-non-null-assertion": [1],
+    "@typescript-eslint/no-dupe-class-members": [2],
+    "@typescript-eslint/no-redeclare": [1],
     "@typescript-eslint/no-unused-vars": [
       1,
       {
@@ -266,12 +203,8 @@
         "caughtErrors": "all"
       }
     ],
-    "no-useless-constructor": [
-      0
-    ],
-    "@typescript-eslint/no-useless-constructor": [
-      1
-    ],
+    "no-useless-constructor": [0],
+    "@typescript-eslint/no-useless-constructor": [1],
     "@typescript-eslint/no-require-imports": [
       1,
       {
@@ -280,90 +213,34 @@
         ]
       }
     ],
-    "react/display-name": [
-      2
-    ],
-    "react/jsx-key": [
-      2
-    ],
-    "react/jsx-no-comment-textnodes": [
-      2
-    ],
-    "react/jsx-no-duplicate-props": [
-      2
-    ],
-    "react/jsx-no-target-blank": [
-      0
-    ],
-    "react/jsx-no-undef": [
-      2
-    ],
-    "react/jsx-uses-react": [
-      2
-    ],
-    "react/jsx-uses-vars": [
-      2
-    ],
-    "react/no-children-prop": [
-      2
-    ],
-    "react/no-danger-with-children": [
-      2
-    ],
-    "react/no-deprecated": [
-      2
-    ],
-    "react/no-direct-mutation-state": [
-      2
-    ],
-    "react/no-find-dom-node": [
-      2
-    ],
-    "react/no-is-mounted": [
-      2
-    ],
-    "react/no-render-return-value": [
-      2
-    ],
-    "react/no-string-refs": [
-      2
-    ],
-    "react/no-unescaped-entities": [
-      2
-    ],
-    "react/no-unknown-property": [
-      1
-    ],
-    "react/no-unsafe": [
-      0
-    ],
-    "react/prop-types": [
-      0
-    ],
-    "react/react-in-jsx-scope": [
-      0
-    ],
-    "react/require-render-return": [
-      2
-    ],
-    "react-hooks/rules-of-hooks": [
-      2
-    ],
-    "react-hooks/exhaustive-deps": [
-      1
-    ],
-    "react/no-this-in-sfc": [
-      1
-    ],
-    "expo/use-dom-exports": [
-      2
-    ],
-    "expo/no-env-var-destructuring": [
-      2
-    ],
-    "expo/no-dynamic-env-var": [
-      2
-    ]
+    "react/display-name": [2],
+    "react/jsx-key": [2],
+    "react/jsx-no-comment-textnodes": [2],
+    "react/jsx-no-duplicate-props": [2],
+    "react/jsx-no-target-blank": [0],
+    "react/jsx-no-undef": [2],
+    "react/jsx-uses-react": [2],
+    "react/jsx-uses-vars": [2],
+    "react/no-children-prop": [2],
+    "react/no-danger-with-children": [2],
+    "react/no-deprecated": [2],
+    "react/no-direct-mutation-state": [2],
+    "react/no-find-dom-node": [2],
+    "react/no-is-mounted": [2],
+    "react/no-render-return-value": [2],
+    "react/no-string-refs": [2],
+    "react/no-unescaped-entities": [2],
+    "react/no-unknown-property": [1],
+    "react/no-unsafe": [0],
+    "react/prop-types": [0],
+    "react/react-in-jsx-scope": [0],
+    "react/require-render-return": [2],
+    "react-hooks/rules-of-hooks": [2],
+    "react-hooks/exhaustive-deps": [1],
+    "react/no-this-in-sfc": [1],
+    "expo/use-dom-exports": [2],
+    "expo/no-env-var-destructuring": [2],
+    "expo/no-dynamic-env-var": [2]
   },
   "plugins": [
     "@",

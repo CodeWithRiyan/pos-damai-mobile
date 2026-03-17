@@ -11,14 +11,16 @@ import { and, desc, eq, isNull, like } from "drizzle-orm";
 import { db } from "../db";
 import * as schema from "../db/schema";
 import { getDiscountedPrice, isDiscountActive } from "../price";
-import { generateLocalRefId } from "../utils/reference";
+import { formatDisplayRefId, generateLocalRefId } from "../utils/reference";
 import { Product } from "./products";
 
 export interface Transaction {
   id: string;
   local_ref_id: string | null;
   customerId: string | null;
+  employeeId?: string | null;
   customerName?: string;
+  employeeName?: string;
   totalAmount: number;
   totalPaid: number;
   commission?: number;
@@ -57,6 +59,7 @@ export interface TransactionItem {
 export interface CreateTransactionDTO {
   id?: string;
   customerId?: string;
+  employeeId?: string;
   totalAmount: number;
   totalPaid: number;
   commission?: number;
@@ -91,6 +94,7 @@ export interface TransactionFilterParams {
   startDate?: Date;
   endDate?: Date;
   showReturnData?: boolean;
+  search?: string;
 }
 
 // Get all transactions from local SQLite
@@ -206,7 +210,7 @@ export function useTransactions(params?: TransactionFilterParams) {
         );
       }
 
-      // Join with customer and payment type names
+      // Join with customer, employee, and payment type names
       const transactionsWithDetails = await Promise.all(
         transactionResult.map(async (transaction) => {
           let customerName = "Walk-in Customer";
@@ -219,6 +223,19 @@ export function useTransactions(params?: TransactionFilterParams) {
             customerName = customer[0]?.name || "Unknown";
           }
 
+          let employeeName: string | undefined;
+          if (transaction.employeeId) {
+            const employee = await db
+              .select({ name: schema.users.name })
+              .from(schema.users)
+              .where(eq(schema.users.id, transaction.employeeId))
+              .limit(1);
+            employeeName = employee[0]?.name;
+            customerName = employeeName
+              ? `Karyawan: ${employeeName}`
+              : "Karyawan";
+          }
+
           const paymentType = await db
             .select({ name: schema.paymentTypes.name })
             .from(schema.paymentTypes)
@@ -228,10 +245,22 @@ export function useTransactions(params?: TransactionFilterParams) {
           return {
             ...transaction,
             customerName,
+            employeeName,
             paymentTypeName: paymentType[0]?.name || "Unknown",
           };
         }),
       );
+
+      // Apply search filter
+      if (params?.search && params.search.trim()) {
+        const term = params.search.toLowerCase();
+        return (transactionsWithDetails as Transaction[]).filter(
+          (t) =>
+            (formatDisplayRefId(t.local_ref_id) || t.id)
+              .toLowerCase()
+              .includes(term) || t.customerName?.toLowerCase().includes(term),
+        );
+      }
 
       return transactionsWithDetails as Transaction[];
     },
@@ -445,6 +474,18 @@ export async function fetchTransaction(
     customerName = customer[0]?.name || "Unknown";
   }
 
+  // Get employee name
+  let employeeName: string | undefined;
+  if (transaction.employeeId) {
+    const employee = await db
+      .select({ name: schema.users.name })
+      .from(schema.users)
+      .where(eq(schema.users.id, transaction.employeeId))
+      .limit(1);
+    employeeName = employee[0]?.name;
+    customerName = employeeName ? `Karyawan: ${employeeName}` : "Karyawan";
+  }
+
   // Get payment type name
   const paymentType = await db
     .select({ name: schema.paymentTypes.name })
@@ -493,6 +534,7 @@ export async function fetchTransaction(
   return {
     ...transaction,
     customerName,
+    employeeName,
     paymentTypeName: paymentType[0]?.name || "Unknown",
     items: itemsWithProductNames,
   } as Transaction;
@@ -540,6 +582,7 @@ export function useCreateTransaction() {
           id: transactionId,
           local_ref_id: localRefId,
           customerId: data.customerId || null,
+          employeeId: data.employeeId || null,
           totalAmount: data.totalAmount,
           totalPaid: Number(data.totalPaid) || 0,
           commission: data.commission || 0,
@@ -840,6 +883,11 @@ export function useCreateTransaction() {
       if (responseData.customerId) {
         queryClient.invalidateQueries({
           queryKey: ["customers", responseData.customerId],
+        });
+      }
+      if (responseData.returnId) {
+        queryClient.invalidateQueries({
+          queryKey: ["transactions", "returnId", responseData.returnId],
         });
       }
     },

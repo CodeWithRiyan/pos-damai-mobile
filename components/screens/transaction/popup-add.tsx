@@ -334,15 +334,17 @@ export default function PopupAddProduct() {
                 {addProduct?.type !== ProductType.MULTIUNIT && (
                   <HStack space="sm">
                     <Heading size="md">
-                      {formatRp(tempSellPrice ||
-                        findSellPrice({
-                          sellPrices: addProduct?.sellPrices || [],
-                          type: customer?.category,
-                          quantity: quantity || 0,
-                          unitVariant: addProduct?.variants.find(
-                            (f) => f.id === variantUnitId,
-                          ),
-                        }))}
+                      {formatRp(
+                        tempSellPrice ||
+                          findSellPrice({
+                            sellPrices: addProduct?.sellPrices || [],
+                            type: customer?.category,
+                            quantity: quantity || 0,
+                            unitVariant: addProduct?.variants.find(
+                              (f) => f.id === variantUnitId,
+                            ),
+                          }),
+                      )}
                     </Heading>
                   </HStack>
                 )}

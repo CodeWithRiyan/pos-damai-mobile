@@ -21,13 +21,19 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
 export default function PopupAddStockOpname() {
-  const { addProduct, addProductVariantId, cart, setAddProduct, addCartItem, removeCartItem } =
-    useStockOpnameStore();
+  const {
+    addProduct,
+    addProductVariantId,
+    cart,
+    setAddProduct,
+    addCartItem,
+    removeCartItem,
+  } = useStockOpnameStore();
 
   const product = cart.find(
-    (item) => 
-      item.product.id === addProduct?.id && 
-      item.variant?.id === addProductVariantId
+    (item) =>
+      item.product.id === addProduct?.id &&
+      item.variant?.id === addProductVariantId,
   );
 
   const addStockOpnameSchema = z.object({
@@ -182,7 +188,10 @@ export default function PopupAddStockOpname() {
               <Pressable
                 className="flex-1 items-center justify-center h-12 px-4 rounded-lg border border-error-500 bg-error-100 active:bg-error-200"
                 onPress={() => {
-                  removeCartItem(addProduct?.id || "", addProductVariantId || undefined);
+                  removeCartItem(
+                    addProduct?.id || "",
+                    addProductVariantId || undefined,
+                  );
                   setAddProduct(null);
                 }}
               >

@@ -1,10 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { and, eq, isNull } from 'drizzle-orm';
-import { db } from '../db';
-import * as schema from '../db/schema';
-import { useAuthStore } from '@/stores/auth';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { and, eq, isNull } from "drizzle-orm";
+import { db } from "../db";
+import * as schema from "../db/schema";
+import { useAuthStore } from "@/stores/auth";
 
-export type CustomerCategory = 'RETAIL' | 'WHOLESALE';
+export type CustomerCategory = "RETAIL" | "WHOLESALE";
 
 export interface Customer {
   id: string;
@@ -46,13 +46,13 @@ export interface UpdateCustomerDTO {
 
 // Get all customers from local SQLite (excluding soft-deleted)
 export function useCustomers(params: { category?: CustomerCategory } | void) {
-  const orgId = useAuthStore(state => state.getOrganizationId());
+  const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ['customers', orgId, params?.category],
+    queryKey: ["customers", orgId, params?.category],
     queryFn: async () => {
       const conditions = [
         eq(schema.customers.organizationId, orgId),
-        isNull(schema.customers.deletedAt)
+        isNull(schema.customers.deletedAt),
       ];
 
       if (params?.category) {
@@ -73,16 +73,16 @@ export function useCustomers(params: { category?: CustomerCategory } | void) {
 // Get single customer
 export function useCustomer(id: string) {
   return useQuery({
-    queryKey: ['customers', id],
+    queryKey: ["customers", id],
     queryFn: async () => {
       const result = await db
         .select()
         .from(schema.customers)
         .where(eq(schema.customers.id, id))
         .limit(1);
-      
+
       if (result.length === 0) return undefined;
-      
+
       return result[0] as CustomerWithStats;
     },
     enabled: !!id,
@@ -104,7 +104,7 @@ export function useCreateCustomer() {
       const newCustomer = {
         id,
         name: data.name,
-        category: data.category ?? 'RETAIL',
+        category: data.category ?? "RETAIL",
         code: data.code ?? null,
         phone: data.phone ?? null,
         address: data.address ?? null,
@@ -128,7 +128,9 @@ export function useCreateCustomer() {
       return newCustomer as Customer;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['customers', data.organizationId] });
+      queryClient.invalidateQueries({
+        queryKey: ["customers", data.organizationId],
+      });
     },
   });
 }
@@ -159,8 +161,8 @@ export function useUpdateCustomer() {
     onSuccess: (data) => {
       const orgId = useAuthStore.getState().getOrganizationId();
       // Invalidate both list and single customer queries
-      queryClient.invalidateQueries({ queryKey: ['customers', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['customers', data.id] });
+      queryClient.invalidateQueries({ queryKey: ["customers", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["customers", data.id] });
     },
   });
 }
@@ -189,7 +191,7 @@ export function useDeleteCustomer() {
     },
     onSuccess: () => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['customers', orgId] });
+      queryClient.invalidateQueries({ queryKey: ["customers", orgId] });
     },
   });
 }
@@ -217,8 +219,8 @@ export function useResetCustomerPoints() {
     },
     onSuccess: (data) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['customers', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['customers', data.id] });
+      queryClient.invalidateQueries({ queryKey: ["customers", orgId] });
+      queryClient.invalidateQueries({ queryKey: ["customers", data.id] });
     },
   });
 }
@@ -248,7 +250,7 @@ export function useBulkResetCustomerPoints() {
     },
     onSuccess: () => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['customers', orgId] });
+      queryClient.invalidateQueries({ queryKey: ["customers", orgId] });
     },
   });
 }
@@ -279,7 +281,7 @@ export function useBulkDeleteCustomer() {
     },
     onSuccess: () => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['customers', orgId] });
+      queryClient.invalidateQueries({ queryKey: ["customers", orgId] });
     },
   });
 }

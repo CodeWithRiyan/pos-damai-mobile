@@ -34,7 +34,13 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useCustomers();
-  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } = useItemSelection<CustomerWithStats>();
+  const {
+    selectedItems,
+    handleItemPress,
+    clearSelection,
+    isSelected,
+    hasSelection,
+  } = useItemSelection<CustomerWithStats>();
 
   useFocusEffect(
     useCallback(() => {
@@ -203,7 +209,9 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
                             icon: "TrashBin2",
                             theme: "red",
                             onPress: () => {
-                              triggerBulkDelete(bulkDeleteConfirm("pelanggan", selectedItems));
+                              triggerBulkDelete(
+                                bulkDeleteConfirm("pelanggan", selectedItems),
+                              );
                               hideActionDrawer();
                             },
                           },
@@ -291,12 +299,10 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
                       Total Transaksi: {item.totalTransactions || 0}
                     </Text>
                     <Text className="text-xs">
-                      Total Omset: Rp{" "}
-                      {formatNumber(item.totalRevenue || 0)}
+                      Total Omset: Rp {formatNumber(item.totalRevenue || 0)}
                     </Text>
                     <Text className="text-xs">
-                      Total Keuntungan: Rp{" "}
-                      {formatNumber(item.totalProfit || 0)}
+                      Total Keuntungan: Rp {formatNumber(item.totalProfit || 0)}
                     </Text>
                   </VStack>
                 </HStack>

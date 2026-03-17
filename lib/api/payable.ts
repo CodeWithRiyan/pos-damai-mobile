@@ -1,10 +1,10 @@
-import { db } from '../db';
-import * as schema from '../db/schema';
-import { and, eq, isNull } from 'drizzle-orm';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/stores/auth';
-import { Supplier } from './suppliers';
-import { generateLocalRefId } from '../utils/reference';
+import { db } from "../db";
+import * as schema from "../db/schema";
+import { and, eq, isNull } from "drizzle-orm";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@/stores/auth";
+import { Supplier } from "./suppliers";
+import { generateLocalRefId } from "../utils/reference";
 
 export interface PayableRealization {
   id: string;
@@ -71,9 +71,9 @@ export interface UpdatePayableDTO {
 }
 
 export function usePayableList() {
-  const orgId = useAuthStore(state => state.getOrganizationId());
+  const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ['payables', 'list', orgId],
+    queryKey: ["payables", "list", orgId],
     queryFn: async () => {
       const allPayables = await db
         .select({
@@ -81,12 +81,15 @@ export function usePayableList() {
           supplier: schema.suppliers,
         })
         .from(schema.payables)
-        .leftJoin(schema.suppliers, eq(schema.payables.supplierId, schema.suppliers.id))
+        .leftJoin(
+          schema.suppliers,
+          eq(schema.payables.supplierId, schema.suppliers.id),
+        )
         .where(
           and(
             eq(schema.payables.organizationId, orgId),
-            isNull(schema.payables.deletedAt)
-          )
+            isNull(schema.payables.deletedAt),
+          ),
         );
 
       const groupedBySupplier: Record<string, PayableBySupplier> = {};
@@ -99,16 +102,19 @@ export function usePayableList() {
           .where(
             and(
               eq(schema.payableRealizations.payableId, payable.id),
-              isNull(schema.payableRealizations.deletedAt)
-            )
+              isNull(schema.payableRealizations.deletedAt),
+            ),
           );
-        
-        const totalRealization = realizations.reduce((sum, r) => sum + r.nominal, 0);
+
+        const totalRealization = realizations.reduce(
+          (sum, r) => sum + r.nominal,
+          0,
+        );
 
         if (!groupedBySupplier[payable.supplierId]) {
           groupedBySupplier[payable.supplierId] = {
             supplierId: payable.supplierId,
-            supplierName: supplier?.name || 'Unknown',
+            supplierName: supplier?.name || "Unknown",
             totalPayable: 0,
             totalRealization: 0,
             nearestDueDate: payable.dueDate,
@@ -121,8 +127,11 @@ export function usePayableList() {
         const group = groupedBySupplier[payable.supplierId];
         group.totalPayable += payable.nominal;
         group.totalRealization += totalRealization;
-        
-        if (payable.dueDate && (!group.nearestDueDate || payable.dueDate < group.nearestDueDate)) {
+
+        if (
+          payable.dueDate &&
+          (!group.nearestDueDate || payable.dueDate < group.nearestDueDate)
+        ) {
           group.nearestDueDate = payable.dueDate;
         }
       }
@@ -134,9 +143,9 @@ export function usePayableList() {
 }
 
 export function usePayableBySupplier(supplierId: string) {
-  const orgId = useAuthStore(state => state.getOrganizationId());
+  const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ['payables', 'supplier', supplierId, orgId],
+    queryKey: ["payables", "supplier", supplierId, orgId],
     queryFn: async () => {
       const payablesWithSupplier = await db
         .select({
@@ -144,13 +153,16 @@ export function usePayableBySupplier(supplierId: string) {
           supplier: schema.suppliers,
         })
         .from(schema.payables)
-        .leftJoin(schema.suppliers, eq(schema.payables.supplierId, schema.suppliers.id))
+        .leftJoin(
+          schema.suppliers,
+          eq(schema.payables.supplierId, schema.suppliers.id),
+        )
         .where(
           and(
             eq(schema.payables.supplierId, supplierId),
             eq(schema.payables.organizationId, orgId),
-            isNull(schema.payables.deletedAt)
-          )
+            isNull(schema.payables.deletedAt),
+          ),
         );
 
       const detailedPayables = await Promise.all(
@@ -162,11 +174,14 @@ export function usePayableBySupplier(supplierId: string) {
             .where(
               and(
                 eq(schema.payableRealizations.payableId, payable.id),
-                isNull(schema.payableRealizations.deletedAt)
-              )
+                isNull(schema.payableRealizations.deletedAt),
+              ),
             );
-          
-          const totalRealization = realizations.reduce((sum, r) => sum + r.nominal, 0);
+
+          const totalRealization = realizations.reduce(
+            (sum, r) => sum + r.nominal,
+            0,
+          );
 
           return {
             ...payable,
@@ -174,7 +189,7 @@ export function usePayableBySupplier(supplierId: string) {
             realizations,
             totalRealization,
           };
-        })
+        }),
       );
 
       return detailedPayables as Payable[];
@@ -185,7 +200,7 @@ export function usePayableBySupplier(supplierId: string) {
 
 export function usePayableDetail(id: string) {
   return useQuery({
-    queryKey: ['payables', 'detail', id],
+    queryKey: ["payables", "detail", id],
     queryFn: async () => {
       const result = await db
         .select({
@@ -193,7 +208,10 @@ export function usePayableDetail(id: string) {
           supplier: schema.suppliers,
         })
         .from(schema.payables)
-        .leftJoin(schema.suppliers, eq(schema.payables.supplierId, schema.suppliers.id))
+        .leftJoin(
+          schema.suppliers,
+          eq(schema.payables.supplierId, schema.suppliers.id),
+        )
         .where(eq(schema.payables.id, id))
         .limit(1);
 
@@ -206,11 +224,14 @@ export function usePayableDetail(id: string) {
         .where(
           and(
             eq(schema.payableRealizations.payableId, id),
-            isNull(schema.payableRealizations.deletedAt)
-          )
+            isNull(schema.payableRealizations.deletedAt),
+          ),
         );
 
-      const totalRealization = realizations.reduce((sum, r) => sum + r.nominal, 0);
+      const totalRealization = realizations.reduce(
+        (sum, r) => sum + r.nominal,
+        0,
+      );
 
       return {
         ...payable,
@@ -239,22 +260,22 @@ export function useCreatePayable() {
         await tx.insert(schema.payables).values({
           id,
           local_ref_id,
-        ...data,
-        dueDate: data.dueDate ? new Date(data.dueDate) : null,
-        organizationId: orgId,
-        createdBy: userId,
-        updatedBy: userId,
-        createdAt: now,
-        updatedAt: now,
-        _dirty: true,
-        _syncedAt: null,
+          ...data,
+          dueDate: data.dueDate ? new Date(data.dueDate) : null,
+          organizationId: orgId,
+          createdBy: userId,
+          updatedBy: userId,
+          createdAt: now,
+          updatedAt: now,
+          _dirty: true,
+          _syncedAt: null,
         });
       });
 
       return { id, local_ref_id, ...data };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payables'] });
+      queryClient.invalidateQueries({ queryKey: ["payables"] });
     },
   });
 }
@@ -271,27 +292,31 @@ export function useCreatePayableRealization() {
 
       let local_ref_id = "";
       await db.transaction(async (tx) => {
-        local_ref_id = await generateLocalRefId(tx, schema.payableRealizations, "PAY");
+        local_ref_id = await generateLocalRefId(
+          tx,
+          schema.payableRealizations,
+          "PAY",
+        );
         await tx.insert(schema.payableRealizations).values({
           id,
           local_ref_id,
-        ...data,
-        realizationDate: new Date(data.realizationDate),
-        organizationId: orgId,
-        createdBy: userId,
-        updatedBy: userId,
-        createdAt: now,
-        updatedAt: now,
-        deletedAt: null,
-        _dirty: true,
-        _syncedAt: null,
+          ...data,
+          realizationDate: new Date(data.realizationDate),
+          organizationId: orgId,
+          createdBy: userId,
+          updatedBy: userId,
+          createdAt: now,
+          updatedAt: now,
+          deletedAt: null,
+          _dirty: true,
+          _syncedAt: null,
         });
       });
 
       return { id, local_ref_id, ...data };
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['payables'] });
+      queryClient.invalidateQueries({ queryKey: ["payables"] });
     },
   });
 }
@@ -311,7 +336,7 @@ export function useDeletePayable() {
         .where(eq(schema.payables.id, id));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payables'] });
+      queryClient.invalidateQueries({ queryKey: ["payables"] });
     },
   });
 }
@@ -334,8 +359,8 @@ export function useBulkDeletePayableBySupplier() {
           .where(
             and(
               eq(schema.payables.supplierId, supplierId),
-              eq(schema.payables.organizationId, orgId)
-            )
+              eq(schema.payables.organizationId, orgId),
+            ),
           );
       }
     },
@@ -358,7 +383,9 @@ export function useUpdatePayable() {
         .update(schema.payables)
         .set({
           ...updateData,
-          dueDate: updateData.dueDate ? new Date(updateData.dueDate) : undefined,
+          dueDate: updateData.dueDate
+            ? new Date(updateData.dueDate)
+            : undefined,
           updatedBy: useAuthStore.getState().profile?.id,
           updatedAt: now,
           _dirty: true,
@@ -366,8 +393,8 @@ export function useUpdatePayable() {
         .where(
           and(
             eq(schema.payables.id, id),
-            eq(schema.payables.organizationId, orgId)
-          )
+            eq(schema.payables.organizationId, orgId),
+          ),
         );
 
       return { id, ...updateData };

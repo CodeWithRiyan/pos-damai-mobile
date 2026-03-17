@@ -29,7 +29,13 @@ export default function SupplierList() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useSuppliers();
-  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } = useItemSelection<Supplier>();
+  const {
+    selectedItems,
+    handleItemPress,
+    clearSelection,
+    isSelected,
+    hasSelection,
+  } = useItemSelection<Supplier>();
 
   useFocusEffect(
     useCallback(() => {
@@ -133,7 +139,11 @@ export default function SupplierList() {
               ) : (
                 <Pressable
                   className="p-6"
-                  onPress={() => triggerBulkDelete(bulkDeleteConfirm("supplier", selectedItems))}
+                  onPress={() =>
+                    triggerBulkDelete(
+                      bulkDeleteConfirm("supplier", selectedItems),
+                    )
+                  }
                 >
                   <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
                 </Pressable>
@@ -178,9 +188,7 @@ export default function SupplierList() {
             renderItem={({ item: supplier }) => (
               <Pressable
                 className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                  isSelected(supplier)
-                    ? "bg-gray-100"
-                    : ""
+                  isSelected(supplier) ? "bg-gray-100" : ""
                 }`}
                 onPress={() => {
                   if (hasSelection) {

@@ -14,7 +14,7 @@ export default function SelectProductInBrand() {
   const { id } = useLocalSearchParams();
   const brandId = id as string;
   const { data } = useBrand(brandId);
-  const { data: products } = useProducts();
+  const { data: products } = useProducts({ forceParent: true });
   const toast = useToast();
 
   const assignMutation = useAssignProductsToBrand();

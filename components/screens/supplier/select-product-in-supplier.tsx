@@ -14,7 +14,7 @@ export default function SelectProductInSupplier() {
   const { id } = useLocalSearchParams();
   const supplierId = id as string;
   const { data } = useSupplier(supplierId);
-  const { data: products } = useProducts({ supplierId });
+  const { data: products } = useProducts({ supplierId, forceParent: true });
   const toast = useToast();
 
   const assignMutation = useAssignProductsToSupplier();

@@ -65,7 +65,9 @@ export default function RoleForm() {
     usePermissions();
 
   const { hasPermission } = usePermission();
-  const canSave = isAdd ? hasPermission("roles:create") : hasPermission("roles:update");
+  const canSave = isAdd
+    ? hasPermission("roles:create")
+    : hasPermission("roles:update");
 
   const createMutation = useCreateRole();
   const updateMutation = useUpdateRole();
@@ -300,7 +302,9 @@ export default function RoleForm() {
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
           className={`w-full rounded-sm h-10 flex justify-center items-center ${
-            !canSave || isLoading ? "bg-slate-300 border-slate-300" : "bg-primary-500 border-primary-500"
+            !canSave || isLoading
+              ? "bg-slate-300 border-slate-300"
+              : "bg-primary-500 border-primary-500"
           }`}
           disabled={!canSave || isLoading}
           onPress={form.handleSubmit(onSubmit)}

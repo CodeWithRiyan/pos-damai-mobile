@@ -1,6 +1,6 @@
-import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
-import { useEffect } from 'react';
-import { create } from 'zustand';
+import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
+import { useEffect } from "react";
+import { create } from "zustand";
 
 interface NetworkState {
   isConnected: boolean;
@@ -29,7 +29,9 @@ export function useNetworkMonitoring() {
 
   useEffect(() => {
     // Get initial state
-    NetInfo.fetch().then(setNetworkState).catch(() => {});
+    NetInfo.fetch()
+      .then(setNetworkState)
+      .catch(() => {});
 
     // Subscribe to network state updates
     const unsubscribe = NetInfo.addEventListener(setNetworkState);

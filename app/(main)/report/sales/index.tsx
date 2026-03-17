@@ -1,5 +1,5 @@
 import TransactionHistory from "@/components/screens/transaction/history";
 
 export default function TransactionReportScreen() {
-  return <TransactionHistory isReport showSearch={false} />;
+  return <TransactionHistory isReport />;
 }
