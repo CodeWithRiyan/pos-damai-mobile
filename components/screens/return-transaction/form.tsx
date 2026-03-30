@@ -28,10 +28,10 @@ import { VStack } from "@/components/ui/vstack";
 //   useCreateReturnTransaction,
 //   useUpdateReturnTransaction,
 // } from "@/lib/api/return-transaction";
-import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
-import { FinanceType, ReturnType, Status } from "@/lib/constants";
 import { useCreateFinance } from "@/lib/api/finances";
 import { useCreateTransactionReturn } from "@/lib/api/return-transaction";
+import { FinanceType, ReturnType, Status } from "@/lib/constants";
+import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 import { useReturnTransactionStore } from "@/stores/return-transaction";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -81,6 +81,7 @@ export default function ReturnTransactionConfirmForm() {
       note: data.reason, // Map 'reason' from form to 'note' in database
       items: cart.map((item) => ({
         productId: item.product.id,
+        variantId: item.variant?.id, // TODO: backend should handle this optional field
         productName: item.product.name || "",
         quantity: item.quantity,
         sellPrice: item.sellPrice || 0,

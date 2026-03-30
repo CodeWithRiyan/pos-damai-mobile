@@ -1,8 +1,8 @@
 import { Customer } from "@/lib/api/customers";
 import { Product, ProductVariant } from "@/lib/api/products";
 import { PriceType, Status } from "@/lib/constants";
-import { BaseCartItem } from "@/lib/types/cart";
 import { calculateLineItemTotal, findSellPrice } from "@/lib/price";
+import { BaseCartItem } from "@/lib/types/cart";
 import { create } from "zustand";
 
 interface CartItem extends BaseCartItem {
@@ -43,12 +43,12 @@ interface TransactionState {
   cartTotal: number;
   status: "DRAFT" | "COMPLETED";
   checkoutData: CheckoutData | null;
-  purchaseId: string | null;
+  transactionId: string | null;
   addProduct: Product | null;
   addProductVariantId: string | null;
   setCustomer: (customer: Customer | null) => void;
   setEmployee: (employee: Employee | null) => void;
-  setPurchaseId: (id: string | null) => void;
+  setTransactionId: (id: string | null) => void;
   addCartItem: (item: CartItem) => void;
   removeCartItem: (productId: string, variantId?: string) => void;
   resetCart: () => void;
@@ -64,7 +64,7 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   cartTotal: 0,
   status: Status.DRAFT,
   checkoutData: null,
-  purchaseId: null,
+  transactionId: null,
   addProduct: null,
   addProductVariantId: null,
   setCustomer: (customer) =>
@@ -176,7 +176,7 @@ export const useTransactionStore = create<TransactionState>((set) => ({
         cart: updatedCart,
       };
     }),
-  setPurchaseId: (id) => set({ purchaseId: id }),
+  setTransactionId: (id) => set({ transactionId: id }),
   setStatus: (status) => set({ status }),
   setCheckoutData: (data) => set({ checkoutData: data }),
   setAddProduct: (product, variantId) =>
@@ -258,5 +258,5 @@ export const useTransactionStore = create<TransactionState>((set) => ({
 
       return { cart: updatedCart, cartTotal: total };
     }),
-  resetCart: () => set({ cart: [], cartTotal: 0, purchaseId: null }),
+  resetCart: () => set({ cart: [], cartTotal: 0, transactionId: null }),
 }));
