@@ -26,6 +26,7 @@ import {
   SolarIconBold,
   SolarIconOutline,
 } from "@/components/ui/solar-icon-wrapper";
+import { ProductType } from "@/lib/constants";
 import { formatNumber } from "@/lib/utils/format";
 import classNames from "classnames";
 import { LayoutChangeEvent } from "react-native";
@@ -160,65 +161,79 @@ export default function ReturnTransactionInput() {
           <FlatList
             data={cart}
             className="flex-1"
-            keyExtractor={(item, index) => `${item.product.id}-${index}`}
-            renderItem={({ item, index }) => (
-              <Pressable
-                className="relative px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
-                onPress={() => {
-                  setAddProduct(item.product);
-                  setDeleteItem(null);
-                }}
-                onLongPress={() => {
-                  const newDeleteItem = item.product.id;
+            keyExtractor={(item, index) =>
+              `${item.product.id}-${item.variant?.id || ""}-${index}`
+            }
+            renderItem={({ item, index }) => {
+              const sellPrice =
+                item.variant && item.product.type === ProductType.MULTIUNIT
+                  ? item.sellPrice * (item.variant.netto || 0)
+                  : item.sellPrice;
 
-                  if (deleteItem === newDeleteItem) {
-                    setDeleteItem(null);
-                    return;
-                  }
-                  setDeleteItem(newDeleteItem);
-                }}
-              >
-                <HStack className="justify-between items-center">
-                  <HStack space="md" className="items-center">
-                    <Box className="size-6 justify-center items-center">
-                      <Heading size="md">{index + 1}</Heading>
-                    </Box>
-                    <VStack className="flex-1">
-                      <Heading size="md" className="line-clamp-2">
-                        {item.product.name}
-                      </Heading>
-                      <Text size="sm" className="text-slate-500">
-                        {item.quantity} x Rp {formatNumber(item.sellPrice ?? 0)}{" "}
-                        = Rp{" "}
-                        {formatNumber(item.quantity * (item.sellPrice || 0))}
-                      </Text>
-                      {item.note ? (
-                        <Text size="sm" className="text-slate-500">
-                          {item.note}
-                        </Text>
-                      ) : null}
-                    </VStack>
-                    <HStack space="sm">
-                      <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
-                        <Text className="font-bold">{item.quantity}</Text>
-                      </Box>
-                    </HStack>
-                  </HStack>
-                </HStack>
+              return (
                 <Pressable
-                  className={classNames(
-                    "absolute right-0 top-0 bottom-0 w-0 bg-error-500 items-center justify-center overflow-hidden transaction-all duration-300",
-                    deleteItem === item.product.id && "w-16",
-                  )}
+                  className="relative px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
                   onPress={() => {
-                    removeCartItem(item.product?.id || "");
+                    setAddProduct(item.product, item.variant?.id);
                     setDeleteItem(null);
                   }}
+                  onLongPress={() => {
+                    const newDeleteItem =
+                      item.product.type === ProductType.MULTIUNIT
+                        ? item.variant?.id || ""
+                        : item.product.id;
+
+                    if (deleteItem === newDeleteItem) {
+                      setDeleteItem(null);
+                      return;
+                    }
+                    setDeleteItem(newDeleteItem);
+                  }}
                 >
-                  <SolarIconBold name="TrashBin2" size={20} color="white" />
+                  <HStack className="justify-between items-center">
+                    <HStack space="md" className="items-center">
+                      <Box className="size-6 justify-center items-center">
+                        <Heading size="md">{index + 1}</Heading>
+                      </Box>
+                      <VStack className="flex-1">
+                        <Heading size="md" className="line-clamp-2">
+                          {item.variant &&
+                          item.product.type === ProductType.MULTIUNIT
+                            ? `${item.product.name} - ${item.variant.name}`
+                            : item.product.name}
+                        </Heading>
+                        <Text size="sm" className="text-slate-500">
+                          {item.quantity} x Rp {formatNumber(sellPrice)} = Rp{" "}
+                          {formatNumber(item.quantity * sellPrice)}
+                        </Text>
+                        {item.note ? (
+                          <Text size="sm" className="text-slate-500">
+                            {item.note}
+                          </Text>
+                        ) : null}
+                      </VStack>
+                      <HStack space="sm">
+                        <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
+                          <Text className="font-bold">{item.quantity}</Text>
+                        </Box>
+                      </HStack>
+                    </HStack>
+                  </HStack>
+                  <Pressable
+                    className={classNames(
+                      "absolute right-0 top-0 bottom-0 w-0 bg-error-500 items-center justify-center overflow-hidden transaction-all duration-300",
+                      deleteItem === item.product.id && "w-16",
+                    )}
+                    onPress={() => {
+                      removeCartItem(item.product?.id || "");
+                      setDeleteItem(null);
+                    }}
+                  >
+                    <SolarIconBold name="TrashBin2" size={20} color="white" />
+                  </Pressable>
                 </Pressable>
-              </Pressable>
-            )}
+              );
+            }}
             ListEmptyComponent={
               <Box className="p-8 items-center">
                 <Text className="text-slate-400 italic">

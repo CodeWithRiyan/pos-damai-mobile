@@ -24,10 +24,10 @@ import { useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
 import { useCreateStockOpname } from "@/lib/api/stock-opname";
 import { Status } from "@/lib/constants";
-import { formatMoney } from "@/lib/utils/format";
-import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
+import { formatMoney } from "@/lib/utils/format";
+import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 import { useStockOpnameStore } from "@/stores/stock-opname";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { and, eq } from "drizzle-orm";
@@ -110,7 +110,11 @@ export default function StockOpnameConfirmForm({
       date: date,
       note: data.note,
       items: (cart || []).map((item) => ({
-        product: { id: item.product.id, name: item.product.name },
+        product: {
+          id: item.product.id,
+          name: item.product.name,
+          variantId: item.variant?.id, // TODO: backend should handle this optional field
+        },
         physicalStock: item.physicalStock,
       })),
     };
