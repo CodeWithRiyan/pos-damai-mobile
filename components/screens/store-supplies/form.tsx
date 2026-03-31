@@ -22,8 +22,8 @@ import {
 } from "@/components/ui/form-control";
 import { useToast } from "@/components/ui/toast";
 import { VStack } from "@/components/ui/vstack";
-import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 import { useCreateStoreSupply } from "@/lib/api/store-supplies";
+import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
 import { useStoreSuppliesStore } from "@/stores/store-supplies";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
@@ -68,7 +68,11 @@ export default function StoreSuppliesConfirmForm({
       date: date,
       note: data.note,
       items: (cart || []).map((item) => ({
-        product: { id: item.product.id, name: item.product.name },
+        product: {
+          id: item.product.id,
+          name: item.product.name,
+          variantId: item.variant?.id,
+        },
         quantity: item.quantity,
       })),
     };

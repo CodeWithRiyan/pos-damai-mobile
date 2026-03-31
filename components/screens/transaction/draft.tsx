@@ -9,24 +9,37 @@ import {
   Text,
   VStack,
 } from "@/components/ui";
-import { useTransactions, fetchTransaction } from "@/lib/api/transactions";
+import { fetchTransaction, useTransactions } from "@/lib/api/transactions";
+import { Status } from "@/lib/constants";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { Status } from "@/lib/constants";
 import { useTransactionStore } from "@/stores/transaction";
 import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { eq, like, and } from "drizzle-orm";
+import { and, eq, like } from "drizzle-orm";
 import { useRouter } from "expo-router";
 import { Trash2 } from "lucide-react-native";
 import { ScrollView } from "react-native";
 
+import { useCustomers } from "@/lib/api/customers";
+import { useUsers } from "@/lib/api/users";
 import { formatNumber } from "@/lib/utils/format";
 export default function TransactionDraft() {
   const router = useRouter();
-  const { data: transactions, isLoading } = useTransactions();
-  const { addCartItem, resetCart, setStatus, setPurchaseId } =
-    useTransactionStore();
+  const { data: transactions, isLoading: isTransactionsLoading } =
+    useTransactions();
+  const { data: customers, isLoading: isCustomersLoading } = useCustomers();
+  const { data: users, isLoading: isUsersLoading } = useUsers();
+  const isLoading =
+    isTransactionsLoading || isCustomersLoading || isUsersLoading;
+  const {
+    addCartItem,
+    resetCart,
+    setStatus,
+    setTransactionId,
+    setCustomer,
+    setEmployee,
+  } = useTransactionStore();
   const queryClient = useQueryClient();
 
   // Filter only DRAFT status
@@ -67,7 +80,18 @@ export default function TransactionDraft() {
         }
       }
       setStatus(Status.DRAFT);
-      setPurchaseId(detail.id);
+      setTransactionId(detail.id);
+      if (detail.customerId) {
+        setCustomer(customers?.find((c) => c.id === detail.customerId) || null);
+      }
+      if (detail.employeeId) {
+        const user = users?.find((u) => u.id === detail.employeeId);
+        setEmployee({
+          id: user?.id || "",
+          name: user?.firstName || "",
+          username: user?.username || "",
+        });
+      }
       router.replace("/(main)/transaction");
     }
   };

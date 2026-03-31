@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/solar-icon-wrapper";
 import { Spinner } from "@/components/ui/spinner";
 import { useDeleteEntity } from "@/hooks/use-delete-entity";
-import { singleDeleteConfirm } from "@/lib/utils/delete-confirm";
 import { useDeletePayable, usePayableDetail } from "@/lib/api/payable";
+import { singleDeleteConfirm } from "@/lib/utils/delete-confirm";
 import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
@@ -50,7 +50,7 @@ export default function PayableRealizationDetail({
           icon: "Pen",
           onPress: () => {
             router.navigate(
-              `/(main)/management/payable-receivable/payable/edit/${payable?.id}` as any,
+              `/(main)/management/payable-receivable/payable/edit?payableId=${payable?.id}` as any,
             );
             hideActionDrawer();
           },

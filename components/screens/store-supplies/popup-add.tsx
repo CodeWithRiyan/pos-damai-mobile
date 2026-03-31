@@ -1,6 +1,9 @@
 import {
   Box,
+  CircleIcon,
   FormControl,
+  FormControlLabel,
+  FormControlLabelText,
   Heading,
   HStack,
   Input,
@@ -11,9 +14,15 @@ import {
   ModalContent,
   ModalHeader,
   Pressable,
+  Radio,
+  RadioGroup,
+  RadioIcon,
+  RadioIndicator,
+  RadioLabel,
   Text,
   VStack,
 } from "@/components/ui";
+import { ProductType } from "@/lib/constants";
 import { useStoreSuppliesStore } from "@/stores/store-supplies";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
@@ -30,11 +39,21 @@ export default function PopupAddStoreSupplies() {
     removeCartItem,
   } = useStoreSuppliesStore();
 
-  const product = cart.find(
-    (item) =>
-      item.product.id === addProduct?.id &&
-      item.variant?.id === addProductVariantId,
-  );
+  const currentProductInCart = addProductVariantId
+    ? cart.find(
+        (item) =>
+          item.product.id === addProduct?.id &&
+          item.variant?.id === addProductVariantId,
+      )
+    : !addProductVariantId && addProduct?.type !== ProductType.MULTIUNIT
+      ? cart.find((item) => item.product.id === addProduct?.id)
+      : undefined;
+
+  const variantUnitOptions =
+    addProduct?.variants.map((item) => ({
+      label: item.name,
+      value: item.id,
+    })) || [];
 
   const addStoreSuppliesSchema = z.object({
     variantUnitId: z.string().nullable(),
@@ -58,10 +77,10 @@ export default function PopupAddStoreSupplies() {
   const quantity = form.watch("quantity");
 
   useEffect(() => {
-    if (addProduct && product) {
+    if (addProduct && currentProductInCart) {
       form.reset({
-        quantity: product.quantity || 0,
-        variantUnitId: product.variant?.id || null,
+        quantity: currentProductInCart.quantity || 0,
+        variantUnitId: currentProductInCart.variant?.id || null,
       });
     } else {
       form.reset({
@@ -70,11 +89,95 @@ export default function PopupAddStoreSupplies() {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, addProduct]);
+  }, [form, addProduct, addProductVariantId, currentProductInCart]);
 
   const onSubmit: SubmitHandler<AddStoreSuppliesFormValues> = (
     data: AddStoreSuppliesFormValues,
   ) => {
+    if (addProduct?.type === ProductType.MULTIUNIT) {
+      const selectedVariant = addProduct.variants.find(
+        (item) => item.id === data.variantUnitId,
+      );
+
+      if (!selectedVariant) return;
+
+      const selectedNetto = selectedVariant.netto;
+
+      if (!selectedNetto) {
+        addCartItem({
+          product: addProduct,
+          quantity: data.quantity,
+          variant: selectedVariant,
+        });
+        setAddProduct(null);
+        return;
+      }
+
+      // Sort variants by their netto from largest to smallest
+      const sortedVariants = [...addProduct.variants]
+        .filter((v) => v.netto != null)
+        .sort((a, b) => (b.netto ?? 0) - (a.netto ?? 0));
+
+      // Decompose totalNetto into available variant-quantity pairs (greedy)
+      const decompose = (
+        remaining: number,
+        variants: typeof sortedVariants,
+      ): { variant: (typeof sortedVariants)[0]; quantity: number }[] => {
+        const result: {
+          variant: (typeof sortedVariants)[0];
+          quantity: number;
+        }[] = [];
+
+        let rem = remaining;
+        for (const variant of variants) {
+          const netto = variant.netto!;
+          if (netto > rem + 0.0001) continue;
+
+          const qty = Math.floor(rem / netto);
+          if (qty > 0) {
+            result.push({ variant, quantity: qty });
+            rem = parseFloat((rem - qty * netto).toFixed(10));
+          }
+
+          if (rem < 0.0001) break;
+        }
+
+        return result;
+      };
+
+      const totalNetto = parseFloat(
+        (selectedNetto * data.quantity).toFixed(10),
+      );
+      const decomposed = decompose(totalNetto, sortedVariants);
+
+      // Remove the variant being edited from cart first
+      removeCartItem(addProduct.id, selectedVariant.id);
+
+      for (const { variant, quantity } of decomposed) {
+        const existingItem = cart.find(
+          (item) =>
+            item.product.id === addProduct.id &&
+            item.variant?.id === variant.id,
+        );
+
+        // Prevent double-counting for the variant being edited
+        const existingQty =
+          existingItem && variant.id !== selectedVariant.id
+            ? existingItem.quantity
+            : 0;
+
+        const finalQty = existingQty + quantity;
+        addCartItem({
+          product: addProduct,
+          quantity: finalQty,
+          variant,
+        });
+      }
+
+      setAddProduct(null);
+      return;
+    }
+
     if (addProduct) {
       addCartItem({
         product: addProduct,
@@ -120,6 +223,44 @@ export default function PopupAddStoreSupplies() {
               </HStack>
             </HStack>
             <VStack space="lg" className="px-4">
+              {addProduct?.type === ProductType.MULTIUNIT && (
+                <Controller
+                  name="variantUnitId"
+                  control={form.control}
+                  render={({ field: { onChange, value } }) => (
+                    <FormControl>
+                      <FormControlLabel>
+                        <FormControlLabelText>Pilih Unit</FormControlLabelText>
+                      </FormControlLabel>
+                      <RadioGroup
+                        value={value || ""}
+                        onChange={(v) => {
+                          const variant = cart?.find(
+                            (f) => f.variant?.id === v,
+                          );
+                          onChange(v);
+                          form.setValue("quantity", variant?.quantity || 1);
+                        }}
+                      >
+                        <VStack space="sm">
+                          {variantUnitOptions.map((variant) => (
+                            <Radio
+                              key={variant.value}
+                              value={variant.value}
+                              size="md"
+                            >
+                              <RadioIndicator>
+                                <RadioIcon as={CircleIcon} />
+                              </RadioIndicator>
+                              <RadioLabel>{variant.label}</RadioLabel>
+                            </Radio>
+                          ))}
+                        </VStack>
+                      </RadioGroup>
+                    </FormControl>
+                  )}
+                />
+              )}
               <HStack
                 space="md"
                 className="w-full justify-between items-center"
@@ -188,15 +329,11 @@ export default function PopupAddStoreSupplies() {
               <Pressable
                 className="flex-1 items-center justify-center h-12 px-4 rounded-lg border border-error-500 bg-error-100 active:bg-error-200"
                 onPress={() => {
-                  removeCartItem(
-                    addProduct?.id || "",
-                    addProductVariantId || undefined,
-                  );
                   setAddProduct(null);
                 }}
               >
                 <Text size="lg" className="text-error-500 font-bold">
-                  HAPUS
+                  BATAL
                 </Text>
               </Pressable>
               <Pressable

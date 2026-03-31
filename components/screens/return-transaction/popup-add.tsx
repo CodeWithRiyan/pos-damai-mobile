@@ -5,6 +5,7 @@ import {
   CheckboxIndicator,
   CheckboxLabel,
   CheckIcon,
+  CircleIcon,
   FormControl,
   FormControlError,
   FormControlErrorText,
@@ -18,6 +19,11 @@ import {
   ModalContent,
   ModalHeader,
   Pressable,
+  Radio,
+  RadioGroup,
+  RadioIcon,
+  RadioIndicator,
+  RadioLabel,
   Text,
   Textarea,
   TextareaInput,
@@ -33,13 +39,37 @@ import { useEffect } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import z from "zod";
 
+import { ProductType } from "@/lib/constants";
 import { formatNumber } from "@/lib/utils/format";
 export default function PopupAddProduct() {
   const toast = useToast();
-  const { addProduct, cart, setAddProduct, addCartItem } =
-    useReturnTransactionStore();
+  const {
+    addProduct,
+    addProductVariantId,
+    cart,
+    setAddProduct,
+    addCartItem,
+    removeCartItem,
+  } = useReturnTransactionStore();
+
+  const currentProductInCart = addProductVariantId
+    ? cart.find(
+        (item) =>
+          item.product.id === addProduct?.id &&
+          item.variant?.id === addProductVariantId,
+      )
+    : !addProductVariantId && addProduct?.type !== ProductType.MULTIUNIT
+      ? cart.find((item) => item.product.id === addProduct?.id)
+      : undefined;
+
+  const variantUnitOptions =
+    addProduct?.variants.map((item) => ({
+      label: item.name,
+      value: item.id,
+    })) || [];
 
   const addProductSchema = z.object({
+    variantUnitId: z.string().nullable(),
     quantity: z.number().min(1, "Jumlah harus minimal 1"),
     addNote: z.boolean(),
     note: z.string(),
@@ -48,6 +78,7 @@ export default function PopupAddProduct() {
   type AddProductFormValues = z.infer<typeof addProductSchema>;
 
   const initialValues: AddProductFormValues = {
+    variantUnitId: null,
     quantity: 1,
     addNote: false,
     note: "",
@@ -79,26 +110,117 @@ export default function PopupAddProduct() {
   }, [form.formState.errors.quantity]);
 
   useEffect(() => {
-    if (addProduct) {
+    if (addProduct && currentProductInCart) {
       form.reset({
-        quantity:
-          cart?.find((item) => item.product.id === addProduct.id)?.quantity ||
-          0,
-        addNote: cart?.find((item) => item.product.id === addProduct.id)?.note
-          ? true
-          : false,
-        note:
-          cart?.find((item) => item.product.id === addProduct.id)?.note || "",
+        quantity: currentProductInCart.quantity || 0,
+        variantUnitId: currentProductInCart.variant?.id || null,
+        addNote: !!currentProductInCart.note,
+        note: currentProductInCart.note || "",
       });
     } else {
-      form.reset(initialValues);
+      form.reset({
+        ...initialValues,
+        variantUnitId: addProductVariantId || null,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, addProduct]);
+  }, [form, addProduct, addProductVariantId, currentProductInCart]);
 
   const onSubmit: SubmitHandler<AddProductFormValues> = (
     data: AddProductFormValues,
   ) => {
+    if (addProduct?.type === ProductType.MULTIUNIT) {
+      const selectedVariant = addProduct.variants.find(
+        (item) => item.id === data.variantUnitId,
+      );
+
+      if (!selectedVariant) return;
+
+      const selectedNetto = selectedVariant.netto || 0;
+
+      if (!selectedNetto) {
+        addCartItem({
+          product: addProduct,
+          quantity: data.quantity,
+          sellPrice: addProduct.lastSellPrice
+            ? addProduct.lastSellPrice * selectedNetto
+            : addProduct.sellPrices?.[0]?.price * selectedNetto,
+          note: data.addNote ? data.note : undefined,
+          variant: selectedVariant,
+        });
+        setAddProduct(null);
+        return;
+      }
+
+      // Sort variants by their netto from largest to smallest
+      const sortedVariants = [...addProduct.variants]
+        .filter((v) => v.netto != null)
+        .sort((a, b) => (b.netto ?? 0) - (a.netto ?? 0));
+
+      // Decompose totalNetto into available variant-quantity pairs (greedy)
+      const decompose = (
+        remaining: number,
+        variants: typeof sortedVariants,
+      ): { variant: (typeof sortedVariants)[0]; quantity: number }[] => {
+        const result: {
+          variant: (typeof sortedVariants)[0];
+          quantity: number;
+        }[] = [];
+
+        let rem = remaining;
+        for (const variant of variants) {
+          const netto = variant.netto!;
+          if (netto > rem + 0.0001) continue;
+
+          const qty = Math.floor(rem / netto);
+          if (qty > 0) {
+            result.push({ variant, quantity: qty });
+            rem = parseFloat((rem - qty * netto).toFixed(10));
+          }
+
+          if (rem < 0.0001) break;
+        }
+
+        return result;
+      };
+
+      const totalNetto = parseFloat(
+        (selectedNetto * data.quantity).toFixed(10),
+      );
+      const decomposed = decompose(totalNetto, sortedVariants);
+
+      // Remove the variant being edited from cart first
+      removeCartItem(addProduct.id, selectedVariant.id);
+
+      for (const { variant, quantity } of decomposed) {
+        const existingItem = cart.find(
+          (item) =>
+            item.product.id === addProduct.id &&
+            item.variant?.id === variant.id,
+        );
+
+        // Prevent double-counting for the variant being edited
+        const existingQty =
+          existingItem && variant.id !== selectedVariant.id
+            ? existingItem.quantity
+            : 0;
+
+        const finalQty = existingQty + quantity;
+        addCartItem({
+          product: addProduct,
+          quantity: finalQty,
+          sellPrice: addProduct.lastSellPrice
+            ? addProduct.lastSellPrice * (variant.netto || 0)
+            : addProduct.sellPrices?.[0]?.price * (variant.netto || 0) || 0,
+          note: data.addNote ? data.note : undefined,
+          variant,
+        });
+      }
+
+      setAddProduct(null);
+      return;
+    }
+
     if (addProduct) {
       addCartItem({
         product: addProduct,
@@ -147,6 +269,44 @@ export default function PopupAddProduct() {
               </HStack>
             </HStack>
             <VStack space="lg" className="px-4">
+              {addProduct?.type === ProductType.MULTIUNIT && (
+                <Controller
+                  name="variantUnitId"
+                  control={form.control}
+                  render={({ field: { onChange, value } }) => (
+                    <FormControl>
+                      <FormControlLabel>
+                        <FormControlLabelText>Pilih Unit</FormControlLabelText>
+                      </FormControlLabel>
+                      <RadioGroup
+                        value={value || ""}
+                        onChange={(v) => {
+                          const variant = cart?.find(
+                            (f) => f.variant?.id === v,
+                          );
+                          onChange(v);
+                          form.setValue("quantity", variant?.quantity || 1);
+                        }}
+                      >
+                        <VStack space="sm">
+                          {variantUnitOptions.map((variant) => (
+                            <Radio
+                              key={variant.value}
+                              value={variant.value}
+                              size="md"
+                            >
+                              <RadioIndicator>
+                                <RadioIcon as={CircleIcon} />
+                              </RadioIndicator>
+                              <RadioLabel>{variant.label}</RadioLabel>
+                            </Radio>
+                          ))}
+                        </VStack>
+                      </RadioGroup>
+                    </FormControl>
+                  )}
+                />
+              )}
               <HStack
                 space="md"
                 className="w-full justify-between items-center"

@@ -32,7 +32,7 @@ import { useCustomer } from "@/lib/api/customers";
 import { useCreateFinance } from "@/lib/api/finances";
 import { usePaymentTypes } from "@/lib/api/payment-types";
 import { useTransactionReturn } from "@/lib/api/return-transaction";
-import { useCreateTransaction } from "@/lib/api/transactions";
+import { useCreateTransaction, useTransaction } from "@/lib/api/transactions";
 import { CalcType, FinanceType, Status } from "@/lib/constants";
 import {
   findSellPrice,
@@ -60,10 +60,23 @@ export default function TransactionCheckoutForm() {
   const { data: returnData } = useTransactionReturn(returnId || "");
   const { data: user } = useCurrentUser();
   const { data: paymentTypesData } = usePaymentTypes();
-  const { customer, employee, cart, cartTotal, status, setCheckoutData } =
-    useTransactionStore();
-  const { resetCart, setCustomer, setEmployee } = useTransactionStore();
+  const {
+    customer,
+    employee,
+    cart,
+    cartTotal,
+    status,
+    transactionId,
+    setCheckoutData,
+    resetCart,
+    setCustomer,
+    setEmployee,
+    setTransactionId,
+  } = useTransactionStore();
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
+  const { data: transaction, isLoading: isLoadingTransaction } = useTransaction(
+    transactionId || "",
+  );
 
   // Map payment types to select options
   const paymentTypes =
@@ -173,19 +186,22 @@ export default function TransactionCheckoutForm() {
   useEffect(() => {
     if (cartTotal) {
       form.setValue("status", status);
-      if (!paymentTypeId && paymentTypesData && paymentTypesData.length > 0) {
+      if (!transaction && paymentTypesData && paymentTypesData.length > 0) {
         const defaultPaymentType =
           paymentTypesData?.find(
             (pt, i) =>
               pt.isDefault ||
               pt.name.toLowerCase() === "cash" ||
-              pt.name.toLowerCase() === "tunai" ||
-              i === 0,
+              pt.name.toLowerCase() === "tunai",
           )?.id || "";
         form.setValue("paymentTypeId", defaultPaymentType);
       }
+      if (transaction) {
+        form.setValue("paymentTypeId", transaction.paymentTypeId);
+        form.setValue("note", transaction.note || "");
+      }
     }
-  }, [form, cartTotal, status, paymentTypesData, paymentTypeId]);
+  }, [form, cartTotal, status, paymentTypesData, transaction]);
 
   useEffect(() => {
     form.setValue("totalPurchase", grandTotal);
@@ -213,7 +229,9 @@ export default function TransactionCheckoutForm() {
   const createFinanceMutation = useCreateFinance();
 
   const isLoading =
-    createTransactionMutation.isPending || createFinanceMutation.isPending;
+    isLoadingTransaction ||
+    createTransactionMutation.isPending ||
+    createFinanceMutation.isPending;
   const excessAndLackAmount = (returnData?.totalAmount || 0) - totalPurchase;
 
   const showValidationError = (message?: string) => {
@@ -232,6 +250,7 @@ export default function TransactionCheckoutForm() {
   ) => {
     try {
       const submissionData = {
+        id: transactionId || undefined,
         totalAmount: grandTotal,
         totalPaid: !returnCustomerId
           ? Number(data.totalPaid || "0")

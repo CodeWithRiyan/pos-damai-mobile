@@ -29,6 +29,7 @@ import { CalendarIcon } from "lucide-react-native";
 import { useState } from "react";
 import { ScrollView } from "react-native";
 
+import { useSupplier } from "@/lib/api/suppliers";
 import { formatRp } from "@/lib/utils/format";
 export default function PayableDetail({ isReport }: { isReport?: boolean }) {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -36,8 +37,12 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
   const params = useLocalSearchParams();
   const supplierId = params.supplierId as string;
 
-  const { data: payableList = [], isLoading } =
+  const { data: supplier, isLoading: isSupplierLoading } =
+    useSupplier(supplierId);
+  const { data: payableList = [], isLoading: isPayableLoading } =
     usePayableBySupplier(supplierId);
+
+  const isLoading = isSupplierLoading || isPayableLoading;
 
   const [selectedItems, setSelectedItems] = useState<Payable[] | null>(null);
   const [showTransactionDatePicker, setShowTransactionDatePicker] =
@@ -123,7 +128,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
                     color="#3b82f6"
                   />
                   <Text className="text-typography-500 text-sm">
-                    {payable?.supplier?.name || "Unknown Supplier"}
+                    {supplier?.name || "Unknown Supplier"}
                   </Text>
                 </HStack>
                 <VStack className="mt-2">

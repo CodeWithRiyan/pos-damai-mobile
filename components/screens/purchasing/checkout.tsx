@@ -22,7 +22,11 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
-import { CreatePurchasingDTO, useCreatePurchasing } from "@/lib/api/purchasing";
+import {
+  CreatePurchasingDTO,
+  useCreatePurchasing,
+  usePurchase,
+} from "@/lib/api/purchasing";
 import { useSuppliers } from "@/lib/api/suppliers";
 import { showErrorToast } from "@/lib/utils/toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -88,6 +92,9 @@ export default function PurchasingCheckoutForm() {
     usePurchasingStore();
   const { data: paymentTypesData } = usePaymentTypes();
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
+  const { data: purchase, isLoading: isLoadingPurchase } = usePurchase(
+    purchaseId || "",
+  );
 
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
   const [showTransactionDatePicker, setShowTransactionDatePicker] =
@@ -114,10 +121,9 @@ export default function PurchasingCheckoutForm() {
   const transactionDate = form.watch("transactionDate");
   const totalPaid = form.watch("totalPaid");
   const isPayable = form.watch("isPayable");
-  const paymentMethodId = form.watch("paymentMethodId");
   const { data: suppliers = [] } = useSuppliers();
   const createMutation = useCreatePurchasing();
-  const isLoading = createMutation.isPending;
+  const isLoading = isLoadingPurchase || createMutation.isPending;
 
   const { grandTotal } = useMemo(() => {
     return { grandTotal: cartTotal };
@@ -134,22 +140,35 @@ export default function PurchasingCheckoutForm() {
   useEffect(() => {
     if (cartTotal) {
       form.setValue("status", status);
-      if (!paymentMethodId && paymentTypesData && paymentTypesData.length > 0) {
+      if (!purchase && paymentTypesData && paymentTypesData.length > 0) {
         const defaultPaymentType =
-          paymentTypesData?.find((pt) => pt.isDefault)?.id ||
           paymentTypesData?.find(
             (pt) =>
+              pt.isDefault ||
               pt.name.toLowerCase() === "cash" ||
               pt.name.toLowerCase() === "tunai",
-          )?.id ||
-          "";
+          )?.id || "";
         form.setValue("paymentMethodId", defaultPaymentType);
+      }
+      if (purchase) {
+        form.setValue("supplierId", purchase.supplierId);
+        form.setValue(
+          "transactionDate",
+          purchase.createdAt ? new Date(purchase.createdAt) : null,
+        );
+        form.setValue("isPayable", !!purchase.dueDate);
+        form.setValue(
+          "dueDate",
+          purchase.dueDate ? new Date(purchase.dueDate) : null,
+        );
+        form.setValue("paymentMethodId", purchase.paymentTypeId || "");
+        form.setValue("note", purchase.note || "");
       }
     } else {
       form.reset(initialValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, cartTotal, paymentTypesData, status, paymentMethodId]);
+  }, [form, cartTotal, paymentTypesData, status, purchase]);
 
   useEffect(() => {
     form.setValue("totalPurchase", grandTotal);
