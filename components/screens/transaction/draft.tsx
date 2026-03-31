@@ -7,16 +7,15 @@ import {
   Pressable,
   Spinner,
   Text,
+  Toast,
+  ToastTitle,
+  useToast,
   VStack,
 } from "@/components/ui";
-import { fetchTransaction, useTransactions } from "@/lib/api/transactions";
+import { useContinueDraft, useDeleteTransaction, useTransactions } from "@/lib/api/transactions";
 import { Status } from "@/lib/constants";
-import { db } from "@/lib/db";
-import * as schema from "@/lib/db/schema";
 import { useTransactionStore } from "@/stores/transaction";
-import { useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { and, eq, like } from "drizzle-orm";
 import { useRouter } from "expo-router";
 import { Trash2 } from "lucide-react-native";
 import { ScrollView } from "react-native";
@@ -32,6 +31,30 @@ export default function TransactionDraft() {
   const { data: users, isLoading: isUsersLoading } = useUsers();
   const isLoading =
     isTransactionsLoading || isCustomersLoading || isUsersLoading;
+  const toast = useToast();
+  const deleteMutation = useDeleteTransaction({
+    onSuccess: () => {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+            <ToastTitle>Berhasil hapus draft</ToastTitle>
+          </Toast>
+        ),
+      });
+    },
+    onError: (error) => {
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+            <ToastTitle>{`Gagal hapus draft: ${error.message}`}</ToastTitle>
+          </Toast>
+        ),
+      });
+    },
+  });
+  const continueDraftMutation = useContinueDraft();
   const {
     addCartItem,
     resetCart,
@@ -40,101 +63,47 @@ export default function TransactionDraft() {
     setCustomer,
     setEmployee,
   } = useTransactionStore();
-  const queryClient = useQueryClient();
 
   // Filter only DRAFT status
   const drafts = transactions?.filter((t) => t.status === Status.DRAFT) || [];
 
   const handleContinueDraft = async (transactionId: string) => {
-    // We need to fetch the full detail of the transaction to get items
-    const detail = await fetchTransaction(transactionId);
+    const result = await continueDraftMutation.mutateAsync(transactionId);
+    
+    if (!result) return;
 
-    if (detail && detail.items) {
-      resetCart();
-      for (const item of detail.items) {
-        // Fetch full product data to ensure all required fields (stock, etc) are present
-        const productResult = await db
-          .select()
-          .from(schema.products)
-          .where(eq(schema.products.id, item.productId))
-          .limit(1);
-
-        if (productResult.length > 0) {
-          const fullProduct = productResult[0];
-          // Get prices for this product
-          const prices = await db
-            .select()
-            .from(schema.productPrices)
-            .where(eq(schema.productPrices.productId, fullProduct.id));
-
-          addCartItem({
-            product: {
-              ...fullProduct,
-              sellPrices: prices,
-              variants: [],
-              code: fullProduct.barcode,
-            } as any,
-            tempSellPrice: item.sellPrice || prices?.[0]?.price || 0,
-            quantity: item.quantity,
-          });
-        }
-      }
-      setStatus(Status.DRAFT);
-      setTransactionId(detail.id);
-      if (detail.customerId) {
-        setCustomer(customers?.find((c) => c.id === detail.customerId) || null);
-      }
-      if (detail.employeeId) {
-        const user = users?.find((u) => u.id === detail.employeeId);
-        setEmployee({
-          id: user?.id || "",
-          name: user?.firstName || "",
-          username: user?.username || "",
+    resetCart();
+    for (const item of result.items) {
+      if (item.product) {
+        addCartItem({
+          product: {
+            ...item.product,
+            code: item.product.barcode,
+          } as any,
+          tempSellPrice: item.sellPrice,
+          quantity: item.quantity,
+          note: item.note,
         });
       }
-      router.replace("/(main)/transaction");
     }
+    setStatus(Status.DRAFT);
+    setTransactionId(result.transactionId);
+    if (result.customerId) {
+      setCustomer(customers?.find((c) => c.id === result.customerId) || null);
+    }
+    if (result.employeeId) {
+      const user = users?.find((u) => u.id === result.employeeId);
+      setEmployee({
+        id: user?.id || "",
+        name: user?.firstName || "",
+        username: user?.username || "",
+      });
+    }
+    router.replace("/(main)/transaction");
   };
 
-  const handleDeleteDraft = async (transactionId: string) => {
-    await db.transaction(async (tx) => {
-      // 1. Get local_ref_id to cleanup transactions
-      const existing = await tx
-        .select()
-        .from(schema.transactions)
-        .where(eq(schema.transactions.id, transactionId))
-        .limit(1);
-
-      if (existing.length > 0) {
-        const refId = existing[0].local_ref_id;
-        // 2. Delete transactions efficiently
-        if (refId) {
-          await tx
-            .delete(schema.inventoryTransactions)
-            .where(
-              and(
-                eq(
-                  schema.inventoryTransactions.organizationId,
-                  existing[0].organizationId,
-                ),
-                like(schema.inventoryTransactions.local_ref_id, `${refId}_%`),
-              ),
-            );
-        }
-      }
-
-      // 3. Delete transaction items
-      await tx
-        .delete(schema.transactionItems)
-        .where(eq(schema.transactionItems.transactionId, transactionId));
-
-      // 4. Delete transaction
-      await tx
-        .delete(schema.transactions)
-        .where(eq(schema.transactions.id, transactionId));
-    });
-
-    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+  const handleDeleteDraft = (transactionId: string) => {
+    deleteMutation.mutate(transactionId);
   };
 
   if (isLoading) {

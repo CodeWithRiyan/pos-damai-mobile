@@ -169,6 +169,13 @@
       "when": 1773705538684,
       "tag": "0023_outgoing_fixer",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1774973923861,
+      "tag": "0024_same_domino",
+      "breakpoints": true
     }
   ]
 }
