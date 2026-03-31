@@ -52,6 +52,7 @@ export interface CreateReceivableDTO {
   nominal: number;
   dueDate?: string;
   note?: string;
+  transactionId?: string;  // NEW: optional link to transaction
 }
 
 export interface CreateReceivableRealizationDTO {
