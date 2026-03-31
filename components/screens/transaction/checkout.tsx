@@ -1,5 +1,9 @@
 import Header from "@/components/header";
 import {
+  Checkbox,
+  CheckboxIcon,
+  CheckboxIndicator,
+  CheckboxLabel,
   FormControl,
   FormControlError,
   FormControlErrorText,
@@ -16,13 +20,13 @@ import {
   useToast,
   VStack,
 } from "@/components/ui";
-// import { CreateTransactionDTO, useCreateTransaction } from "@/lib/api/transaction";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { ScrollView } from "react-native";
 import { z } from "zod";
-// import { useTransaction } from "@/lib/api/transaction";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import dayjs from "dayjs";
 import InputVirtualKeyboard from "@/components/ui/input-virtual-keyboard";
 import SelectModal from "@/components/ui/select/select-modal";
 import { useCurrentUser } from "@/lib/api/auth";
@@ -33,6 +37,7 @@ import { useCreateFinance } from "@/lib/api/finances";
 import { usePaymentTypes } from "@/lib/api/payment-types";
 import { useTransactionReturn } from "@/lib/api/return-transaction";
 import { useCreateTransaction, useTransaction } from "@/lib/api/transactions";
+import { useCreateReceivable } from "@/lib/api/receivable";
 import { CalcType, FinanceType, Status } from "@/lib/constants";
 import {
   findSellPrice,
@@ -43,7 +48,7 @@ import { usePaymentTypeStore } from "@/stores/payment-type";
 import { useTransactionStore } from "@/stores/transaction";
 import classNames from "classnames";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Check, PlusIcon } from "lucide-react-native";
+import { CalendarIcon, Check, CheckIcon, PlusIcon } from "lucide-react-native";
 
 import { formatNumber, formatRp } from "@/lib/utils/format";
 // Payment types are now loaded from the database via usePaymentTypes hook
@@ -109,7 +114,8 @@ export default function TransactionCheckoutForm() {
       if (
         data.status === Status.COMPLETED &&
         !returnCustomerId &&
-        Number(data.totalPaid || "0") < data.totalPurchase
+        Number(data.totalPaid || "0") < data.totalPurchase &&
+        !isHutang
       ) {
         ctx.addIssue({
           code: "custom",
@@ -227,11 +233,26 @@ export default function TransactionCheckoutForm() {
   const toast = useToast();
   const createTransactionMutation = useCreateTransaction();
   const createFinanceMutation = useCreateFinance();
+  const createReceivableMutation = useCreateReceivable();
+
+  // Hutang state
+  const [isHutang, setIsHutang] = useState(false);
+  const [showDueDatePicker, setShowDueDatePicker] = useState(false);
+  const [dueDate, setDueDate] = useState(() => {
+    const defaultDue = new Date();
+    defaultDue.setDate(defaultDue.getDate() + 30);
+    return defaultDue;
+  });
+
+  // Only show hutang option when employee is selected
+  const showHutangOption =
+    !!employee && status === Status.COMPLETED && !returnCustomerId;
 
   const isLoading =
     isLoadingTransaction ||
     createTransactionMutation.isPending ||
-    createFinanceMutation.isPending;
+    createFinanceMutation.isPending ||
+    createReceivableMutation.isPending;
   const excessAndLackAmount = (returnData?.totalAmount || 0) - totalPurchase;
 
   const showValidationError = (message?: string) => {
@@ -249,12 +270,17 @@ export default function TransactionCheckoutForm() {
     data: TransactionFormValues,
   ) => {
     try {
+      // When hutang is checked, set totalPaid to 0
+      const finalTotalPaid = isHutang
+        ? 0
+        : !returnCustomerId
+          ? Number(data.totalPaid || "0")
+          : Number(data.totalPaid || "0") + (returnData?.totalAmount || 0);
+
       const submissionData = {
         id: transactionId || undefined,
         totalAmount: grandTotal,
-        totalPaid: !returnCustomerId
-          ? Number(data.totalPaid || "0")
-          : Number(data.totalPaid || "0") + (returnData?.totalAmount || 0),
+        totalPaid: finalTotalPaid,
         commission: commission,
         paymentTypeId: data.paymentTypeId,
         customerId: employee ? undefined : customer?.id || "",
@@ -296,6 +322,17 @@ export default function TransactionCheckoutForm() {
         await createTransactionMutation.mutateAsync(submissionData);
 
       if (result.id) {
+        // Create receivable if hutang is checked
+        if (isHutang && employee) {
+          await createReceivableMutation.mutateAsync({
+            userId: employee.id,
+            nominal: grandTotal,
+            dueDate: dueDate.toISOString(),
+            note: `Piutang dari Karyawan ${employee.username} pada tanggal ${dayjs().format("DD/MM/YYYY")}`,
+            transactionId: result.id,
+          });
+        }
+
         setCheckoutData({
           id: result.id,
           referenceNumber: result.local_ref_id || "",
@@ -444,6 +481,52 @@ export default function TransactionCheckoutForm() {
                   )}
                 </HStack>
               )}
+              {showHutangOption && (
+                <HStack
+                  space="md"
+                  className="px-4 py-3 bg-warning-100 border-b border-warning-300"
+                >
+                  <Checkbox
+                    value={isHutang ? "true" : "false"}
+                    isChecked={isHutang}
+                    size="md"
+                    onChange={(checked) => setIsHutang(checked)}
+                  >
+                    <CheckboxIndicator>
+                      <CheckboxIcon as={CheckIcon} />
+                    </CheckboxIndicator>
+                    <CheckboxLabel className="font-bold text-warning-700 ml-2">
+                      Piutang
+                    </CheckboxLabel>
+                  </Checkbox>
+                  {isHutang && (
+                    <Pressable
+                      onPress={() => setShowDueDatePicker(true)}
+                      className="flex-1 items-end"
+                    >
+                      <HStack space="sm" className="items-center">
+                        <Icon as={CalendarIcon} size="md" color="#b45309" />
+                        <Text className="text-warning-700 font-bold">
+                          {dayjs(dueDate).format("DD/MM/YYYY")}
+                        </Text>
+                      </HStack>
+                    </Pressable>
+                  )}
+                </HStack>
+              )}
+              {showDueDatePicker && (
+                <DateTimePicker
+                  mode="date"
+                  value={dueDate}
+                  minimumDate={new Date()}
+                  onChange={(event, selectedDate) => {
+                    setShowDueDatePicker(false);
+                    if (event.type === "set" && selectedDate) {
+                      setDueDate(selectedDate);
+                    }
+                  }}
+                />
+              )}
               <HStack className="justify-center p-6 flex-col items-center">
                 <Text className="text-typography-600 mb-2 font-bold">
                   Total Tagihan
@@ -553,36 +636,38 @@ export default function TransactionCheckoutForm() {
             </VStack>
           </ScrollView>
         </VStack>
-        {status === Status.COMPLETED && excessAndLackAmount < 0 && (
-          <VStack className="flex-1">
-            <ScrollView className="flex-1">
-              <VStack className="flex-1">
-                <HStack className="justify-center p-6 flex-col items-center">
-                  <Heading size="3xl" className="font-bold">
-                    Rp {totalPaid ? formatNumber(parseFloat(totalPaid)) : "0"}
-                  </Heading>
-                  {Number(totalPaid) > form.getValues("totalPurchase") && (
-                    <Text className="text-success-500 font-bold mt-2">
-                      Kembalian:{" "}
-                      {formatRp(
-                        Number(totalPaid) - form.getValues("totalPurchase"),
-                      )}
-                    </Text>
-                  )}
-                </HStack>
-                <InputVirtualKeyboard
-                  nominal={totalPaid}
-                  exactChange={
-                    !returnId
-                      ? grandTotal.toString()
-                      : Math.abs(excessAndLackAmount).toString()
-                  }
-                  onChange={(value) => form.setValue("totalPaid", value)}
-                />
-              </VStack>
-            </ScrollView>
-          </VStack>
-        )}
+        {status === Status.COMPLETED &&
+          excessAndLackAmount < 0 &&
+          !isHutang && (
+            <VStack className="flex-1">
+              <ScrollView className="flex-1">
+                <VStack className="flex-1">
+                  <HStack className="justify-center p-6 flex-col items-center">
+                    <Heading size="3xl" className="font-bold">
+                      Rp {totalPaid ? formatNumber(parseFloat(totalPaid)) : "0"}
+                    </Heading>
+                    {Number(totalPaid) > form.getValues("totalPurchase") && (
+                      <Text className="text-success-500 font-bold mt-2">
+                        Kembalian:{" "}
+                        {formatRp(
+                          Number(totalPaid) - form.getValues("totalPurchase"),
+                        )}
+                      </Text>
+                    )}
+                  </HStack>
+                  <InputVirtualKeyboard
+                    nominal={totalPaid}
+                    exactChange={
+                      !returnId
+                        ? grandTotal.toString()
+                        : Math.abs(excessAndLackAmount).toString()
+                    }
+                    onChange={(value) => form.setValue("totalPaid", value)}
+                  />
+                </VStack>
+              </ScrollView>
+            </VStack>
+          )}
       </HStack>
     </VStack>
   );

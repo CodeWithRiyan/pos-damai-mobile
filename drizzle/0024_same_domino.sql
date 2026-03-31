@@ -1,0 +1,1 @@
+ALTER TABLE `receivables` ADD `transactionId` text;

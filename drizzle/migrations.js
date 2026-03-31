@@ -25,6 +25,7 @@ import m0020 from './0020_real_robin_chapel.sql';
 import m0021 from './0021_mute_quicksilver.sql';
 import m0022 from './0022_add_discount_profit_fields.sql';
 import m0023 from './0023_outgoing_fixer.sql';
+import m0024 from './0024_same_domino.sql';
 
   export default {
     journal,
@@ -52,7 +53,8 @@ m0019,
 m0020,
 m0021,
 m0022,
-m0023
+m0023,
+m0024
     }
   }
   

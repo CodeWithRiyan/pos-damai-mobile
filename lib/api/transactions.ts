@@ -876,7 +876,7 @@ export function useCreateTransaction() {
         }
       });
 
-      return { id: transactionId, local_ref_id: transactionId, ...data }; // Return actual ID, as finalLocalRefId is scoped inside the tx block.
+      return { ...data, id: transactionId, local_ref_id: transactionId }; // Return actual ID, as finalLocalRefId is scoped inside the tx block.
     },
     onSuccess: (responseData) => {
       const orgId = useAuthStore.getState().getOrganizationId();
@@ -893,6 +893,9 @@ export function useCreateTransaction() {
         queryClient.invalidateQueries({
           queryKey: ["customer-ids-with-transactions", orgId],
         });
+        queryClient.invalidateQueries({
+          queryKey: ["purchased-products", orgId, responseData.customerId],
+        });
       }
       if (responseData.returnId) {
         queryClient.invalidateQueries({
@@ -904,7 +907,10 @@ export function useCreateTransaction() {
 }
 
 // Soft delete transaction
-export function useDeleteTransaction() {
+export function useDeleteTransaction(options?: {
+  onSuccess?: (data: { id: string }) => void;
+  onError?: (error: Error) => void;
+}) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -960,10 +966,86 @@ export function useDeleteTransaction() {
 
       return { id };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("DELETE DRAFT SUCCESS");
       const orgId = useAuthStore.getState().getOrganizationId();
       queryClient.invalidateQueries({ queryKey: ["transactions", orgId] });
       queryClient.invalidateQueries({ queryKey: ["products", orgId] });
+      options?.onSuccess?.(data);
+    },
+  });
+}
+
+export interface CartItemData {
+  productId: string;
+  product?: Product;
+  variantId?: string | null;
+  quantity: number;
+  sellPrice: number;
+  note?: string;
+}
+
+export interface ContinueDraftResult {
+  items: CartItemData[];
+  customerId?: string;
+  employeeId?: string;
+  status: string;
+  transactionId: string;
+  paymentTypeId: string;
+  note: string;
+}
+
+export function useContinueDraft() {
+  return useMutation({
+    mutationFn: async (
+      transactionId: string,
+    ): Promise<ContinueDraftResult | null> => {
+      const detail = await fetchTransaction(transactionId);
+
+      if (!detail) return null;
+
+      const items: CartItemData[] = await Promise.all(
+        (detail.items || []).map(async (item) => {
+          const productResult = await db
+            .select()
+            .from(schema.products)
+            .where(eq(schema.products.id, item.productId))
+            .limit(1);
+
+          const prices = await db
+            .select()
+            .from(schema.productPrices)
+            .where(eq(schema.productPrices.productId, item.productId));
+
+          return {
+            productId: item.productId,
+            product:
+              productResult.length > 0
+                ? ({
+                    ...productResult[0],
+                    sellPrices: prices,
+                    variants: [],
+                    code: productResult[0].barcode,
+                    stock: 0,
+                  } as Product)
+                : undefined,
+            variantId: item.variantId,
+            quantity: item.quantity,
+            sellPrice: item.sellPrice,
+            note: item.note || undefined,
+          };
+        }),
+      );
+
+      return {
+        items,
+        customerId: detail.customerId || undefined,
+        employeeId: detail.employeeId || undefined,
+        status: detail.status,
+        transactionId: detail.id,
+        paymentTypeId: detail.paymentTypeId,
+        note: detail.note || "",
+      };
     },
   });
 }

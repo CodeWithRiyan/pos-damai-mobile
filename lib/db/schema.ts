@@ -243,6 +243,7 @@ export const receivables = sqliteTable("receivables", {
   note: text("note"),
   userId: text("userId").notNull(),
   organizationId: text("organizationId").notNull(),
+  transactionId: text("transactionId"),  // NEW: optional link to transaction
   ...syncColumns,
 });
 
