@@ -81,7 +81,7 @@ export default function ReturnTransactionConfirmForm() {
       note: data.reason, // Map 'reason' from form to 'note' in database
       items: cart.map((item) => ({
         productId: item.product.id,
-        variantId: item.variant?.id, // TODO: backend should handle this optional field
+        variantId: item.variant?.id,
         productName: item.product.name || "",
         quantity: item.quantity,
         sellPrice: item.sellPrice || 0,

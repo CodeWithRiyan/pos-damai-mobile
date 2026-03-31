@@ -71,7 +71,7 @@ export default function StoreSuppliesConfirmForm({
         product: {
           id: item.product.id,
           name: item.product.name,
-          variantId: item.variant?.id, // TODO: backend should handle this optional field
+          variantId: item.variant?.id,
         },
         quantity: item.quantity,
       })),
