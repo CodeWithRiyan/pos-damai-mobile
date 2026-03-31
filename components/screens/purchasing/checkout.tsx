@@ -240,7 +240,6 @@ export default function PurchasingCheckoutForm() {
       })),
     };
 
-    // TODO: tambahkan purchaseId untuk update jika sudah ada, bukan buat baru terus
     createMutation.mutate(submissionData, {
       onSuccess: (responseData) => {
         setCheckoutData({

@@ -250,6 +250,7 @@ export default function TransactionCheckoutForm() {
   ) => {
     try {
       const submissionData = {
+        id: transactionId || undefined,
         totalAmount: grandTotal,
         totalPaid: !returnCustomerId
           ? Number(data.totalPaid || "0")
@@ -291,7 +292,6 @@ export default function TransactionCheckoutForm() {
         }),
       };
 
-      // TODO: tambahkan transactionId untuk update jika sudah ada, bukan buat baru terus
       const result =
         await createTransactionMutation.mutateAsync(submissionData);
 

@@ -21,6 +21,7 @@ import {
 
 export interface ReturnTransactionItem {
   productId: string;
+  variantId?: string;
   productName?: string;
   quantity: number;
   sellPrice: number;
@@ -260,6 +261,7 @@ export const useCreateTransactionReturn = () => {
               id: itemId,
               transactionReturnId: returnId,
               productId: item.productId,
+              variantId: item.variantId || null,
               quantity: item.quantity,
               sellPrice: item.sellPrice,
               organizationId,
