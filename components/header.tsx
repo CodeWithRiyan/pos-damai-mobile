@@ -9,11 +9,14 @@ import {
   HStack,
   Icon,
   MenuIcon,
+  Text,
+  VStack,
 } from "./ui";
 import { Pressable } from "./ui/pressable";
 
 export default function Header({
   header,
+  subHeader,
   action,
   isGoBack = false,
   onGoBack,
@@ -23,6 +26,7 @@ export default function Header({
   onCancelSelectedItems,
 }: {
   header?: React.ReactNode;
+  subHeader?: React.ReactNode;
   action?: React.ReactNode;
   isGoBack?: boolean;
   onGoBack?: () => void;
@@ -88,9 +92,14 @@ export default function Header({
         space="sm"
         className="absolute inset-0 justify-center items-center"
       >
-        <Heading size="sm" className="text-typography-0">
-          {header}
-        </Heading>
+        <VStack className="justify-center items-center">
+          <Heading size="sm" className="text-typography-0">
+            {header}
+          </Heading>
+          {subHeader && (
+            <Text className="text-typography-0 text-xs">{subHeader}</Text>
+          )}
+        </VStack>
       </HStack>
       {selectedItemsPosition === "right" && selectedItemsLength ? (
         <CancelSelectedItems />
