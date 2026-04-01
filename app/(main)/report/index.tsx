@@ -30,8 +30,8 @@ export default function ReportScreen() {
       icon: "Chart",
     },
     {
-      label: "Laporan Setor",
-      href: "/report/submit-report",
+      label: "Laporan Setor Tunai",
+      href: "/report/cash-deposit",
       icon: "Chart",
     },
     {
