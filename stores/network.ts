@@ -1,6 +1,6 @@
-import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
-import { useEffect } from "react";
-import { create } from "zustand";
+import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
+import { useEffect } from 'react';
+import { create } from 'zustand';
 
 interface NetworkState {
   isConnected: boolean;

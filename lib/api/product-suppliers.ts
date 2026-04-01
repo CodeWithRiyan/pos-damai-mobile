@@ -1,8 +1,8 @@
-import { useAuthStore } from "@/stores/auth";
-import { useQuery } from "@tanstack/react-query";
-import { and, eq, isNull } from "drizzle-orm";
-import { db } from "../db";
-import * as schema from "../db/schema";
+import { useAuthStore } from '@/stores/auth';
+import { useQuery } from '@tanstack/react-query';
+import { and, eq, isNull } from 'drizzle-orm';
+import { db } from '../db';
+import * as schema from '../db/schema';
 
 export interface ProductSupplier {
   supplierId: string;
@@ -26,7 +26,7 @@ export function useProductSuppliers(productId: string) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
 
   return useQuery({
-    queryKey: ["product-suppliers", productId, orgId],
+    queryKey: ['product-suppliers', productId, orgId],
     queryFn: async () => {
       if (!productId || !orgId) {
         return [];
@@ -39,8 +39,8 @@ export function useProductSuppliers(productId: string) {
         .where(
           and(
             eq(schema.inventoryTransactions.productId, productId),
-            eq(schema.inventoryTransactions.type, "PURCHASE"),
-            eq(schema.inventoryTransactions.status, "COMPLETED"),
+            eq(schema.inventoryTransactions.type, 'PURCHASE'),
+            eq(schema.inventoryTransactions.status, 'COMPLETED'),
             eq(schema.inventoryTransactions.organizationId, orgId),
             isNull(schema.inventoryTransactions.deletedAt),
           ),
@@ -55,7 +55,7 @@ export function useProductSuppliers(productId: string) {
       transactions.forEach((tx) => {
         if (tx.local_ref_id) {
           // Remove _{productId} from the end
-          const purchaseRef = tx.local_ref_id.replace(`_${productId}`, "");
+          const purchaseRef = tx.local_ref_id.replace(`_${productId}`, '');
           purchaseRefs.add(purchaseRef);
         }
       });
@@ -69,7 +69,7 @@ export function useProductSuppliers(productId: string) {
         .where(
           and(
             eq(schema.purchases.organizationId, orgId),
-            eq(schema.purchases.status, "COMPLETED"),
+            eq(schema.purchases.status, 'COMPLETED'),
             isNull(schema.purchases.deletedAt),
           ),
         );
@@ -117,7 +117,7 @@ export function useProductSuppliers(productId: string) {
 
         // Find transactions for this purchase and product
         const purchaseTxs = transactions.filter((tx) =>
-          tx.local_ref_id?.startsWith(purchase.local_ref_id + "_"),
+          tx.local_ref_id?.startsWith(purchase.local_ref_id + '_'),
         );
 
         for (const tx of purchaseTxs) {
@@ -128,8 +128,7 @@ export function useProductSuppliers(productId: string) {
         // Update last purchase date
         if (
           purchase.createdAt &&
-          (!supplierData.lastPurchaseDate ||
-            purchase.createdAt > supplierData.lastPurchaseDate)
+          (!supplierData.lastPurchaseDate || purchase.createdAt > supplierData.lastPurchaseDate)
         ) {
           supplierData.lastPurchaseDate = purchase.createdAt;
         }
@@ -150,7 +149,7 @@ export function useProductSuppliers(productId: string) {
 
         result.push({
           supplierId: data.supplierId,
-          supplierName: supplier[0]?.name || "Unknown Supplier",
+          supplierName: supplier[0]?.name || 'Unknown Supplier',
           totalQuantity: data.totalQuantity,
           totalValue: data.totalValue,
           lastPurchaseDate: data.lastPurchaseDate || new Date(),
@@ -160,27 +159,22 @@ export function useProductSuppliers(productId: string) {
 
       // Sort by last purchase date (most recent first)
       result.sort(
-        (a, b) =>
-          new Date(b.lastPurchaseDate).getTime() -
-          new Date(a.lastPurchaseDate).getTime(),
+        (a, b) => new Date(b.lastPurchaseDate).getTime() - new Date(a.lastPurchaseDate).getTime(),
       );
 
       return result;
     },
     enabled: !!productId && !!orgId,
-    refetchOnMount: "always",
+    refetchOnMount: 'always',
     staleTime: 0,
   });
 }
 
-export function useProductSupplierTransactions(
-  productId: string,
-  supplierId: string,
-) {
+export function useProductSupplierTransactions(productId: string, supplierId: string) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
 
   return useQuery({
-    queryKey: ["product-supplier-transactions", productId, supplierId, orgId],
+    queryKey: ['product-supplier-transactions', productId, supplierId, orgId],
     queryFn: async () => {
       if (!productId || !supplierId || !orgId) {
         return [];
@@ -193,8 +187,8 @@ export function useProductSupplierTransactions(
         .where(
           and(
             eq(schema.inventoryTransactions.productId, productId),
-            eq(schema.inventoryTransactions.type, "PURCHASE"),
-            eq(schema.inventoryTransactions.status, "COMPLETED"),
+            eq(schema.inventoryTransactions.type, 'PURCHASE'),
+            eq(schema.inventoryTransactions.status, 'COMPLETED'),
             eq(schema.inventoryTransactions.organizationId, orgId),
             isNull(schema.inventoryTransactions.deletedAt),
           ),
@@ -206,7 +200,7 @@ export function useProductSupplierTransactions(
       const purchaseRefs = new Set<string>();
       transactions.forEach((tx) => {
         if (tx.local_ref_id) {
-          const purchaseRef = tx.local_ref_id.replace(`_${productId}`, "");
+          const purchaseRef = tx.local_ref_id.replace(`_${productId}`, '');
           purchaseRefs.add(purchaseRef);
         }
       });
@@ -221,7 +215,7 @@ export function useProductSupplierTransactions(
           and(
             eq(schema.purchases.supplierId, supplierId),
             eq(schema.purchases.organizationId, orgId),
-            eq(schema.purchases.status, "COMPLETED"),
+            eq(schema.purchases.status, 'COMPLETED'),
             isNull(schema.purchases.deletedAt),
           ),
         );
@@ -246,7 +240,7 @@ export function useProductSupplierTransactions(
       for (const purchase of relevantPurchases) {
         // Find transactions for this purchase and product
         const purchaseTxs = transactions.filter((tx) =>
-          tx.local_ref_id?.startsWith(purchase.local_ref_id + "_"),
+          tx.local_ref_id?.startsWith(purchase.local_ref_id + '_'),
         );
 
         for (const tx of purchaseTxs) {
@@ -263,15 +257,13 @@ export function useProductSupplierTransactions(
 
       // Sort by purchase date (most recent first)
       result.sort(
-        (a, b) =>
-          new Date(b.purchaseDate).getTime() -
-          new Date(a.purchaseDate).getTime(),
+        (a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime(),
       );
 
       return result;
     },
     enabled: !!productId && !!supplierId && !!orgId,
-    refetchOnMount: "always",
+    refetchOnMount: 'always',
     staleTime: 0,
   });
 }

@@ -1,5 +1,5 @@
-import { Category } from "@/lib/api/categories";
-import { create } from "zustand";
+import { Category } from '@/lib/api/categories';
+import { create } from 'zustand';
 
 interface CategoryState {
   open: boolean;

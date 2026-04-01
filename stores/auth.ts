@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import { UserProfile } from "@/lib/api/auth";
-import { storageAdapter } from "@/lib/storage";
+import { create } from 'zustand';
+import { UserProfile } from '@/lib/api/auth';
+import { storageAdapter } from '@/lib/storage';
 
 interface AuthState {
   profile: UserProfile | null;
@@ -11,7 +11,7 @@ interface AuthState {
 
 // Helper to get profile from storage
 const getProfileFromStorage = (): UserProfile | null => {
-  const data = storageAdapter.getItem("userProfile");
+  const data = storageAdapter.getItem('userProfile');
   if (data) {
     try {
       return JSON.parse(data);
@@ -27,16 +27,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setProfile: (profile) => {
     set({ profile });
     if (profile) {
-      storageAdapter.setItem("userProfile", JSON.stringify(profile));
+      storageAdapter.setItem('userProfile', JSON.stringify(profile));
     } else {
-      storageAdapter.removeItem("userProfile");
+      storageAdapter.removeItem('userProfile');
     }
   },
   getOrganizationId: () => {
     const profile = get().profile;
-    return (
-      profile?.selectedOrganizationId || profile?.selectedOrganization?.id || ""
-    );
+    return profile?.selectedOrganizationId || profile?.selectedOrganization?.id || '';
   },
   rehydrate: () => {
     const profile = getProfileFromStorage();

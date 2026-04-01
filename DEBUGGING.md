@@ -57,7 +57,7 @@ Gunakan `console.log` di dalam store atau buat selector sementara untuk memantau
 
 ```typescript
 const cart = useTransactionStore((state) => state.cart);
-console.log("Cart state:", JSON.stringify(cart, null, 2));
+console.log('Cart state:', JSON.stringify(cart, null, 2));
 ```
 
 ---

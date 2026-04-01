@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   Heading,
   Icon,
@@ -8,34 +8,31 @@ import {
   InputSlot,
   SearchIcon,
   Text,
-} from "@/components/ui";
-import { Box } from "@/components/ui/box";
-import { HStack } from "@/components/ui/hstack";
-import { Pressable } from "@/components/ui/pressable";
-import {
-  SolarIconBold,
-  SolarIconLinear,
-} from "@/components/ui/solar-icon-wrapper";
-import { VStack } from "@/components/ui/vstack";
+} from '@/components/ui';
+import { Box } from '@/components/ui/box';
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold, SolarIconLinear } from '@/components/ui/solar-icon-wrapper';
+import { VStack } from '@/components/ui/vstack';
 // import { useBulkDeletePurchasing, Purchasing, usePurchasing } from "@/lib/api/purchasing";
-import { ShowByStock, useProducts } from "@/lib/api/products";
-import { usePurchasingStore } from "@/stores/purchasing";
-import { useRouter } from "expo-router";
-import { Plus } from "lucide-react-native";
-import React, { useState } from "react";
-import { FlatList } from "react-native";
-import ProductNotification from "../product/notification";
-import PurchasingFilter from "./filter";
-import PopupAddProduct from "./popup-add";
+import { ShowByStock, useProducts } from '@/lib/api/products';
+import { usePurchasingStore } from '@/stores/purchasing';
+import { useRouter } from 'expo-router';
+import { Plus } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { FlatList } from 'react-native';
+import ProductNotification from '../product/notification';
+import PurchasingFilter from './filter';
+import PopupAddProduct from './popup-add';
 
-import { Status } from "@/lib/constants";
-import { formatRp, formatNumber } from "@/lib/utils/format";
+import { Status } from '@/lib/constants';
+import { formatRp, formatNumber } from '@/lib/utils/format';
 export default function PurchasingList() {
   const [openNotification, setOpenNotification] = useState<boolean>(false);
-  const [stockFilter, setStockFilter] = useState<ShowByStock>("ALL_STOCK");
+  const [stockFilter, setStockFilter] = useState<ShowByStock>('ALL_STOCK');
 
   const [openFilter, setOpenFilter] = useState<boolean>(false);
-  const [supplierId, setSupplierId] = useState<string>("");
+  const [supplierId, setSupplierId] = useState<string>('');
   const activeFilterCount = [supplierId].filter(Boolean).length;
 
   const { cart, setAddProduct, setStatus } = usePurchasingStore();
@@ -54,13 +51,13 @@ export default function PurchasingList() {
           <HStack space="sm" className="pr-4">
             <Pressable
               className="size-10 items-center justify-center"
-              onPress={() => router.navigate("/(main)/purchasing/draft")}
+              onPress={() => router.navigate('/(main)/purchasing/draft')}
             >
               <SolarIconBold name="ClipboardList" size={20} color="#FDFBF9" />
             </Pressable>
             <Pressable
               className="size-10 items-center justify-center"
-              onPress={() => router.navigate("/(main)/purchasing/history")}
+              onPress={() => router.navigate('/(main)/purchasing/history')}
             >
               <SolarIconBold name="History" size={20} color="#FDFBF9" />
             </Pressable>
@@ -69,10 +66,7 @@ export default function PurchasingList() {
       />
       <HStack className="flex-1 bg-white">
         <VStack className="flex-1 border-r border-gray-300">
-          <HStack
-            space="sm"
-            className="p-4 shadow-lg bg-background-0 items-center"
-          >
+          <HStack space="sm" className="p-4 shadow-lg bg-background-0 items-center">
             <Pressable
               className="size-10 items-center justify-center"
               onPress={() => setOpenNotification(true)}
@@ -108,9 +102,7 @@ export default function PurchasingList() {
                 <Pressable
                   className="w-full rounded-md h-10 flex-row justify-center items-center gap-4 bg-primary-100 border border-primary-500 active:bg-primary-200"
                   onPress={() =>
-                    router.navigate(
-                      "/(main)/management/product-category-brand/product/add",
-                    )
+                    router.navigate('/(main)/management/product-category-brand/product/add')
                   }
                 >
                   <Icon as={Plus} size="sm" color="#3d2117" />
@@ -143,14 +135,11 @@ export default function PurchasingList() {
                     <HStack space="sm">
                       <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
                         <Text className="font-bold">
-                          {cart?.find((f) => f.product.id === product.id)
-                            ?.quantity || 0}
+                          {cart?.find((f) => f.product.id === product.id)?.quantity || 0}
                         </Text>
                       </Box>
                       <Box className="h-10 min-w-10 items-center justify-center bg-primary-500 px-2 rounded-lg">
-                        <Text className="text-typography-0 font-bold">
-                          {product.stock}
-                        </Text>
+                        <Text className="text-typography-0 font-bold">{product.stock}</Text>
                       </Box>
                     </HStack>
                   </HStack>
@@ -184,8 +173,7 @@ export default function PurchasingList() {
                         {item.product.name}
                       </Heading>
                       <Text size="sm" className="text-slate-500">
-                        {item.quantity} x Rp{" "}
-                        {formatNumber(item.newPurchasePrice)} = Rp{" "}
+                        {item.quantity} x Rp {formatNumber(item.newPurchasePrice)} = Rp{' '}
                         {formatNumber(item.quantity * item.newPurchasePrice)}
                       </Text>
                       {item.note ? (
@@ -205,9 +193,7 @@ export default function PurchasingList() {
             )}
             ListEmptyComponent={
               <Box className="p-8 items-center">
-                <Text className="text-slate-400 italic">
-                  Belum ada barang di keranjang
-                </Text>
+                <Text className="text-slate-400 italic">Belum ada barang di keranjang</Text>
               </Box>
             }
           />
@@ -216,15 +202,13 @@ export default function PurchasingList() {
               <Pressable
                 className="flex-1 flex-row items-center justify-between h-16 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
                 onPress={() => {
-                  router.navigate("/(main)/purchasing/checkout");
+                  router.navigate('/(main)/purchasing/checkout');
                   setStatus(Status.COMPLETED);
                 }}
               >
                 <HStack space="md" className="items-center">
                   <Text size="4xl" className="text-white font-bold">
-                    {formatNumber(
-                      cart.reduce((total, item) => total + item.quantity, 0),
-                    )}
+                    {formatNumber(cart.reduce((total, item) => total + item.quantity, 0))}
                   </Text>
                   <Text size="lg" className="text-white font-bold">
                     ITEM
@@ -237,7 +221,7 @@ export default function PurchasingList() {
               <Pressable
                 className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                 onPress={() => {
-                  router.navigate("/(main)/purchasing/checkout");
+                  router.navigate('/(main)/purchasing/checkout');
                   setStatus(Status.DRAFT);
                 }}
               >

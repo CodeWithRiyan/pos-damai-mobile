@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   Heading,
   Input,
@@ -8,17 +8,17 @@ import {
   SearchIcon,
   Text,
   VStack,
-} from "@/components/ui";
-import { Box } from "@/components/ui/box";
-import { HStack } from "@/components/ui/hstack";
-import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { Spinner } from "@/components/ui/spinner";
-import { useCustomers } from "@/lib/api/customers";
-import { useCustomerIdsWithTransactions } from "@/lib/api/transactions";
-import { useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
-import { FlatList, RefreshControl } from "react-native";
+} from '@/components/ui';
+import { Box } from '@/components/ui/box';
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { Spinner } from '@/components/ui/spinner';
+import { useCustomers } from '@/lib/api/customers';
+import { useCustomerIdsWithTransactions } from '@/lib/api/transactions';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { FlatList, RefreshControl } from 'react-native';
 
 export default function PurchasingCustomerList() {
   const {
@@ -31,7 +31,7 @@ export default function PurchasingCustomerList() {
     isLoading: loadingTx,
     refetch: refetchTx,
   } = useCustomerIdsWithTransactions();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const router = useRouter();
 
   const isLoading = loadingCustomers || loadingTx;
@@ -54,9 +54,7 @@ export default function PurchasingCustomerList() {
         );
 
   const hasNoCustomersWithTx =
-    !isLoading &&
-    Array.isArray(customerIdsWithTx) &&
-    customerIdsWithTx.length === 0;
+    !isLoading && Array.isArray(customerIdsWithTx) && customerIdsWithTx.length === 0;
 
   return (
     <Box className="flex-1 bg-white">
@@ -66,19 +64,14 @@ export default function PurchasingCustomerList() {
         action={
           <Pressable
             className="p-6"
-            onPress={() =>
-              router.push("/(main)/management/return/transaction/history")
-            }
+            onPress={() => router.push('/(main)/management/return/transaction/history')}
           >
             <SolarIconBold name="History" size={20} color="#FDFBF9" />
           </Pressable>
         }
       />
       <VStack className="flex-1">
-        <HStack
-          space="sm"
-          className="p-4 shadow-lg bg-background-0 items-center"
-        >
+        <HStack space="sm" className="p-4 shadow-lg bg-background-0 items-center">
           <Input className="flex-1 border border-background-300 rounded-lg h-10">
             <InputSlot className="pl-3">
               <InputIcon as={SearchIcon} />
@@ -93,9 +86,7 @@ export default function PurchasingCustomerList() {
         <FlatList
           data={filteredCustomers}
           className="flex-1"
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           keyExtractor={(customer) => customer.id}
           renderItem={({ item: customer }) => (
             <Pressable
@@ -126,9 +117,7 @@ export default function PurchasingCustomerList() {
               </VStack>
             ) : hasNoCustomersWithTx ? (
               <VStack className="items-center py-10">
-                <Text className="text-gray-400">
-                  Belum ada pelanggan dengan transaksi selesai
-                </Text>
+                <Text className="text-gray-400">Belum ada pelanggan dengan transaksi selesai</Text>
               </VStack>
             ) : (
               <VStack className="items-center py-10">

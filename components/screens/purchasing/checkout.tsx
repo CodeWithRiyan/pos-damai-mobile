@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   Box,
   Checkbox,
@@ -21,62 +21,56 @@ import {
   ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
-import {
-  CreatePurchasingDTO,
-  useCreatePurchasing,
-  usePurchase,
-} from "@/lib/api/purchasing";
-import { useSuppliers } from "@/lib/api/suppliers";
-import { showErrorToast } from "@/lib/utils/toast";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { ScrollView } from "react-native";
-import { z } from "zod";
+} from '@/components/ui';
+import { CreatePurchasingDTO, useCreatePurchasing, usePurchase } from '@/lib/api/purchasing';
+import { useSuppliers } from '@/lib/api/suppliers';
+import { showErrorToast } from '@/lib/utils/toast';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { ScrollView } from 'react-native';
+import { z } from 'zod';
 // import { usePurchasing } from "@/lib/api/purchasing";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
-import InputVirtualKeyboard from "@/components/ui/input-virtual-keyboard";
-import SelectModal from "@/components/ui/select/select-modal";
-import { useCurrentUser } from "@/lib/api/auth";
-import { usePaymentTypes } from "@/lib/api/payment-types";
-import { usePaymentTypeStore } from "@/stores/payment-type";
-import { usePurchasingStore } from "@/stores/purchasing";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import dayjs from "dayjs";
-import { ArrowRight, CalendarIcon, Check, PlusIcon } from "lucide-react-native";
+import { usePopUpConfirm } from '@/components/pop-up-confirm';
+import InputVirtualKeyboard from '@/components/ui/input-virtual-keyboard';
+import SelectModal from '@/components/ui/select/select-modal';
+import { useCurrentUser } from '@/lib/api/auth';
+import { usePaymentTypes } from '@/lib/api/payment-types';
+import { usePaymentTypeStore } from '@/stores/payment-type';
+import { usePurchasingStore } from '@/stores/purchasing';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
+import { ArrowRight, CalendarIcon, Check, PlusIcon } from 'lucide-react-native';
 
-import { Status } from "@/lib/constants";
-import { formatNumber, formatRp } from "@/lib/utils/format";
+import { Status } from '@/lib/constants';
+import { formatNumber, formatRp } from '@/lib/utils/format';
 const purchasingSchema = z
   .object({
-    totalPurchase: z
-      .number()
-      .min(0, "Total pembelian harus lebih besar atau sama dengan 0"),
+    totalPurchase: z.number().min(0, 'Total pembelian harus lebih besar atau sama dengan 0'),
     totalPaid: z.string(),
-    supplierId: z.string().min(1, "Supplier harus dipilih"),
+    supplierId: z.string().min(1, 'Supplier harus dipilih'),
     isPayable: z.boolean(),
     transactionDate: z.date().nullable(),
     dueDate: z.date().nullable(),
     isCashdrawer: z.boolean(),
     status: z.string(),
-    paymentMethodId: z.string().min(1, "Metode pembayaran harus dipilih"),
+    paymentMethodId: z.string().min(1, 'Metode pembayaran harus dipilih'),
     note: z.string(),
   })
   .superRefine((data, ctx) => {
     if (data.transactionDate === null) {
       ctx.addIssue({
-        code: "custom",
-        message: "Tanggal transaksi harus diisi",
-        path: ["transactionDate"],
+        code: 'custom',
+        message: 'Tanggal transaksi harus diisi',
+        path: ['transactionDate'],
       });
     }
     if (data.isPayable && data.dueDate === null) {
       ctx.addIssue({
-        code: "custom",
-        message: "Tanggal jatuh tempo harus diisi",
-        path: ["dueDate"],
+        code: 'custom',
+        message: 'Tanggal jatuh tempo harus diisi',
+        path: ['dueDate'],
       });
     }
   });
@@ -88,29 +82,25 @@ export default function PurchasingCheckoutForm() {
   const router = useRouter();
 
   const { data: user } = useCurrentUser();
-  const { cart, cartTotal, status, setCheckoutData, resetCart, purchaseId } =
-    usePurchasingStore();
+  const { cart, cartTotal, status, setCheckoutData, resetCart, purchaseId } = usePurchasingStore();
   const { data: paymentTypesData } = usePaymentTypes();
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
-  const { data: purchase, isLoading: isLoadingPurchase } = usePurchase(
-    purchaseId || "",
-  );
+  const { data: purchase, isLoading: isLoadingPurchase } = usePurchase(purchaseId || '');
 
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
-  const [showTransactionDatePicker, setShowTransactionDatePicker] =
-    useState(false);
+  const [showTransactionDatePicker, setShowTransactionDatePicker] = useState(false);
 
   const initialValues: PurchasingFormValues = {
     totalPurchase: 0,
-    totalPaid: "",
+    totalPaid: '',
     transactionDate: null,
-    supplierId: "",
+    supplierId: '',
     isPayable: false,
     dueDate: null,
     isCashdrawer: false,
     status: Status.DRAFT,
-    paymentMethodId: "",
-    note: "",
+    paymentMethodId: '',
+    note: '',
   };
 
   const form = useForm<PurchasingFormValues>({
@@ -118,9 +108,9 @@ export default function PurchasingCheckoutForm() {
     defaultValues: initialValues,
   });
 
-  const transactionDate = form.watch("transactionDate");
-  const totalPaid = form.watch("totalPaid");
-  const isPayable = form.watch("isPayable");
+  const transactionDate = form.watch('transactionDate');
+  const totalPaid = form.watch('totalPaid');
+  const isPayable = form.watch('isPayable');
   const { data: suppliers = [] } = useSuppliers();
   const createMutation = useCreatePurchasing();
   const isLoading = isLoadingPurchase || createMutation.isPending;
@@ -139,30 +129,22 @@ export default function PurchasingCheckoutForm() {
 
   useEffect(() => {
     if (cartTotal) {
-      form.setValue("status", status);
+      form.setValue('status', status);
       if (!purchase && paymentTypesData && paymentTypesData.length > 0) {
         const defaultPaymentType =
           paymentTypesData?.find(
             (pt) =>
-              pt.isDefault ||
-              pt.name.toLowerCase() === "cash" ||
-              pt.name.toLowerCase() === "tunai",
-          )?.id || "";
-        form.setValue("paymentMethodId", defaultPaymentType);
+              pt.isDefault || pt.name.toLowerCase() === 'cash' || pt.name.toLowerCase() === 'tunai',
+          )?.id || '';
+        form.setValue('paymentMethodId', defaultPaymentType);
       }
       if (purchase) {
-        form.setValue("supplierId", purchase.supplierId);
-        form.setValue(
-          "transactionDate",
-          purchase.createdAt ? new Date(purchase.createdAt) : null,
-        );
-        form.setValue("isPayable", !!purchase.dueDate);
-        form.setValue(
-          "dueDate",
-          purchase.dueDate ? new Date(purchase.dueDate) : null,
-        );
-        form.setValue("paymentMethodId", purchase.paymentTypeId || "");
-        form.setValue("note", purchase.note || "");
+        form.setValue('supplierId', purchase.supplierId);
+        form.setValue('transactionDate', purchase.createdAt ? new Date(purchase.createdAt) : null);
+        form.setValue('isPayable', !!purchase.dueDate);
+        form.setValue('dueDate', purchase.dueDate ? new Date(purchase.dueDate) : null);
+        form.setValue('paymentMethodId', purchase.paymentTypeId || '');
+        form.setValue('note', purchase.note || '');
       }
     } else {
       form.reset(initialValues);
@@ -171,24 +153,20 @@ export default function PurchasingCheckoutForm() {
   }, [form, cartTotal, paymentTypesData, status, purchase]);
 
   useEffect(() => {
-    form.setValue("totalPurchase", grandTotal);
+    form.setValue('totalPurchase', grandTotal);
   }, [form, grandTotal]);
 
-  const onSubmit: SubmitHandler<PurchasingFormValues> = (
-    data: PurchasingFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<PurchasingFormValues> = (data: PurchasingFormValues) => {
     if (
       data.status === Status.COMPLETED &&
       Number(data.totalPaid) < data.totalPurchase &&
       !isPayable
     ) {
       toast.show({
-        placement: "top",
+        placement: 'top',
         render: ({ id }) => (
           <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>
-              Total pembayaran tidak boleh kurang dari total pembelian
-            </ToastTitle>
+            <ToastTitle>Total pembayaran tidak boleh kurang dari total pembelian</ToastTitle>
           </Toast>
         ),
       });
@@ -199,7 +177,7 @@ export default function PurchasingCheckoutForm() {
     ) {
       showPopUpConfirm({
         title: `APAKAH INI TRANSAKSI HUTANG?`,
-        icon: "warning",
+        icon: 'warning',
         description: (
           <Text className="text-slate-500">
             <Text>{`Pembayaran senilai `}</Text>
@@ -208,10 +186,10 @@ export default function PurchasingCheckoutForm() {
           </Text>
         ),
         showClose: true,
-        okText: "OKE",
-        closeText: "BATAL",
-        okVariant: "solid",
-        closeVariant: "destructive",
+        okText: 'OKE',
+        closeText: 'BATAL',
+        okVariant: 'solid',
+        closeVariant: 'destructive',
         onOk: () => {
           hidePopUpConfirm();
           goSubmit(data);
@@ -245,54 +223,46 @@ export default function PurchasingCheckoutForm() {
         setCheckoutData({
           ...data,
           id: responseData.id,
-          referenceNumber: responseData.local_ref_id || "",
+          referenceNumber: responseData.local_ref_id || '',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          createdById: user?.id || "",
-          createdByName: user?.name || "",
-          updatedById: user?.id || "",
-          updatedByName: user?.name || "",
+          createdById: user?.id || '',
+          createdByName: user?.name || '',
+          updatedById: user?.id || '',
+          updatedByName: user?.name || '',
           items: cart,
         });
         const changedProductPrice = cart.filter(
           (item) => item.newPurchasePrice !== item.product.purchasePrice,
         );
         if (data.status === Status.DRAFT) {
-          router.replace("/(main)/purchasing");
+          router.replace('/(main)/purchasing');
           resetCart();
           setCheckoutData(null);
         } else {
-          router.replace(
-            `/(main)/purchasing/receipt/${responseData.id}?isSuccess=true`,
-          );
+          router.replace(`/(main)/purchasing/receipt/${responseData.id}?isSuccess=true`);
           resetCart();
           setCheckoutData(null);
           if (!!changedProductPrice.length) {
             showPopUpConfirm({
               title: `ADA PERUBAHAN HARGA BELI`,
-              icon: "warning",
+              icon: 'warning',
               description: (
                 <VStack space="sm">
                   <Text className="text-slate-500">
-                    Harga Beli berubah pada beberapa produk. Apakah Anda ingin
-                    menyesuaikan Harga Jual?
+                    Harga Beli berubah pada beberapa produk. Apakah Anda ingin menyesuaikan Harga
+                    Jual?
                   </Text>
                   {changedProductPrice.map((item) => (
-                    <HStack
-                      key={item.product.id}
-                      space="sm"
-                      className="items-center"
-                    >
+                    <HStack key={item.product.id} space="sm" className="items-center">
                       <Box className="w-2 h-2 rounded-full bg-slate-500" />
-                      <Text className="text-slate-500 font-bold">
-                        {item.product.name}
-                      </Text>
+                      <Text className="text-slate-500 font-bold">{item.product.name}</Text>
                       <Text className="font-bold text-slate-500">
                         {formatRp(item.product.purchasePrice)}
                       </Text>
                       <Icon as={ArrowRight} className="text-slate-500" />
                       <Text
-                        className={`font-bold${item.newPurchasePrice < item.product.purchasePrice ? " text-success-500" : " text-error-500"}`}
+                        className={`font-bold${item.newPurchasePrice < item.product.purchasePrice ? ' text-success-500' : ' text-error-500'}`}
                       >
                         {formatRp(item.newPurchasePrice)}
                       </Text>
@@ -301,14 +271,12 @@ export default function PurchasingCheckoutForm() {
                 </VStack>
               ),
               showClose: true,
-              okText: "UBAH HARGA",
-              closeText: "NANTI SAJA",
-              okVariant: "solid",
-              closeVariant: "destructive",
+              okText: 'UBAH HARGA',
+              closeText: 'NANTI SAJA',
+              okVariant: 'solid',
+              closeVariant: 'destructive',
               onOk: () => {
-                router.replace(
-                  "/(main)/management/product-category-brand/product",
-                );
+                router.replace('/(main)/management/product-category-brand/product');
                 resetCart();
                 setCheckoutData(null);
               },
@@ -325,7 +293,7 @@ export default function PurchasingCheckoutForm() {
   return (
     <VStack className="flex-1 bg-white">
       <Header
-        header={status === Status.DRAFT ? "SIMPAN DRAFT" : "CHECKOUT"}
+        header={status === Status.DRAFT ? 'SIMPAN DRAFT' : 'CHECKOUT'}
         isGoBack
         action={
           <HStack space="md" className="pr-4">
@@ -347,35 +315,26 @@ export default function PurchasingCheckoutForm() {
           <ScrollView className="flex-1">
             <VStack className="flex-1">
               <HStack className="justify-center p-6 flex-col items-center">
-                <Text className="text-typography-600 mb-2 font-bold">
-                  Total Tagihan
-                </Text>
+                <Text className="text-typography-600 mb-2 font-bold">Total Tagihan</Text>
                 <Heading size="3xl" className="font-bold text-center">
-                  {formatRp(form.getValues("totalPurchase") ?? 0)}
+                  {formatRp(form.getValues('totalPurchase') ?? 0)}
                 </Heading>
               </HStack>
               <VStack space="lg" className="p-4">
                 <Controller
                   name="transactionDate"
                   control={form.control}
-                  render={({
-                    field: { onChange, value },
-                    fieldState: { error },
-                  }) => (
-                    <FormControl
-                      isRequired
-                      isInvalid={!!error}
-                      className="flex-1"
-                    >
+                  render={({ field: { onChange, value }, fieldState: { error } }) => (
+                    <FormControl isRequired isInvalid={!!error} className="flex-1">
                       <Pressable
                         onPress={() => setShowTransactionDatePicker(true)}
-                        className={`border border-background-300 rounded px-3 py-2${error ? " border-red-500" : ""}`}
+                        className={`border border-background-300 rounded px-3 py-2${error ? ' border-red-500' : ''}`}
                       >
                         <HStack className="items-center justify-between">
                           <Text>
                             {value instanceof Date
-                              ? dayjs(value).format("DD/MM/YYYY")
-                              : "Tanggal Transaksi"}
+                              ? dayjs(value).format('DD/MM/YYYY')
+                              : 'Tanggal Transaksi'}
                           </Text>
                           <Icon as={CalendarIcon} size="md" className="mr-2" />
                         </HStack>
@@ -387,7 +346,7 @@ export default function PurchasingCheckoutForm() {
                           maximumDate={new Date()}
                           onChange={(event, selectedDate) => {
                             setShowTransactionDatePicker(false);
-                            if (event.type === "set" && selectedDate) {
+                            if (event.type === 'set' && selectedDate) {
                               onChange(selectedDate);
                             }
                           }}
@@ -395,9 +354,7 @@ export default function PurchasingCheckoutForm() {
                       )}
                       {error && (
                         <FormControlError>
-                          <FormControlErrorText>
-                            {error.message}
-                          </FormControlErrorText>
+                          <FormControlErrorText>{error.message}</FormControlErrorText>
                         </FormControlError>
                       )}
                     </FormControl>
@@ -406,10 +363,7 @@ export default function PurchasingCheckoutForm() {
                 <Controller
                   control={form.control}
                   name="supplierId"
-                  render={({
-                    field: { onChange, value },
-                    fieldState: { error },
-                  }) => (
+                  render={({ field: { onChange, value }, fieldState: { error } }) => (
                     <FormControl isRequired isInvalid={!!error}>
                       <HStack space="md">
                         <SelectModal
@@ -426,9 +380,7 @@ export default function PurchasingCheckoutForm() {
                         <Pressable
                           className="size-10 rounded-full bg-primary-500 items-center justify-center"
                           onPress={() =>
-                            router.navigate(
-                              "/(main)/management/customer-supplier/supplier/add",
-                            )
+                            router.navigate('/(main)/management/customer-supplier/supplier/add')
                           }
                         >
                           <Icon as={PlusIcon} color="white" />
@@ -436,9 +388,7 @@ export default function PurchasingCheckoutForm() {
                       </HStack>
                       {error && (
                         <FormControlError>
-                          <FormControlErrorText>
-                            {error.message}
-                          </FormControlErrorText>
+                          <FormControlErrorText>{error.message}</FormControlErrorText>
                         </FormControlError>
                       )}
                     </FormControl>
@@ -448,10 +398,7 @@ export default function PurchasingCheckoutForm() {
                   <Controller
                     name="isPayable"
                     control={form.control}
-                    render={({
-                      field: { onChange, onBlur, value },
-                      fieldState: { error },
-                    }) => (
+                    render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                       <FormControl isInvalid={!!error}>
                         <Checkbox
                           value={value.toString()}
@@ -459,7 +406,7 @@ export default function PurchasingCheckoutForm() {
                           size="md"
                           onChange={(v) => {
                             onChange(v);
-                            if (!v) form.setValue("note", "");
+                            if (!v) form.setValue('note', '');
                           }}
                           onBlur={onBlur}
                         >
@@ -470,9 +417,7 @@ export default function PurchasingCheckoutForm() {
                         </Checkbox>
                         {error && (
                           <FormControlError>
-                            <FormControlErrorText>
-                              {error.message}
-                            </FormControlErrorText>
+                            <FormControlErrorText>{error.message}</FormControlErrorText>
                           </FormControlError>
                         )}
                       </FormControl>
@@ -483,26 +428,19 @@ export default function PurchasingCheckoutForm() {
                   <Controller
                     name="dueDate"
                     control={form.control}
-                    render={({
-                      field: { onChange, value },
-                      fieldState: { error },
-                    }) => (
+                    render={({ field: { onChange, value }, fieldState: { error } }) => (
                       <FormControl isInvalid={!!error} className="flex-1">
                         <Pressable
                           onPress={() => setShowDueDatePicker(true)}
-                          className={`border border-background-300 rounded px-3 py-2${error ? " border-red-500" : ""}`}
+                          className={`border border-background-300 rounded px-3 py-2${error ? ' border-red-500' : ''}`}
                         >
                           <HStack className="items-center justify-between">
                             <Text>
                               {value instanceof Date
-                                ? dayjs(value).format("DD/MM/YYYY")
-                                : "Tanggal Jatuh Tempo"}
+                                ? dayjs(value).format('DD/MM/YYYY')
+                                : 'Tanggal Jatuh Tempo'}
                             </Text>
-                            <Icon
-                              as={CalendarIcon}
-                              size="md"
-                              className="mr-2"
-                            />
+                            <Icon as={CalendarIcon} size="md" className="mr-2" />
                           </HStack>
                         </Pressable>
                         {showDueDatePicker && (
@@ -512,7 +450,7 @@ export default function PurchasingCheckoutForm() {
                             minimumDate={transactionDate || new Date()}
                             onChange={(event, selectedDate) => {
                               setShowDueDatePicker(false);
-                              if (event.type === "set" && selectedDate) {
+                              if (event.type === 'set' && selectedDate) {
                                 onChange(selectedDate);
                               }
                             }}
@@ -520,9 +458,7 @@ export default function PurchasingCheckoutForm() {
                         )}
                         {error && (
                           <FormControlError>
-                            <FormControlErrorText>
-                              {error.message}
-                            </FormControlErrorText>
+                            <FormControlErrorText>{error.message}</FormControlErrorText>
                           </FormControlError>
                         )}
                       </FormControl>
@@ -532,10 +468,7 @@ export default function PurchasingCheckoutForm() {
                 <Controller
                   control={form.control}
                   name="paymentMethodId"
-                  render={({
-                    field: { onChange, value },
-                    fieldState: { error },
-                  }) => (
+                  render={({ field: { onChange, value }, fieldState: { error } }) => (
                     <FormControl isRequired isInvalid={!!error}>
                       <HStack space="md">
                         <SelectModal
@@ -554,9 +487,7 @@ export default function PurchasingCheckoutForm() {
                       </HStack>
                       {error && (
                         <FormControlError>
-                          <FormControlErrorText>
-                            {error.message}
-                          </FormControlErrorText>
+                          <FormControlErrorText>{error.message}</FormControlErrorText>
                         </FormControlError>
                       )}
                     </FormControl>
@@ -565,10 +496,7 @@ export default function PurchasingCheckoutForm() {
                 <Controller
                   name="note"
                   control={form.control}
-                  render={({
-                    field: { onChange, onBlur, value },
-                    fieldState: { error },
-                  }) => (
+                  render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                     <FormControl isInvalid={!!error}>
                       <Textarea size="md">
                         <TextareaInput
@@ -581,9 +509,7 @@ export default function PurchasingCheckoutForm() {
                       </Textarea>
                       {error && (
                         <FormControlError>
-                          <FormControlErrorText>
-                            {error.message}
-                          </FormControlErrorText>
+                          <FormControlErrorText>{error.message}</FormControlErrorText>
                         </FormControlError>
                       )}
                     </FormControl>
@@ -599,23 +525,20 @@ export default function PurchasingCheckoutForm() {
               <VStack className="flex-1">
                 <HStack className="justify-center p-6 flex-col items-center">
                   <Heading size="3xl" className="font-bold">
-                    Rp {totalPaid ? formatNumber(parseFloat(totalPaid)) : "0"}
+                    Rp {totalPaid ? formatNumber(parseFloat(totalPaid)) : '0'}
                   </Heading>
-                  {Number(totalPaid) > (form.getValues("totalPurchase") ?? 0) &&
-                    !form.getValues("isPayable") && (
+                  {Number(totalPaid) > (form.getValues('totalPurchase') ?? 0) &&
+                    !form.getValues('isPayable') && (
                       <Text className="text-success-500 font-bold mt-2">
-                        Kembalian:{" "}
-                        {formatRp(
-                          Number(totalPaid) -
-                            (form.getValues("totalPurchase") ?? 0),
-                        )}
+                        Kembalian:{' '}
+                        {formatRp(Number(totalPaid) - (form.getValues('totalPurchase') ?? 0))}
                       </Text>
                     )}
                 </HStack>
                 <InputVirtualKeyboard
                   nominal={totalPaid}
                   exactChange={grandTotal.toString()}
-                  onChange={(value) => form.setValue("totalPaid", value)}
+                  onChange={(value) => form.setValue('totalPaid', value)}
                 />
               </VStack>
             </ScrollView>

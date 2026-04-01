@@ -1,5 +1,5 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
 import {
   Box,
   Checkbox,
@@ -12,23 +12,23 @@ import {
   Icon,
   Text,
   VStack,
-} from "@/components/ui";
-import { Pressable } from "@/components/ui/pressable";
+} from '@/components/ui';
+import { Pressable } from '@/components/ui/pressable';
 import {
   SolarIconBold,
   SolarIconBoldDuotone,
   SolarIconLinear,
-} from "@/components/ui/solar-icon-wrapper";
-import { Spinner } from "@/components/ui/spinner";
-import { Receivable, useReceivableByUser } from "@/lib/api/receivable";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import dayjs from "dayjs";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { CalendarIcon } from "lucide-react-native";
-import { useState } from "react";
-import { ScrollView } from "react-native";
+} from '@/components/ui/solar-icon-wrapper';
+import { Spinner } from '@/components/ui/spinner';
+import { Receivable, useReceivableByUser } from '@/lib/api/receivable';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { CalendarIcon } from 'lucide-react-native';
+import { useState } from 'react';
+import { ScrollView } from 'react-native';
 
-import { formatRp } from "@/lib/utils/format";
+import { formatRp } from '@/lib/utils/format';
 export default function ReceivableDetail() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
@@ -38,10 +38,9 @@ export default function ReceivableDetail() {
   const { data: receivableList = [], isLoading } = useReceivableByUser(userId);
 
   const [selectedItems, setSelectedItems] = useState<Receivable[] | null>(null);
-  const [showTransactionDatePicker, setShowTransactionDatePicker] =
-    useState<boolean>(false);
+  const [showTransactionDatePicker, setShowTransactionDatePicker] = useState<boolean>(false);
   const [transactionDate, setDueDate] = useState<Date | null>(null);
-  const [statuses, setStatuses] = useState<string[]>(["Lunas", "Belum Lunas"]);
+  const [statuses, setStatuses] = useState<string[]>(['Lunas', 'Belum Lunas']);
 
   const receivable = receivableList[0];
 
@@ -58,9 +57,9 @@ export default function ReceivableDetail() {
     showActionDrawer({
       actions: [
         {
-          label: "Delete All",
-          icon: "TrashBin2",
-          theme: "red",
+          label: 'Delete All',
+          icon: 'TrashBin2',
+          theme: 'red',
           onPress: () => {
             hideActionDrawer();
           },
@@ -92,7 +91,7 @@ export default function ReceivableDetail() {
                 name="MenuDots"
                 size={20}
                 color="#FDFBF9"
-                style={{ transform: [{ rotate: "90deg" }] }}
+                style={{ transform: [{ rotate: '90deg' }] }}
               />
             </Pressable>
           </HStack>
@@ -103,32 +102,20 @@ export default function ReceivableDetail() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="md" className="flex-1">
           <VStack className="p-4">
-            <HStack
-              space="lg"
-              className="relative rounded-lg bg-error-100 px-4 pt-4 pb-6 mb-4"
-            >
+            <HStack space="lg" className="relative rounded-lg bg-error-100 px-4 pt-4 pb-6 mb-4">
               <VStack className="flex-1">
                 <HStack space="md">
-                  <SolarIconBoldDuotone
-                    name="UserCircle"
-                    size={20}
-                    color="#3b82f6"
-                  />
+                  <SolarIconBoldDuotone name="UserCircle" size={20} color="#3b82f6" />
                   <Text className="text-typography-500 text-sm">
-                    {receivable?.user?.firstName ||
-                      receivable?.user?.username ||
-                      "Unknown User"}
+                    {receivable?.user?.firstName || receivable?.user?.username || 'Unknown User'}
                   </Text>
                 </HStack>
                 <VStack className="mt-2">
-                  <Text className="text-typography-500 text-sm">
-                    Total Belum Lunas
-                  </Text>
+                  <Text className="text-typography-500 text-sm">Total Belum Lunas</Text>
                   <Text className="text-error-500 font-bold">
                     {formatRp(
                       receivableList?.reduce(
-                        (acc, curr) =>
-                          acc + (curr.nominal - curr.totalRealization),
+                        (acc, curr) => acc + (curr.nominal - curr.totalRealization),
                         0,
                       ) ?? 0,
                     )}
@@ -136,15 +123,9 @@ export default function ReceivableDetail() {
                 </VStack>
               </VStack>
               <VStack className="flex-1 items-end">
-                <Text className="text-typography-500 text-sm">
-                  Jumlah Transaksi Belum Lunas
-                </Text>
+                <Text className="text-typography-500 text-sm">Jumlah Transaksi Belum Lunas</Text>
                 <Text className="text-error-500 font-bold">
-                  {
-                    receivableList?.filter(
-                      (f) => f.totalRealization !== f.nominal,
-                    ).length
-                  }
+                  {receivableList?.filter((f) => f.totalRealization !== f.nominal).length}
                 </Text>
               </VStack>
               <HStack className="absolute -bottom-4 right-0 left-0 justify-center">
@@ -152,7 +133,7 @@ export default function ReceivableDetail() {
                   className="items-center justify-center h-10 px-10 rounded-lg bg-primary-500 active:bg-primary-500/90"
                   onPress={() => {
                     router.navigate(
-                      `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${receivableList?.map((m) => m.id).join("-")}` as any,
+                      `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${receivableList?.map((m) => m.id).join('-')}` as any,
                     );
                   }}
                 >
@@ -166,10 +147,7 @@ export default function ReceivableDetail() {
         </VStack>
         <VStack space="md" className="px-4 mb-4 mt-4">
           <HStack space="sm" className="items-center">
-            <Pressable
-              className="size-10 items-center justify-center"
-              onPress={() => {}}
-            >
+            <Pressable className="size-10 items-center justify-center" onPress={() => {}}>
               <SolarIconLinear name="Sort" size={20} color="#3d2117" />
             </Pressable>
             <>
@@ -180,8 +158,8 @@ export default function ReceivableDetail() {
                 <HStack className="items-center justify-between">
                   <Text>
                     {transactionDate instanceof Date
-                      ? dayjs(transactionDate).format("DD/MM/YYYY")
-                      : "Pilih Tanggal"}
+                      ? dayjs(transactionDate).format('DD/MM/YYYY')
+                      : 'Pilih Tanggal'}
                   </Text>
                   <Icon as={CalendarIcon} size="md" className="mr-2" />
                 </HStack>
@@ -189,15 +167,11 @@ export default function ReceivableDetail() {
               {showTransactionDatePicker && (
                 <DateTimePicker
                   mode="date"
-                  value={
-                    transactionDate instanceof Date
-                      ? transactionDate
-                      : new Date()
-                  }
+                  value={transactionDate instanceof Date ? transactionDate : new Date()}
                   maximumDate={new Date()}
                   onChange={(event, selectedDate) => {
                     setShowTransactionDatePicker(false);
-                    if (event.type === "set" && selectedDate) {
+                    if (event.type === 'set' && selectedDate) {
                       setDueDate(selectedDate);
                     }
                   }}
@@ -207,14 +181,12 @@ export default function ReceivableDetail() {
           </HStack>
           <HStack space="sm">
             <Checkbox
-              value={statuses.some((s) => s === "Belum Lunas").toString()}
-              isChecked={statuses.some((s) => s === "Belum Lunas")}
+              value={statuses.some((s) => s === 'Belum Lunas').toString()}
+              isChecked={statuses.some((s) => s === 'Belum Lunas')}
               size="md"
               onChange={(v) => {
                 setStatuses(
-                  v
-                    ? [...statuses, "Belum Lunas"]
-                    : statuses.filter((s) => s !== "Belum Lunas"),
+                  v ? [...statuses, 'Belum Lunas'] : statuses.filter((s) => s !== 'Belum Lunas'),
                 );
               }}
             >
@@ -224,15 +196,11 @@ export default function ReceivableDetail() {
               <CheckboxLabel className="text-sm">Belum Lunas</CheckboxLabel>
             </Checkbox>
             <Checkbox
-              value={statuses.some((s) => s === "Lunas").toString()}
-              isChecked={statuses.some((s) => s === "Lunas")}
+              value={statuses.some((s) => s === 'Lunas').toString()}
+              isChecked={statuses.some((s) => s === 'Lunas')}
               size="md"
               onChange={(v) => {
-                setStatuses(
-                  v
-                    ? [...statuses, "Lunas"]
-                    : statuses.filter((s) => s !== "Lunas"),
-                );
+                setStatuses(v ? [...statuses, 'Lunas'] : statuses.filter((s) => s !== 'Lunas'));
               }}
             >
               <CheckboxIndicator className="w-[16px] h-[16px] border-[1px] rounded-md">
@@ -245,17 +213,13 @@ export default function ReceivableDetail() {
         <VStack>
           {receivableList
             ?.filter((r) =>
-              statuses.includes(
-                r.nominal - r.totalRealization > 0 ? "Belum Lunas" : "Lunas",
-              ),
+              statuses.includes(r.nominal - r.totalRealization > 0 ? 'Belum Lunas' : 'Lunas'),
             )
             ?.map((receivable) => (
               <Pressable
                 key={receivable.id}
                 className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                  selectedItems?.some((r) => r.id === receivable.id)
-                    ? "bg-gray-100"
-                    : ""
+                  selectedItems?.some((r) => r.id === receivable.id) ? 'bg-gray-100' : ''
                 }`}
                 onPress={() => {
                   if (!!selectedItems?.length) {
@@ -273,12 +237,8 @@ export default function ReceivableDetail() {
                   <HStack space="md" className="items-center">
                     {!!selectedItems?.length && (
                       <Checkbox
-                        value={selectedItems
-                          ?.some((r) => r.id === receivable.id)
-                          .toString()}
-                        isChecked={selectedItems?.some(
-                          (r) => r.id === receivable.id,
-                        )}
+                        value={selectedItems?.some((r) => r.id === receivable.id).toString()}
+                        isChecked={selectedItems?.some((r) => r.id === receivable.id)}
                         size="md"
                         onChange={() => handleReceivablePress(receivable)}
                       >
@@ -289,35 +249,28 @@ export default function ReceivableDetail() {
                     )}
                     <VStack>
                       <Heading size="sm">
-                        {dayjs(receivable.createdAt).format("DD/MM/YYYY")}
+                        {dayjs(receivable.createdAt).format('DD/MM/YYYY')}
                       </Heading>
                       <Text size="xs" className="text-blue-500 font-bold">
                         {formatRp(receivable.nominal)}
                       </Text>
                       <Text size="xs" className="text-slate-500">
-                        {`JT: ${dayjs(receivable.dueDate).format("DD/MM/YYYY")}`}
+                        {`JT: ${dayjs(receivable.dueDate).format('DD/MM/YYYY')}`}
                       </Text>
                     </VStack>
                   </HStack>
                   <VStack className="items-end">
                     <HStack space="xs" className="items-center">
                       <Box
-                        className={`w-2 h-2 rounded-full${receivable.totalRealization < receivable.nominal ? " bg-red-500" : " bg-green-500"}`}
+                        className={`w-2 h-2 rounded-full${receivable.totalRealization < receivable.nominal ? ' bg-red-500' : ' bg-green-500'}`}
                       />
-                      <Text
-                        size="xs"
-                        className="text-primary-500 text-sm font-bold"
-                      >
-                        {receivable.totalRealization < receivable.nominal
-                          ? "Belum Lunas"
-                          : "Lunas"}
+                      <Text size="xs" className="text-primary-500 text-sm font-bold">
+                        {receivable.totalRealization < receivable.nominal ? 'Belum Lunas' : 'Lunas'}
                       </Text>
                     </HStack>
                     {receivable.totalRealization < receivable.nominal && (
                       <Text size="xs" className="font-bold text-error-500">
-                        {formatRp(
-                          receivable.nominal - receivable.totalRealization,
-                        )}
+                        {formatRp(receivable.nominal - receivable.totalRealization)}
                       </Text>
                     )}
                   </VStack>
@@ -338,13 +291,13 @@ export default function ReceivableDetail() {
             className="w-full rounded-md h-10 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
             onPress={() => {
               router.navigate(
-                `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${selectedItems?.map((m) => m.id).join("-")}` as any,
+                `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${selectedItems?.map((m) => m.id).join('-')}` as any,
               );
             }}
           >
             <Text size="sm" className="text-typography-0 font-bold">
               {selectedItems?.length === 1
-                ? "TERIMA PIUTANG"
+                ? 'TERIMA PIUTANG'
                 : `TERIMA ${selectedItems?.length} PIUTANG`}
             </Text>
           </Pressable>
@@ -352,9 +305,7 @@ export default function ReceivableDetail() {
           <Pressable
             className="w-full rounded-sm h-10 flex justify-center items-center bg-error-50 border border-error-500"
             onPress={() => {
-              router.navigate(
-                `/(main)/management/payable-receivable/receivable/add` as any,
-              );
+              router.navigate(`/(main)/management/payable-receivable/receivable/add` as any);
             }}
           >
             <Text size="sm" className="text-error-500 font-bold">

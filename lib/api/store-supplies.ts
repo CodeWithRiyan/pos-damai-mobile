@@ -1,9 +1,9 @@
-import { db } from "../db";
-import * as schema from "../db/schema";
-import { eq, desc, and, getTableColumns } from "drizzle-orm";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "@/stores/auth";
-import { generateLocalRefId } from "../utils/reference";
+import { db } from '../db';
+import * as schema from '../db/schema';
+import { eq, desc, and, getTableColumns } from 'drizzle-orm';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/stores/auth';
+import { generateLocalRefId } from '../utils/reference';
 
 export interface StoreSupplyDTO {
   date: Date;
@@ -24,11 +24,11 @@ export function useCreateStoreSupply() {
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
 
-      let supplyRefId = "";
+      let supplyRefId = '';
       const supplyId = `supply_${Date.now()}`;
 
       await db.transaction(async (tx) => {
-        supplyRefId = await generateLocalRefId(tx, schema.storeSupplies, "SSP");
+        supplyRefId = await generateLocalRefId(tx, schema.storeSupplies, 'SSP');
 
         for (const item of data.items) {
           // Get current system stock
@@ -38,14 +38,11 @@ export function useCreateStoreSupply() {
             .where(
               and(
                 eq(schema.inventoryTransactions.productId, item.product.id),
-                eq(schema.inventoryTransactions.status, "COMPLETED"),
+                eq(schema.inventoryTransactions.status, 'COMPLETED'),
               ),
             );
 
-          const currentStock = transactions.reduce(
-            (sum, t) => sum + t.quantity,
-            0,
-          );
+          const currentStock = transactions.reduce((sum, t) => sum + t.quantity, 0);
 
           // Get product purchase price
           const [product] = await tx
@@ -61,7 +58,7 @@ export function useCreateStoreSupply() {
           const physicalStock = Math.max(0, currentStock - usageInBaseUnit);
           const difference = -usageInBaseUnit;
 
-          const supplyItemId = `supply_item_${Date.now()}_${item.product.id}_${item.variant?.id || "base"}`;
+          const supplyItemId = `supply_item_${Date.now()}_${item.product.id}_${item.variant?.id || 'base'}`;
 
           // Insert Supply Item
           await tx.insert(schema.storeSupplyItems).values({
@@ -86,10 +83,10 @@ export function useCreateStoreSupply() {
             const txId = `inv_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             await tx.insert(schema.inventoryTransactions).values({
               id: txId,
-              local_ref_id: `${supplyRefId}_${item.product.id}_${item.variant?.id || "base"}`,
+              local_ref_id: `${supplyRefId}_${item.product.id}_${item.variant?.id || 'base'}`,
               productId: item.product.id,
               variantId: item.variant?.id || null,
-              type: "STORE_SUPPLY",
+              type: 'STORE_SUPPLY',
               quantity: difference,
               organizationId: orgId,
               createdBy: userId,
@@ -108,7 +105,7 @@ export function useCreateStoreSupply() {
           local_ref_id: supplyRefId,
           date: data.date,
           note: data.note,
-          status: "COMPLETED",
+          status: 'COMPLETED',
           createdBy: userId,
           updatedBy: userId,
           organizationId: orgId,
@@ -121,15 +118,15 @@ export function useCreateStoreSupply() {
       return { id: supplyId, ...data };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["store-supplies"] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['store-supplies'] });
     },
   });
 }
 
 export function useStoreSupplies() {
   return useQuery({
-    queryKey: ["store-supplies"],
+    queryKey: ['store-supplies'],
     queryFn: async () => {
       const result = await db
         .select()
@@ -142,7 +139,7 @@ export function useStoreSupplies() {
 
 export function useStoreSupply(id: string) {
   return useQuery({
-    queryKey: ["store-supply", id],
+    queryKey: ['store-supply', id],
     queryFn: async () => {
       // Get Supply
       const [supply] = await db
@@ -161,10 +158,7 @@ export function useStoreSupply(id: string) {
           variantName: schema.productVariants.name,
         })
         .from(schema.storeSupplyItems)
-        .leftJoin(
-          schema.products,
-          eq(schema.storeSupplyItems.productId, schema.products.id),
-        )
+        .leftJoin(schema.products, eq(schema.storeSupplyItems.productId, schema.products.id))
         .leftJoin(
           schema.productVariants,
           eq(schema.storeSupplyItems.variantId, schema.productVariants.id),

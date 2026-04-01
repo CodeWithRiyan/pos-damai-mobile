@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   FormControl,
   FormControlError,
@@ -13,33 +13,33 @@ import {
   Text,
   Textarea,
   TextareaInput,
-} from "@/components/ui";
-import { Box } from "@/components/ui/box";
-import { HStack } from "@/components/ui/hstack";
-import { Pressable } from "@/components/ui/pressable";
-import { Radio, RadioGroup, RadioLabel } from "@/components/ui/radio";
-import SelectModal from "@/components/ui/select/select-modal";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
-import { useCreateFinance, useFinance } from "@/lib/api/finances";
-import { zodResolver } from "@hookform/resolvers/zod";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import dayjs from "dayjs";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { CalendarIcon } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { ScrollView } from "react-native";
-import { FinanceType, Status } from "@/lib/constants";
-import z from "zod";
+} from '@/components/ui';
+import { Box } from '@/components/ui/box';
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { Radio, RadioGroup, RadioLabel } from '@/components/ui/radio';
+import SelectModal from '@/components/ui/select/select-modal';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
+import { useCreateFinance, useFinance } from '@/lib/api/finances';
+import { zodResolver } from '@hookform/resolvers/zod';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { CalendarIcon } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { ScrollView } from 'react-native';
+import { FinanceType, Status } from '@/lib/constants';
+import z from 'zod';
 
 // Dummy data removed
 
 const financeSchema = z.object({
-  type: z.enum(["INCOME", "EXPENSES"]),
+  type: z.enum(['INCOME', 'EXPENSES']),
   expensesType: z.string(), // "STORE_EXPENSES" || "SUPPLIES" || "EQUIPMENT"
-  nominal: z.number().min(1, "Nominal wajib diisi."),
+  nominal: z.number().min(1, 'Nominal wajib diisi.'),
   transactionDate: z.date(),
   note: z.string(),
 });
@@ -48,20 +48,20 @@ export type FinanceFormValues = z.infer<typeof financeSchema>;
 
 export const expensesTypeOptions = [
   {
-    label: "Bayar Hutang",
-    value: "PAYABLE_REALIZATION",
+    label: 'Bayar Hutang',
+    value: 'PAYABLE_REALIZATION',
   },
   {
-    label: "Beli Barang",
-    value: "SUPPLIES",
+    label: 'Beli Barang',
+    value: 'SUPPLIES',
   },
   {
-    label: "Perlengkapan",
-    value: "EQUIPMENT_1",
+    label: 'Perlengkapan',
+    value: 'EQUIPMENT_1',
   },
   {
-    label: "Peralatan",
-    value: "EQUIPMENT_2",
+    label: 'Peralatan',
+    value: 'EQUIPMENT_2',
   },
 ];
 
@@ -71,18 +71,17 @@ export default function FinanceTransaction() {
   const { data: draftData } = useFinance(draftId as string);
 
   const toast = useToast();
-  const [showTransactionDatePicker, setShowTransactionDatePicker] =
-    useState(false);
+  const [showTransactionDatePicker, setShowTransactionDatePicker] = useState(false);
 
   const createMutation = useCreateFinance();
   const isLoading = createMutation.isPending;
 
   const initialValues: FinanceFormValues = {
     type: FinanceType.INCOME,
-    expensesType: "",
+    expensesType: '',
     nominal: 0,
     transactionDate: new Date(),
-    note: "",
+    note: '',
   };
 
   const form = useForm<FinanceFormValues>({
@@ -92,21 +91,21 @@ export default function FinanceTransaction() {
 
   useEffect(() => {
     if (draftData && draftData.status === Status.DRAFT) {
-      let expType = draftData.expensesType || "";
-      let parsedNote = draftData.note || "";
-      if (expType === "EQUIPMENT") {
-        if (parsedNote.startsWith("Perlengkapan: ")) {
-          expType = "EQUIPMENT_1";
-          parsedNote = parsedNote.replace("Perlengkapan: ", "");
-        } else if (parsedNote.startsWith("Perlengkapan")) {
-          expType = "EQUIPMENT_1";
-          parsedNote = parsedNote.replace("Perlengkapan", "");
-        } else if (parsedNote.startsWith("Peralatan: ")) {
-          expType = "EQUIPMENT_2";
-          parsedNote = parsedNote.replace("Peralatan: ", "");
-        } else if (parsedNote.startsWith("Peralatan")) {
-          expType = "EQUIPMENT_2";
-          parsedNote = parsedNote.replace("Peralatan", "");
+      let expType = draftData.expensesType || '';
+      let parsedNote = draftData.note || '';
+      if (expType === 'EQUIPMENT') {
+        if (parsedNote.startsWith('Perlengkapan: ')) {
+          expType = 'EQUIPMENT_1';
+          parsedNote = parsedNote.replace('Perlengkapan: ', '');
+        } else if (parsedNote.startsWith('Perlengkapan')) {
+          expType = 'EQUIPMENT_1';
+          parsedNote = parsedNote.replace('Perlengkapan', '');
+        } else if (parsedNote.startsWith('Peralatan: ')) {
+          expType = 'EQUIPMENT_2';
+          parsedNote = parsedNote.replace('Peralatan: ', '');
+        } else if (parsedNote.startsWith('Peralatan')) {
+          expType = 'EQUIPMENT_2';
+          parsedNote = parsedNote.replace('Peralatan', '');
         }
       }
       form.reset({
@@ -119,9 +118,7 @@ export default function FinanceTransaction() {
     }
   }, [draftData, form]);
 
-  const onSubmit: SubmitHandler<FinanceFormValues> = (
-    data: FinanceFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<FinanceFormValues> = (data: FinanceFormValues) => {
     handleSave(data, Status.COMPLETED);
   };
 
@@ -130,33 +127,30 @@ export default function FinanceTransaction() {
     handleSave(data, Status.DRAFT);
   };
 
-  const handleSave = (
-    data: FinanceFormValues,
-    status: "DRAFT" | "COMPLETED",
-  ) => {
-    const isEquipment = data.expensesType.includes("EQUIPMENT");
+  const handleSave = (data: FinanceFormValues, status: 'DRAFT' | 'COMPLETED') => {
+    const isEquipment = data.expensesType.includes('EQUIPMENT');
     createMutation.mutate(
       {
         id: (draftId as string) || undefined,
         ...data,
-        expensesType: isEquipment ? "EQUIPMENT" : data.expensesType,
+        expensesType: isEquipment ? 'EQUIPMENT' : data.expensesType,
         nominal: data.nominal,
         inputToCashdrawer: status === Status.COMPLETED,
         note: !isEquipment
           ? data.note
-          : `${data.expensesType.includes("1") ? "Perlengkapan" : "Peralatan"}${data.note ? `: ${data.note}` : ""}`,
+          : `${data.expensesType.includes('1') ? 'Perlengkapan' : 'Peralatan'}${data.note ? `: ${data.note}` : ''}`,
         status,
       },
       {
         onSuccess: (responseData) => {
           toast.show({
-            placement: "top",
+            placement: 'top',
             render: ({ id }) => (
               <Toast nativeID={id} action="success" variant="solid">
                 <ToastTitle>
                   {status === Status.COMPLETED
-                    ? "Transaksi berhasil disimpan"
-                    : "Draft berhasil disimpan"}
+                    ? 'Transaksi berhasil disimpan'
+                    : 'Draft berhasil disimpan'}
                 </ToastTitle>
               </Toast>
             ),
@@ -165,13 +159,13 @@ export default function FinanceTransaction() {
           if (status === Status.COMPLETED) {
             router.replace(`/(main)/finance/receipt/${responseData.id}`);
           } else {
-            router.navigate("/(main)/finance/draft");
+            router.navigate('/(main)/finance/draft');
           }
           form.reset(initialValues);
         },
         onError: (error) => {
           toast.show({
-            placement: "top",
+            placement: 'top',
             render: ({ id }) => (
               <Toast nativeID={id} action="error" variant="solid">
                 <ToastTitle>{`Gagal menyimpan: ${error.message}`}</ToastTitle>
@@ -191,13 +185,13 @@ export default function FinanceTransaction() {
           <HStack space="sm" className="pr-4">
             <Pressable
               className="size-10 items-center justify-center"
-              onPress={() => router.navigate("/(main)/finance/draft")}
+              onPress={() => router.navigate('/(main)/finance/draft')}
             >
               <SolarIconBold name="ClipboardList" size={20} color="#FDFBF9" />
             </Pressable>
             <Pressable
               className="size-10 items-center justify-center"
-              onPress={() => router.navigate("/(main)/finance/history")}
+              onPress={() => router.navigate('/(main)/finance/history')}
             >
               <SolarIconBold name="History" size={20} color="#FDFBF9" />
             </Pressable>
@@ -211,10 +205,7 @@ export default function FinanceTransaction() {
               <Controller
                 name="type"
                 control={form.control}
-                render={({
-                  field: { onChange, onBlur, value },
-                  fieldState: { error },
-                }) => (
+                render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                   <FormControl isRequired isInvalid={!!error}>
                     <FormControlLabel>
                       <FormControlLabelText>Transaksi</FormControlLabelText>
@@ -230,14 +221,14 @@ export default function FinanceTransaction() {
                         isInvalid={false}
                         isDisabled={false}
                         className={`flex-1 h-16 border rounded-sm flex items-center justify-center${
-                          value === "INCOME"
-                            ? " bg-success-100 border-success-500"
-                            : " bg-background-100 border-background-300"
+                          value === 'INCOME'
+                            ? ' bg-success-100 border-success-500'
+                            : ' bg-background-100 border-background-300'
                         }`}
                       >
                         <RadioLabel>
                           <Text
-                            className={`text-lg font-bold${value === "INCOME" ? " text-success-500" : ""}`}
+                            className={`text-lg font-bold${value === 'INCOME' ? ' text-success-500' : ''}`}
                           >
                             Pemasukan
                           </Text>
@@ -248,14 +239,14 @@ export default function FinanceTransaction() {
                         isInvalid={false}
                         isDisabled={false}
                         className={`flex-1 h-16 border rounded-sm flex items-center justify-center${
-                          value === "EXPENSES"
-                            ? " bg-error-100 border-error-500"
-                            : " bg-background-100 border-background-300"
+                          value === 'EXPENSES'
+                            ? ' bg-error-100 border-error-500'
+                            : ' bg-background-100 border-background-300'
                         }`}
                       >
                         <RadioLabel>
                           <Text
-                            className={`text-lg font-bold${value === "EXPENSES" ? " text-error-500" : ""}`}
+                            className={`text-lg font-bold${value === 'EXPENSES' ? ' text-error-500' : ''}`}
                           >
                             Pengeluaran
                           </Text>
@@ -265,19 +256,14 @@ export default function FinanceTransaction() {
                   </FormControl>
                 )}
               />
-              {form.watch("type") === FinanceType.EXPENSES && (
+              {form.watch('type') === FinanceType.EXPENSES && (
                 <Controller
                   control={form.control}
                   name="expensesType"
-                  render={({
-                    field: { onChange, value },
-                    fieldState: { error },
-                  }) => (
+                  render={({ field: { onChange, value }, fieldState: { error } }) => (
                     <FormControl isRequired isInvalid={!!error}>
                       <FormControlLabel>
-                        <FormControlLabelText>
-                          Jenis Pengeluaran
-                        </FormControlLabelText>
+                        <FormControlLabelText>Jenis Pengeluaran</FormControlLabelText>
                       </FormControlLabel>
                       <HStack space="md">
                         <SelectModal
@@ -291,9 +277,7 @@ export default function FinanceTransaction() {
                       </HStack>
                       {error && (
                         <FormControlError>
-                          <FormControlErrorText>
-                            {error.message}
-                          </FormControlErrorText>
+                          <FormControlErrorText>{error.message}</FormControlErrorText>
                         </FormControlError>
                       )}
                     </FormControl>
@@ -303,10 +287,7 @@ export default function FinanceTransaction() {
               <Controller
                 name="nominal"
                 control={form.control}
-                render={({
-                  field: { onChange, onBlur, value },
-                  fieldState: { error },
-                }) => (
+                render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                   <FormControl isRequired isInvalid={!!error}>
                     <FormControlLabel>
                       <FormControlLabelText>Nominal</FormControlLabelText>
@@ -338,29 +319,20 @@ export default function FinanceTransaction() {
               <Controller
                 name="transactionDate"
                 control={form.control}
-                render={({
-                  field: { onChange, value },
-                  fieldState: { error },
-                }) => (
-                  <FormControl
-                    isRequired
-                    isInvalid={!!error}
-                    className="flex-1"
-                  >
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <FormControl isRequired isInvalid={!!error} className="flex-1">
                     <FormControlLabel>
-                      <FormControlLabelText>
-                        Tanggal Transaksi
-                      </FormControlLabelText>
+                      <FormControlLabelText>Tanggal Transaksi</FormControlLabelText>
                     </FormControlLabel>
                     <Pressable
                       onPress={() => setShowTransactionDatePicker(true)}
-                      className={`border border-background-300 rounded px-3 py-2${error ? " border-red-500" : ""}`}
+                      className={`border border-background-300 rounded px-3 py-2${error ? ' border-red-500' : ''}`}
                     >
                       <HStack className="items-center justify-between">
                         <Text>
                           {value instanceof Date
-                            ? dayjs(value).format("DD/MM/YYYY")
-                            : "Tanggal Transaksi"}
+                            ? dayjs(value).format('DD/MM/YYYY')
+                            : 'Tanggal Transaksi'}
                         </Text>
                         <Icon as={CalendarIcon} size="md" className="mr-2" />
                       </HStack>
@@ -372,7 +344,7 @@ export default function FinanceTransaction() {
                         maximumDate={new Date()}
                         onChange={(event, selectedDate) => {
                           setShowTransactionDatePicker(false);
-                          if (event.type === "set" && selectedDate) {
+                          if (event.type === 'set' && selectedDate) {
                             onChange(selectedDate);
                           }
                         }}
@@ -380,9 +352,7 @@ export default function FinanceTransaction() {
                     )}
                     {error && (
                       <FormControlError>
-                        <FormControlErrorText>
-                          {error.message}
-                        </FormControlErrorText>
+                        <FormControlErrorText>{error.message}</FormControlErrorText>
                       </FormControlError>
                     )}
                   </FormControl>
@@ -391,10 +361,7 @@ export default function FinanceTransaction() {
               <Controller
                 name="note"
                 control={form.control}
-                render={({
-                  field: { onChange, onBlur, value },
-                  fieldState: { error },
-                }) => (
+                render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                   <FormControl isRequired isInvalid={!!error}>
                     <FormControlLabel>
                       <FormControlLabelText>Catatan</FormControlLabelText>
@@ -410,9 +377,7 @@ export default function FinanceTransaction() {
                     </Textarea>
                     {error && (
                       <FormControlError>
-                        <FormControlErrorText>
-                          {error.message}
-                        </FormControlErrorText>
+                        <FormControlErrorText>{error.message}</FormControlErrorText>
                       </FormControlError>
                     )}
                   </FormControl>
@@ -440,11 +405,7 @@ export default function FinanceTransaction() {
                   {isLoading ? (
                     <Spinner size="small" color="#FFFFFF" />
                   ) : (
-                    <SolarIconBold
-                      name="ClipboardAdd"
-                      size={28}
-                      color="#3d2117"
-                    />
+                    <SolarIconBold name="ClipboardAdd" size={28} color="#3d2117" />
                   )}
                 </Pressable>
               </HStack>

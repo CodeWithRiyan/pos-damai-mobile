@@ -1,11 +1,11 @@
-const currencyFormatter = new Intl.NumberFormat("id-ID", {
-  style: "currency",
-  currency: "IDR",
+const currencyFormatter = new Intl.NumberFormat('id-ID', {
+  style: 'currency',
+  currency: 'IDR',
   minimumFractionDigits: 0,
   maximumFractionDigits: 0,
 });
 
-const numberFormatter = new Intl.NumberFormat("id-ID");
+const numberFormatter = new Intl.NumberFormat('id-ID');
 
 /** "Rp15.000" - full Intl currency format */
 export function formatMoney(amount: number): string {

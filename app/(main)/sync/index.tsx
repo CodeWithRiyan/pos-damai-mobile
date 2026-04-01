@@ -1,22 +1,14 @@
-import Header from "@/components/header";
-import {
-  Box,
-  Text,
-  VStack,
-  HStack,
-  Button,
-  ButtonText,
-  Icon,
-} from "@/components/ui";
-import { ScrollView } from "react-native";
-import { useDirtyCount } from "@/hooks/use-dirty-count";
-import { useSyncQueueStore } from "@/stores/sync-queue-store";
-import { SyncEngine } from "@/lib/sync/sync-engine";
-import { useNetworkStore } from "@/stores/network-store";
-import { useState } from "react";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
-import { RepeatIcon, ArrowUpIcon, DownloadIcon } from "@/components/ui/icon";
-import dayjs from "dayjs";
+import Header from '@/components/header';
+import { Box, Text, VStack, HStack, Button, ButtonText, Icon } from '@/components/ui';
+import { ScrollView } from 'react-native';
+import { useDirtyCount } from '@/hooks/use-dirty-count';
+import { useSyncQueueStore } from '@/stores/sync-queue';
+import { SyncEngine } from '@/lib/sync/sync-engine';
+import { useNetworkStore } from '@/stores/network';
+import { useState } from 'react';
+import { usePopUpConfirm } from '@/components/pop-up-confirm';
+import { RepeatIcon, ArrowUpIcon, DownloadIcon } from '@/components/ui/icon';
+import dayjs from 'dayjs';
 
 export default function SyncScreen() {
   const { dirtyCount, refetch } = useDirtyCount();
@@ -28,16 +20,16 @@ export default function SyncScreen() {
   const [lastSyncResult, setLastSyncResult] = useState<string | null>(null);
 
   const lastPullLabel = lastSyncAt
-    ? dayjs(lastSyncAt).format("DD MMM YYYY HH:mm")
-    : "Belum pernah sinkron";
+    ? dayjs(lastSyncAt).format('DD MMM YYYY HH:mm')
+    : 'Belum pernah sinkron';
 
   const handleManualSync = async () => {
     showPopUpConfirm({
-      title: "Mulai Sinkronisasi",
+      title: 'Mulai Sinkronisasi',
       description:
-        "Aplikasi akan menyamakan data lokal dengan server. Pastikan koneksi internet stabil.",
-      okText: "Mulai Sekarang",
-      closeText: "Batal",
+        'Aplikasi akan menyamakan data lokal dengan server. Pastikan koneksi internet stabil.',
+      okText: 'Mulai Sekarang',
+      closeText: 'Batal',
       showClose: true,
       onOk: async () => {
         setIsSyncing(true);
@@ -45,10 +37,10 @@ export default function SyncScreen() {
         try {
           await SyncEngine.sync();
           await refetch();
-          setLastSyncResult("Sinkronisasi berhasil!");
+          setLastSyncResult('Sinkronisasi berhasil!');
         } catch (error) {
-          console.error("[SyncScreen] Sync failed:", error);
-          setLastSyncResult("Sinkronisasi gagal. Silakan coba lagi.");
+          console.error('[SyncScreen] Sync failed:', error);
+          setLastSyncResult('Sinkronisasi gagal. Silakan coba lagi.');
         } finally {
           setIsSyncing(false);
         }
@@ -63,9 +55,7 @@ export default function SyncScreen() {
       <ScrollView className="flex-1 p-4" showsVerticalScrollIndicator={false}>
         <VStack space="xl">
           <Box className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
-            <Text className="text-gray-500 text-xs font-bold uppercase mb-4">
-              Status Saat Ini
-            </Text>
+            <Text className="text-gray-500 text-xs font-bold uppercase mb-4">Status Saat Ini</Text>
 
             <VStack space="md">
               <HStack className="justify-between items-center">
@@ -75,12 +65,10 @@ export default function SyncScreen() {
                 </HStack>
                 <Text
                   className={
-                    isConnected
-                      ? "text-success-600 font-bold"
-                      : "text-error-600 font-bold"
+                    isConnected ? 'text-success-600 font-bold' : 'text-error-600 font-bold'
                   }
                 >
-                  {isConnected ? "Terhubung" : "Terputus"}
+                  {isConnected ? 'Terhubung' : 'Terputus'}
                 </Text>
               </HStack>
 
@@ -91,9 +79,7 @@ export default function SyncScreen() {
                 </HStack>
                 <Text
                   className={
-                    dirtyCount > 0
-                      ? "text-primary-600 font-bold"
-                      : "text-gray-600 font-bold"
+                    dirtyCount > 0 ? 'text-primary-600 font-bold' : 'text-gray-600 font-bold'
                   }
                 >
                   {dirtyCount} Record
@@ -119,14 +105,12 @@ export default function SyncScreen() {
               className="bg-brand-primary h-14 rounded-xl"
             >
               <Icon as={RepeatIcon} className="mr-2" />
-              <ButtonText>
-                {isSyncing ? "Menyinkronkan..." : "Sinkronkan Sekarang"}
-              </ButtonText>
+              <ButtonText>{isSyncing ? 'Menyinkronkan...' : 'Sinkronkan Sekarang'}</ButtonText>
             </Button>
 
             {lastSyncResult && (
               <Text
-                className={`text-center text-sm font-medium ${lastSyncResult.includes("berhasil") ? "text-success-600" : "text-error-600"}`}
+                className={`text-center text-sm font-medium ${lastSyncResult.includes('berhasil') ? 'text-success-600' : 'text-error-600'}`}
               >
                 {lastSyncResult}
               </Text>
@@ -135,12 +119,11 @@ export default function SyncScreen() {
 
           <Box className="mt-4">
             <Text className="text-gray-400 text-xs leading-5">
-              * Sinkronisasi data mengirimkan perubahan yang Anda buat saat
-              offline ke server dan mengambil data terbaru dari server.
+              * Sinkronisasi data mengirimkan perubahan yang Anda buat saat offline ke server dan
+              mengambil data terbaru dari server.
             </Text>
             <Text className="text-gray-400 text-xs leading-5 mt-2">
-              * Pastikan Anda tidak menutup aplikasi selama proses sinkronisasi
-              berlangsung.
+              * Pastikan Anda tidak menutup aplikasi selama proses sinkronisasi berlangsung.
             </Text>
           </Box>
         </VStack>

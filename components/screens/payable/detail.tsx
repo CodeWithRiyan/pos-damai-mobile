@@ -1,5 +1,5 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
 import {
   Box,
   Checkbox,
@@ -12,45 +12,43 @@ import {
   Icon,
   Text,
   VStack,
-} from "@/components/ui";
-import { Pressable } from "@/components/ui/pressable";
+} from '@/components/ui';
+import { Pressable } from '@/components/ui/pressable';
 import {
   SolarIconBold,
   SolarIconBoldDuotone,
   SolarIconLinear,
-} from "@/components/ui/solar-icon-wrapper";
-import { Spinner } from "@/components/ui/spinner";
-import { Payable, usePayableBySupplier } from "@/lib/api/payable";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import classNames from "classnames";
-import dayjs from "dayjs";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { CalendarIcon } from "lucide-react-native";
-import { useState } from "react";
-import { ScrollView } from "react-native";
+} from '@/components/ui/solar-icon-wrapper';
+import { Spinner } from '@/components/ui/spinner';
+import { Payable, usePayableBySupplier } from '@/lib/api/payable';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import classNames from 'classnames';
+import dayjs from 'dayjs';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { CalendarIcon } from 'lucide-react-native';
+import { useState } from 'react';
+import { ScrollView } from 'react-native';
 
-import { useSupplier } from "@/lib/api/suppliers";
-import { formatRp } from "@/lib/utils/format";
+import { useSupplier } from '@/lib/api/suppliers';
+import { formatRp } from '@/lib/utils/format';
 export default function PayableDetail({ isReport }: { isReport?: boolean }) {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const params = useLocalSearchParams();
   const supplierId = params.supplierId as string;
 
-  const { data: supplier, isLoading: isSupplierLoading } =
-    useSupplier(supplierId);
-  const { data: payableList = [], isLoading: isPayableLoading } =
-    usePayableBySupplier(supplierId);
+  const { data: supplier, isLoading: isSupplierLoading } = useSupplier(supplierId);
+  const { data: payableList = [], isLoading: isPayableLoading } = usePayableBySupplier(supplierId);
 
   const isLoading = isSupplierLoading || isPayableLoading;
 
   const [selectedItems, setSelectedItems] = useState<Payable[] | null>(null);
-  const [showTransactionDatePicker, setShowTransactionDatePicker] =
-    useState<boolean>(false);
+  const [showTransactionDatePicker, setShowTransactionDatePicker] = useState<boolean>(false);
   const [transactionDate, setDueDate] = useState<Date | null>(null);
-  const [statuses, setStatuses] = useState<string[]>(["Lunas", "Belum Lunas"]);
+  const [statuses, setStatuses] = useState<string[]>(['Lunas', 'Belum Lunas']);
 
-  const payable = payableList[0];
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _payable = payableList[0];
 
   const handlePayablePress = (payable: Payable) => {
     setSelectedItems((prev) => {
@@ -65,9 +63,9 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
     showActionDrawer({
       actions: [
         {
-          label: "Delete All",
-          icon: "TrashBin2",
-          theme: "red",
+          label: 'Delete All',
+          icon: 'TrashBin2',
+          theme: 'red',
           onPress: () => {
             // Bulk delete logic could go here if needed
             hideActionDrawer();
@@ -101,7 +99,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
                   name="MenuDots"
                   size={20}
                   color="#FDFBF9"
-                  style={{ transform: [{ rotate: "90deg" }] }}
+                  style={{ transform: [{ rotate: '90deg' }] }}
                 />
               </Pressable>
             </HStack>
@@ -116,30 +114,23 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
             <HStack
               space="lg"
               className={classNames(
-                "relative rounded-lg bg-error-100 px-4 pt-4 pb-6 mb-4",
-                isReport && "pb-4 mb-0",
+                'relative rounded-lg bg-error-100 px-4 pt-4 pb-6 mb-4',
+                isReport && 'pb-4 mb-0',
               )}
             >
               <VStack className="flex-1">
                 <HStack space="md">
-                  <SolarIconBoldDuotone
-                    name="UserCircle"
-                    size={20}
-                    color="#3b82f6"
-                  />
+                  <SolarIconBoldDuotone name="UserCircle" size={20} color="#3b82f6" />
                   <Text className="text-typography-500 text-sm">
-                    {supplier?.name || "Unknown Supplier"}
+                    {supplier?.name || 'Unknown Supplier'}
                   </Text>
                 </HStack>
                 <VStack className="mt-2">
-                  <Text className="text-typography-500 text-sm">
-                    Total Belum Lunas
-                  </Text>
+                  <Text className="text-typography-500 text-sm">Total Belum Lunas</Text>
                   <Text className="text-error-500 font-bold">
                     {formatRp(
                       payableList?.reduce(
-                        (acc, curr) =>
-                          acc + (curr.nominal - curr.totalRealization),
+                        (acc, curr) => acc + (curr.nominal - curr.totalRealization),
                         0,
                       ) ?? 0,
                     )}
@@ -147,14 +138,9 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
                 </VStack>
               </VStack>
               <VStack className="flex-1 items-end">
-                <Text className="text-typography-500 text-sm">
-                  Jumlah Transaksi Belum Lunas
-                </Text>
+                <Text className="text-typography-500 text-sm">Jumlah Transaksi Belum Lunas</Text>
                 <Text className="text-error-500 font-bold">
-                  {
-                    payableList?.filter((f) => f.totalRealization !== f.nominal)
-                      .length
-                  }
+                  {payableList?.filter((f) => f.totalRealization !== f.nominal).length}
                 </Text>
               </VStack>
               {!isReport && (
@@ -163,7 +149,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
                     className="items-center justify-center h-10 px-10 rounded-lg bg-primary-500 active:bg-primary-500/90"
                     onPress={() => {
                       router.navigate(
-                        `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${payableList?.map((m) => m.id).join("-")}` as any,
+                        `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${payableList?.map((m) => m.id).join('-')}` as any,
                       );
                     }}
                   >
@@ -178,10 +164,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
         </VStack>
         <VStack space="md" className="px-4 mb-4 mt-4">
           <HStack space="sm" className="items-center">
-            <Pressable
-              className="size-10 items-center justify-center"
-              onPress={() => {}}
-            >
+            <Pressable className="size-10 items-center justify-center" onPress={() => {}}>
               <SolarIconLinear name="Sort" size={20} color="#3d2117" />
             </Pressable>
             <>
@@ -192,8 +175,8 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
                 <HStack className="items-center justify-between">
                   <Text>
                     {transactionDate instanceof Date
-                      ? dayjs(transactionDate).format("DD/MM/YYYY")
-                      : "Pilih Tanggal"}
+                      ? dayjs(transactionDate).format('DD/MM/YYYY')
+                      : 'Pilih Tanggal'}
                   </Text>
                   <Icon as={CalendarIcon} size="md" className="mr-2" />
                 </HStack>
@@ -201,15 +184,11 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
               {showTransactionDatePicker && (
                 <DateTimePicker
                   mode="date"
-                  value={
-                    transactionDate instanceof Date
-                      ? transactionDate
-                      : new Date()
-                  }
+                  value={transactionDate instanceof Date ? transactionDate : new Date()}
                   maximumDate={new Date()}
                   onChange={(event, selectedDate) => {
                     setShowTransactionDatePicker(false);
-                    if (event.type === "set" && selectedDate) {
+                    if (event.type === 'set' && selectedDate) {
                       setDueDate(selectedDate);
                     }
                   }}
@@ -219,14 +198,12 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
           </HStack>
           <HStack space="sm">
             <Checkbox
-              value={statuses.some((s) => s === "Belum Lunas").toString()}
-              isChecked={statuses.some((s) => s === "Belum Lunas")}
+              value={statuses.some((s) => s === 'Belum Lunas').toString()}
+              isChecked={statuses.some((s) => s === 'Belum Lunas')}
               size="md"
               onChange={(v) => {
                 setStatuses(
-                  v
-                    ? [...statuses, "Belum Lunas"]
-                    : statuses.filter((s) => s !== "Belum Lunas"),
+                  v ? [...statuses, 'Belum Lunas'] : statuses.filter((s) => s !== 'Belum Lunas'),
                 );
               }}
             >
@@ -236,15 +213,11 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
               <CheckboxLabel className="text-sm">Belum Lunas</CheckboxLabel>
             </Checkbox>
             <Checkbox
-              value={statuses.some((s) => s === "Lunas").toString()}
-              isChecked={statuses.some((s) => s === "Lunas")}
+              value={statuses.some((s) => s === 'Lunas').toString()}
+              isChecked={statuses.some((s) => s === 'Lunas')}
               size="md"
               onChange={(v) => {
-                setStatuses(
-                  v
-                    ? [...statuses, "Lunas"]
-                    : statuses.filter((s) => s !== "Lunas"),
-                );
+                setStatuses(v ? [...statuses, 'Lunas'] : statuses.filter((s) => s !== 'Lunas'));
               }}
             >
               <CheckboxIndicator className="w-[16px] h-[16px] border-[1px] rounded-md">
@@ -257,17 +230,13 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
         <VStack>
           {payableList
             ?.filter((r) =>
-              statuses.includes(
-                r.nominal - r.totalRealization > 0 ? "Belum Lunas" : "Lunas",
-              ),
+              statuses.includes(r.nominal - r.totalRealization > 0 ? 'Belum Lunas' : 'Lunas'),
             )
             ?.map((payable) => (
               <Pressable
                 key={payable.id}
                 className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                  selectedItems?.some((r) => r.id === payable.id)
-                    ? "bg-gray-100"
-                    : ""
+                  selectedItems?.some((r) => r.id === payable.id) ? 'bg-gray-100' : ''
                 }`}
                 onPress={() => {
                   if (!!selectedItems?.length) {
@@ -287,12 +256,8 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
                   <HStack space="md" className="items-center">
                     {!!selectedItems?.length && (
                       <Checkbox
-                        value={selectedItems
-                          ?.some((r) => r.id === payable.id)
-                          .toString()}
-                        isChecked={selectedItems?.some(
-                          (r) => r.id === payable.id,
-                        )}
+                        value={selectedItems?.some((r) => r.id === payable.id).toString()}
+                        isChecked={selectedItems?.some((r) => r.id === payable.id)}
                         size="md"
                         onChange={() => handlePayablePress(payable)}
                       >
@@ -302,29 +267,22 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
                       </Checkbox>
                     )}
                     <VStack>
-                      <Heading size="sm">
-                        {dayjs(payable.createdAt).format("DD/MM/YYYY")}
-                      </Heading>
+                      <Heading size="sm">{dayjs(payable.createdAt).format('DD/MM/YYYY')}</Heading>
                       <Text size="xs" className="text-blue-500 font-bold">
                         {formatRp(payable.nominal)}
                       </Text>
                       <Text size="xs" className="text-slate-500">
-                        {`JT: ${dayjs(payable.dueDate).format("DD/MM/YYYY")}`}
+                        {`JT: ${dayjs(payable.dueDate).format('DD/MM/YYYY')}`}
                       </Text>
                     </VStack>
                   </HStack>
                   <VStack className="items-end">
                     <HStack space="xs" className="items-center">
                       <Box
-                        className={`w-2 h-2 rounded-full${payable.totalRealization < payable.nominal ? " bg-red-500" : " bg-green-500"}`}
+                        className={`w-2 h-2 rounded-full${payable.totalRealization < payable.nominal ? ' bg-red-500' : ' bg-green-500'}`}
                       />
-                      <Text
-                        size="xs"
-                        className="text-primary-500 text-sm font-bold"
-                      >
-                        {payable.totalRealization < payable.nominal
-                          ? "Belum Lunas"
-                          : "Lunas"}
+                      <Text size="xs" className="text-primary-500 text-sm font-bold">
+                        {payable.totalRealization < payable.nominal ? 'Belum Lunas' : 'Lunas'}
                       </Text>
                     </HStack>
                     {payable.totalRealization < payable.nominal && (
@@ -350,13 +308,13 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
             className="w-full rounded-md h-10 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
             onPress={() => {
               router.navigate(
-                `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${selectedItems?.map((m) => m.id).join("-")}` as any,
+                `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${selectedItems?.map((m) => m.id).join('-')}` as any,
               );
             }}
           >
             <Text size="sm" className="text-typography-0 font-bold">
               {selectedItems?.length === 1
-                ? "BAYAR HUTANG"
+                ? 'BAYAR HUTANG'
                 : `BAYAR ${selectedItems?.length} HUTANG`}
             </Text>
           </Pressable>

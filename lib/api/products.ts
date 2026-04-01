@@ -1,11 +1,11 @@
-import { InventoryTxType, ProductType, Status } from "@/lib/constants";
-import { useAuthStore } from "@/stores/auth";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { and, desc, eq, isNull, like, or } from "drizzle-orm";
-import { db } from "../db";
-import * as schema from "../db/schema";
+import { InventoryTxType, ProductType, Status } from '@/lib/constants';
+import { useAuthStore } from '@/stores/auth';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { and, desc, eq, isNull, like, or } from 'drizzle-orm';
+import { db } from '../db';
+import * as schema from '../db/schema';
 
-export type ProductListItem = Omit<Product, "sellPrices" | "variants">;
+export type ProductListItem = Omit<Product, 'sellPrices' | 'variants'>;
 
 export interface IProductLog {
   id: string;
@@ -21,7 +21,7 @@ export interface ProductPrice {
   label: string;
   price: number;
   minimumPurchase: number;
-  type: "RETAIL" | "WHOLESALE";
+  type: 'RETAIL' | 'WHOLESALE';
 }
 
 export interface ProductVariant {
@@ -41,7 +41,7 @@ export interface Product {
   description: string | null;
   isFavorite: boolean;
   isActive: boolean;
-  type: "DEFAULT" | "MULTIUNIT" | "VARIANTS";
+  type: 'DEFAULT' | 'MULTIUNIT' | 'VARIANTS';
   unit: string | null;
   minimumStock: number;
   categoryId: string;
@@ -61,7 +61,7 @@ export interface Product {
     id: string;
     name: string;
     nominal: number;
-    type: "FLAT" | "PERCENTAGE";
+    type: 'FLAT' | 'PERCENTAGE';
     startDate: Date;
     endDate: Date;
   };
@@ -79,13 +79,13 @@ export interface CreateProductDTO {
   description?: string;
   isFavorite?: boolean;
   isActive?: boolean;
-  type: "DEFAULT" | "MULTIUNIT" | "VARIANTS";
+  type: 'DEFAULT' | 'MULTIUNIT' | 'VARIANTS';
   unit?: string | null;
   minimumStock?: number;
   categoryId: string;
   brandId?: string;
-  prices: Omit<ProductPrice, "id">[];
-  variants?: (Omit<ProductVariant, "id"> & { id?: string })[];
+  prices: Omit<ProductPrice, 'id'>[];
+  variants?: (Omit<ProductVariant, 'id'> & { id?: string })[];
   discountId?: string | null;
 }
 
@@ -93,7 +93,7 @@ export interface UpdateProductDTO extends Partial<CreateProductDTO> {
   id: string;
 }
 
-export type ShowByStock = "NO_STOCK" | "LOW_STOCK" | "ALL_STOCK";
+export type ShowByStock = 'NO_STOCK' | 'LOW_STOCK' | 'ALL_STOCK';
 
 export interface ProductParams {
   search?: string;
@@ -111,7 +111,7 @@ export function useProducts(params: ProductParams | void) {
 
   return useQuery({
     queryKey: [
-      "products",
+      'products',
       orgId,
       params?.search,
       params?.showByStock,
@@ -131,10 +131,7 @@ export function useProducts(params: ProductParams | void) {
       if (params?.search) {
         const searchTerm = `%${params.search}%`;
         conditions.push(
-          or(
-            like(schema.products.name, searchTerm),
-            like(schema.products.barcode, searchTerm),
-          )!,
+          or(like(schema.products.name, searchTerm), like(schema.products.barcode, searchTerm))!,
         );
       }
 
@@ -156,10 +153,7 @@ export function useProducts(params: ProductParams | void) {
           discount: schema.discounts,
         })
         .from(schema.products)
-        .leftJoin(
-          schema.discounts,
-          eq(schema.products.discountId, schema.discounts.id),
-        )
+        .leftJoin(schema.discounts, eq(schema.products.discountId, schema.discounts.id))
         .where(and(...conditions));
 
       const productsWithPrices = await Promise.all(
@@ -190,10 +184,7 @@ export function useProducts(params: ProductParams | void) {
               ),
             );
 
-          const totalStock = transactions.reduce(
-            (sum, tx) => sum + tx.quantity,
-            0,
-          );
+          const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
 
           return {
             ...product,
@@ -207,7 +198,7 @@ export function useProducts(params: ProductParams | void) {
                   id: discount.id,
                   name: discount.name,
                   nominal: discount.nominal,
-                  type: discount.type as "FLAT" | "PERCENTAGE",
+                  type: discount.type as 'FLAT' | 'PERCENTAGE',
                   startDate: discount.startDate,
                   endDate: discount.endDate,
                 }
@@ -217,10 +208,7 @@ export function useProducts(params: ProductParams | void) {
       );
 
       const flattenedProducts = productsWithPrices.flatMap((product) => {
-        if (
-          product.type === ProductType.MULTIUNIT &&
-          params?.forceParentMultiUnit
-        ) {
+        if (product.type === ProductType.MULTIUNIT && params?.forceParentMultiUnit) {
           return [
             {
               ...product,
@@ -257,11 +245,11 @@ export function useProducts(params: ProductParams | void) {
             ...product,
             sellPrices: product.sellPrices.map((p) => ({
               ...p,
-              type: p.type as ProductPrice["type"],
+              type: p.type as ProductPrice['type'],
               minimumPurchase: p.minimumPurchase || 0,
             })),
             minimumStock: product.minimumStock || 0,
-            type: product.type as Product["type"],
+            type: product.type as Product['type'],
             isActive: !!product.isActive,
             isFavorite: !!product.isFavorite,
             purchasePrice: product.purchasePrice || 0,
@@ -272,8 +260,7 @@ export function useProducts(params: ProductParams | void) {
 
         // Add variants/children for MULTIUNIT and VARIANTS if they exist
         if (
-          (product.type === ProductType.MULTIUNIT ||
-            product.type === ProductType.VARIANTS) &&
+          (product.type === ProductType.MULTIUNIT || product.type === ProductType.VARIANTS) &&
           hasVariants
         ) {
           product.variants.forEach((variant) => {
@@ -286,14 +273,14 @@ export function useProducts(params: ProductParams | void) {
               code: variant.code || product.code, // Use variant code if available
               isVariant: true,
               variantData: variant,
-              type: product.type as Product["type"],
+              type: product.type as Product['type'],
               isActive: !!product.isActive,
               isFavorite: !!product.isFavorite,
               minimumStock: product.minimumStock || 0,
               purchasePrice: product.purchasePrice || 0,
               sellPrices: product.sellPrices.map((p) => ({
                 ...p,
-                type: p.type as ProductPrice["type"],
+                type: p.type as ProductPrice['type'],
                 minimumPurchase: p.minimumPurchase || 0,
               })),
             };
@@ -304,22 +291,21 @@ export function useProducts(params: ProductParams | void) {
 
         // Fallback: If type is VARIANTS or MULTIUNIT but it has no variants yet, still show the parent
         if (
-          (product.type === ProductType.VARIANTS ||
-            product.type === ProductType.MULTIUNIT) &&
+          (product.type === ProductType.VARIANTS || product.type === ProductType.MULTIUNIT) &&
           !hasVariants
         ) {
           items.push({
             ...product,
             isVariant: false,
             variantData: undefined,
-            type: product.type as Product["type"],
+            type: product.type as Product['type'],
             isActive: !!product.isActive,
             isFavorite: !!product.isFavorite,
             minimumStock: product.minimumStock || 0,
             purchasePrice: product.purchasePrice || 0,
             sellPrices: product.sellPrices.map((p) => ({
               ...p,
-              type: p.type as ProductPrice["type"],
+              type: p.type as ProductPrice['type'],
               minimumPurchase: p.minimumPurchase || 0,
             })),
           });
@@ -329,12 +315,10 @@ export function useProducts(params: ProductParams | void) {
       });
 
       if (params?.showByStock) {
-        if (params.showByStock === "NO_STOCK") {
+        if (params.showByStock === 'NO_STOCK') {
           return flattenedProducts.filter((p) => p.stock === 0);
-        } else if (params.showByStock === "LOW_STOCK") {
-          return flattenedProducts.filter(
-            (p) => p.stock < (p.minimumStock || 0),
-          );
+        } else if (params.showByStock === 'LOW_STOCK') {
+          return flattenedProducts.filter((p) => p.stock < (p.minimumStock || 0));
         }
       }
 
@@ -348,7 +332,7 @@ export function useProducts(params: ProductParams | void) {
 export function useProductsByCategory(categoryId: string) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["products", orgId, "byCategory", categoryId],
+    queryKey: ['products', orgId, 'byCategory', categoryId],
     queryFn: async () => {
       const productResult = await db
         .select({
@@ -356,10 +340,7 @@ export function useProductsByCategory(categoryId: string) {
           discount: schema.discounts,
         })
         .from(schema.products)
-        .leftJoin(
-          schema.discounts,
-          eq(schema.products.discountId, schema.discounts.id),
-        )
+        .leftJoin(schema.discounts, eq(schema.products.discountId, schema.discounts.id))
         .where(
           and(
             eq(schema.products.organizationId, orgId),
@@ -387,10 +368,7 @@ export function useProductsByCategory(categoryId: string) {
               ),
             );
 
-          const totalStock = transactions.reduce(
-            (sum, tx) => sum + tx.quantity,
-            0,
-          );
+          const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
 
           return {
             ...product,
@@ -404,7 +382,7 @@ export function useProductsByCategory(categoryId: string) {
                   id: discount.id,
                   name: discount.name,
                   nominal: discount.nominal,
-                  type: discount.type as "FLAT" | "PERCENTAGE",
+                  type: discount.type as 'FLAT' | 'PERCENTAGE',
                   startDate: discount.startDate,
                   endDate: discount.endDate,
                 }
@@ -423,7 +401,7 @@ export function useProductsByCategory(categoryId: string) {
 export function useProductsByBrand(brandId: string) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["products", orgId, "byBrand", brandId],
+    queryKey: ['products', orgId, 'byBrand', brandId],
     queryFn: async () => {
       const productResult = await db
         .select({
@@ -431,10 +409,7 @@ export function useProductsByBrand(brandId: string) {
           discount: schema.discounts,
         })
         .from(schema.products)
-        .leftJoin(
-          schema.discounts,
-          eq(schema.products.discountId, schema.discounts.id),
-        )
+        .leftJoin(schema.discounts, eq(schema.products.discountId, schema.discounts.id))
         .where(
           and(
             eq(schema.products.organizationId, orgId),
@@ -462,10 +437,7 @@ export function useProductsByBrand(brandId: string) {
               ),
             );
 
-          const totalStock = transactions.reduce(
-            (sum, tx) => sum + tx.quantity,
-            0,
-          );
+          const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
 
           return {
             ...product,
@@ -479,7 +451,7 @@ export function useProductsByBrand(brandId: string) {
                   id: discount.id,
                   name: discount.name,
                   nominal: discount.nominal,
-                  type: discount.type as "FLAT" | "PERCENTAGE",
+                  type: discount.type as 'FLAT' | 'PERCENTAGE',
                   startDate: discount.startDate,
                   endDate: discount.endDate,
                 }
@@ -498,7 +470,7 @@ export function useProductsByBrand(brandId: string) {
 export function useProductsBySupplier(supplierId: string) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["products", orgId, "bySupplier", supplierId],
+    queryKey: ['products', orgId, 'bySupplier', supplierId],
     queryFn: async () => {
       const productResult = await db
         .select({
@@ -506,10 +478,7 @@ export function useProductsBySupplier(supplierId: string) {
           discount: schema.discounts,
         })
         .from(schema.products)
-        .leftJoin(
-          schema.discounts,
-          eq(schema.products.discountId, schema.discounts.id),
-        )
+        .leftJoin(schema.discounts, eq(schema.products.discountId, schema.discounts.id))
         .where(
           and(
             eq(schema.products.organizationId, orgId),
@@ -537,10 +506,7 @@ export function useProductsBySupplier(supplierId: string) {
               ),
             );
 
-          const totalStock = transactions.reduce(
-            (sum, tx) => sum + tx.quantity,
-            0,
-          );
+          const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
 
           return {
             ...product,
@@ -554,7 +520,7 @@ export function useProductsBySupplier(supplierId: string) {
                   id: discount.id,
                   name: discount.name,
                   nominal: discount.nominal,
-                  type: discount.type as "FLAT" | "PERCENTAGE",
+                  type: discount.type as 'FLAT' | 'PERCENTAGE',
                   startDate: discount.startDate,
                   endDate: discount.endDate,
                 }
@@ -572,12 +538,10 @@ export function useProductsBySupplier(supplierId: string) {
 // Get single product with relative data
 export function useProduct(id: string) {
   return useQuery({
-    queryKey: ["products", id],
+    queryKey: ['products', id],
     queryFn: async () => {
       // If the ID contains a dash, it's a flattened variant (e.g. prod_...-var_...)
-      const baseProductId = id.includes("-var_")
-        ? id.substring(0, id.indexOf("-var_"))
-        : id;
+      const baseProductId = id.includes('-var_') ? id.substring(0, id.indexOf('-var_')) : id;
       const productResult = await db
         .select({
           product: schema.products,
@@ -586,15 +550,9 @@ export function useProduct(id: string) {
           discount: schema.discounts,
         })
         .from(schema.products)
-        .leftJoin(
-          schema.categories,
-          eq(schema.products.categoryId, schema.categories.id),
-        )
+        .leftJoin(schema.categories, eq(schema.products.categoryId, schema.categories.id))
         .leftJoin(schema.brands, eq(schema.products.brandId, schema.brands.id))
-        .leftJoin(
-          schema.discounts,
-          eq(schema.products.discountId, schema.discounts.id),
-        )
+        .leftJoin(schema.discounts, eq(schema.products.discountId, schema.discounts.id))
         .where(eq(schema.products.id, baseProductId))
         .limit(1);
 
@@ -630,17 +588,15 @@ export function useProduct(id: string) {
 
       // If looking at a specific variant wrapper, inject its data context onto the product obj
       let activeVariantData = undefined;
-      if (id.includes("-var_")) {
-        const variantIdStr = id.substring(id.indexOf("-") + 1);
+      if (id.includes('-var_')) {
+        const variantIdStr = id.substring(id.indexOf('-') + 1);
         activeVariantData = variants.find((v) => v.id === variantIdStr);
       }
 
       return {
         ...product,
         // Optional override to mimic flattened product structure
-        name: activeVariantData
-          ? `${product.name} - ${activeVariantData.name}`
-          : product.name,
+        name: activeVariantData ? `${product.name} - ${activeVariantData.name}` : product.name,
         code: activeVariantData?.code || product.barcode,
         isVariant: !!activeVariantData,
         variantData: activeVariantData,
@@ -648,16 +604,14 @@ export function useProduct(id: string) {
         sellPrices: prices,
         variants,
         discountId: product.discountId,
-        category: category
-          ? { id: category.id, name: category.name }
-          : undefined,
+        category: category ? { id: category.id, name: category.name } : undefined,
         brand: brand ? { id: brand.id, name: brand.name } : undefined,
         discount: discount
           ? {
               id: discount.id,
               name: discount.name,
               nominal: discount.nominal,
-              type: discount.type as "FLAT" | "PERCENTAGE",
+              type: discount.type as 'FLAT' | 'PERCENTAGE',
               startDate: discount.startDate,
               endDate: discount.endDate,
             }
@@ -673,7 +627,7 @@ export function useProductLog(productId: string) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
 
   return useQuery({
-    queryKey: ["productLogs", orgId, productId],
+    queryKey: ['productLogs', orgId, productId],
     queryFn: async () => {
       const logs = await db
         .select()
@@ -743,9 +697,7 @@ export function useCreateProduct() {
         if (variants && variants.length > 0) {
           for (const variant of variants) {
             await tx.insert(schema.productVariants).values({
-              id:
-                variant.id ||
-                `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              id: variant.id || `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               ...variant,
               productId: id,
               organizationId: orgId,
@@ -782,7 +734,7 @@ export function useCreateProduct() {
     },
     onSuccess: (data) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["products", orgId] });
+      queryClient.invalidateQueries({ queryKey: ['products', orgId] });
     },
   });
 }
@@ -814,9 +766,7 @@ export function useUpdateProduct() {
         if (prices) {
           // Simplest reconciliation: delete existing and re-insert
           // Better: upsert based on ID if available, but DTO doesn't have it for new ones
-          await tx
-            .delete(schema.productPrices)
-            .where(eq(schema.productPrices.productId, id));
+          await tx.delete(schema.productPrices).where(eq(schema.productPrices.productId, id));
           for (const price of prices) {
             await tx.insert(schema.productPrices).values({
               id: `price_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -834,14 +784,10 @@ export function useUpdateProduct() {
         }
 
         if (variants) {
-          await tx
-            .delete(schema.productVariants)
-            .where(eq(schema.productVariants.productId, id));
+          await tx.delete(schema.productVariants).where(eq(schema.productVariants.productId, id));
           for (const variant of variants) {
             await tx.insert(schema.productVariants).values({
-              id:
-                variant.id ||
-                `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              id: variant.id || `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
               ...variant,
               productId: id,
               organizationId: orgId,
@@ -860,8 +806,8 @@ export function useUpdateProduct() {
     },
     onSuccess: (data) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["products", orgId] });
-      queryClient.invalidateQueries({ queryKey: ["products", data.id] });
+      queryClient.invalidateQueries({ queryKey: ['products', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['products', data.id] });
     },
   });
 }
@@ -880,7 +826,7 @@ export function useDeleteProduct() {
         // If the ID contains '-var_', it's a flattened variant (e.g. prod_...-var_...)
         // Must use indexOf("-var_") specifically, NOT just indexOf("-"),
         // because the productId prefix itself also contains dashes.
-        const varSeparatorIndex = id.indexOf("-var_");
+        const varSeparatorIndex = id.indexOf('-var_');
         if (varSeparatorIndex !== -1) {
           // Extract only the variant portion (after the "-" separator)
           const variantIdStr = id.substring(varSeparatorIndex + 1); // e.g. "var_xxx"
@@ -913,8 +859,8 @@ export function useDeleteProduct() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
-        queryKey: ["products"],
-        refetchType: "all",
+        queryKey: ['products'],
+        refetchType: 'all',
       });
     },
   });
@@ -931,7 +877,7 @@ export function useBulkDeleteProduct() {
       const userId = useAuthStore.getState().profile?.id;
 
       for (const id of data.ids) {
-        const varSeparatorIndex = id.indexOf("-var_");
+        const varSeparatorIndex = id.indexOf('-var_');
         if (varSeparatorIndex !== -1) {
           // It's a composite variant ID (e.g. prod_xxx-var_yyy) — delete the variant row
           const variantIdStr = id.substring(varSeparatorIndex + 1);
@@ -962,8 +908,8 @@ export function useBulkDeleteProduct() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["products"],
-        refetchType: "all",
+        queryKey: ['products'],
+        refetchType: 'all',
       });
     },
   });
@@ -994,8 +940,8 @@ export function useAssignProductsToCategory() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["productCountsByCategory"] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['productCountsByCategory'] });
     },
   });
 }
@@ -1025,8 +971,8 @@ export function useAssignProductsToSupplier() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] });
     },
   });
 }
@@ -1056,8 +1002,8 @@ export function useAssignProductsToBrand() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["productCountsByBrand"] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['productCountsByBrand'] });
     },
   });
 }
@@ -1075,7 +1021,7 @@ export function useUnassignProductsFromCategory() {
         await db
           .update(schema.products)
           .set({
-            categoryId: "",
+            categoryId: '',
             updatedBy: userId,
             updatedAt: now,
             _dirty: true,
@@ -1086,8 +1032,8 @@ export function useUnassignProductsFromCategory() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["productCountsByCategory"] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['productCountsByCategory'] });
     },
   });
 }
@@ -1116,8 +1062,8 @@ export function useUnassignProductsFromSupplier() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["productCountsBySupplier"] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['productCountsBySupplier'] });
     },
   });
 }
@@ -1146,8 +1092,8 @@ export function useUnassignProductsFromBrand() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["productCountsByBrand"] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['productCountsByBrand'] });
     },
   });
 }

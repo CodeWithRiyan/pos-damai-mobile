@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   FormControl,
   FormControlError,
@@ -16,7 +16,7 @@ import {
   ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
+} from '@/components/ui';
 import {
   Permission,
   useCreateRole,
@@ -24,18 +24,18 @@ import {
   useRole,
   useRoles,
   useUpdateRole,
-} from "@/lib/api/roles";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect } from "react";
-import { usePermission } from "@/hooks/use-permission";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { ScrollView } from "react-native";
-import z from "zod";
-import { showErrorToast } from "@/lib/utils/toast";
+} from '@/lib/api/roles';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect } from 'react';
+import { usePermission } from '@/hooks/use-permission';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { ScrollView } from 'react-native';
+import z from 'zod';
+import { showErrorToast } from '@/lib/utils/toast';
 
 const roleSchema = z.object({
-  name: z.string().min(1, "Nama wajib diisi."),
+  name: z.string().min(1, 'Nama wajib diisi.'),
   description: z.string(),
   permissionIds: z.array(z.string()),
 });
@@ -43,8 +43,8 @@ const roleSchema = z.object({
 type RoleFormValues = z.infer<typeof roleSchema>;
 
 const initialValues: RoleFormValues = {
-  name: "",
-  description: "",
+  name: '',
+  description: '',
   permissionIds: [],
 };
 
@@ -59,15 +59,12 @@ export default function RoleForm() {
     defaultValues: initialValues,
   });
 
-  const { data: role, refetch: refetchRole } = useRole(roleId || "");
+  const { data: role, refetch: refetchRole } = useRole(roleId || '');
   const { refetch: refetchRoles } = useRoles();
-  const { data: permissions = [], isLoading: isLoadingPermissions } =
-    usePermissions();
+  const { data: permissions = [], isLoading: isLoadingPermissions } = usePermissions();
 
   const { hasPermission } = usePermission();
-  const canSave = isAdd
-    ? hasPermission("roles:create")
-    : hasPermission("roles:update");
+  const canSave = isAdd ? hasPermission('roles:create') : hasPermission('roles:update');
 
   const createMutation = useCreateRole();
   const updateMutation = useUpdateRole();
@@ -110,13 +107,9 @@ export default function RoleForm() {
             handleCancel();
 
             toast.show({
-              placement: "top",
+              placement: 'top',
               render: ({ id }) => (
-                <Toast
-                  nativeID={`toast-${id}`}
-                  action="success"
-                  variant="solid"
-                >
+                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
                   <ToastTitle>Role berhasil diubah</ToastTitle>
                 </Toast>
               ),
@@ -134,7 +127,7 @@ export default function RoleForm() {
           handleCancel();
 
           toast.show({
-            placement: "top",
+            placement: 'top',
             render: ({ id }) => (
               <Toast nativeID={`toast-${id}`} action="success" variant="solid">
                 <ToastTitle>Role berhasil dibuat</ToastTitle>
@@ -163,17 +156,14 @@ export default function RoleForm() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header={isAdd ? "TAMBAH ROLE" : "EDIT ROLE"} isGoBack />
+      <Header header={isAdd ? 'TAMBAH ROLE' : 'EDIT ROLE'} isGoBack />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="lg" className="p-4">
           <Controller
             name="name"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Nama</FormControlLabelText>
@@ -199,10 +189,7 @@ export default function RoleForm() {
           <Controller
             name="description"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Deskripsi</FormControlLabelText>
@@ -244,47 +231,39 @@ export default function RoleForm() {
                   </Text>
                 ) : (
                   <>
-                    {Object.entries(groupedPermissions).map(
-                      ([module, modulePermissions]) => (
-                        <VStack
-                          key={module}
-                          space="md"
-                          className="mb-2 border border-background-300 rounded-md p-4"
-                        >
-                          <Text className="font-bold text-slate-500 uppercase text-sm">
-                            {module}
-                          </Text>
-                          <VStack>
-                            {modulePermissions.map((permission) => {
-                              const isChecked = value.includes(permission.id);
+                    {Object.entries(groupedPermissions).map(([module, modulePermissions]) => (
+                      <VStack
+                        key={module}
+                        space="md"
+                        className="mb-2 border border-background-300 rounded-md p-4"
+                      >
+                        <Text className="font-bold text-slate-500 uppercase text-sm">{module}</Text>
+                        <VStack>
+                          {modulePermissions.map((permission) => {
+                            const isChecked = value.includes(permission.id);
 
-                              return (
-                                <HStack
-                                  key={permission.id}
-                                  className="items-center justify-between h-12"
-                                >
-                                  <Text className="flex-1 text-base">
-                                    {permission.description}
-                                  </Text>
-                                  <Switch
-                                    size="md"
-                                    value={isChecked}
-                                    onToggle={() => {
-                                      const newValue = isChecked
-                                        ? value.filter(
-                                            (id) => id !== permission.id,
-                                          )
-                                        : [...value, permission.id];
-                                      onChange(newValue);
-                                    }}
-                                  />
-                                </HStack>
-                              );
-                            })}
-                          </VStack>
+                            return (
+                              <HStack
+                                key={permission.id}
+                                className="items-center justify-between h-12"
+                              >
+                                <Text className="flex-1 text-base">{permission.description}</Text>
+                                <Switch
+                                  size="md"
+                                  value={isChecked}
+                                  onToggle={() => {
+                                    const newValue = isChecked
+                                      ? value.filter((id) => id !== permission.id)
+                                      : [...value, permission.id];
+                                    onChange(newValue);
+                                  }}
+                                />
+                              </HStack>
+                            );
+                          })}
                         </VStack>
-                      ),
-                    )}
+                      </VStack>
+                    ))}
                   </>
                 )}
 
@@ -303,8 +282,8 @@ export default function RoleForm() {
         <Pressable
           className={`w-full rounded-sm h-10 flex justify-center items-center ${
             !canSave || isLoading
-              ? "bg-slate-300 border-slate-300"
-              : "bg-primary-500 border-primary-500"
+              ? 'bg-slate-300 border-slate-300'
+              : 'bg-primary-500 border-primary-500'
           }`}
           disabled={!canSave || isLoading}
           onPress={form.handleSubmit(onSubmit)}

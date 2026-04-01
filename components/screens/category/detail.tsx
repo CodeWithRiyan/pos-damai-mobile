@@ -1,6 +1,6 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
+import { usePopUpConfirm } from '@/components/pop-up-confirm';
 import {
   Box,
   Heading,
@@ -11,30 +11,26 @@ import {
   ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
-import { Badge, BadgeText } from "@/components/ui/badge";
-import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import {
-  useCategories,
-  useCategory,
-  useDeleteCategory,
-} from "@/lib/api/categories";
-import { showErrorToast } from "@/lib/utils/toast";
+} from '@/components/ui';
+import { Badge, BadgeText } from '@/components/ui/badge';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { useCategories, useCategory, useDeleteCategory } from '@/lib/api/categories';
+import { showErrorToast } from '@/lib/utils/toast';
 import {
   Product,
   useProductsByCategory,
   useUnassignProductsFromCategory,
-} from "@/lib/api/products";
-import { useCategoryStore } from "@/stores/category";
-import { useDeleteEntity } from "@/hooks/use-delete-entity";
-import { singleDeleteConfirm } from "@/lib/utils/delete-confirm";
-import { useItemSelection } from "@/hooks/use-item-selection";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo } from "react";
-import { ScrollView } from "react-native";
+} from '@/lib/api/products';
+import { useCategoryStore } from '@/stores/category';
+import { useDeleteEntity } from '@/hooks/use-delete-entity';
+import { singleDeleteConfirm } from '@/lib/utils/delete-confirm';
+import { useItemSelection } from '@/hooks/use-item-selection';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useMemo } from 'react';
+import { ScrollView } from 'react-native';
 
-import { formatRp, formatNumber } from "@/lib/utils/format";
+import { formatRp, formatNumber } from '@/lib/utils/format';
 export default function CategoryDetail() {
   const { setOpen, setData } = useCategoryStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -52,10 +48,8 @@ export default function CategoryDetail() {
   } = useItemSelection<Product>();
 
   const { refetch: refetchCategorys } = useCategories();
-  const { data: category, refetch: refetchCategory } = useCategory(
-    categoryId || "",
-  );
-  const { data: products = [] } = useProductsByCategory(categoryId || "");
+  const { data: category, refetch: refetchCategory } = useCategory(categoryId || '');
+  const { data: products = [] } = useProductsByCategory(categoryId || '');
   const deleteMutation = useDeleteCategory();
   const unassignProductMutation = useUnassignProductsFromCategory();
   const toast = useToast();
@@ -72,7 +66,7 @@ export default function CategoryDetail() {
   };
 
   const { triggerDelete } = useDeleteEntity({
-    successMessage: "Kategori berhasil dihapus",
+    successMessage: 'Kategori berhasil dihapus',
     deleteMutation,
     onSuccess: onRefetch,
   });
@@ -81,8 +75,8 @@ export default function CategoryDetail() {
     const productIds = selectedProducts?.map((m) => m.id) || [];
 
     showPopUpConfirm({
-      title: `HAPUS PRODUK DARI ${category?.name?.toUpperCase() ?? ""}`,
-      icon: "warning",
+      title: `HAPUS PRODUK DARI ${category?.name?.toUpperCase() ?? ''}`,
+      icon: 'warning',
       description: (
         <Text className="text-slate-500">
           {`Apakah Anda yakin ingin menghapus `}
@@ -91,9 +85,9 @@ export default function CategoryDetail() {
         </Text>
       ),
       showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
+      okText: 'HAPUS',
+      closeText: 'BATAL',
+      okVariant: 'destructive',
       onOk: () => {
         unassignProductMutation.mutate(
           { productIds },
@@ -103,16 +97,10 @@ export default function CategoryDetail() {
               clearProductSelection();
               onRefetch();
               toast.show({
-                placement: "top",
+                placement: 'top',
                 render: ({ id }) => (
-                  <Toast
-                    nativeID={`toast-${id}`}
-                    action="success"
-                    variant="solid"
-                  >
-                    <ToastTitle>
-                      Produk berhasil dihapus dari kategori
-                    </ToastTitle>
+                  <Toast nativeID={`toast-${id}`} action="success" variant="solid">
+                    <ToastTitle>Produk berhasil dihapus dari kategori</ToastTitle>
                   </Toast>
                 ),
               });
@@ -132,8 +120,8 @@ export default function CategoryDetail() {
     showActionDrawer({
       actions: [
         {
-          label: "Edit",
-          icon: "Pen",
+          label: 'Edit',
+          icon: 'Pen',
           onPress: () => {
             setOpen(true);
             setData(category ?? null);
@@ -141,17 +129,11 @@ export default function CategoryDetail() {
           },
         },
         {
-          label: "Hapus",
-          icon: "TrashBin2",
-          theme: "red",
+          label: 'Hapus',
+          icon: 'TrashBin2',
+          theme: 'red',
           onPress: () => {
-            triggerDelete(
-              singleDeleteConfirm(
-                "kategori",
-                category?.id || "",
-                category?.name,
-              ),
-            );
+            triggerDelete(singleDeleteConfirm('kategori', category?.id || '', category?.name));
             hideActionDrawer();
           },
         },
@@ -173,10 +155,7 @@ export default function CategoryDetail() {
                 <Spinner size="small" color="#FFFFFF" />
               </Box>
             ) : (
-              <Pressable
-                className="p-6"
-                onPress={() => handleDeleteProductPress()}
-              >
+              <Pressable className="p-6" onPress={() => handleDeleteProductPress()}>
                 <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
               </Pressable>
             )
@@ -186,7 +165,7 @@ export default function CategoryDetail() {
                 name="MenuDots"
                 size={20}
                 color="#FDFBF9"
-                style={{ transform: [{ rotate: "90deg" }] }}
+                style={{ transform: [{ rotate: '90deg' }] }}
               />
             </Pressable>
           )
@@ -199,7 +178,7 @@ export default function CategoryDetail() {
           <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Nama Category</Text>
-              <Text className="font-bold">{category?.name || "-"}</Text>
+              <Text className="font-bold">{category?.name || '-'}</Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Total Produk</Text>
@@ -224,7 +203,7 @@ export default function CategoryDetail() {
                 <Pressable
                   key={product.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    isProductSelected(product) ? "bg-gray-100" : ""
+                    isProductSelected(product) ? 'bg-gray-100' : ''
                   }`}
                   onPress={() => {
                     if (hasProductSelection) {
@@ -247,39 +226,31 @@ export default function CategoryDetail() {
                         </Text>
                         <Badge size="sm" variant="solid" action="muted">
                           <BadgeText className="text-xs">{`Harga Beli: Rp ${product.purchasePrice.toLocaleString(
-                            "id-ID",
+                            'id-ID',
                           )}`}</BadgeText>
                         </Badge>
                       </VStack>
                     </HStack>
                     <VStack className="items-end">
-                      <Text className="text-primary-500 text-sm font-bold">
-                        {product.stock}
-                      </Text>
+                      <Text className="text-primary-500 text-sm font-bold">{product.stock}</Text>
                       <Text className="text-xs">
-                        Retail:{" "}
+                        Retail:{' '}
                         {`${
-                          product.sellPrices?.filter(
-                            (r) => r.type === "RETAIL",
-                          )?.[0]?.minimumPurchase
+                          product.sellPrices?.filter((r) => r.type === 'RETAIL')?.[0]
+                            ?.minimumPurchase
                         }@ ${formatRp(
-                          product.sellPrices?.filter(
-                            (r) => r.type === "RETAIL",
-                          )?.[0]?.price ?? 0,
+                          product.sellPrices?.filter((r) => r.type === 'RETAIL')?.[0]?.price ?? 0,
                         )}`}
                       </Text>
-                      {product.sellPrices?.filter((r) => r.type === "WHOLESALE")
-                        .length ? (
+                      {product.sellPrices?.filter((r) => r.type === 'WHOLESALE').length ? (
                         <Text className="text-xs">
-                          Grosir:{" "}
+                          Grosir:{' '}
                           {`${
-                            product.sellPrices?.filter(
-                              (r) => r.type === "WHOLESALE",
-                            )?.[0]?.minimumPurchase
+                            product.sellPrices?.filter((r) => r.type === 'WHOLESALE')?.[0]
+                              ?.minimumPurchase
                           }@ ${formatRp(
-                            product.sellPrices?.filter(
-                              (r) => r.type === "WHOLESALE",
-                            )?.[0]?.price ?? 0,
+                            product.sellPrices?.filter((r) => r.type === 'WHOLESALE')?.[0]?.price ??
+                              0,
                           )}`}
                         </Text>
                       ) : null}

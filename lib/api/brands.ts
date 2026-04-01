@@ -1,8 +1,8 @@
-import { db } from "../db";
-import * as schema from "../db/schema";
-import { and, eq, isNull, ne } from "drizzle-orm";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "@/stores/auth";
+import { db } from '../db';
+import * as schema from '../db/schema';
+import { and, eq, isNull, ne } from 'drizzle-orm';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/stores/auth';
 
 export interface Brand {
   id: string;
@@ -30,17 +30,12 @@ export interface UpdateBrandDTO {
 export function useBrands() {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["brands", orgId],
+    queryKey: ['brands', orgId],
     queryFn: async () => {
       const result = await db
         .select()
         .from(schema.brands)
-        .where(
-          and(
-            eq(schema.brands.organizationId, orgId),
-            isNull(schema.brands.deletedAt),
-          ),
-        );
+        .where(and(eq(schema.brands.organizationId, orgId), isNull(schema.brands.deletedAt)));
       return result as Brand[];
     },
     enabled: !!orgId,
@@ -50,13 +45,9 @@ export function useBrands() {
 // Get single brand
 export function useBrand(id: string) {
   return useQuery({
-    queryKey: ["brands", id],
+    queryKey: ['brands', id],
     queryFn: async () => {
-      const result = await db
-        .select()
-        .from(schema.brands)
-        .where(eq(schema.brands.id, id))
-        .limit(1);
+      const result = await db.select().from(schema.brands).where(eq(schema.brands.id, id)).limit(1);
       return result[0] as Brand | undefined;
     },
     enabled: !!id,
@@ -67,17 +58,12 @@ export function useBrand(id: string) {
 export function useProductCountsByBrand() {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["productCountsByBrand", orgId],
+    queryKey: ['productCountsByBrand', orgId],
     queryFn: async () => {
       const products = await db
         .select({ brandId: schema.products.brandId })
         .from(schema.products)
-        .where(
-          and(
-            eq(schema.products.organizationId, orgId),
-            isNull(schema.products.deletedAt),
-          ),
-        );
+        .where(and(eq(schema.products.organizationId, orgId), isNull(schema.products.deletedAt)));
 
       const counts: Record<string, number> = {};
       products.forEach((p) => {
@@ -96,7 +82,7 @@ export function useProductCountsByBrand() {
 export function useCapitalValueByBrand() {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["capitalValueByBrand", orgId],
+    queryKey: ['capitalValueByBrand', orgId],
     queryFn: async () => {
       // Get all products with their brand
       const products = await db
@@ -106,12 +92,7 @@ export function useCapitalValueByBrand() {
           purchasePrice: schema.products.purchasePrice,
         })
         .from(schema.products)
-        .where(
-          and(
-            eq(schema.products.organizationId, orgId),
-            isNull(schema.products.deletedAt),
-          ),
-        );
+        .where(and(eq(schema.products.organizationId, orgId), isNull(schema.products.deletedAt)));
 
       const values: Record<string, number> = {};
 
@@ -125,7 +106,7 @@ export function useCapitalValueByBrand() {
           .where(
             and(
               eq(schema.inventoryTransactions.productId, product.id),
-              eq(schema.inventoryTransactions.status, "COMPLETED"),
+              eq(schema.inventoryTransactions.status, 'COMPLETED'),
             ),
           );
 
@@ -150,7 +131,7 @@ export function useCreateBrand() {
 
       if (!orgId) {
         throw new Error(
-          "Gagal menambahkan brand: ID Organisasi tidak ditemukan. Silakan login kembali.",
+          'Gagal menambahkan brand: ID Organisasi tidak ditemukan. Silakan login kembali.',
         );
       }
 
@@ -196,7 +177,7 @@ export function useCreateBrand() {
     },
     onSuccess: (newBrand) => {
       queryClient.invalidateQueries({
-        queryKey: ["brands", newBrand.organizationId],
+        queryKey: ['brands', newBrand.organizationId],
       });
     },
   });
@@ -247,8 +228,8 @@ export function useUpdateBrand() {
     },
     onSuccess: (data) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["brands", orgId] });
-      queryClient.invalidateQueries({ queryKey: ["brands", data.id] });
+      queryClient.invalidateQueries({ queryKey: ['brands', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['brands', data.id] });
     },
   });
 }
@@ -277,7 +258,7 @@ export function useDeleteBrand() {
     },
     onSuccess: () => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["brands", orgId] });
+      queryClient.invalidateQueries({ queryKey: ['brands', orgId] });
     },
   });
 }
@@ -308,7 +289,7 @@ export function useBulkDeleteBrand() {
     },
     onSuccess: () => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["brands", orgId] });
+      queryClient.invalidateQueries({ queryKey: ['brands', orgId] });
     },
   });
 }

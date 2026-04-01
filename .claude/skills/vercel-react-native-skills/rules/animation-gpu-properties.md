@@ -12,15 +12,12 @@ Avoid animating `width`, `height`, `top`, `left`, `margin`, or `padding`. These 
 **Incorrect (animates height, triggers layout every frame):**
 
 ```tsx
-import Animated, {
-  useAnimatedStyle,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 function CollapsiblePanel({ expanded }: { expanded: boolean }) {
   const animatedStyle = useAnimatedStyle(() => ({
     height: withTiming(expanded ? 200 : 0), // triggers layout on every frame
-    overflow: "hidden",
+    overflow: 'hidden',
   }));
 
   return <Animated.View style={animatedStyle}>{children}</Animated.View>;
@@ -30,10 +27,7 @@ function CollapsiblePanel({ expanded }: { expanded: boolean }) {
 **Correct (animates scaleY, GPU-accelerated):**
 
 ```tsx
-import Animated, {
-  useAnimatedStyle,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 function CollapsiblePanel({ expanded }: { expanded: boolean }) {
   const animatedStyle = useAnimatedStyle(() => ({
@@ -42,9 +36,7 @@ function CollapsiblePanel({ expanded }: { expanded: boolean }) {
   }));
 
   return (
-    <Animated.View
-      style={[{ height: 200, transformOrigin: "top" }, animatedStyle]}
-    >
+    <Animated.View style={[{ height: 200, transformOrigin: 'top' }, animatedStyle]}>
       {children}
     </Animated.View>
   );
@@ -54,10 +46,7 @@ function CollapsiblePanel({ expanded }: { expanded: boolean }) {
 **Correct (animates translateY for slide animations):**
 
 ```tsx
-import Animated, {
-  useAnimatedStyle,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 function SlideIn({ visible }: { visible: boolean }) {
   const animatedStyle = useAnimatedStyle(() => ({

@@ -1,9 +1,9 @@
-import { Box, HStack, Pressable, Text, VStack } from "@/components/ui";
-import { useShifts } from "@/lib/api/shifts";
-import { useRouter } from "expo-router";
-import { FlatList } from "react-native";
-import { Spinner } from "@/components/ui/spinner";
-import dayjs from "dayjs";
+import { Box, HStack, Pressable, Text, VStack } from '@/components/ui';
+import { useShifts } from '@/lib/api/shifts';
+import { useRouter } from 'expo-router';
+import { FlatList } from 'react-native';
+import { Spinner } from '@/components/ui/spinner';
+import dayjs from 'dayjs';
 
 export default function HistoryShift() {
   const router = useRouter();
@@ -38,22 +38,18 @@ export default function HistoryShift() {
                 </VStack>
                 <VStack className="w-1/2">
                   <Text className="text-gray-500 font-bold">Mulai</Text>
-                  <Text>
-                    {dayjs(item.startTime).format("DD-MM-YYYY HH:mm")}
-                  </Text>
+                  <Text>{dayjs(item.startTime).format('DD-MM-YYYY HH:mm')}</Text>
                 </VStack>
               </HStack>
               <HStack className="flex-1">
                 <VStack className="w-1/2">
                   <Text className="text-gray-500 font-bold">Catatan</Text>
-                  <Text>{item.note || "-"}</Text>
+                  <Text>{item.note || '-'}</Text>
                 </VStack>
                 <VStack className="w-1/2">
                   <Text className="text-gray-500 font-bold">Berakhir</Text>
                   <Text>
-                    {item.endTime
-                      ? dayjs(item.endTime).format("DD-MM-YYYY HH:mm")
-                      : "Masih Aktif"}
+                    {item.endTime ? dayjs(item.endTime).format('DD-MM-YYYY HH:mm') : 'Masih Aktif'}
                   </Text>
                 </VStack>
               </HStack>
@@ -63,9 +59,7 @@ export default function HistoryShift() {
         )}
         ListEmptyComponent={
           <Box className="py-20 justify-center items-center">
-            <Text className="text-gray-500 italic">
-              Belum ada riwayat shift
-            </Text>
+            <Text className="text-gray-500 italic">Belum ada riwayat shift</Text>
           </Box>
         }
       />

@@ -1,7 +1,7 @@
-import { Product } from "@/lib/api/products";
-import { Status } from "@/lib/constants";
-import { BaseCartItem } from "@/lib/types/cart";
-import { create } from "zustand";
+import { Product } from '@/lib/api/products';
+import { Status } from '@/lib/constants';
+import { BaseCartItem } from '@/lib/types/cart';
+import { create } from 'zustand';
 
 interface CartItem extends BaseCartItem {
   newPurchasePrice: number;
@@ -33,10 +33,10 @@ interface PurchasingState {
   cart: CartItem[];
   cartTotal: number;
   checkoutData: PurchasingCheckoutResponse | null;
-  status: "DRAFT" | "COMPLETED";
+  status: 'DRAFT' | 'COMPLETED';
   purchaseId: string | null;
   setPurchaseId: (id: string | null) => void;
-  setStatus: (status: "DRAFT" | "COMPLETED") => void;
+  setStatus: (status: 'DRAFT' | 'COMPLETED') => void;
   setAddProduct: (state: Product | null) => void;
   setCheckoutData: (state: PurchasingCheckoutResponse | null) => void;
   addCartItem: (item: CartItem) => void;
@@ -63,11 +63,7 @@ export const usePurchasingStore = create<PurchasingState>((set) => ({
 
       let updatedCart: CartItem[];
 
-      if (
-        existingItemIndex !== undefined &&
-        existingItemIndex !== -1 &&
-        state.cart
-      ) {
+      if (existingItemIndex !== undefined && existingItemIndex !== -1 && state.cart) {
         updatedCart = [...state.cart];
         updatedCart[existingItemIndex] = item;
       } else {
@@ -83,9 +79,7 @@ export const usePurchasingStore = create<PurchasingState>((set) => ({
     }),
   removeCartItem: (productId) =>
     set((state) => {
-      const updatedCart = state.cart?.filter(
-        (cartItem) => cartItem.product.id !== productId,
-      );
+      const updatedCart = state.cart?.filter((cartItem) => cartItem.product.id !== productId);
 
       const total = updatedCart.reduce(
         (sum, cartItem) => sum + cartItem.quantity * cartItem.newPurchasePrice,

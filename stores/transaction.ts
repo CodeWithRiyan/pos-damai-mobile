@@ -1,9 +1,9 @@
-import { Customer } from "@/lib/api/customers";
-import { Product, ProductVariant } from "@/lib/api/products";
-import { PriceType, Status } from "@/lib/constants";
-import { calculateLineItemTotal, findSellPrice } from "@/lib/price";
-import { BaseCartItem } from "@/lib/types/cart";
-import { create } from "zustand";
+import { Customer } from '@/lib/api/customers';
+import { Product, ProductVariant } from '@/lib/api/products';
+import { PriceType, Status } from '@/lib/constants';
+import { calculateLineItemTotal, findSellPrice } from '@/lib/price';
+import { BaseCartItem } from '@/lib/types/cart';
+import { create } from 'zustand';
 
 interface CartItem extends BaseCartItem {
   variant?: ProductVariant;
@@ -41,7 +41,7 @@ interface TransactionState {
   employee: Employee | null;
   cart: CartItem[];
   cartTotal: number;
-  status: "DRAFT" | "COMPLETED";
+  status: 'DRAFT' | 'COMPLETED';
   checkoutData: CheckoutData | null;
   transactionId: string | null;
   addProduct: Product | null;
@@ -52,7 +52,7 @@ interface TransactionState {
   addCartItem: (item: CartItem) => void;
   removeCartItem: (productId: string, variantId?: string) => void;
   resetCart: () => void;
-  setStatus: (status: "DRAFT" | "COMPLETED") => void;
+  setStatus: (status: 'DRAFT' | 'COMPLETED') => void;
   setCheckoutData: (data: CheckoutData | null) => void;
   setAddProduct: (product: Product | null, variantId?: string) => void;
 }
@@ -79,10 +79,7 @@ export const useTransactionStore = create<TransactionState>((set) => ({
         const updateTempSellPrice = () => {
           if (nextCategory === PriceType.RETAIL && cartItem.variant?.netto) {
             return undefined;
-          } else if (
-            nextCategory === PriceType.WHOLESALE &&
-            cartItem.variant?.netto
-          ) {
+          } else if (nextCategory === PriceType.WHOLESALE && cartItem.variant?.netto) {
             return (
               findSellPrice({
                 sellPrices: cartItem.product.sellPrices,
@@ -143,9 +140,7 @@ export const useTransactionStore = create<TransactionState>((set) => ({
       // Switching from WHOLESALE customer to employee — recalculate to RETAIL
       const updatedCart = state.cart.map((cartItem) => ({
         ...cartItem,
-        tempSellPrice: cartItem.variant?.netto
-          ? undefined
-          : cartItem.tempSellPrice,
+        tempSellPrice: cartItem.variant?.netto ? undefined : cartItem.tempSellPrice,
       }));
 
       const updatedTotal = updatedCart.reduce((sum, cartItem) => {
@@ -184,18 +179,12 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   addCartItem: (item) =>
     set((state) => {
       const existingItemIndex = state.cart.findIndex(
-        (i) =>
-          i.product.id === item.product.id &&
-          i.variant?.id === item.variant?.id,
+        (i) => i.product.id === item.product.id && i.variant?.id === item.variant?.id,
       );
 
       let updatedCart: CartItem[];
 
-      if (
-        existingItemIndex !== undefined &&
-        existingItemIndex !== -1 &&
-        state.cart
-      ) {
+      if (existingItemIndex !== undefined && existingItemIndex !== -1 && state.cart) {
         updatedCart = [...state.cart];
         updatedCart[existingItemIndex] = item;
       } else {
@@ -228,11 +217,7 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   removeCartItem: (productId, variantId) =>
     set((state) => {
       const updatedCart = state.cart?.filter(
-        (cartItem) =>
-          !(
-            cartItem.product.id === productId &&
-            cartItem.variant?.id === variantId
-          ),
+        (cartItem) => !(cartItem.product.id === productId && cartItem.variant?.id === variantId),
       );
 
       const total = updatedCart.reduce((sum, cartItem) => {

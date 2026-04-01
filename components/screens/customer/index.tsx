@@ -1,46 +1,41 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
-import { useBulkDeleteEntity } from "@/hooks/use-bulk-delete-entity";
-import { Box } from "@/components/ui/box";
-import { Button, ButtonText } from "@/components/ui/button";
-import { Heading } from "@/components/ui/heading";
-import { HStack } from "@/components/ui/hstack";
-import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { Spinner } from "@/components/ui/spinner";
-import { Text } from "@/components/ui/text";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
-import { getErrorMessage } from "@/lib/api/client";
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
+import { usePopUpConfirm } from '@/components/pop-up-confirm';
+import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
+import { Box } from '@/components/ui/box';
+import { Button, ButtonText } from '@/components/ui/button';
+import { Heading } from '@/components/ui/heading';
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { Spinner } from '@/components/ui/spinner';
+import { Text } from '@/components/ui/text';
+import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
+import { getErrorMessage } from '@/lib/api/client';
 import {
   CustomerWithStats,
   useBulkDeleteCustomer,
   useBulkResetCustomerPoints,
   useCreateCustomer,
   useCustomers,
-} from "@/lib/api/customers";
-import { bulkDeleteConfirm } from "@/lib/utils/delete-confirm";
-import { exportCustomers, importCustomers } from "@/lib/utils/excel";
-import { showErrorToast } from "@/lib/utils/toast";
-import { useItemSelection } from "@/hooks/use-item-selection";
-import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback } from "react";
-import { FlatList } from "react-native";
+} from '@/lib/api/customers';
+import { bulkDeleteConfirm } from '@/lib/utils/delete-confirm';
+import { exportCustomers, importCustomers } from '@/lib/utils/excel';
+import { showErrorToast } from '@/lib/utils/toast';
+import { useItemSelection } from '@/hooks/use-item-selection';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
+import { FlatList } from 'react-native';
 
-import { formatNumber } from "@/lib/utils/format";
+import { formatNumber } from '@/lib/utils/format';
 export default function CustomerList({ isReport }: { isReport?: boolean }) {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useCustomers();
-  const {
-    selectedItems,
-    handleItemPress,
-    clearSelection,
-    isSelected,
-    hasSelection,
-  } = useItemSelection<CustomerWithStats>();
+  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } =
+    useItemSelection<CustomerWithStats>();
 
   useFocusEffect(
     useCallback(() => {
@@ -52,7 +47,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
 
   const deleteMutation = useBulkDeleteCustomer();
   const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({
-    successMessage: "Pelanggan berhasil dihapus",
+    successMessage: 'Pelanggan berhasil dihapus',
     deleteMutation,
     onSuccess: () => refetch(),
     clearSelection,
@@ -67,7 +62,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
       await exportCustomers(customers);
     } catch (e) {
       toast.show({
-        placement: "top",
+        placement: 'top',
         render: ({ id }) => (
           <Toast nativeID={`toast-${id}`} action="error" variant="solid">
             <ToastTitle>{getErrorMessage(e)}</ToastTitle>
@@ -91,7 +86,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
       }
       refetch();
       toast.show({
-        placement: "top",
+        placement: 'top',
         render: ({ id }) => (
           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
             <ToastTitle>{`${successCount} pelanggan berhasil diimpor`}</ToastTitle>
@@ -100,7 +95,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
       });
     } catch (e) {
       toast.show({
-        placement: "top",
+        placement: 'top',
         render: ({ id }) => (
           <Toast nativeID={`toast-${id}`} action="error" variant="solid">
             <ToastTitle>{getErrorMessage(e)}</ToastTitle>
@@ -112,15 +107,15 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
 
   const handleAdd = () => {
     clearSelection();
-    router.push("/(main)/management/customer-supplier/customer/add");
+    router.push('/(main)/management/customer-supplier/customer/add');
   };
 
   const handleResetPointPress = () => {
     const ids = selectedItems?.map((m) => m.id) || [];
 
     showPopUpConfirm({
-      title: "RESET POIN PELANGGAN",
-      icon: "warning",
+      title: 'RESET POIN PELANGGAN',
+      icon: 'warning',
       description: (
         <Text className="text-slate-500">
           {`Apakah Anda yakin ingin me-reset poin milik `}
@@ -129,9 +124,9 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
         </Text>
       ),
       showClose: true,
-      okText: "RESET",
-      closeText: "BATAL",
-      okVariant: "destructive",
+      okText: 'RESET',
+      closeText: 'BATAL',
+      okVariant: 'destructive',
       onOk: () => confirmResetPoint(ids),
       loading: resetPointMutation.isPending,
     });
@@ -149,7 +144,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
           refetch();
 
           toast.show({
-            placement: "top",
+            placement: 'top',
             render: ({ id }) => (
               <Toast nativeID={`toast-${id}`} action="success" variant="solid">
                 <ToastTitle>Poin Pelanggan berhasil direset</ToastTitle>
@@ -176,7 +171,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
   return (
     <Box className="flex-1 bg-white">
       <Header
-        header={isReport ? "LAPORAN PELANGGAN" : "PELANGGAN"}
+        header={isReport ? 'LAPORAN PELANGGAN' : 'PELANGGAN'}
         isGoBack
         selectedItemsLength={selectedItems?.length}
         selectedItemsSuffixLabel="Pelanggan terpilih"
@@ -196,22 +191,20 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
                       showActionDrawer({
                         actions: [
                           {
-                            label: "Reset Poin",
-                            icon: "RestartCircle",
-                            theme: "red",
+                            label: 'Reset Poin',
+                            icon: 'RestartCircle',
+                            theme: 'red',
                             onPress: () => {
                               handleResetPointPress();
                               hideActionDrawer();
                             },
                           },
                           {
-                            label: "Hapus Pelanggan",
-                            icon: "TrashBin2",
-                            theme: "red",
+                            label: 'Hapus Pelanggan',
+                            icon: 'TrashBin2',
+                            theme: 'red',
                             onPress: () => {
-                              triggerBulkDelete(
-                                bulkDeleteConfirm("pelanggan", selectedItems),
-                              );
+                              triggerBulkDelete(bulkDeleteConfirm('pelanggan', selectedItems));
                               hideActionDrawer();
                             },
                           },
@@ -229,13 +222,13 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
                     showActionDrawer({
                       actions: [
                         {
-                          label: "Export Data",
-                          icon: "Export",
+                          label: 'Export Data',
+                          icon: 'Export',
                           onPress: handleExport,
                         },
                         {
-                          label: "Import Data",
-                          icon: "Import",
+                          label: 'Import Data',
+                          icon: 'Import',
                           onPress: handleImport,
                         },
                       ],
@@ -246,7 +239,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
                     name="MenuDots"
                     size={20}
                     color="#FDFBF9"
-                    style={{ transform: [{ rotate: "90deg" }] }}
+                    style={{ transform: [{ rotate: '90deg' }] }}
                   />
                 </Pressable>
               )}
@@ -263,7 +256,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
             renderItem={({ item }) => (
               <Pressable
                 className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                  isSelected(item) ? "bg-gray-100" : ""
+                  isSelected(item) ? 'bg-gray-100' : ''
                 }`}
                 onPress={() => {
                   if (hasSelection) {
@@ -295,9 +288,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
                     <Text className="text-brand-primary text-sm font-bold">
                       {item.points || 0} Poin
                     </Text>
-                    <Text className="text-xs">
-                      Total Transaksi: {item.totalTransactions || 0}
-                    </Text>
+                    <Text className="text-xs">Total Transaksi: {item.totalTransactions || 0}</Text>
                     <Text className="text-xs">
                       Total Omset: Rp {formatNumber(item.totalRevenue || 0)}
                     </Text>
@@ -310,9 +301,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
             )}
             ListEmptyComponent={
               <Box className="p-8 items-center">
-                <Text className="text-slate-400 italic">
-                  Tidak ada pelanggan
-                </Text>
+                <Text className="text-slate-400 italic">Tidak ada pelanggan</Text>
               </Box>
             }
           />

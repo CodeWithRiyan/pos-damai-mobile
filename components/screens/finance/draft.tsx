@@ -1,29 +1,19 @@
-import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
-import {
-  Box,
-  Heading,
-  HStack,
-  Icon,
-  Pressable,
-  Spinner,
-  Text,
-  VStack,
-} from "@/components/ui";
-import { FinanceType, Status } from "@/lib/constants";
-import { useDeleteFinance, useFinances } from "@/lib/api/finances";
-import dayjs from "dayjs";
-import { useRouter } from "expo-router";
-import { Trash2 } from "lucide-react-native";
-import { ScrollView } from "react-native";
+import Header from '@/components/header';
+import { usePopUpConfirm } from '@/components/pop-up-confirm';
+import { Box, Heading, HStack, Icon, Pressable, Spinner, Text, VStack } from '@/components/ui';
+import { FinanceType, Status } from '@/lib/constants';
+import { useDeleteFinance, useFinances } from '@/lib/api/finances';
+import dayjs from 'dayjs';
+import { useRouter } from 'expo-router';
+import { Trash2 } from 'lucide-react-native';
+import { ScrollView } from 'react-native';
 
-import { formatNumber } from "@/lib/utils/format";
+import { formatNumber } from '@/lib/utils/format';
 export default function FinanceDraft() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data: finances, isLoading: isLoadingFinances } = useFinances();
-  const { mutate: deleteFinance, isPending: isPendingDelete } =
-    useDeleteFinance();
+  const { mutate: deleteFinance, isPending: isPendingDelete } = useDeleteFinance();
   const isLoading = isLoadingFinances || isPendingDelete;
 
   // Filter only DRAFT status
@@ -34,15 +24,15 @@ export default function FinanceDraft() {
     // Usually we would pre-fill a store, but Finance doesn't have a large cart yet.
     // However, for consistency, we could pass the ID.
     router.replace({
-      pathname: "/(main)/finance",
+      pathname: '/(main)/finance',
       params: { draftId: financeId },
     });
   };
 
   const handleDeleteDraft = async (financeId: string) => {
     showPopUpConfirm({
-      title: "HAPUS DRAFT",
-      icon: "warning",
+      title: 'HAPUS DRAFT',
+      icon: 'warning',
       description: (
         <Text className="text-slate-500">
           {`Apakah Anda yakin ingin menghapus draft`}
@@ -51,9 +41,9 @@ export default function FinanceDraft() {
         </Text>
       ),
       showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
+      okText: 'HAPUS',
+      closeText: 'BATAL',
+      okVariant: 'destructive',
       onOk: () => {
         deleteFinance(financeId, {
           onSuccess: () => {
@@ -99,16 +89,16 @@ export default function FinanceDraft() {
                   <HStack space="xl" className="items-center flex-1">
                     <VStack>
                       <Text className="text-typography-500 font-bold">
-                        {date.format("HH:mm:ss")}
+                        {date.format('HH:mm:ss')}
                       </Text>
                       <HStack space="sm" className="items-center">
-                        <Heading size="4xl">{date.format("DD")}</Heading>
+                        <Heading size="4xl">{date.format('DD')}</Heading>
                         <VStack>
                           <Text className="text-typography-500 font-bold">
-                            {date.format("MMM")}
+                            {date.format('MMM')}
                           </Text>
                           <Text className="text-typography-500 font-bold">
-                            {date.format("YYYY")}
+                            {date.format('YYYY')}
                           </Text>
                         </VStack>
                       </HStack>
@@ -116,23 +106,15 @@ export default function FinanceDraft() {
                     <VStack space="sm" className="flex-1">
                       <HStack className="justify-between">
                         <VStack>
-                          <Text className="text-typography-400 text-xs">
-                            Nominal
-                          </Text>
-                          <Text className="font-bold">
-                            Rp {formatNumber(draft.nominal)}
-                          </Text>
+                          <Text className="text-typography-400 text-xs">Nominal</Text>
+                          <Text className="font-bold">Rp {formatNumber(draft.nominal)}</Text>
                         </VStack>
                         <VStack>
-                          <Text className="text-typography-400 text-xs">
-                            Tipe
-                          </Text>
+                          <Text className="text-typography-400 text-xs">Tipe</Text>
                           <Text
-                            className={`font-bold ${draft.type === FinanceType.INCOME ? "text-success-500" : "text-error-500"}`}
+                            className={`font-bold ${draft.type === FinanceType.INCOME ? 'text-success-500' : 'text-error-500'}`}
                           >
-                            {draft.type === FinanceType.INCOME
-                              ? "Pemasukan"
-                              : "Pengeluaran"}
+                            {draft.type === FinanceType.INCOME ? 'Pemasukan' : 'Pengeluaran'}
                           </Text>
                         </VStack>
                       </HStack>

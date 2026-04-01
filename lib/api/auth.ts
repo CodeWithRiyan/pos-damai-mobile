@@ -1,7 +1,7 @@
-import { useSyncQueueStore } from "@/stores/sync-queue-store";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { authStorageAdapter } from "../storage";
-import { apiClient, isConnectionError } from "./client";
+import { useSyncQueueStore } from '@/stores/sync-queue';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { authStorageAdapter } from '../storage';
+import { apiClient, isConnectionError } from './client';
 
 // Types
 export interface LoginCredentials {
@@ -75,10 +75,7 @@ export interface ProfileResponse {
 export function useLogin() {
   return useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
-      const response = await apiClient.post<LoginResponse>(
-        "/auth/login",
-        credentials,
-      );
+      const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
       return response.data;
     },
     onSuccess: (response) => {
@@ -90,7 +87,7 @@ export function useLogin() {
     },
     onError: (error) => {
       // Login errors are always shown immediately, never queued
-      console.error("Login failed:", error);
+      console.error('Login failed:', error);
     },
   });
 }
@@ -101,7 +98,7 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: async () => {
-      const response = await apiClient.post("/auth/logout");
+      const response = await apiClient.post('/auth/logout');
       return response.data;
     },
     onSuccess: () => {
@@ -112,8 +109,8 @@ export function useLogout() {
       // If connection error, queue for later
       if (isConnectionError(error)) {
         addToQueue({
-          type: "create",
-          endpoint: "/auth/logout",
+          type: 'create',
+          endpoint: '/auth/logout',
           data: {},
         });
       }
@@ -127,9 +124,9 @@ export function useLogout() {
 // Get current user profile
 export function useCurrentUser() {
   return useQuery({
-    queryKey: ["auth", "profile"],
+    queryKey: ['auth', 'profile'],
     queryFn: async () => {
-      const response = await apiClient.get<ProfileResponse>("/auth/profile");
+      const response = await apiClient.get<ProfileResponse>('/auth/profile');
       return response.data.data.user;
     },
     enabled: !!authStorageAdapter.getToken(),

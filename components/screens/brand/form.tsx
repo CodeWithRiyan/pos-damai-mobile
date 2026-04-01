@@ -9,43 +9,38 @@ import {
   ModalHeader,
   Pressable,
   Text,
-} from "@/components/ui";
+} from '@/components/ui';
 import {
   FormControl,
   FormControlError,
   FormControlErrorText,
   FormControlLabel,
   FormControlLabelText,
-} from "@/components/ui/form-control";
-import { Input, InputField } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
-import {
-  useBrand,
-  useBrands,
-  useCreateBrand,
-  useUpdateBrand,
-} from "@/lib/api/brands";
-import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
-import { useBrandStore } from "@/stores/brand";
-import { zodResolver } from "@hookform/resolvers/zod";
-import React, { useEffect } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import z from "zod";
+} from '@/components/ui/form-control';
+import { Input, InputField } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
+import { useBrand, useBrands, useCreateBrand, useUpdateBrand } from '@/lib/api/brands';
+import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
+import { useBrandStore } from '@/stores/brand';
+import { zodResolver } from '@hookform/resolvers/zod';
+import React, { useEffect } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import z from 'zod';
 
 export default function BrandForm() {
   const { open, setOpen, data: dataBrand } = useBrandStore();
   const toast = useToast();
 
   const brandSchema = z.object({
-    name: z.string().min(1, "Nama Brand wajib diisi."),
+    name: z.string().min(1, 'Nama Brand wajib diisi.'),
   });
 
   type BrandFormValues = z.infer<typeof brandSchema>;
 
   const initialValues: BrandFormValues = {
-    name: "",
+    name: '',
   };
 
   const form = useForm<BrandFormValues>({
@@ -54,7 +49,7 @@ export default function BrandForm() {
   });
 
   const { refetch: refetchBrands } = useBrands();
-  const { refetch: refetchBrand } = useBrand(dataBrand?.id || "");
+  const { refetch: refetchBrand } = useBrand(dataBrand?.id || '');
 
   const createMutation = useCreateBrand();
   const updateMutation = useUpdateBrand();
@@ -66,7 +61,7 @@ export default function BrandForm() {
 
   useEffect(() => {
     if (dataBrand) {
-      form.setValue("name", dataBrand.name);
+      form.setValue('name', dataBrand.name);
     } else {
       form.reset(initialValues);
     }
@@ -79,7 +74,7 @@ export default function BrandForm() {
         { id: dataBrand.id, ...data },
         {
           onSuccess: () => {
-            showSuccessToast(toast, "Brand berhasil diperbarui");
+            showSuccessToast(toast, 'Brand berhasil diperbarui');
             onRefetch();
             form.reset(initialValues);
             setOpen(false);
@@ -90,7 +85,7 @@ export default function BrandForm() {
     } else {
       createMutation.mutate(data, {
         onSuccess: (newBrand) => {
-          showSuccessToast(toast, "Brand berhasil ditambahkan");
+          showSuccessToast(toast, 'Brand berhasil ditambahkan');
           onRefetch();
           if (useBrandStore.getState().onSuccess) {
             useBrandStore.getState().onSuccess?.(newBrand);
@@ -118,7 +113,7 @@ export default function BrandForm() {
       <ModalContent className="p-0 max-h-[90%]">
         <ModalHeader className="p-4 border-b border-background-300">
           <Heading size="md" className="text-center flex-1">
-            {dataBrand ? "EDIT BRAND" : "TAMBAH BRAND"}
+            {dataBrand ? 'EDIT BRAND' : 'TAMBAH BRAND'}
           </Heading>
         </ModalHeader>
         <ModalBody className="m-0" showsVerticalScrollIndicator={false}>
@@ -126,10 +121,7 @@ export default function BrandForm() {
             <Controller
               name="name"
               control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl isRequired isInvalid={!!error}>
                   <FormControlLabel>
                     <FormControlLabelText>Nama Brand</FormControlLabelText>
@@ -145,9 +137,7 @@ export default function BrandForm() {
                   </Input>
                   {error && (
                     <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
+                      <FormControlErrorText>{error.message}</FormControlErrorText>
                     </FormControlError>
                   )}
                 </FormControl>
@@ -166,7 +156,7 @@ export default function BrandForm() {
                 <Spinner size="small" color="#FFFFFF" />
               ) : (
                 <Text size="sm" className="text-typography-0 font-bold">
-                  {!dataBrand ? "SIMPAN" : "PERBARUI"}
+                  {!dataBrand ? 'SIMPAN' : 'PERBARUI'}
                 </Text>
               )}
             </Pressable>

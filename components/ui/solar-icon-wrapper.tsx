@@ -1,9 +1,9 @@
-import type { IconProps } from "@solar-icons/react-native";
-import * as BoldIcons from "@solar-icons/react-native/Bold";
-import * as BoldDuotoneIcons from "@solar-icons/react-native/BoldDuotone";
-import * as LinearIcons from "@solar-icons/react-native/Linear";
-import * as OutlineIcons from "@solar-icons/react-native/Outline";
-import React from "react";
+import type { IconProps } from '@solar-icons/react-native';
+import * as BoldIcons from '@solar-icons/react-native/Bold';
+import * as BoldDuotoneIcons from '@solar-icons/react-native/BoldDuotone';
+import * as LinearIcons from '@solar-icons/react-native/Linear';
+import * as OutlineIcons from '@solar-icons/react-native/Outline';
+import React from 'react';
 
 export interface SolarIconBoldProps extends IconProps {
   name: keyof typeof BoldIcons;
@@ -26,10 +26,7 @@ export const SolarIconBold = ({ name, ...props }: SolarIconBoldProps) => {
   return <IconComponent {...props} />;
 };
 
-export const SolarIconBoldDuotone = ({
-  name,
-  ...props
-}: SolarIconBoldDuotoneProps) => {
+export const SolarIconBoldDuotone = ({ name, ...props }: SolarIconBoldDuotoneProps) => {
   const IconComponent = BoldDuotoneIcons[name];
   return <IconComponent {...props} />;
 };

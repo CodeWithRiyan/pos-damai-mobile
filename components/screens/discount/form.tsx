@@ -12,34 +12,34 @@ import {
   ModalHeader,
   Pressable,
   Text,
-} from "@/components/ui";
+} from '@/components/ui';
 import {
   FormControl,
   FormControlError,
   FormControlErrorText,
   FormControlLabel,
   FormControlLabelText,
-} from "@/components/ui/form-control";
-import { Input, InputField } from "@/components/ui/input";
-import { Radio, RadioGroup, RadioLabel } from "@/components/ui/radio";
-import { Spinner } from "@/components/ui/spinner";
-import { useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
-import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
+} from '@/components/ui/form-control';
+import { Input, InputField } from '@/components/ui/input';
+import { Radio, RadioGroup, RadioLabel } from '@/components/ui/radio';
+import { Spinner } from '@/components/ui/spinner';
+import { useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
+import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
 import {
   useCreateDiscount,
   useDiscount,
   useDiscounts,
   useUpdateDiscount,
-} from "@/lib/api/discounts";
-import { useDiscountStore } from "@/stores/discount";
-import { zodResolver } from "@hookform/resolvers/zod";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { Percent } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { CalcType } from "@/lib/constants";
-import z from "zod";
+} from '@/lib/api/discounts';
+import { useDiscountStore } from '@/stores/discount';
+import { zodResolver } from '@hookform/resolvers/zod';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Percent } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { CalcType } from '@/lib/constants';
+import z from 'zod';
 
 export default function DiscountForm() {
   const { open, setOpen, data: dataDiscount } = useDiscountStore();
@@ -52,9 +52,9 @@ export default function DiscountForm() {
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
 
   const discountSchema = z.object({
-    name: z.string().min(1, "Nama Discount wajib diisi."),
-    nominal: z.number().min(1, "Nominal wajib diisi."),
-    type: z.enum(["FLAT", "PERCENTAGE"]),
+    name: z.string().min(1, 'Nama Discount wajib diisi.'),
+    nominal: z.number().min(1, 'Nominal wajib diisi.'),
+    type: z.enum(['FLAT', 'PERCENTAGE']),
     startDate: z.date(),
     endDate: z.date(),
   });
@@ -62,7 +62,7 @@ export default function DiscountForm() {
   type DiscountFormValues = z.infer<typeof discountSchema>;
 
   const initialValues: DiscountFormValues = {
-    name: "",
+    name: '',
     nominal: 0,
     type: CalcType.PERCENTAGE,
     startDate: new Date(),
@@ -75,7 +75,7 @@ export default function DiscountForm() {
   });
 
   const { refetch: refetchDiscounts } = useDiscounts();
-  const { refetch: refetchDiscount } = useDiscount(dataDiscount?.id || "");
+  const { refetch: refetchDiscount } = useDiscount(dataDiscount?.id || '');
 
   const onRefetch = () => {
     refetchDiscounts();
@@ -88,12 +88,8 @@ export default function DiscountForm() {
         name: dataDiscount.name,
         nominal: dataDiscount.nominal,
         type: dataDiscount.type,
-        startDate: dataDiscount.startDate
-          ? new Date(dataDiscount.startDate)
-          : new Date(),
-        endDate: dataDiscount.endDate
-          ? new Date(dataDiscount.endDate)
-          : new Date(),
+        startDate: dataDiscount.startDate ? new Date(dataDiscount.startDate) : new Date(),
+        endDate: dataDiscount.endDate ? new Date(dataDiscount.endDate) : new Date(),
       });
     } else {
       form.reset(initialValues);
@@ -101,15 +97,13 @@ export default function DiscountForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataDiscount, form]);
 
-  const onSubmit: SubmitHandler<DiscountFormValues> = (
-    data: DiscountFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<DiscountFormValues> = (data: DiscountFormValues) => {
     if (dataDiscount) {
       updateMutation.mutate(
         { ...data, id: dataDiscount.id },
         {
           onSuccess: () => {
-            showSuccessToast(toast, "Diskon berhasil diperbarui");
+            showSuccessToast(toast, 'Diskon berhasil diperbarui');
             form.reset(initialValues);
             setOpen(false);
             onRefetch();
@@ -122,7 +116,7 @@ export default function DiscountForm() {
     } else {
       createMutation.mutate(data, {
         onSuccess: (newDiscount) => {
-          showSuccessToast(toast, "Diskon berhasil ditambahkan");
+          showSuccessToast(toast, 'Diskon berhasil ditambahkan');
           onRefetch();
           if (useDiscountStore.getState().onSuccess) {
             useDiscountStore.getState().onSuccess?.(newDiscount);
@@ -154,7 +148,7 @@ export default function DiscountForm() {
       <ModalContent>
         <ModalHeader className="mb-4">
           <Heading size="md" className="text-center flex-1">
-            {dataDiscount ? "EDIT DISKON" : "TAMBAH DISKON"}
+            {dataDiscount ? 'EDIT DISKON' : 'TAMBAH DISKON'}
           </Heading>
           <ModalCloseButton onPress={() => setOpen(false)}>
             <Icon as={CloseIcon} />
@@ -165,10 +159,7 @@ export default function DiscountForm() {
             <Controller
               name="name"
               control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl isRequired isInvalid={!!error}>
                   <FormControlLabel>
                     <FormControlLabelText>Nama Diskon</FormControlLabelText>
@@ -184,9 +175,7 @@ export default function DiscountForm() {
                   </Input>
                   {error && (
                     <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
+                      <FormControlErrorText>{error.message}</FormControlErrorText>
                     </FormControlError>
                   )}
                 </FormControl>
@@ -195,10 +184,7 @@ export default function DiscountForm() {
             <Controller
               name="nominal"
               control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl isRequired isInvalid={!!error}>
                   <FormControlLabel>
                     <FormControlLabelText>Nominal Diskon</FormControlLabelText>
@@ -219,10 +205,7 @@ export default function DiscountForm() {
                     <Controller
                       name="type"
                       control={form.control}
-                      render={({
-                        field: { onChange, onBlur, value },
-                        fieldState: { error },
-                      }) => (
+                      render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                         <FormControl isRequired isInvalid={!!error}>
                           <RadioGroup
                             value={value}
@@ -236,9 +219,9 @@ export default function DiscountForm() {
                               isInvalid={false}
                               isDisabled={false}
                               className={`size-10 border rounded-sm flex items-center justify-center${
-                                value === "PERCENTAGE"
-                                  ? " bg-primary-200 text-primary-500 border-primary-500"
-                                  : " bg-background-100 border-background-300"
+                                value === 'PERCENTAGE'
+                                  ? ' bg-primary-200 text-primary-500 border-primary-500'
+                                  : ' bg-background-100 border-background-300'
                               }`}
                             >
                               <RadioLabel>
@@ -251,9 +234,9 @@ export default function DiscountForm() {
                               isInvalid={false}
                               isDisabled={false}
                               className={`size-10 border rounded-sm flex items-center justify-center${
-                                value === "FLAT"
-                                  ? " bg-primary-200 text-primary-500 border-primary-500"
-                                  : " bg-background-100 border-background-300"
+                                value === 'FLAT'
+                                  ? ' bg-primary-200 text-primary-500 border-primary-500'
+                                  : ' bg-background-100 border-background-300'
                               }`}
                             >
                               <RadioLabel className="font-bold">Rp</RadioLabel>
@@ -265,9 +248,7 @@ export default function DiscountForm() {
                   </HStack>
                   {error && (
                     <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
+                      <FormControlErrorText>{error.message}</FormControlErrorText>
                     </FormControlError>
                   )}
                 </FormControl>
@@ -277,15 +258,8 @@ export default function DiscountForm() {
               <Controller
                 name="startDate"
                 control={form.control}
-                render={({
-                  field: { onChange, value },
-                  fieldState: { error },
-                }) => (
-                  <FormControl
-                    isRequired
-                    isInvalid={!!error}
-                    className="flex-1"
-                  >
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <FormControl isRequired isInvalid={!!error} className="flex-1">
                     <FormControlLabel>
                       <FormControlLabelText>Tanggal Mulai</FormControlLabelText>
                     </FormControlLabel>
@@ -295,8 +269,8 @@ export default function DiscountForm() {
                     >
                       <Text>
                         {value instanceof Date
-                          ? value.toLocaleDateString("id-ID")
-                          : "Pilih tanggal"}
+                          ? value.toLocaleDateString('id-ID')
+                          : 'Pilih tanggal'}
                       </Text>
                     </Pressable>
                     {showStartDatePicker && (
@@ -305,7 +279,7 @@ export default function DiscountForm() {
                         value={value instanceof Date ? value : new Date()}
                         onChange={(event, selectedDate) => {
                           setShowStartDatePicker(false);
-                          if (event.type === "set" && selectedDate) {
+                          if (event.type === 'set' && selectedDate) {
                             onChange(selectedDate);
                           }
                         }}
@@ -313,9 +287,7 @@ export default function DiscountForm() {
                     )}
                     {error && (
                       <FormControlError>
-                        <FormControlErrorText>
-                          {error.message}
-                        </FormControlErrorText>
+                        <FormControlErrorText>{error.message}</FormControlErrorText>
                       </FormControlError>
                     )}
                   </FormControl>
@@ -324,19 +296,10 @@ export default function DiscountForm() {
               <Controller
                 name="endDate"
                 control={form.control}
-                render={({
-                  field: { onChange, value },
-                  fieldState: { error },
-                }) => (
-                  <FormControl
-                    isRequired
-                    isInvalid={!!error}
-                    className="flex-1"
-                  >
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
+                  <FormControl isRequired isInvalid={!!error} className="flex-1">
                     <FormControlLabel>
-                      <FormControlLabelText>
-                        Tanggal Selesai
-                      </FormControlLabelText>
+                      <FormControlLabelText>Tanggal Selesai</FormControlLabelText>
                     </FormControlLabel>
                     <Pressable
                       onPress={() => setShowEndDatePicker(true)}
@@ -344,8 +307,8 @@ export default function DiscountForm() {
                     >
                       <Text>
                         {value instanceof Date
-                          ? value.toLocaleDateString("id-ID")
-                          : "Pilih tanggal"}
+                          ? value.toLocaleDateString('id-ID')
+                          : 'Pilih tanggal'}
                       </Text>
                     </Pressable>
                     {showEndDatePicker && (
@@ -354,7 +317,7 @@ export default function DiscountForm() {
                         value={value instanceof Date ? value : new Date()}
                         onChange={(event, selectedDate) => {
                           setShowEndDatePicker(false);
-                          if (event.type === "set" && selectedDate) {
+                          if (event.type === 'set' && selectedDate) {
                             onChange(selectedDate);
                           }
                         }}
@@ -362,9 +325,7 @@ export default function DiscountForm() {
                     )}
                     {error && (
                       <FormControlError>
-                        <FormControlErrorText>
-                          {error.message}
-                        </FormControlErrorText>
+                        <FormControlErrorText>{error.message}</FormControlErrorText>
                       </FormControlError>
                     )}
                   </FormControl>
@@ -384,7 +345,7 @@ export default function DiscountForm() {
                 <Spinner size="small" color="#FFFFFF" />
               ) : (
                 <Text size="sm" className="text-typography-0 font-bold">
-                  {!dataDiscount ? "SIMPAN" : "PERBARUI"}
+                  {!dataDiscount ? 'SIMPAN' : 'PERBARUI'}
                 </Text>
               )}
             </Pressable>

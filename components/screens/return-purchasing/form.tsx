@@ -12,55 +12,54 @@ import {
   Text,
   Textarea,
   TextareaInput,
-} from "@/components/ui";
+} from '@/components/ui';
 import {
   FormControl,
   FormControlError,
   FormControlErrorText,
   FormControlLabel,
   FormControlLabelText,
-} from "@/components/ui/form-control";
-import { Radio, RadioGroup, RadioLabel } from "@/components/ui/radio";
-import { useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
+} from '@/components/ui/form-control';
+import { Radio, RadioGroup, RadioLabel } from '@/components/ui/radio';
+import { useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
 // import {
 //   useReturnPurchasing,
 //   useCreateReturnPurchasing,
 //   useUpdateReturnPurchasing,
 // } from "@/lib/api/return-purchasing";
-import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
-import { usePurchase } from "@/lib/api/purchasing";
-import { useCreatePurchaseReturn } from "@/lib/api/return-purchasing";
-import { useReturnPurchasingStore } from "@/stores/return-purchasing";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import z from "zod";
+import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
+import { usePurchase } from '@/lib/api/purchasing';
+import { useCreatePurchaseReturn } from '@/lib/api/return-purchasing';
+import { useReturnPurchasingStore } from '@/stores/return-purchasing';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import z from 'zod';
 
 export default function ReturnPurchasingConfirmForm() {
   const { purchaseId, supplierId } = useLocalSearchParams<{
     purchaseId: string;
     supplierId: string;
   }>();
-  const { data: purchase } = usePurchase(purchaseId || "");
-  const { cart, openConfirm, setOpenConfirm, resetCart } =
-    useReturnPurchasingStore();
+  const { data: purchase } = usePurchase(purchaseId || '');
+  const { cart, openConfirm, setOpenConfirm, resetCart } = useReturnPurchasingStore();
   const router = useRouter();
   const toast = useToast();
   const createMutation = useCreatePurchaseReturn();
   const isLoading = createMutation.isPending;
 
   const returnPurchaseSchema = z.object({
-    reason: z.string().min(1, "Alasan wajib diisi."),
-    returnType: z.string().min(1, "Tipe Retur wajib diisi."),
+    reason: z.string().min(1, 'Alasan wajib diisi.'),
+    returnType: z.string().min(1, 'Tipe Retur wajib diisi.'),
   });
 
   type ReturnPurchasingFormValues = z.infer<typeof returnPurchaseSchema>;
 
   const initialValues: ReturnPurchasingFormValues = {
-    reason: "",
-    returnType: "CASH",
+    reason: '',
+    returnType: 'CASH',
   };
 
   const form = useForm<ReturnPurchasingFormValues>({
@@ -77,13 +76,13 @@ export default function ReturnPurchasingConfirmForm() {
     );
 
     const returnData = {
-      supplierId: purchase?.supplierId || supplierId || "",
+      supplierId: purchase?.supplierId || supplierId || '',
       totalAmount,
-      returnType: data.returnType as "CASH" | "ITEM",
+      returnType: data.returnType as 'CASH' | 'ITEM',
       note: data.reason, // Map 'reason' from form to 'note' in database
       items: cart.map((item) => ({
         productId: item.product.id,
-        productName: item.product.name || "",
+        productName: item.product.name || '',
         quantity: item.quantity,
         purchasePrice: item.product.purchasePrice || 0,
       })),
@@ -91,11 +90,9 @@ export default function ReturnPurchasingConfirmForm() {
 
     createMutation.mutate(returnData, {
       onSuccess: (data) => {
-        showSuccessToast(toast, "Retur berhasil disimpan");
+        showSuccessToast(toast, 'Retur berhasil disimpan');
         setOpenConfirm(false);
-        router.navigate(
-          `/(main)/management/return/purchasing/receipt/${data.id}`,
-        );
+        router.navigate(`/(main)/management/return/purchasing/receipt/${data.id}`);
         resetCart();
         form.reset(initialValues);
       },
@@ -124,15 +121,10 @@ export default function ReturnPurchasingConfirmForm() {
             <Controller
               name="returnType"
               control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl isRequired isInvalid={!!error}>
                   <FormControlLabel>
-                    <FormControlLabelText>
-                      Tipe Pengembalian
-                    </FormControlLabelText>
+                    <FormControlLabelText>Tipe Pengembalian</FormControlLabelText>
                   </FormControlLabel>
                   <RadioGroup
                     value={value}
@@ -146,9 +138,9 @@ export default function ReturnPurchasingConfirmForm() {
                       isInvalid={false}
                       isDisabled={false}
                       className={`flex-1 h-12 border rounded-md flex items-center justify-center${
-                        value === "CASH"
-                          ? " bg-primary-200 text-primary-500 border-primary-500"
-                          : " bg-background-100 border-background-300"
+                        value === 'CASH'
+                          ? ' bg-primary-200 text-primary-500 border-primary-500'
+                          : ' bg-background-100 border-background-300'
                       }`}
                     >
                       <RadioLabel className="font-bold">UANG</RadioLabel>
@@ -159,14 +151,12 @@ export default function ReturnPurchasingConfirmForm() {
                       isInvalid={false}
                       isDisabled={false}
                       className={`flex-1 h-12 border rounded-md flex items-center justify-center${
-                        value === "ITEM"
-                          ? " bg-primary-200 text-primary-500 border-primary-500"
-                          : " bg-background-100 border-background-300"
+                        value === 'ITEM'
+                          ? ' bg-primary-200 text-primary-500 border-primary-500'
+                          : ' bg-background-100 border-background-300'
                       }`}
                     >
-                      <RadioLabel className="font-bold">
-                        TUKAR BARANG
-                      </RadioLabel>
+                      <RadioLabel className="font-bold">TUKAR BARANG</RadioLabel>
                     </Radio>
                   </RadioGroup>
                 </FormControl>
@@ -175,18 +165,12 @@ export default function ReturnPurchasingConfirmForm() {
             <Controller
               name="reason"
               control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl isRequired isInvalid={!!error}>
                   <FormControlLabel>
                     <FormControlLabelText>Berikan Alasan</FormControlLabelText>
                   </FormControlLabel>
-                  <Textarea
-                    size="md"
-                    className={error ? "border-error-500" : undefined}
-                  >
+                  <Textarea size="md" className={error ? 'border-error-500' : undefined}>
                     <TextareaInput
                       value={value}
                       autoComplete="off"
@@ -197,9 +181,7 @@ export default function ReturnPurchasingConfirmForm() {
                   </Textarea>
                   {error && (
                     <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
+                      <FormControlErrorText>{error.message}</FormControlErrorText>
                     </FormControlError>
                   )}
                 </FormControl>

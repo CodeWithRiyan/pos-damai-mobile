@@ -1,5 +1,5 @@
-import { Brand } from "@/lib/api/brands";
-import { create } from "zustand";
+import { Brand } from '@/lib/api/brands';
+import { create } from 'zustand';
 
 interface BrandState {
   open: boolean;

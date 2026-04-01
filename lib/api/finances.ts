@@ -1,19 +1,19 @@
-import { FinanceType, Status } from "@/lib/constants";
-import { db } from "@/lib/db";
-import * as schema from "@/lib/db/schema";
-import { useAuthStore } from "@/stores/auth";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { eq, desc, and, isNull } from "drizzle-orm";
-import { generateLocalRefId } from "../utils/reference";
+import { FinanceType, Status } from '@/lib/constants';
+import { db } from '@/lib/db';
+import * as schema from '@/lib/db/schema';
+import { useAuthStore } from '@/stores/auth';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { eq, desc, and, isNull } from 'drizzle-orm';
+import { generateLocalRefId } from '../utils/reference';
 
 export interface Finance {
   id: string;
   local_ref_id: string;
   nominal: number;
-  type: "INCOME" | "EXPENSES";
+  type: 'INCOME' | 'EXPENSES';
   expensesType?: string | null;
   transactionDate: Date;
-  status: "DRAFT" | "COMPLETED";
+  status: 'DRAFT' | 'COMPLETED';
   note?: string | null;
   inputToCashdrawer: boolean;
   userId?: string | null;
@@ -31,10 +31,10 @@ export interface CreateFinanceDTO {
   id?: string;
   local_ref_id?: string;
   nominal?: number;
-  type?: "INCOME" | "EXPENSES";
+  type?: 'INCOME' | 'EXPENSES';
   expensesType?: string | null;
   transactionDate?: Date;
-  status?: "DRAFT" | "COMPLETED";
+  status?: 'DRAFT' | 'COMPLETED';
   note?: string | null;
   inputToCashdrawer?: boolean;
   createdAt?: Date;
@@ -44,18 +44,13 @@ export function useFinances() {
   const orgId = useAuthStore((state) => state.getOrganizationId());
 
   return useQuery({
-    queryKey: ["finances", orgId],
+    queryKey: ['finances', orgId],
     queryFn: async () => {
       if (!orgId) return [];
       const results = await db
         .select()
         .from(schema.finances)
-        .where(
-          and(
-            eq(schema.finances.organizationId, orgId),
-            isNull(schema.finances.deletedAt),
-          ),
-        )
+        .where(and(eq(schema.finances.organizationId, orgId), isNull(schema.finances.deletedAt)))
         .orderBy(desc(schema.finances.transactionDate));
       return results as Finance[];
     },
@@ -65,7 +60,7 @@ export function useFinances() {
 
 export function useFinance(id?: string) {
   return useQuery({
-    queryKey: ["finances", id],
+    queryKey: ['finances', id],
     queryFn: async () => {
       if (!id) return null;
       const results = await db
@@ -87,7 +82,7 @@ export function useCreateFinance() {
 
   return useMutation({
     mutationFn: async (data: CreateFinanceDTO) => {
-      if (!orgId) throw new Error("Organization ID is required");
+      if (!orgId) throw new Error('Organization ID is required');
 
       const now = new Date();
       const financeId = data.id || `fin_${Date.now()}`;
@@ -103,8 +98,7 @@ export function useCreateFinance() {
       const localRefId =
         existing.length > 0
           ? existing[0].r
-          : data.local_ref_id ||
-            (await generateLocalRefId(db, schema.finances, "FIN"));
+          : data.local_ref_id || (await generateLocalRefId(db, schema.finances, 'FIN'));
 
       const profile = useAuthStore.getState().profile;
       const userId = profile?.id || null;
@@ -145,10 +139,10 @@ export function useCreateFinance() {
       return { id: financeId };
     },
     onSuccess: (responseData) => {
-      queryClient.invalidateQueries({ queryKey: ["finances"] });
+      queryClient.invalidateQueries({ queryKey: ['finances'] });
       if (responseData?.id) {
         queryClient.invalidateQueries({
-          queryKey: ["finances", responseData.id],
+          queryKey: ['finances', responseData.id],
         });
       }
     },
@@ -176,7 +170,7 @@ export function useDeleteFinance() {
       return { id };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["finances"] });
+      queryClient.invalidateQueries({ queryKey: ['finances'] });
     },
   });
 }

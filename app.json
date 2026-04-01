@@ -51,18 +51,11 @@
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
             "minSdkVersion": 24,
-            "abiFilters": [
-              "armeabi-v7a",
-              "arm64-v8a",
-              "x86",
-              "x86_64"
-            ],
+            "abiFilters": ["armeabi-v7a", "arm64-v8a", "x86", "x86_64"],
             "enableProguardInReleaseBuilds": true,
             "enableShrinkResourcesInReleaseBuilds": true,
             "packagingOptions": {
-              "pickFirsts": [
-                "**/libc++_shared.so"
-              ]
+              "pickFirsts": ["**/libc++_shared.so"]
             }
           }
         }

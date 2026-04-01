@@ -1,21 +1,21 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
-import { Box, Heading, HStack, Pressable, Text, VStack } from "@/components/ui";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { Spinner } from "@/components/ui/spinner";
-import { usePurchaseReturn } from "@/lib/api/return-purchasing";
-import { useAuthStore } from "@/stores/auth";
-import dayjs from "dayjs";
-import { useLocalSearchParams } from "expo-router";
-import { ScrollView } from "react-native";
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
+import { Box, Heading, HStack, Pressable, Text, VStack } from '@/components/ui';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { Spinner } from '@/components/ui/spinner';
+import { usePurchaseReturn } from '@/lib/api/return-purchasing';
+import { useAuthStore } from '@/stores/auth';
+import dayjs from 'dayjs';
+import { useLocalSearchParams } from 'expo-router';
+import { ScrollView } from 'react-native';
 
-import { getReceiptActions } from "@/lib/utils/receipt-actions";
-import { ReturnType } from "@/lib/constants";
-import { formatNumber, formatRp } from "@/lib/utils/format";
+import { getReceiptActions } from '@/lib/utils/receipt-actions';
+import { ReturnType } from '@/lib/constants';
+import { formatNumber, formatRp } from '@/lib/utils/format';
 export default function ReturnPurchasingReceipt() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: returnData, isLoading } = usePurchaseReturn(id || "");
+  const { data: returnData, isLoading } = usePurchaseReturn(id || '');
   const profile = useAuthStore((state) => state.profile);
 
   if (isLoading || !id) {
@@ -60,7 +60,7 @@ export default function ReturnPurchasingReceipt() {
               name="MenuDots"
               size={20}
               color="#FDFBF9"
-              style={{ transform: [{ rotate: "90deg" }] }}
+              style={{ transform: [{ rotate: '90deg' }] }}
             />
           </Pressable>
         }
@@ -69,34 +69,23 @@ export default function ReturnPurchasingReceipt() {
         <Box className="p-4 flex-1">
           <VStack className="flex-1 bg-background-0 p-6 shadow">
             <VStack className="items-center">
-              <Heading size="xl">
-                {profile?.selectedOrganization?.name || "Toko Damai"}
-              </Heading>
+              <Heading size="xl">{profile?.selectedOrganization?.name || 'Toko Damai'}</Heading>
               <Text className="text-typography-500 text-center">
-                {profile?.selectedOrganization?.address ||
-                  "Pekalongan Timur, Pekalongan"}
+                {profile?.selectedOrganization?.address || 'Pekalongan Timur, Pekalongan'}
               </Text>
               <Text className="text-typography-500">## Struk Penjualan ##</Text>
             </VStack>
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack>
               <HStack className="justify-between items-center">
-                <Text className="text-typography-500">
-                  {date.format("DD/MM/YYYY")}
-                </Text>
-                <Text className="text-typography-500">
-                  Admin: {profile?.name || "Admin"}
-                </Text>
+                <Text className="text-typography-500">{date.format('DD/MM/YYYY')}</Text>
+                <Text className="text-typography-500">Admin: {profile?.name || 'Admin'}</Text>
               </HStack>
               <HStack className="justify-between items-center">
-                <Text className="text-typography-500">
-                  {date.format("HH:mm:ss")}
-                </Text>
+                <Text className="text-typography-500">{date.format('HH:mm:ss')}</Text>
               </HStack>
               <HStack className="justify-between items-center mt-1">
-                <Text className="text-typography-500">
-                  Supplier: {returnData.supplierName}
-                </Text>
+                <Text className="text-typography-500">Supplier: {returnData.supplierName}</Text>
               </HStack>
               <HStack className="justify-between items-center mt-1">
                 <Text className="text-typography-500">
@@ -124,23 +113,17 @@ export default function ReturnPurchasingReceipt() {
             <VStack space="sm">
               <HStack className="justify-between items-center">
                 <Text className="font-bold">Total</Text>
-                <Text className="font-bold">
-                  Rp {formatNumber(returnData.totalAmount ?? 0)}
-                </Text>
+                <Text className="font-bold">Rp {formatNumber(returnData.totalAmount ?? 0)}</Text>
               </HStack>
               <HStack className="justify-between items-center">
                 <Text className="text-typography-500">Tipe Pengembalian</Text>
                 <Text className="text-typography-500">
-                  {returnData.returnType === ReturnType.CASH
-                    ? "Uang"
-                    : "Tukar Barang"}
+                  {returnData.returnType === ReturnType.CASH ? 'Uang' : 'Tukar Barang'}
                 </Text>
               </HStack>
               <HStack className="justify-between items-center">
                 <Text className="text-typography-500">Alasan Pengembalian</Text>
-                <Text className="text-typography-500">
-                  {returnData.note || "Tidak ada alasan"}
-                </Text>
+                <Text className="text-typography-500">{returnData.note || 'Tidak ada alasan'}</Text>
               </HStack>
             </VStack>
           </VStack>

@@ -1,14 +1,9 @@
-import {
-  InventoryTxType,
-  PriceType,
-  ReturnType,
-  Status,
-} from "@/lib/constants";
-import { useAuthStore } from "@/stores/auth";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { desc, eq } from "drizzle-orm";
-import { db } from "../db";
-import { generateLocalRefId } from "../utils/reference";
+import { InventoryTxType, PriceType, ReturnType, Status } from '@/lib/constants';
+import { useAuthStore } from '@/stores/auth';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { desc, eq } from 'drizzle-orm';
+import { db } from '../db';
+import { generateLocalRefId } from '../utils/reference';
 import {
   categories,
   customers,
@@ -17,7 +12,7 @@ import {
   transactionReturnItems,
   transactionReturns,
   users,
-} from "../db/schema";
+} from '../db/schema';
 
 export interface ReturnTransactionItem {
   productId: string;
@@ -33,7 +28,7 @@ export interface ReturnTransaction {
   customerId: string;
   customerName?: string;
   totalAmount: number;
-  returnType: "CASH" | "ITEM";
+  returnType: 'CASH' | 'ITEM';
   note: string; // Required field for return reason
   items?: ReturnTransactionItem[];
   createdBy: string | null;
@@ -68,9 +63,7 @@ async function calcEarnedPoints(
       .limit(1);
     if (row) {
       const catPoints =
-        customerCategory === PriceType.WHOLESALE
-          ? row.wholesalePoint
-          : row.retailPoint;
+        customerCategory === PriceType.WHOLESALE ? row.wholesalePoint : row.retailPoint;
       points += (catPoints ?? 0) * item.quantity;
       revenue += item.sellPrice * item.quantity;
       profit += (item.sellPrice - (row.purchasePrice ?? 0)) * item.quantity;
@@ -79,16 +72,12 @@ async function calcEarnedPoints(
   return { points, revenue, profit };
 }
 
-export const useTransactionReturns = (
-  params: TransactionReturnParams | void,
-) => {
+export const useTransactionReturns = (params: TransactionReturnParams | void) => {
   const isUsedFilter = !!params?.customerId;
-  const organizationId = useAuthStore(
-    (state) => state.profile?.selectedOrganizationId,
-  );
+  const organizationId = useAuthStore((state) => state.profile?.selectedOrganizationId);
 
   return useQuery({
-    queryKey: ["transaction-returns", organizationId, params?.customerId],
+    queryKey: ['transaction-returns', organizationId, params?.customerId],
     queryFn: async () => {
       if (!organizationId) return [];
 
@@ -98,10 +87,7 @@ export const useTransactionReturns = (
           .from(transactionReturns)
           .where(eq(transactionReturns.organizationId, organizationId))
           .orderBy(desc(transactionReturns.createdAt)),
-        db
-          .select()
-          .from(customers)
-          .where(eq(customers.organizationId, organizationId)),
+        db.select().from(customers).where(eq(customers.organizationId, organizationId)),
       ]);
 
       const customerMap = new Map(custdat.map((c) => [c.id, c.name]));
@@ -109,13 +95,11 @@ export const useTransactionReturns = (
       const retData = retdat.map((r) => ({
         ...r,
         customerName: r.customerId
-          ? customerMap.get(r.customerId) || "Walk-in Customer"
-          : "Walk-in Customer",
+          ? customerMap.get(r.customerId) || 'Walk-in Customer'
+          : 'Walk-in Customer',
       }));
 
-      const filteredRetData = retData.filter(
-        (r) => r.customerId === params?.customerId,
-      );
+      const filteredRetData = retData.filter((r) => r.customerId === params?.customerId);
 
       return isUsedFilter ? filteredRetData : retData;
     },
@@ -124,12 +108,10 @@ export const useTransactionReturns = (
 };
 
 export const useTransactionReturn = (id: string) => {
-  const organizationId = useAuthStore(
-    (state) => state.profile?.selectedOrganizationId,
-  );
+  const organizationId = useAuthStore((state) => state.profile?.selectedOrganizationId);
 
   return useQuery({
-    queryKey: ["transaction-return", id],
+    queryKey: ['transaction-return', id],
     queryFn: async () => {
       if (!organizationId || !id) return null;
 
@@ -144,7 +126,7 @@ export const useTransactionReturn = (id: string) => {
       const returnRecord = returnResult[0];
 
       // Get customer name
-      let customerName = "Walk-in Customer";
+      let customerName = 'Walk-in Customer';
       if (returnRecord.customerId) {
         const customerResult = await db
           .select({ name: customers.name })
@@ -157,7 +139,7 @@ export const useTransactionReturn = (id: string) => {
       }
 
       // Get creator name
-      let createdByName = "Admin";
+      let createdByName = 'Admin';
       if (returnRecord.createdBy) {
         const creatorResult = await db
           .select({ name: users.name })
@@ -176,7 +158,7 @@ export const useTransactionReturn = (id: string) => {
         .where(eq(transactionReturnItems.transactionReturnId, id));
 
       // Import products to get names
-      const { products } = await import("../db/schema");
+      const { products } = await import('../db/schema');
       const itemsWithNames = await Promise.all(
         items.map(async (item) => {
           const productResult = await db
@@ -186,7 +168,7 @@ export const useTransactionReturn = (id: string) => {
             .limit(1);
           return {
             ...item,
-            productName: productResult[0]?.name || "Unknown",
+            productName: productResult[0]?.name || 'Unknown',
           };
         }),
       );
@@ -204,36 +186,25 @@ export const useTransactionReturn = (id: string) => {
 
 export const useCreateTransactionReturn = () => {
   const queryClient = useQueryClient();
-  const organizationId = useAuthStore(
-    (state) => state.profile?.selectedOrganizationId,
-  );
+  const organizationId = useAuthStore((state) => state.profile?.selectedOrganizationId);
 
   return useMutation({
     mutationFn: async (
       data: Omit<
         ReturnTransaction,
-        | "id"
-        | "local_ref_id"
-        | "createdAt"
-        | "updatedAt"
-        | "createdBy"
-        | "updatedBy"
+        'id' | 'local_ref_id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'updatedBy'
       >,
     ) => {
-      if (!organizationId) throw new Error("Organization ID is required");
+      if (!organizationId) throw new Error('Organization ID is required');
 
       const returnId = `tret_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
-      let finalLocalRefId = "";
+      let finalLocalRefId = '';
 
       await db.transaction(async (tx) => {
-        finalLocalRefId = await generateLocalRefId(
-          tx,
-          transactionReturns,
-          "RTS",
-        );
+        finalLocalRefId = await generateLocalRefId(tx, transactionReturns, 'RTS');
 
         // 1. Create Return Header
         await tx.insert(transactionReturns).values({
@@ -325,28 +296,15 @@ export const useCreateTransactionReturn = () => {
             .where(eq(customers.id, data.customerId))
             .limit(1);
           if (cust) {
-            const returned = await calcEarnedPoints(
-              tx,
-              data.items ?? [],
-              cust.category,
-            );
+            const returned = await calcEarnedPoints(tx, data.items ?? [], cust.category);
             if (data.returnType === ReturnType.CASH) {
               await tx
                 .update(customers)
                 .set({
                   points: Math.max(0, (cust.points ?? 0) - returned.points),
-                  totalTransactions: Math.max(
-                    0,
-                    (cust.totalTransactions ?? 0) - 1,
-                  ),
-                  totalRevenue: Math.max(
-                    0,
-                    (cust.totalRevenue ?? 0) - returned.revenue,
-                  ),
-                  totalProfit: Math.max(
-                    0,
-                    (cust.totalProfit ?? 0) - returned.profit,
-                  ),
+                  totalTransactions: Math.max(0, (cust.totalTransactions ?? 0) - 1),
+                  totalRevenue: Math.max(0, (cust.totalRevenue ?? 0) - returned.revenue),
+                  totalProfit: Math.max(0, (cust.totalProfit ?? 0) - returned.profit),
                   _dirty: true,
                 })
                 .where(eq(customers.id, cust.id));
@@ -359,10 +317,10 @@ export const useCreateTransactionReturn = () => {
       return { id: returnId, local_ref_id: finalLocalRefId };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transaction-returns"] });
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["inventory-transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ['transaction-returns'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
     },
   });
 };

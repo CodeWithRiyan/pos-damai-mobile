@@ -1,15 +1,15 @@
-import { Box, Heading, HStack, Icon, Text, VStack } from "@/components/ui";
-import { Image } from "@/components/ui/image";
-import { Pressable } from "@/components/ui/pressable";
-import { usePurchaseReturn } from "@/lib/api/return-purchasing";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Printer } from "lucide-react-native";
-import { ScrollView } from "react-native";
+import { Box, Heading, HStack, Icon, Text, VStack } from '@/components/ui';
+import { Image } from '@/components/ui/image';
+import { Pressable } from '@/components/ui/pressable';
+import { usePurchaseReturn } from '@/lib/api/return-purchasing';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ArrowLeft, Printer } from 'lucide-react-native';
+import { ScrollView } from 'react-native';
 
 export default function ReturnPurchasingSuccess() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: returnData } = usePurchaseReturn(id || "");
+  const { data: returnData } = usePurchaseReturn(id || '');
   const totalAmount = returnData?.items.reduce(
     (acc, item) => acc + item.quantity * (item.purchasePrice || 0),
     0,
@@ -25,55 +25,39 @@ export default function ReturnPurchasingSuccess() {
           <Image
             className="my-6 w-40 h-40"
             source={{
-              uri: require("../../../assets/images/thumb-up.gif"),
+              uri: require('../../../assets/images/thumb-up.gif'),
             }}
             alt="image"
           />
           <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
             <HStack className="w-full flex-row justify-between">
-              <Text className="text-typography-500 text-lg">
-                Total Nilai Pengembalian
-              </Text>
+              <Text className="text-typography-500 text-lg">Total Nilai Pengembalian</Text>
+              <Text className="font-bold text-lg">Rp {totalAmount?.toLocaleString()}</Text>
+            </HStack>
+            <HStack className="w-full flex-row justify-between">
+              <Text className="text-typography-500 text-lg">Tipe Pengembalian</Text>
               <Text className="font-bold text-lg">
-                Rp {totalAmount?.toLocaleString()}
+                {returnData?.returnType === 'CASH' ? 'Uang' : 'Tukar Barang'}
               </Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
-              <Text className="text-typography-500 text-lg">
-                Tipe Pengembalian
-              </Text>
-              <Text className="font-bold text-lg">
-                {returnData?.returnType === "CASH" ? "Uang" : "Tukar Barang"}
-              </Text>
-            </HStack>
-            <HStack className="w-full flex-row justify-between">
-              <Text className="text-typography-500 text-lg">
-                Alasan Pengembalian
-              </Text>
-              <Text className="font-bold text-lg">
-                {returnData?.note || "Tidak ada alasan"}
-              </Text>
+              <Text className="text-typography-500 text-lg">Alasan Pengembalian</Text>
+              <Text className="font-bold text-lg">{returnData?.note || 'Tidak ada alasan'}</Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-500 text-lg">Kasir / Admin</Text>
-              <Text className="font-bold text-lg">
-                {returnData?.createdByName || "Admin"}
-              </Text>
+              <Text className="font-bold text-lg">{returnData?.createdByName || 'Admin'}</Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-500 text-lg">Supplier</Text>
-              <Text className="font-bold text-lg">
-                {returnData?.supplierName}
-              </Text>
+              <Text className="font-bold text-lg">{returnData?.supplierName}</Text>
             </HStack>
           </Box>
           <VStack space="md" className="w-full p-4">
             <Pressable
               className="w-full rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-background-0 border border-primary-500 active:bg-primary-100"
               onPress={() => {
-                router.replace(
-                  `/(main)/management/return/purchasing/receipt/${id}`,
-                );
+                router.replace(`/(main)/management/return/purchasing/receipt/${id}`);
               }}
             >
               <Icon as={Printer} size="xl" color="#3d2117" />

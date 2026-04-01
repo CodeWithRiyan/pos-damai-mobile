@@ -1,31 +1,23 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
-import {
-  Box,
-  Spinner,
-  Text,
-  Toast,
-  ToastTitle,
-  useToast,
-  VStack,
-} from "@/components/ui";
-import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
+import { Box, Spinner, Text, Toast, ToastTitle, useToast, VStack } from '@/components/ui';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import {
   useDeletePaymentType,
   usePaymentType,
   usePaymentTypes,
   useSetDefaultPaymentType,
-} from "@/lib/api/payment-types";
-import { usePaymentTypeStore } from "@/stores/payment-type";
-import classNames from "classnames";
-import { useLocalSearchParams } from "expo-router";
-import { ScrollView } from "react-native";
+} from '@/lib/api/payment-types';
+import { usePaymentTypeStore } from '@/stores/payment-type';
+import classNames from 'classnames';
+import { useLocalSearchParams } from 'expo-router';
+import { ScrollView } from 'react-native';
 
-import { formatNumber } from "@/lib/utils/format";
-import { showErrorToast } from "@/lib/utils/toast";
-import { useDeleteEntity } from "@/hooks/use-delete-entity";
-import { singleDeleteConfirm } from "@/lib/utils/delete-confirm";
+import { formatNumber } from '@/lib/utils/format';
+import { showErrorToast } from '@/lib/utils/toast';
+import { useDeleteEntity } from '@/hooks/use-delete-entity';
+import { singleDeleteConfirm } from '@/lib/utils/delete-confirm';
 export default function PaymentTypeDetail() {
   const { setOpen, setData } = usePaymentTypeStore();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -33,9 +25,7 @@ export default function PaymentTypeDetail() {
   const paymentTypeId = id as string;
 
   const { refetch: refetchPaymentTypes } = usePaymentTypes();
-  const { data: paymentType, refetch: refetchPaymentType } = usePaymentType(
-    paymentTypeId || "",
-  );
+  const { data: paymentType, refetch: refetchPaymentType } = usePaymentType(paymentTypeId || '');
   const deleteMutation = useDeletePaymentType();
   const setDefaultMutation = useSetDefaultPaymentType();
 
@@ -48,7 +38,7 @@ export default function PaymentTypeDetail() {
   };
 
   const { triggerDelete } = useDeleteEntity({
-    successMessage: "Jenis pembayaran berhasil dihapus",
+    successMessage: 'Jenis pembayaran berhasil dihapus',
     deleteMutation,
     onSuccess: onRefetch,
   });
@@ -57,8 +47,8 @@ export default function PaymentTypeDetail() {
     showActionDrawer({
       actions: [
         {
-          label: "Edit",
-          icon: "Pen",
+          label: 'Edit',
+          icon: 'Pen',
           onPress: () => {
             setOpen(true);
             setData(paymentType ?? null);
@@ -66,16 +56,12 @@ export default function PaymentTypeDetail() {
           },
         },
         {
-          label: "Hapus",
-          icon: "TrashBin2",
-          theme: "red",
+          label: 'Hapus',
+          icon: 'TrashBin2',
+          theme: 'red',
           onPress: () => {
             triggerDelete(
-              singleDeleteConfirm(
-                "jenis pembayaran",
-                paymentType?.id || "",
-                paymentType?.name,
-              ),
+              singleDeleteConfirm('jenis pembayaran', paymentType?.id || '', paymentType?.name),
             );
             hideActionDrawer();
           },
@@ -99,7 +85,7 @@ export default function PaymentTypeDetail() {
                 name="MenuDots"
                 size={20}
                 color="#FDFBF9"
-                style={{ transform: [{ rotate: "90deg" }] }}
+                style={{ transform: [{ rotate: '90deg' }] }}
               />
             </Pressable>
           )
@@ -117,16 +103,14 @@ export default function PaymentTypeDetail() {
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Komisi</Text>
               <Text className="font-bold">
-                {paymentType?.commissionType === "FLAT"
-                  ? `Rp ${formatNumber(paymentType?.commission ?? 0) || "-"}`
-                  : `${paymentType?.commission || "-"}%`}
+                {paymentType?.commissionType === 'FLAT'
+                  ? `Rp ${formatNumber(paymentType?.commission ?? 0) || '-'}`
+                  : `${paymentType?.commission || '-'}%`}
               </Text>
             </VStack>
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Jumlah Minimal</Text>
-              <Text className="font-bold">
-                {paymentType?.minimalAmount || "-"}
-              </Text>
+              <Text className="font-bold">{paymentType?.minimalAmount || '-'}</Text>
             </VStack>
           </Box>
         </VStack>
@@ -134,8 +118,8 @@ export default function PaymentTypeDetail() {
       <VStack space="md" className="w-full p-4">
         <Pressable
           className={classNames(
-            "w-full rounded-sm h-10 flex justify-center items-center bg-background-0 border border-brand-primary",
-            !paymentType?.isDefault && "bg-brand-primary",
+            'w-full rounded-sm h-10 flex justify-center items-center bg-background-0 border border-brand-primary',
+            !paymentType?.isDefault && 'bg-brand-primary',
           )}
           disabled={paymentType?.isDefault || setDefaultMutation.isPending}
           onPress={() => {
@@ -143,13 +127,9 @@ export default function PaymentTypeDetail() {
               setDefaultMutation.mutate(paymentType.id, {
                 onSuccess: () => {
                   toast.show({
-                    placement: "top",
+                    placement: 'top',
                     render: ({ id }) => (
-                      <Toast
-                        nativeID={`toast-${id}`}
-                        action="success"
-                        variant="solid"
-                      >
+                      <Toast nativeID={`toast-${id}`} action="success" variant="solid">
                         <ToastTitle>Berhasil diatur sebagai default</ToastTitle>
                       </Toast>
                     ),
@@ -164,13 +144,11 @@ export default function PaymentTypeDetail() {
           <Text
             size="sm"
             className={classNames(
-              "text-brand-primary font-bold",
-              !paymentType?.isDefault && "text-white",
+              'text-brand-primary font-bold',
+              !paymentType?.isDefault && 'text-white',
             )}
           >
-            {paymentType?.isDefault
-              ? "DEFAULT PEMBAYARAN"
-              : "JADIKAN DEFAULT PEMBAYARAN"}
+            {paymentType?.isDefault ? 'DEFAULT PEMBAYARAN' : 'JADIKAN DEFAULT PEMBAYARAN'}
           </Text>
         </Pressable>
       </VStack>

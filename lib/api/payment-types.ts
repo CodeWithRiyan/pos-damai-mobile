@@ -1,14 +1,14 @@
-import { db } from "../db";
-import * as schema from "../db/schema";
-import { and, eq, isNull } from "drizzle-orm";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "@/stores/auth";
+import { db } from '../db';
+import * as schema from '../db/schema';
+import { and, eq, isNull } from 'drizzle-orm';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/stores/auth';
 
 export interface PaymentType {
   id: string;
   name: string;
   commission: number;
-  commissionType: "FLAT" | "PERCENTAGE";
+  commissionType: 'FLAT' | 'PERCENTAGE';
   isDefault: boolean;
   minimalAmount: number;
   organizationId: string;
@@ -21,7 +21,7 @@ export interface PaymentType {
 export interface CreatePaymentTypeDTO {
   name: string;
   commission?: number;
-  commissionType?: "FLAT" | "PERCENTAGE";
+  commissionType?: 'FLAT' | 'PERCENTAGE';
   isDefault?: boolean;
   minimalAmount?: number;
 }
@@ -34,17 +34,14 @@ export interface UpdatePaymentTypeDTO extends Partial<CreatePaymentTypeDTO> {
 export function usePaymentTypes() {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["paymentTypes", orgId],
+    queryKey: ['paymentTypes', orgId],
     queryFn: async () => {
       if (!orgId) return [];
       const result = await db
         .select()
         .from(schema.paymentTypes)
         .where(
-          and(
-            eq(schema.paymentTypes.organizationId, orgId),
-            isNull(schema.paymentTypes.deletedAt),
-          ),
+          and(eq(schema.paymentTypes.organizationId, orgId), isNull(schema.paymentTypes.deletedAt)),
         );
       return result as PaymentType[];
     },
@@ -55,7 +52,7 @@ export function usePaymentTypes() {
 // Get single payment type
 export function usePaymentType(id: string) {
   return useQuery({
-    queryKey: ["paymentTypes", id],
+    queryKey: ['paymentTypes', id],
     queryFn: async () => {
       const result = await db
         .select()
@@ -77,9 +74,7 @@ export function useCreatePaymentType() {
       const orgId = useAuthStore.getState().getOrganizationId();
 
       if (!orgId) {
-        throw new Error(
-          "Gagal menambahkan jenis pembayaran: ID Organisasi tidak ditemukan.",
-        );
+        throw new Error('Gagal menambahkan jenis pembayaran: ID Organisasi tidak ditemukan.');
       }
 
       const id = `pm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -91,7 +86,7 @@ export function useCreatePaymentType() {
         id,
         name: data.name,
         commission: data.commission ?? 0,
-        commissionType: data.commissionType ?? "PERCENTAGE",
+        commissionType: data.commissionType ?? 'PERCENTAGE',
         isDefault: data.isDefault ?? false,
         minimalAmount: data.minimalAmount ?? 0,
         organizationId: orgId,
@@ -109,7 +104,7 @@ export function useCreatePaymentType() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
-        queryKey: ["paymentTypes", data.organizationId],
+        queryKey: ['paymentTypes', data.organizationId],
       });
     },
   });
@@ -140,8 +135,8 @@ export function useUpdatePaymentType() {
     },
     onSuccess: (data) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["paymentTypes", orgId] });
-      queryClient.invalidateQueries({ queryKey: ["paymentTypes", data.id] });
+      queryClient.invalidateQueries({ queryKey: ['paymentTypes', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['paymentTypes', data.id] });
     },
   });
 }
@@ -171,7 +166,7 @@ export function useDeletePaymentType() {
     },
     onSuccess: () => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["paymentTypes", orgId] });
+      queryClient.invalidateQueries({ queryKey: ['paymentTypes', orgId] });
     },
   });
 }
@@ -202,7 +197,7 @@ export function useBulkDeletePaymentType() {
     },
     onSuccess: () => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["paymentTypes", orgId] });
+      queryClient.invalidateQueries({ queryKey: ['paymentTypes', orgId] });
     },
   });
 }
@@ -216,9 +211,7 @@ export function useSetDefaultPaymentType() {
       const orgId = useAuthStore.getState().getOrganizationId();
       const userId = useAuthStore.getState().profile?.id;
       if (!orgId) {
-        throw new Error(
-          "Gagal mengatur pembayaran default: ID Organisasi tidak ditemukan.",
-        );
+        throw new Error('Gagal mengatur pembayaran default: ID Organisasi tidak ditemukan.');
       }
 
       const now = new Date();
@@ -228,10 +221,7 @@ export function useSetDefaultPaymentType() {
         .select()
         .from(schema.paymentTypes)
         .where(
-          and(
-            eq(schema.paymentTypes.organizationId, orgId),
-            isNull(schema.paymentTypes.deletedAt),
-          ),
+          and(eq(schema.paymentTypes.organizationId, orgId), isNull(schema.paymentTypes.deletedAt)),
         );
 
       for (const pt of allPaymentTypes) {
@@ -263,7 +253,7 @@ export function useSetDefaultPaymentType() {
     },
     onSuccess: () => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["paymentTypes", orgId] });
+      queryClient.invalidateQueries({ queryKey: ['paymentTypes', orgId] });
     },
   });
 }

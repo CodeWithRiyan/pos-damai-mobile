@@ -1,17 +1,17 @@
-import { useAuthStore } from "@/stores/auth";
-import { Box } from "@/components/ui/box";
-import { Heading } from "@/components/ui/heading";
-import { HStack } from "@/components/ui/hstack";
-import { IconSymbol } from "@/components/ui/icon-symbol";
-import { Text } from "@/components/ui/text";
-import { VStack } from "@/components/ui/vstack";
-import useBreakpoint from "@/hooks/use-breakpoint";
-import { useLogout } from "@/lib/api/auth";
-import { useSidebarStore } from "@/stores/sidebar";
-import { Link, LinkProps, usePathname, useRouter } from "expo-router";
-import React, { useMemo } from "react";
-import { usePermission } from "@/hooks/use-permission";
-import { CloseIcon, Icon } from "./ui";
+import { useAuthStore } from '@/stores/auth';
+import { Box } from '@/components/ui/box';
+import { Heading } from '@/components/ui/heading';
+import { HStack } from '@/components/ui/hstack';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Text } from '@/components/ui/text';
+import { VStack } from '@/components/ui/vstack';
+import useBreakpoint from '@/hooks/use-breakpoint';
+import { useLogout } from '@/lib/api/auth';
+import { useSidebarStore } from '@/stores/sidebar';
+import { Link, LinkProps, usePathname, useRouter } from 'expo-router';
+import React, { useMemo } from 'react';
+import { usePermission } from '@/hooks/use-permission';
+import { CloseIcon, Icon } from './ui';
 import {
   Drawer,
   DrawerBackdrop,
@@ -19,12 +19,9 @@ import {
   DrawerContent,
   DrawerFooter,
   DrawerHeader,
-} from "./ui/drawer";
-import { Pressable } from "./ui/pressable";
-import {
-  SolarIconBoldDuotone,
-  SolarIconBoldDuotoneProps,
-} from "./ui/solar-icon-wrapper";
+} from './ui/drawer';
+import { Pressable } from './ui/pressable';
+import { SolarIconBoldDuotone, SolarIconBoldDuotoneProps } from './ui/solar-icon-wrapper';
 
 export function Sidebar() {
   const router = useRouter();
@@ -39,7 +36,7 @@ export function Sidebar() {
   const handleLogout = () => {
     logout(undefined, {
       onSuccess: () => {
-        router.replace("/login");
+        router.replace('/login');
         setShowDrawer(false);
       },
     });
@@ -48,59 +45,59 @@ export function Sidebar() {
   const menuItems = useMemo(() => {
     const items: {
       label: string;
-      icon: SolarIconBoldDuotoneProps["name"];
-      href: LinkProps["href"];
+      icon: SolarIconBoldDuotoneProps['name'];
+      href: LinkProps['href'];
       requiredPermission?: string | string[];
     }[] = [
-      { label: "Dashboard", icon: "Widget5", href: "/" },
+      { label: 'Dashboard', icon: 'Widget5', href: '/' },
       {
-        label: "Manajemen",
-        icon: "Database",
-        href: "/management",
+        label: 'Manajemen',
+        icon: 'Database',
+        href: '/management',
         requiredPermission: [
-          "products:read",
-          "categories:read",
-          "brands:read",
-          "customers:read",
-          "suppliers:read",
-          "roles:read",
-          "users:read",
-          "payables:read",
-          "receivables:read",
-          "inventory:read",
+          'products:read',
+          'categories:read',
+          'brands:read',
+          'customers:read',
+          'suppliers:read',
+          'roles:read',
+          'users:read',
+          'payables:read',
+          'receivables:read',
+          'inventory:read',
         ],
       },
       {
-        label: "Pembelian Barang",
-        icon: "Cart3",
-        href: "/purchasing",
-        requiredPermission: "purchases:read",
+        label: 'Pembelian Barang',
+        icon: 'Cart3',
+        href: '/purchasing',
+        requiredPermission: 'purchases:read',
       },
       {
-        label: "Transaksi Penjualan",
-        icon: "Plain",
-        href: "/transaction",
-        requiredPermission: "transactions:read",
+        label: 'Transaksi Penjualan',
+        icon: 'Plain',
+        href: '/transaction',
+        requiredPermission: 'transactions:read',
       },
       {
-        label: "Keuangan",
-        icon: "WalletMoney",
-        href: "/finance",
-        requiredPermission: "finances:read",
+        label: 'Keuangan',
+        icon: 'WalletMoney',
+        href: '/finance',
+        requiredPermission: 'finances:read',
       },
       {
-        label: "Shift",
-        icon: "WatchSquareMinimalistic",
-        href: "/shift/current",
-        requiredPermission: "shifts:read",
+        label: 'Shift',
+        icon: 'WatchSquareMinimalistic',
+        href: '/shift/current',
+        requiredPermission: 'shifts:read',
       },
       {
-        label: "Laporan",
-        icon: "PieChart2",
-        href: "/report",
-        requiredPermission: "reports:read",
+        label: 'Laporan',
+        icon: 'PieChart2',
+        href: '/report',
+        requiredPermission: 'reports:read',
       },
-      { label: "Pengaturan", icon: "Settings", href: "/setting" },
+      { label: 'Pengaturan', icon: 'Settings', href: '/setting' },
     ];
 
     return items.filter((item) => {
@@ -116,7 +113,7 @@ export function Sidebar() {
     <>
       <Drawer
         isOpen={showDrawer}
-        size={sm ? "md" : "full"}
+        size={sm ? 'md' : 'full'}
         anchor="left"
         onClose={() => {
           setShowDrawer(false);
@@ -144,10 +141,10 @@ export function Sidebar() {
                 </Box>
                 <VStack>
                   <Text size="sm" className="font-bold truncate">
-                    {profile?.name || profile?.id || "Unknown User"}
+                    {profile?.name || profile?.id || 'Unknown User'}
                   </Text>
                   <Text size="xs" className="text-slate-500 truncate">
-                    {role?.name || "No Role"}
+                    {role?.name || 'No Role'}
                   </Text>
                 </VStack>
               </HStack>
@@ -159,14 +156,13 @@ export function Sidebar() {
               {menuItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
-                  (item.href !== "/" &&
-                    pathname.startsWith(item.href as string));
+                  (item.href !== '/' && pathname.startsWith(item.href as string));
 
                 return (
                   <Link href={item.href} key={item.label} asChild>
                     <Pressable
                       className={`flex-row items-center p-3 rounded-xl gap-3 ${
-                        isActive ? "bg-brand-primary" : "active:bg-slate-200"
+                        isActive ? 'bg-brand-primary' : 'active:bg-slate-200'
                       }`}
                       onPress={() => {
                         setShowDrawer(false);
@@ -175,14 +171,12 @@ export function Sidebar() {
                       <SolarIconBoldDuotone
                         name={item.icon}
                         size={20}
-                        color={isActive ? "#FDFBF9" : "#64748b"}
+                        color={isActive ? '#FDFBF9' : '#64748b'}
                       />
 
                       <Text
                         className={`font-medium ${
-                          isActive
-                            ? "text-brand-primary-forground"
-                            : "text-slate-500"
+                          isActive ? 'text-brand-primary-forground' : 'text-slate-500'
                         }`}
                       >
                         {item.label}

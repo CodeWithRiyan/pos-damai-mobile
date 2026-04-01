@@ -1,30 +1,28 @@
-import { AnySQLiteSelect } from "drizzle-orm/sqlite-core";
-import { and, eq, like, desc, sql } from "drizzle-orm";
+import { AnySQLiteSelect } from 'drizzle-orm/sqlite-core';
+import { and, eq, like, desc, sql } from 'drizzle-orm';
 
 export type TransactionPrefix =
-  | "TRX" // Penjualan (transactions)
-  | "PUR" // Pembelian (purchases)
-  | "RTS" // Retur Penjualan (return_transactions)
-  | "RTP" // Retur Pembelian (purchase_returns)
-  | "FIN" // Keuangan (finances)
-  | "SO" // Stock Opname (stock_opnames)
-  | "SSP" // Store Supplies (store_supplies)
-  | "PAY" // Hutang (payables / payable_realizations)
-  | "REC"; // Piutang (receivables / receivable_realizations)
+  | 'TRX' // Penjualan (transactions)
+  | 'PUR' // Pembelian (purchases)
+  | 'RTS' // Retur Penjualan (return_transactions)
+  | 'RTP' // Retur Pembelian (purchase_returns)
+  | 'FIN' // Keuangan (finances)
+  | 'SO' // Stock Opname (stock_opnames)
+  | 'SSP' // Store Supplies (store_supplies)
+  | 'PAY' // Hutang (payables / payable_realizations)
+  | 'REC'; // Piutang (receivables / receivable_realizations)
 
 /**
  * Mendapatkan bagian terformat dari sebuah local_ref_id untuk digunakan di UI
  * Contoh: membuang 'TRX-' menjadi '22-02-26-0001'
  */
-export function formatDisplayRefId(
-  localRefId: string | null | undefined,
-): string {
-  if (!localRefId) return "-";
+export function formatDisplayRefId(localRefId: string | null | undefined): string {
+  if (!localRefId) return '-';
 
-  const parts = localRefId.split("-");
+  const parts = localRefId.split('-');
 
   if (parts.length >= 5) {
-    return parts.slice(1).join("-");
+    return parts.slice(1).join('-');
   }
 
   return localRefId;
@@ -41,8 +39,8 @@ export async function generateLocalRefId(
 ): Promise<string> {
   const now = new Date();
 
-  const dd = String(now.getDate()).padStart(2, "0");
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
   const yy = String(now.getFullYear()).slice(-2);
 
   const dateStr = `${dd}-${mm}-${yy}`;
@@ -59,7 +57,7 @@ export async function generateLocalRefId(
 
   if (records.length > 0 && records[0].refId) {
     const lastRefId = records[0].refId;
-    const parts = lastRefId.split("-");
+    const parts = lastRefId.split('-');
 
     if (parts.length === 5) {
       const lastSeq = parseInt(parts[4], 10);
@@ -69,6 +67,6 @@ export async function generateLocalRefId(
     }
   }
 
-  const sequenceStr = String(sequence).padStart(4, "0");
+  const sequenceStr = String(sequence).padStart(4, '0');
   return `${prefix}-${dateStr}-${sequenceStr}`;
 }

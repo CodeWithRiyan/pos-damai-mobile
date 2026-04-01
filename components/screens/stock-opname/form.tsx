@@ -12,39 +12,36 @@ import {
   Text,
   Textarea,
   TextareaInput,
-} from "@/components/ui";
+} from '@/components/ui';
 import {
   FormControl,
   FormControlError,
   FormControlErrorText,
   FormControlLabel,
   FormControlLabelText,
-} from "@/components/ui/form-control";
-import { useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
-import { useCreateStockOpname } from "@/lib/api/stock-opname";
-import { Status } from "@/lib/constants";
-import { db } from "@/lib/db";
-import * as schema from "@/lib/db/schema";
-import { formatMoney } from "@/lib/utils/format";
-import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
-import { useStockOpnameStore } from "@/stores/stock-opname";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { and, eq } from "drizzle-orm";
-import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import z from "zod";
+} from '@/components/ui/form-control';
+import { useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
+import { useCreateStockOpname } from '@/lib/api/stock-opname';
+import { Status } from '@/lib/constants';
+import { db } from '@/lib/db';
+import * as schema from '@/lib/db/schema';
+import { formatMoney } from '@/lib/utils/format';
+import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
+import { useStockOpnameStore } from '@/stores/stock-opname';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { and, eq } from 'drizzle-orm';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import z from 'zod';
 
 interface StockOpnameConfirmFormProps {
   date: Date;
 }
 
-export default function StockOpnameConfirmForm({
-  date,
-}: StockOpnameConfirmFormProps) {
-  const { openConfirm, setOpenConfirm, resetCart, cart } =
-    useStockOpnameStore();
+export default function StockOpnameConfirmForm({ date }: StockOpnameConfirmFormProps) {
+  const { openConfirm, setOpenConfirm, resetCart, cart } = useStockOpnameStore();
   const router = useRouter();
   const toast = useToast();
   const [summary, setSummary] = useState({ totalGain: 0, totalLoss: 0 });
@@ -56,7 +53,7 @@ export default function StockOpnameConfirmForm({
   type StockOpnameFormValues = z.infer<typeof stockOpnameSchema>;
 
   const initialValues: StockOpnameFormValues = {
-    note: "",
+    note: '',
   };
 
   const form = useForm<StockOpnameFormValues>({
@@ -83,10 +80,7 @@ export default function StockOpnameConfirmForm({
             ),
           );
 
-        const currentStock = transactions.reduce(
-          (sum, t) => sum + t.quantity,
-          0,
-        );
+        const currentStock = transactions.reduce((sum, t) => sum + t.quantity, 0);
         const difference = item.physicalStock - currentStock;
         const purchasePrice = item.product.purchasePrice || 0;
         const impact = difference * purchasePrice;
@@ -103,9 +97,7 @@ export default function StockOpnameConfirmForm({
     }
   }, [openConfirm, cart]);
 
-  const onSubmit: SubmitHandler<StockOpnameFormValues> = (
-    data: StockOpnameFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<StockOpnameFormValues> = (data: StockOpnameFormValues) => {
     const submissionData = {
       date: date,
       note: data.note,
@@ -121,7 +113,7 @@ export default function StockOpnameConfirmForm({
 
     createMutation.mutate(submissionData, {
       onSuccess: () => {
-        showSuccessToast(toast, "Stock Opname berhasil disimpan");
+        showSuccessToast(toast, 'Stock Opname berhasil disimpan');
         setOpenConfirm(false);
         resetCart();
         router.back();
@@ -151,31 +143,22 @@ export default function StockOpnameConfirmForm({
             <VStack space="sm" className="bg-background-50 p-3 rounded-lg">
               <HStack className="justify-between">
                 <Text className="text-slate-500">Tanggal:</Text>
-                <Text className="font-bold">
-                  {date.toLocaleDateString("id-ID")}
-                </Text>
+                <Text className="font-bold">{date.toLocaleDateString('id-ID')}</Text>
               </HStack>
               <HStack className="justify-between">
                 <Text className="text-slate-500">Total Kelebihan (Gain):</Text>
-                <Text className="font-bold text-success-600">
-                  {formatMoney(summary.totalGain)}
-                </Text>
+                <Text className="font-bold text-success-600">{formatMoney(summary.totalGain)}</Text>
               </HStack>
               <HStack className="justify-between">
                 <Text className="text-slate-500">Total Kekurangan (Loss):</Text>
-                <Text className="font-bold text-error-600">
-                  {formatMoney(summary.totalLoss)}
-                </Text>
+                <Text className="font-bold text-error-600">{formatMoney(summary.totalLoss)}</Text>
               </HStack>
             </VStack>
 
             <Controller
               name="note"
               control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl isInvalid={!!error}>
                   <FormControlLabel>
                     <FormControlLabelText>Keterangan</FormControlLabelText>
@@ -191,21 +174,17 @@ export default function StockOpnameConfirmForm({
                   </Textarea>
                   {error && (
                     <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
+                      <FormControlErrorText>{error.message}</FormControlErrorText>
                     </FormControlError>
                   )}
                 </FormControl>
               )}
             />
             <Text className="text-typography-400 font-bold">
-              Pastikan Anda / Karyawan Anda tidak melakukan transaksi apapun,
-              karena proses ini akan mempengaruhi riwayat stok barang anda!
+              Pastikan Anda / Karyawan Anda tidak melakukan transaksi apapun, karena proses ini akan
+              mempengaruhi riwayat stok barang anda!
             </Text>
-            <Text className="font-bold">
-              Apakah anda yakin untuk menyimpan data Stock Opname?
-            </Text>
+            <Text className="font-bold">Apakah anda yakin untuk menyimpan data Stock Opname?</Text>
           </VStack>
         </ModalBody>
         <ModalFooter>

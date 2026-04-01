@@ -1,14 +1,11 @@
-import { PaymentType } from "@/lib/api/payment-types";
-import { create } from "zustand";
+import { PaymentType } from '@/lib/api/payment-types';
+import { create } from 'zustand';
 
 interface PaymentTypeState {
   open: boolean;
   data: PaymentType | null;
   onSuccess?: (paymentType: PaymentType) => void;
-  setOpen: (
-    state: boolean,
-    onSuccess?: (paymentType: PaymentType) => void,
-  ) => void;
+  setOpen: (state: boolean, onSuccess?: (paymentType: PaymentType) => void) => void;
   setData: (data: PaymentType | null) => void;
 }
 

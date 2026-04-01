@@ -1,6 +1,6 @@
-import { Product } from "@/lib/api/products";
-import { BaseCartItem as CartItem, ConfirmData } from "@/lib/types/cart";
-import { create } from "zustand";
+import { Product } from '@/lib/api/products';
+import { BaseCartItem as CartItem, ConfirmData } from '@/lib/types/cart';
+import { create } from 'zustand';
 
 interface ReturnPurchasingState {
   addProduct: Product | null;
@@ -16,50 +16,44 @@ interface ReturnPurchasingState {
   resetCart: () => void;
 }
 
-export const useReturnPurchasingStore = create<ReturnPurchasingState>(
-  (set) => ({
-    addProduct: null,
-    cart: [],
-    cartTotal: 0,
-    openConfirm: false,
-    confirmData: null,
-    setOpenConfirm: (state) => set({ openConfirm: state }),
-    setConfirmData: (data) => set({ confirmData: data }),
-    setAddProduct: (state) => set({ addProduct: state }),
-    addCartItem: (item) =>
-      set((state) => {
-        const existingItemIndex = state.cart?.findIndex(
-          (cartItem) => cartItem.product.id === item.product.id,
-        );
+export const useReturnPurchasingStore = create<ReturnPurchasingState>((set) => ({
+  addProduct: null,
+  cart: [],
+  cartTotal: 0,
+  openConfirm: false,
+  confirmData: null,
+  setOpenConfirm: (state) => set({ openConfirm: state }),
+  setConfirmData: (data) => set({ confirmData: data }),
+  setAddProduct: (state) => set({ addProduct: state }),
+  addCartItem: (item) =>
+    set((state) => {
+      const existingItemIndex = state.cart?.findIndex(
+        (cartItem) => cartItem.product.id === item.product.id,
+      );
 
-        let updatedCart: CartItem[];
+      let updatedCart: CartItem[];
 
-        if (
-          existingItemIndex !== undefined &&
-          existingItemIndex !== -1 &&
-          state.cart
-        ) {
-          updatedCart = [...state.cart];
-          updatedCart[existingItemIndex] = item;
-        } else {
-          updatedCart = state.cart ? [...state.cart, item] : [item];
-        }
+      if (existingItemIndex !== undefined && existingItemIndex !== -1 && state.cart) {
+        updatedCart = [...state.cart];
+        updatedCart[existingItemIndex] = item;
+      } else {
+        updatedCart = state.cart ? [...state.cart, item] : [item];
+      }
 
-        return { cart: updatedCart };
-      }),
-    removeCartItem: (productId) =>
-      set((state) => {
-        const updatedCart = (state.cart ?? []).filter(
-          (cartItem) => cartItem.product.id !== productId,
-        );
+      return { cart: updatedCart };
+    }),
+  removeCartItem: (productId) =>
+    set((state) => {
+      const updatedCart = (state.cart ?? []).filter(
+        (cartItem) => cartItem.product.id !== productId,
+      );
 
-        const cartTotal = updatedCart.reduce(
-          (sum, item) => sum + item.product.purchasePrice * item.quantity,
-          0,
-        );
+      const cartTotal = updatedCart.reduce(
+        (sum, item) => sum + item.product.purchasePrice * item.quantity,
+        0,
+      );
 
-        return { cart: updatedCart, cartTotal };
-      }),
-    resetCart: () => set({ cart: [], cartTotal: 0 }),
-  }),
-);
+      return { cart: updatedCart, cartTotal };
+    }),
+  resetCart: () => set({ cart: [], cartTotal: 0 }),
+}));

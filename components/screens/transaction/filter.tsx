@@ -1,22 +1,18 @@
-import { CheckboxGroup, HStack, SearchIcon, Text } from "@/components/ui";
-import {
-  FormControl,
-  FormControlError,
-  FormControlErrorText,
-} from "@/components/ui/form-control";
-import { Grid, GridItem } from "@/components/ui/grid";
-import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
-import SelectModal from "@/components/ui/select/select-modal";
-import { VStack } from "@/components/ui/vstack";
-import { usePaymentTypes } from "@/lib/api/payment-types";
-import { useUsers } from "@/lib/api/users";
-import { zodResolver } from "@hookform/resolvers/zod";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import dayjs from "dayjs";
-import React, { useEffect, useState } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { TouchableOpacity, View } from "react-native";
-import z from "zod";
+import { CheckboxGroup, HStack, SearchIcon, Text } from '@/components/ui';
+import { FormControl, FormControlError, FormControlErrorText } from '@/components/ui/form-control';
+import { Grid, GridItem } from '@/components/ui/grid';
+import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
+import SelectModal from '@/components/ui/select/select-modal';
+import { VStack } from '@/components/ui/vstack';
+import { usePaymentTypes } from '@/lib/api/payment-types';
+import { useUsers } from '@/lib/api/users';
+import { zodResolver } from '@hookform/resolvers/zod';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
+import React, { useEffect, useState } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { TouchableOpacity, View } from 'react-native';
+import z from 'zod';
 
 // ─── Schema ────────────────────────────────────────────────────────────────
 
@@ -25,36 +21,28 @@ const transactionFilterSchema = z
     search: z.string(),
     userId: z.string(),
     paymentTypeIds: z.array(z.string()),
-    dateType: z.enum([
-      "TODAY",
-      "THIS_WEEK",
-      "THIS_MONTH",
-      "THIS_YEAR",
-      "CUSTOM",
-    ]),
+    dateType: z.enum(['TODAY', 'THIS_WEEK', 'THIS_MONTH', 'THIS_YEAR', 'CUSTOM']),
     startDate: z.date(),
     endDate: z.date(),
   })
   .refine(
     (data) => {
-      if (data.dateType !== "CUSTOM") return true;
-      return !dayjs(data.endDate).isBefore(dayjs(data.startDate), "day");
+      if (data.dateType !== 'CUSTOM') return true;
+      return !dayjs(data.endDate).isBefore(dayjs(data.startDate), 'day');
     },
     {
-      message: "Tanggal selesai tidak boleh sebelum tanggal mulai",
-      path: ["endDate"],
+      message: 'Tanggal selesai tidak boleh sebelum tanggal mulai',
+      path: ['endDate'],
     },
   );
 
-export type TransactionFilterFormValues = z.infer<
-  typeof transactionFilterSchema
->;
+export type TransactionFilterFormValues = z.infer<typeof transactionFilterSchema>;
 
 export const transactionFilterInitialValues: TransactionFilterFormValues = {
-  search: "",
-  userId: "",
+  search: '',
+  userId: '',
   paymentTypeIds: [],
-  dateType: "TODAY",
+  dateType: 'TODAY',
   startDate: new Date(),
   endDate: new Date(),
 };
@@ -62,11 +50,11 @@ export const transactionFilterInitialValues: TransactionFilterFormValues = {
 // ─── Date Type Chips ────────────────────────────────────────────────────────
 
 const DATE_TYPE_OPTIONS = [
-  { value: "TODAY", label: "Hari ini" },
-  { value: "THIS_WEEK", label: "Minggu ini" },
-  { value: "THIS_MONTH", label: "Bulan ini" },
-  { value: "THIS_YEAR", label: "Tahun ini" },
-  { value: "CUSTOM", label: "Custom" },
+  { value: 'TODAY', label: 'Hari ini' },
+  { value: 'THIS_WEEK', label: 'Minggu ini' },
+  { value: 'THIS_MONTH', label: 'Bulan ini' },
+  { value: 'THIS_YEAR', label: 'Tahun ini' },
+  { value: 'CUSTOM', label: 'Custom' },
 ] as const;
 
 // ─── Section Label ──────────────────────────────────────────────────────────
@@ -105,14 +93,14 @@ export default function TransactionFilter({
     defaultValues: transactionFilterInitialValues,
   });
 
-  const dateType = form.watch("dateType");
-  const startDate = form.watch("startDate");
+  const dateType = form.watch('dateType');
+  const startDate = form.watch('startDate');
 
   // Seed payment types on first load
   useEffect(() => {
     if (filterValues.paymentTypeIds.length === 0 && paymentTypes) {
       form.setValue(
-        "paymentTypeIds",
+        'paymentTypeIds',
         paymentTypes.map((pt) => pt.id),
       );
     }
@@ -127,10 +115,10 @@ export default function TransactionFilter({
 
   // When startDate changes in CUSTOM mode, clamp endDate if needed
   useEffect(() => {
-    if (dateType === "CUSTOM") {
-      const endDate = form.getValues("endDate");
-      if (dayjs(endDate).isBefore(dayjs(startDate), "day")) {
-        form.setValue("endDate", startDate);
+    if (dateType === 'CUSTOM') {
+      const endDate = form.getValues('endDate');
+      if (dayjs(endDate).isBefore(dayjs(startDate), 'day')) {
+        form.setValue('endDate', startDate);
       }
     }
   }, [startDate, dateType, form]);
@@ -143,7 +131,7 @@ export default function TransactionFilter({
     form.reset(transactionFilterInitialValues);
     if (paymentTypes) {
       form.setValue(
-        "paymentTypeIds",
+        'paymentTypeIds',
         paymentTypes.map((pt) => pt.id),
       );
     }
@@ -153,16 +141,15 @@ export default function TransactionFilter({
     });
   };
 
-  const selectedPaymentTypeIds = form.watch("paymentTypeIds");
+  const selectedPaymentTypeIds = form.watch('paymentTypeIds');
 
-  const allPaymentSelected =
-    paymentTypes?.length === selectedPaymentTypeIds.length;
+  const allPaymentSelected = paymentTypes?.length === selectedPaymentTypeIds.length;
 
   const toggleSelectAllPaymentTypes = () => {
     if (allPaymentSelected) {
-      form.setValue("paymentTypeIds", []);
+      form.setValue('paymentTypeIds', []);
     } else {
-      form.setValue("paymentTypeIds", paymentTypes?.map((pt) => pt.id) ?? []);
+      form.setValue('paymentTypeIds', paymentTypes?.map((pt) => pt.id) ?? []);
     }
   };
 
@@ -172,10 +159,7 @@ export default function TransactionFilter({
       <Controller
         name="search"
         control={form.control}
-        render={({
-          field: { onChange, onBlur, value },
-          fieldState: { error },
-        }) => (
+        render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
           <FormControl isInvalid={!!error}>
             <Input className="w-full border border-background-300 rounded-lg h-10 bg-background-50">
               <InputSlot className="pl-3">
@@ -214,7 +198,7 @@ export default function TransactionFilter({
                 placeholder="Semua karyawan"
                 showSearch={false}
                 options={[
-                  { label: "Semua karyawan", value: "" },
+                  { label: 'Semua karyawan', value: '' },
                   ...(users?.map((u) => ({
                     label: u.firstName,
                     value: u.id,
@@ -241,7 +225,7 @@ export default function TransactionFilter({
           <SectionLabel>Metode Pembayaran</SectionLabel>
           <TouchableOpacity onPress={toggleSelectAllPaymentTypes}>
             <Text className="text-xs font-semibold text-primary-500">
-              {allPaymentSelected ? "Batal semua" : "Pilih semua"}
+              {allPaymentSelected ? 'Batal semua' : 'Pilih semua'}
             </Text>
           </TouchableOpacity>
         </HStack>
@@ -251,14 +235,11 @@ export default function TransactionFilter({
           render={({ field: { onChange, value }, fieldState: { error } }) => (
             <FormControl isInvalid={!!error}>
               <CheckboxGroup value={value} onChange={onChange}>
-                <Grid _extra={{ className: "grid-cols-4" }}>
+                <Grid _extra={{ className: 'grid-cols-4' }}>
                   {paymentTypes?.map((pt) => {
                     const isChecked = value.includes(pt.id);
                     return (
-                      <GridItem
-                        key={pt.id}
-                        _extra={{ className: "col-span-2" }}
-                      >
+                      <GridItem key={pt.id} _extra={{ className: 'col-span-2' }}>
                         <TouchableOpacity
                           activeOpacity={0.7}
                           onPress={() => {
@@ -268,32 +249,28 @@ export default function TransactionFilter({
                             onChange(next);
                           }}
                           className={[
-                            "flex-row items-center gap-2 px-3 py-2 rounded-lg border mb-2 mr-2",
+                            'flex-row items-center gap-2 px-3 py-2 rounded-lg border mb-2 mr-2',
                             isChecked
-                              ? "bg-primary-50 border-primary-400"
-                              : "bg-background-50 border-background-300",
-                          ].join(" ")}
+                              ? 'bg-primary-50 border-primary-400'
+                              : 'bg-background-50 border-background-300',
+                          ].join(' ')}
                         >
                           {/* Custom checkbox dot */}
                           <View
                             className={[
-                              "w-4 h-4 rounded-full border-2 items-center justify-center",
+                              'w-4 h-4 rounded-full border-2 items-center justify-center',
                               isChecked
-                                ? "border-primary-500 bg-primary-500"
-                                : "border-background-400 bg-white",
-                            ].join(" ")}
+                                ? 'border-primary-500 bg-primary-500'
+                                : 'border-background-400 bg-white',
+                            ].join(' ')}
                           >
-                            {isChecked && (
-                              <View className="w-1.5 h-1.5 rounded-full bg-white" />
-                            )}
+                            {isChecked && <View className="w-1.5 h-1.5 rounded-full bg-white" />}
                           </View>
                           <Text
                             className={[
-                              "text-xs font-medium flex-1",
-                              isChecked
-                                ? "text-primary-700"
-                                : "text-typography-500",
-                            ].join(" ")}
+                              'text-xs font-medium flex-1',
+                              isChecked ? 'text-primary-700' : 'text-typography-500',
+                            ].join(' ')}
                             numberOfLines={1}
                           >
                             {pt.name}
@@ -332,17 +309,17 @@ export default function TransactionFilter({
                     activeOpacity={0.7}
                     onPress={() => onChange(opt.value)}
                     className={[
-                      "px-3 py-1.5 rounded-full border",
+                      'px-3 py-1.5 rounded-full border',
                       isActive
-                        ? "bg-primary-500 border-primary-500"
-                        : "bg-background-50 border-background-300",
-                    ].join(" ")}
+                        ? 'bg-primary-500 border-primary-500'
+                        : 'bg-background-50 border-background-300',
+                    ].join(' ')}
                   >
                     <Text
                       className={[
-                        "text-xs font-semibold",
-                        isActive ? "text-white" : "text-typography-500",
-                      ].join(" ")}
+                        'text-xs font-semibold',
+                        isActive ? 'text-white' : 'text-typography-500',
+                      ].join(' ')}
                     >
                       {opt.label}
                     </Text>
@@ -355,7 +332,7 @@ export default function TransactionFilter({
       </VStack>
 
       {/* ── Custom Date Range ── */}
-      {dateType === "CUSTOM" && (
+      {dateType === 'CUSTOM' && (
         <HStack space="md">
           {/* Start Date */}
           <Controller
@@ -368,14 +345,12 @@ export default function TransactionFilter({
                   activeOpacity={0.7}
                   onPress={() => setShowStartDatePicker(true)}
                   className={[
-                    "border rounded-lg px-3 py-2.5 bg-background-50",
-                    error ? "border-error-500" : "border-background-300",
-                  ].join(" ")}
+                    'border rounded-lg px-3 py-2.5 bg-background-50',
+                    error ? 'border-error-500' : 'border-background-300',
+                  ].join(' ')}
                 >
                   <Text className="text-sm text-typography-700">
-                    {value instanceof Date
-                      ? dayjs(value).format("DD MMM YYYY")
-                      : "Pilih tanggal"}
+                    {value instanceof Date ? dayjs(value).format('DD MMM YYYY') : 'Pilih tanggal'}
                   </Text>
                 </TouchableOpacity>
                 {showStartDatePicker && (
@@ -385,7 +360,7 @@ export default function TransactionFilter({
                     value={value instanceof Date ? value : new Date()}
                     onChange={(event, selectedDate) => {
                       setShowStartDatePicker(false);
-                      if (event.type === "set" && selectedDate) {
+                      if (event.type === 'set' && selectedDate) {
                         onChange(selectedDate);
                       }
                     }}
@@ -411,27 +386,23 @@ export default function TransactionFilter({
                   activeOpacity={0.7}
                   onPress={() => setShowEndDatePicker(true)}
                   className={[
-                    "border rounded-lg px-3 py-2.5 bg-background-50",
-                    error ? "border-error-500" : "border-background-300",
-                  ].join(" ")}
+                    'border rounded-lg px-3 py-2.5 bg-background-50',
+                    error ? 'border-error-500' : 'border-background-300',
+                  ].join(' ')}
                 >
                   <Text className="text-sm text-typography-700">
-                    {value instanceof Date
-                      ? dayjs(value).format("DD MMM YYYY")
-                      : "Pilih tanggal"}
+                    {value instanceof Date ? dayjs(value).format('DD MMM YYYY') : 'Pilih tanggal'}
                   </Text>
                 </TouchableOpacity>
                 {showEndDatePicker && (
                   <DateTimePicker
                     mode="date"
-                    minimumDate={
-                      startDate instanceof Date ? startDate : undefined
-                    }
+                    minimumDate={startDate instanceof Date ? startDate : undefined}
                     maximumDate={new Date()}
                     value={value instanceof Date ? value : new Date()}
                     onChange={(event, selectedDate) => {
                       setShowEndDatePicker(false);
-                      if (event.type === "set" && selectedDate) {
+                      if (event.type === 'set' && selectedDate) {
                         onChange(selectedDate);
                       }
                     }}
@@ -457,9 +428,7 @@ export default function TransactionFilter({
           className="flex-1 rounded-lg h-10 flex-row justify-center items-center bg-background-100 border border-background-300"
           onPress={handleReset}
         >
-          <Text className="text-sm text-typography-600 font-semibold">
-            Reset
-          </Text>
+          <Text className="text-sm text-typography-600 font-semibold">Reset</Text>
         </TouchableOpacity>
         <TouchableOpacity
           activeOpacity={0.8}

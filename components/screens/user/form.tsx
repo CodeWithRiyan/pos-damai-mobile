@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   FormControl,
   FormControlError,
@@ -16,10 +16,10 @@ import {
   ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
-import SelectModal from "@/components/ui/select/select-modal";
-import { showErrorToast } from "@/lib/utils/toast";
-import { useRoles } from "@/lib/api/roles";
+} from '@/components/ui';
+import SelectModal from '@/components/ui/select/select-modal';
+import { showErrorToast } from '@/lib/utils/toast';
+import { useRoles } from '@/lib/api/roles';
 import {
   CreateUserDTO,
   UpdateUserDTO,
@@ -27,13 +27,13 @@ import {
   useUpdateUser,
   useUser,
   useUsers,
-} from "@/lib/api/users";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { ScrollView } from "react-native";
-import { z } from "zod";
+} from '@/lib/api/users';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { ScrollView } from 'react-native';
+import { z } from 'zod';
 
 export default function UserForm() {
   const router = useRouter();
@@ -42,20 +42,20 @@ export default function UserForm() {
   const userId = id as string;
 
   const userSchema = z.object({
-    name: z.string().min(1, "Nama wajib diisi."),
-    username: z.string().min(1, "Username wajib diisi."),
-    password: userId ? z.string() : z.string().min(1, "Password wajib diisi."),
-    roleId: z.string().min(1, "Role wajib diisi."),
+    name: z.string().min(1, 'Nama wajib diisi.'),
+    username: z.string().min(1, 'Username wajib diisi.'),
+    password: userId ? z.string() : z.string().min(1, 'Password wajib diisi.'),
+    roleId: z.string().min(1, 'Role wajib diisi.'),
     isActive: z.boolean(),
   });
 
   type UserFormValues = z.infer<typeof userSchema>;
 
   const initialValues: UserFormValues = {
-    name: "",
-    username: "",
-    password: "",
-    roleId: "",
+    name: '',
+    username: '',
+    password: '',
+    roleId: '',
     isActive: true,
   };
 
@@ -65,7 +65,7 @@ export default function UserForm() {
   });
 
   const { refetch: refetchUsers } = useUsers();
-  const { data: user, refetch: refetchUser } = useUser(userId || "");
+  const { data: user, refetch: refetchUser } = useUser(userId || '');
   const { data: roles = [] } = useRoles();
   const createMutation = useCreateUser();
   const updateMutation = useUpdateUser();
@@ -77,10 +77,10 @@ export default function UserForm() {
   useEffect(() => {
     if (userId && user) {
       form.reset({
-        name: user.firstName || "",
+        name: user.firstName || '',
         username: user.username,
-        password: "",
-        roleId: user.roles[0].roleId || "",
+        password: '',
+        roleId: user.roles[0].roleId || '',
         isActive: user.isActive,
       });
     } else {
@@ -115,7 +115,7 @@ export default function UserForm() {
           handleCancel();
 
           toast.show({
-            placement: "top",
+            placement: 'top',
             render: ({ id }) => (
               <Toast nativeID={`toast-${id}`} action="success" variant="solid">
                 <ToastTitle>Karyawan berhasil diubah</ToastTitle>
@@ -128,6 +128,7 @@ export default function UserForm() {
         },
       });
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { isActive, ...restData } = data;
       const createData: CreateUserDTO = restData;
 
@@ -137,7 +138,7 @@ export default function UserForm() {
           handleCancel();
 
           toast.show({
-            placement: "top",
+            placement: 'top',
             render: ({ id }) => (
               <Toast nativeID={`toast-${id}`} action="success" variant="solid">
                 <ToastTitle>Karyawan berhasil diubah</ToastTitle>
@@ -154,17 +155,14 @@ export default function UserForm() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header={isAdd ? "TAMBAH KARYAWAN" : "EDIT KARYAWAN"} isGoBack />
+      <Header header={isAdd ? 'TAMBAH KARYAWAN' : 'EDIT KARYAWAN'} isGoBack />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="lg" className="p-4">
           <Controller
             name="name"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Nama</FormControlLabelText>
@@ -189,10 +187,7 @@ export default function UserForm() {
           <Controller
             name="username"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Username</FormControlLabelText>
@@ -219,10 +214,7 @@ export default function UserForm() {
           <Controller
             name="password"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isRequired={isAdd} isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Password</FormControlLabelText>
@@ -277,10 +269,7 @@ export default function UserForm() {
             <Controller
               control={form.control}
               name="isActive"
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl
                   isInvalid={!!error}
                   className="flex-row gap-4 items-center border border-background-300 px-4 rounded-md flex-1"

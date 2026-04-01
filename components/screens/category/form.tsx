@@ -9,45 +9,45 @@ import {
   ModalHeader,
   Pressable,
   Text,
-} from "@/components/ui";
+} from '@/components/ui';
 import {
   FormControl,
   FormControlError,
   FormControlErrorText,
   FormControlLabel,
   FormControlLabelText,
-} from "@/components/ui/form-control";
-import { Input, InputField } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
+} from '@/components/ui/form-control';
+import { Input, InputField } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
 import {
   useCategories,
   useCategory,
   useCreateCategory,
   useUpdateCategory,
-} from "@/lib/api/categories";
-import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
-import { useCategoryStore } from "@/stores/category";
-import { zodResolver } from "@hookform/resolvers/zod";
-import React, { useEffect } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import z from "zod";
+} from '@/lib/api/categories';
+import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
+import { useCategoryStore } from '@/stores/category';
+import { zodResolver } from '@hookform/resolvers/zod';
+import React, { useEffect } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import z from 'zod';
 
 export default function CategoryForm() {
   const { open, setOpen, data: dataCategory } = useCategoryStore();
   const toast = useToast();
 
   const categorySchema = z.object({
-    name: z.string().min(1, "Nama Category wajib diisi."),
-    retailPoint: z.number().min(0, "Poin harus >= 0"),
-    wholesalePoint: z.number().min(0, "Poin harus >= 0"),
+    name: z.string().min(1, 'Nama Category wajib diisi.'),
+    retailPoint: z.number().min(0, 'Poin harus >= 0'),
+    wholesalePoint: z.number().min(0, 'Poin harus >= 0'),
   });
 
   type CategoryFormValues = z.infer<typeof categorySchema>;
 
   const initialValues: CategoryFormValues = {
-    name: "",
+    name: '',
     retailPoint: 0,
     wholesalePoint: 0,
   };
@@ -58,7 +58,7 @@ export default function CategoryForm() {
   });
 
   const { refetch: refetchCategorys } = useCategories();
-  const { refetch: refetchCategory } = useCategory(dataCategory?.id || "");
+  const { refetch: refetchCategory } = useCategory(dataCategory?.id || '');
 
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
@@ -81,15 +81,13 @@ export default function CategoryForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataCategory, form]);
 
-  const onSubmit: SubmitHandler<CategoryFormValues> = (
-    data: CategoryFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<CategoryFormValues> = (data: CategoryFormValues) => {
     if (dataCategory) {
       updateMutation.mutate(
         { id: dataCategory.id, ...data },
         {
           onSuccess: () => {
-            showSuccessToast(toast, "Kategori berhasil diperbarui");
+            showSuccessToast(toast, 'Kategori berhasil diperbarui');
             onRefetch();
             form.reset(initialValues);
             setOpen(false);
@@ -100,7 +98,7 @@ export default function CategoryForm() {
     } else {
       createMutation.mutate(data, {
         onSuccess: (newCat) => {
-          showSuccessToast(toast, "Kategori berhasil ditambahkan");
+          showSuccessToast(toast, 'Kategori berhasil ditambahkan');
           onRefetch();
           if (useCategoryStore.getState().onSuccess) {
             useCategoryStore.getState().onSuccess?.(newCat);
@@ -128,7 +126,7 @@ export default function CategoryForm() {
       <ModalContent className="p-0 max-h-[90%]">
         <ModalHeader className="p-4 border-b border-background-300">
           <Heading size="md" className="text-center flex-1">
-            {dataCategory ? "EDIT KATEGORI" : "TAMBAH KATEGORI"}
+            {dataCategory ? 'EDIT KATEGORI' : 'TAMBAH KATEGORI'}
           </Heading>
         </ModalHeader>
         <ModalBody className="m-0" showsVerticalScrollIndicator={false}>
@@ -136,10 +134,7 @@ export default function CategoryForm() {
             <Controller
               name="name"
               control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl isRequired isInvalid={!!error}>
                   <FormControlLabel>
                     <FormControlLabelText>Nama Kategori</FormControlLabelText>
@@ -155,9 +150,7 @@ export default function CategoryForm() {
                   </Input>
                   {error && (
                     <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
+                      <FormControlErrorText>{error.message}</FormControlErrorText>
                     </FormControlError>
                   )}
                 </FormControl>
@@ -167,15 +160,8 @@ export default function CategoryForm() {
               <Controller
                 name="retailPoint"
                 control={form.control}
-                render={({
-                  field: { onChange, onBlur, value },
-                  fieldState: { error },
-                }) => (
-                  <FormControl
-                    isRequired
-                    isInvalid={!!error}
-                    className="flex-1"
-                  >
+                render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                  <FormControl isRequired isInvalid={!!error} className="flex-1">
                     <FormControlLabel>
                       <FormControlLabelText>Poin Retail</FormControlLabelText>
                     </FormControlLabel>
@@ -193,9 +179,7 @@ export default function CategoryForm() {
                     </Input>
                     {error && (
                       <FormControlError>
-                        <FormControlErrorText>
-                          {error.message}
-                        </FormControlErrorText>
+                        <FormControlErrorText>{error.message}</FormControlErrorText>
                       </FormControlError>
                     )}
                   </FormControl>
@@ -204,15 +188,8 @@ export default function CategoryForm() {
               <Controller
                 name="wholesalePoint"
                 control={form.control}
-                render={({
-                  field: { onChange, onBlur, value },
-                  fieldState: { error },
-                }) => (
-                  <FormControl
-                    isRequired
-                    isInvalid={!!error}
-                    className="flex-1"
-                  >
+                render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                  <FormControl isRequired isInvalid={!!error} className="flex-1">
                     <FormControlLabel>
                       <FormControlLabelText>Poin Grosir</FormControlLabelText>
                     </FormControlLabel>
@@ -230,9 +207,7 @@ export default function CategoryForm() {
                     </Input>
                     {error && (
                       <FormControlError>
-                        <FormControlErrorText>
-                          {error.message}
-                        </FormControlErrorText>
+                        <FormControlErrorText>{error.message}</FormControlErrorText>
                       </FormControlError>
                     )}
                   </FormControl>
@@ -252,7 +227,7 @@ export default function CategoryForm() {
                 <Spinner size="small" color="#FFFFFF" />
               ) : (
                 <Text size="sm" className="text-typography-0 font-bold">
-                  {!dataCategory ? "SIMPAN" : "PERBARUI"}
+                  {!dataCategory ? 'SIMPAN' : 'PERBARUI'}
                 </Text>
               )}
             </Pressable>

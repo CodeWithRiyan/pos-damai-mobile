@@ -12,37 +12,36 @@ import {
   Text,
   Textarea,
   TextareaInput,
-} from "@/components/ui";
+} from '@/components/ui';
 import {
   FormControl,
   FormControlError,
   FormControlErrorText,
   FormControlLabel,
   FormControlLabelText,
-} from "@/components/ui/form-control";
-import { Radio, RadioGroup, RadioLabel } from "@/components/ui/radio";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
+} from '@/components/ui/form-control';
+import { Radio, RadioGroup, RadioLabel } from '@/components/ui/radio';
+import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
 // import {
 //   useReturnTransaction,
 //   useCreateReturnTransaction,
 //   useUpdateReturnTransaction,
 // } from "@/lib/api/return-transaction";
-import { useCreateFinance } from "@/lib/api/finances";
-import { useCreateTransactionReturn } from "@/lib/api/return-transaction";
-import { FinanceType, ReturnType, Status } from "@/lib/constants";
-import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
-import { useReturnTransactionStore } from "@/stores/return-transaction";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import z from "zod";
+import { useCreateFinance } from '@/lib/api/finances';
+import { useCreateTransactionReturn } from '@/lib/api/return-transaction';
+import { FinanceType, ReturnType, Status } from '@/lib/constants';
+import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
+import { useReturnTransactionStore } from '@/stores/return-transaction';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import z from 'zod';
 
 export default function ReturnTransactionConfirmForm() {
   const { customerId } = useLocalSearchParams<{ customerId: string }>();
-  const { cart, openConfirm, setOpenConfirm, resetCart } =
-    useReturnTransactionStore();
+  const { cart, openConfirm, setOpenConfirm, resetCart } = useReturnTransactionStore();
   const router = useRouter();
   const toast = useToast();
   const createMutation = useCreateTransactionReturn();
@@ -50,15 +49,15 @@ export default function ReturnTransactionConfirmForm() {
   const isLoading = createMutation.isPending || createFinanceMutation.isPending;
 
   const returnPurchaseSchema = z.object({
-    reason: z.string().min(1, "Alasan wajib diisi."),
-    returnType: z.string().min(1, "Tipe Retur wajib diisi."),
+    reason: z.string().min(1, 'Alasan wajib diisi.'),
+    returnType: z.string().min(1, 'Tipe Retur wajib diisi.'),
   });
 
   type ReturnTransactionFormValues = z.infer<typeof returnPurchaseSchema>;
 
   const initialValues: ReturnTransactionFormValues = {
-    reason: "",
-    returnType: "CASH",
+    reason: '',
+    returnType: 'CASH',
   };
 
   const form = useForm<ReturnTransactionFormValues>({
@@ -69,20 +68,17 @@ export default function ReturnTransactionConfirmForm() {
   const onSubmit: SubmitHandler<ReturnTransactionFormValues> = (
     data: ReturnTransactionFormValues,
   ) => {
-    const totalAmount = cart.reduce(
-      (acc, item) => acc + item.quantity * (item.sellPrice || 0),
-      0,
-    );
+    const totalAmount = cart.reduce((acc, item) => acc + item.quantity * (item.sellPrice || 0), 0);
 
     const returnData = {
-      customerId: customerId || "",
+      customerId: customerId || '',
       totalAmount,
-      returnType: data.returnType as "CASH" | "ITEM",
+      returnType: data.returnType as 'CASH' | 'ITEM',
       note: data.reason, // Map 'reason' from form to 'note' in database
       items: cart.map((item) => ({
         productId: item.product.id,
         variantId: item.variant?.id,
-        productName: item.product.name || "",
+        productName: item.product.name || '',
         quantity: item.quantity,
         sellPrice: item.sellPrice || 0,
       })),
@@ -90,7 +86,7 @@ export default function ReturnTransactionConfirmForm() {
 
     createMutation.mutate(returnData, {
       onSuccess: (response) => {
-        showSuccessToast(toast, "Retur berhasil disimpan");
+        showSuccessToast(toast, 'Retur berhasil disimpan');
         setOpenConfirm(false);
 
         if (data.returnType === ReturnType.CASH) {
@@ -110,17 +106,11 @@ export default function ReturnTransactionConfirmForm() {
     });
   };
 
-  const createFinance = ({
-    returnId,
-    totalAmount,
-  }: {
-    returnId: string;
-    totalAmount: number;
-  }) => {
+  const createFinance = ({ returnId, totalAmount }: { returnId: string; totalAmount: number }) => {
     createFinanceMutation.mutate(
       {
         type: FinanceType.EXPENSES,
-        expensesType: "OTHER_EXPENSES",
+        expensesType: 'OTHER_EXPENSES',
         transactionDate: new Date(),
         nominal: totalAmount,
         note: `Retur Ref: ${returnId}`,
@@ -130,7 +120,7 @@ export default function ReturnTransactionConfirmForm() {
       {
         onError: (error) => {
           toast.show({
-            placement: "top",
+            placement: 'top',
             render: ({ id }) => (
               <Toast nativeID={id} action="error" variant="solid">
                 <ToastTitle>{`Gagal menyimpan: ${error.message}`}</ToastTitle>
@@ -163,15 +153,10 @@ export default function ReturnTransactionConfirmForm() {
             <Controller
               name="returnType"
               control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl isRequired isInvalid={!!error}>
                   <FormControlLabel>
-                    <FormControlLabelText>
-                      Tipe Pengembalian
-                    </FormControlLabelText>
+                    <FormControlLabelText>Tipe Pengembalian</FormControlLabelText>
                   </FormControlLabel>
                   <RadioGroup
                     value={value}
@@ -185,9 +170,9 @@ export default function ReturnTransactionConfirmForm() {
                       isInvalid={false}
                       isDisabled={false}
                       className={`flex-1 h-12 border rounded-md flex items-center justify-center${
-                        value === "CASH"
-                          ? " bg-primary-200 text-primary-500 border-primary-500"
-                          : " bg-background-100 border-background-300"
+                        value === 'CASH'
+                          ? ' bg-primary-200 text-primary-500 border-primary-500'
+                          : ' bg-background-100 border-background-300'
                       }`}
                     >
                       <RadioLabel className="font-bold">UANG</RadioLabel>
@@ -198,14 +183,12 @@ export default function ReturnTransactionConfirmForm() {
                       isInvalid={false}
                       isDisabled={false}
                       className={`flex-1 h-12 border rounded-md flex items-center justify-center${
-                        value === "ITEM"
-                          ? " bg-primary-200 text-primary-500 border-primary-500"
-                          : " bg-background-100 border-background-300"
+                        value === 'ITEM'
+                          ? ' bg-primary-200 text-primary-500 border-primary-500'
+                          : ' bg-background-100 border-background-300'
                       }`}
                     >
-                      <RadioLabel className="font-bold">
-                        TUKAR BARANG
-                      </RadioLabel>
+                      <RadioLabel className="font-bold">TUKAR BARANG</RadioLabel>
                     </Radio>
                   </RadioGroup>
                 </FormControl>
@@ -214,18 +197,12 @@ export default function ReturnTransactionConfirmForm() {
             <Controller
               name="reason"
               control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl isRequired isInvalid={!!error}>
                   <FormControlLabel>
                     <FormControlLabelText>Berikan Alasan</FormControlLabelText>
                   </FormControlLabel>
-                  <Textarea
-                    size="md"
-                    className={error ? "border-error-500" : undefined}
-                  >
+                  <Textarea size="md" className={error ? 'border-error-500' : undefined}>
                     <TextareaInput
                       value={value}
                       autoComplete="off"
@@ -236,9 +213,7 @@ export default function ReturnTransactionConfirmForm() {
                   </Textarea>
                   {error && (
                     <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
+                      <FormControlErrorText>{error.message}</FormControlErrorText>
                     </FormControlError>
                   )}
                 </FormControl>

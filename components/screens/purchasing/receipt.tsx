@@ -1,28 +1,20 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
-import {
-  Box,
-  Heading,
-  HStack,
-  Icon,
-  Pressable,
-  Text,
-  VStack,
-} from "@/components/ui";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { Spinner } from "@/components/ui/spinner";
-import { usePurchase } from "@/lib/api/purchasing";
-import { formatDisplayRefId } from "@/lib/utils/reference";
-import { useAuthStore } from "@/stores/auth";
-import classNames from "classnames";
-import dayjs from "dayjs";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Check, Printer } from "lucide-react-native";
-import { ScrollView } from "react-native";
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
+import { Box, Heading, HStack, Icon, Pressable, Text, VStack } from '@/components/ui';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { Spinner } from '@/components/ui/spinner';
+import { usePurchase } from '@/lib/api/purchasing';
+import { formatDisplayRefId } from '@/lib/utils/reference';
+import { useAuthStore } from '@/stores/auth';
+import classNames from 'classnames';
+import dayjs from 'dayjs';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Check, Printer } from 'lucide-react-native';
+import { ScrollView } from 'react-native';
 
-import { PaymentMethod, Status } from "@/lib/constants";
-import { formatNumber, formatRp } from "@/lib/utils/format";
-import { getReceiptActions } from "@/lib/utils/receipt-actions";
+import { PaymentMethod, Status } from '@/lib/constants';
+import { formatNumber, formatRp } from '@/lib/utils/format';
+import { getReceiptActions } from '@/lib/utils/receipt-actions';
 export default function PurchasingReceipt() {
   const router = useRouter();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -30,7 +22,7 @@ export default function PurchasingReceipt() {
     id: string;
     isSuccess: string;
   }>();
-  const { data: purchase, isLoading } = usePurchase(id || "");
+  const { data: purchase, isLoading } = usePurchase(id || '');
   const profile = useAuthStore((state) => state.profile);
 
   if (isLoading || !id) {
@@ -75,14 +67,14 @@ export default function PurchasingReceipt() {
               name="MenuDots"
               size={20}
               color="#FDFBF9"
-              style={{ transform: [{ rotate: "90deg" }] }}
+              style={{ transform: [{ rotate: '90deg' }] }}
             />
           </Pressable>
         }
       />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="md" className="p-4 flex-1">
-          {isSuccess === "true" && (
+          {isSuccess === 'true' && (
             <HStack space="md" className="w-full">
               <Pressable
                 className="flex-1 rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-primary-500 border border-primary-500 active:bg-primary-400"
@@ -106,12 +98,9 @@ export default function PurchasingReceipt() {
           )}
           <VStack className="flex-1 bg-background-0 p-6 shadow">
             <VStack className="items-center">
-              <Heading size="xl">
-                {profile?.selectedOrganization?.name || "Toko Damai"}
-              </Heading>
+              <Heading size="xl">{profile?.selectedOrganization?.name || 'Toko Damai'}</Heading>
               <Text className="text-typography-500 text-center">
-                {profile?.selectedOrganization?.address ||
-                  "Pekalongan Timur, Pekalongan"}
+                {profile?.selectedOrganization?.address || 'Pekalongan Timur, Pekalongan'}
               </Text>
               <Text className="text-typography-500">## Struk Pembelian ##</Text>
               {purchase.status === Status.DRAFT && (
@@ -128,40 +117,31 @@ export default function PurchasingReceipt() {
               </HStack>
               <HStack className="justify-between items-center">
                 <Text className="text-typography-500">Tanggal</Text>
-                <Text className="text-typography-500">
-                  {date.format("DD/MM/YYYY HH:mm:ss")}
-                </Text>
+                <Text className="text-typography-500">{date.format('DD/MM/YYYY HH:mm:ss')}</Text>
               </HStack>
               <HStack className="justify-between items-center">
                 <Text className="text-typography-500">Admin</Text>
-                <Text className="text-typography-500">
-                  {profile?.name || "Admin"}
-                </Text>
+                <Text className="text-typography-500">{profile?.name || 'Admin'}</Text>
               </HStack>
               <HStack className="justify-between items-center">
                 <Text className="text-typography-500">Supplier</Text>
-                <Text className="text-typography-500">
-                  {purchase.supplierName}
-                </Text>
+                <Text className="text-typography-500">{purchase.supplierName}</Text>
               </HStack>
               <HStack className="justify-between items-center">
                 <Text className="text-typography-500">Metode Pembayaran</Text>
                 <Text className="text-typography-500">
                   {purchase.paymentTypeName ||
-                    (purchase.paymentType === PaymentMethod.CASH
-                      ? "Tunai"
-                      : "Hutang")}
+                    (purchase.paymentType === PaymentMethod.CASH ? 'Tunai' : 'Hutang')}
                 </Text>
               </HStack>
-              {purchase.paymentType === PaymentMethod.DEBT &&
-                purchase.dueDate && (
-                  <HStack className="justify-between items-center">
-                    <Text className="text-typography-500">Jatuh Tempo</Text>
-                    <Text className="text-typography-500">
-                      {dayjs(purchase.dueDate).format("DD/MM/YYYY")}
-                    </Text>
-                  </HStack>
-                )}
+              {purchase.paymentType === PaymentMethod.DEBT && purchase.dueDate && (
+                <HStack className="justify-between items-center">
+                  <Text className="text-typography-500">Jatuh Tempo</Text>
+                  <Text className="text-typography-500">
+                    {dayjs(purchase.dueDate).format('DD/MM/YYYY')}
+                  </Text>
+                </HStack>
+              )}
             </VStack>
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack space="md">
@@ -170,13 +150,10 @@ export default function PurchasingReceipt() {
                   <VStack className="flex-1 mr-2">
                     <Heading size="sm">{item.productName}</Heading>
                     {item.note ? (
-                      <Text className="text-typography-500 text-xs italic">
-                        {item.note}
-                      </Text>
+                      <Text className="text-typography-500 text-xs italic">{item.note}</Text>
                     ) : null}
                     <Text className="text-typography-500 text-sm">
-                      {item.quantity} x Rp{" "}
-                      {formatNumber(item.purchasePrice || 0)}
+                      {item.quantity} x Rp {formatNumber(item.purchasePrice || 0)}
                     </Text>
                   </VStack>
                   <Text className="text-typography-500 font-bold">
@@ -195,9 +172,7 @@ export default function PurchasingReceipt() {
               </HStack>
               {purchase.commission ? (
                 <HStack className="justify-between items-center">
-                  <Text className="text-typography-500">
-                    Biaya Layanan/Admin
-                  </Text>
+                  <Text className="text-typography-500">Biaya Layanan/Admin</Text>
                   <Text className="text-typography-500">
                     Rp {formatNumber(purchase.commission)}
                   </Text>
@@ -205,27 +180,16 @@ export default function PurchasingReceipt() {
               ) : null}
               <HStack className="justify-between items-center">
                 <Text className="font-bold">Total Tagihan</Text>
-                <Text className="font-bold">
-                  Rp {formatNumber(purchase.totalAmount)}
-                </Text>
+                <Text className="font-bold">Rp {formatNumber(purchase.totalAmount)}</Text>
               </HStack>
               <HStack className="justify-between items-center">
                 <Text className="font-bold">Uang Dibayarkan</Text>
-                <Text className="font-bold">
-                  Rp {formatNumber(purchase.totalPaid ?? 0)}
-                </Text>
+                <Text className="font-bold">Rp {formatNumber(purchase.totalPaid ?? 0)}</Text>
               </HStack>
               <HStack className="justify-between items-center">
-                <Text className="font-bold">
-                  {!!purchase.dueDate ? "Kekurangan" : "Kembalian"}
-                </Text>
-                <Text
-                  className={classNames(
-                    "font-bold",
-                    !!purchase.dueDate && "text-error-500",
-                  )}
-                >
-                  Rp{" "}
+                <Text className="font-bold">{!!purchase.dueDate ? 'Kekurangan' : 'Kembalian'}</Text>
+                <Text className={classNames('font-bold', !!purchase.dueDate && 'text-error-500')}>
+                  Rp{' '}
                   {!!purchase.dueDate
                     ? formatNumber(purchase.totalAmount - purchase.totalPaid)
                     : formatNumber(purchase.totalPaid - purchase.totalAmount)}
@@ -236,20 +200,14 @@ export default function PurchasingReceipt() {
               <>
                 <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
                 <VStack space="sm">
-                  <Text className="text-typography-500 font-bold">
-                    Catatan:
-                  </Text>
-                  <Text className="text-typography-500 text-sm">
-                    {purchase.note}
-                  </Text>
+                  <Text className="text-typography-500 font-bold">Catatan:</Text>
+                  <Text className="text-typography-500 text-sm">{purchase.note}</Text>
                 </VStack>
               </>
             ) : null}
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack className="items-center py-2">
-              <Text className="text-typography-500">
-                Terima kasih atas pembelian Anda
-              </Text>
+              <Text className="text-typography-500">Terima kasih atas pembelian Anda</Text>
             </VStack>
           </VStack>
         </VStack>

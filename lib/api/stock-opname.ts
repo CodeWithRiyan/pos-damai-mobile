@@ -1,9 +1,9 @@
-import { db } from "../db";
-import * as schema from "../db/schema";
-import { eq, desc, and, getTableColumns } from "drizzle-orm";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "@/stores/auth";
-import { generateLocalRefId } from "../utils/reference";
+import { db } from '../db';
+import * as schema from '../db/schema';
+import { eq, desc, and, getTableColumns } from 'drizzle-orm';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/stores/auth';
+import { generateLocalRefId } from '../utils/reference';
 
 export interface StockOpnameDTO {
   date: Date;
@@ -27,11 +27,11 @@ export function useCreateStockOpname() {
       let totalGain = 0;
       let totalLoss = 0;
       let hasDifference = false;
-      let opnameRefId = "";
+      let opnameRefId = '';
       const opnameId = `opname_${Date.now()}`;
 
       await db.transaction(async (tx) => {
-        opnameRefId = await generateLocalRefId(tx, schema.stockOpnames, "SO");
+        opnameRefId = await generateLocalRefId(tx, schema.stockOpnames, 'SO');
         // 1. Calculate financials & prepare items
 
         for (const item of data.items) {
@@ -42,14 +42,11 @@ export function useCreateStockOpname() {
             .where(
               and(
                 eq(schema.inventoryTransactions.productId, item.product.id),
-                eq(schema.inventoryTransactions.status, "COMPLETED"),
+                eq(schema.inventoryTransactions.status, 'COMPLETED'),
               ),
             );
 
-          const currentStock = transactions.reduce(
-            (sum, t) => sum + t.quantity,
-            0,
-          );
+          const currentStock = transactions.reduce((sum, t) => sum + t.quantity, 0);
 
           const variantNetto = item.variant?.netto || 1;
           const physicalInBaseUnit = item.physicalStock * variantNetto;
@@ -68,7 +65,7 @@ export function useCreateStockOpname() {
           if (difference < 0) totalLoss += Math.abs(financialImpact);
           if (difference !== 0) hasDifference = true;
 
-          const opnameItemId = `opname_item_${Date.now()}_${item.product.id}_${item.variant?.id || "base"}`;
+          const opnameItemId = `opname_item_${Date.now()}_${item.product.id}_${item.variant?.id || 'base'}`;
 
           // Insert Opname Item
           await tx.insert(schema.stockOpnameItems).values({
@@ -94,10 +91,10 @@ export function useCreateStockOpname() {
             const txId = `inv_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             await tx.insert(schema.inventoryTransactions).values({
               id: txId,
-              local_ref_id: `${opnameRefId}_${item.product.id}_${item.variant?.id || "base"}`,
+              local_ref_id: `${opnameRefId}_${item.product.id}_${item.variant?.id || 'base'}`,
               productId: item.product.id,
               variantId: item.variant?.id || null,
-              type: "STOCK_OPNAME",
+              type: 'STOCK_OPNAME',
               quantity: difference,
               organizationId: orgId,
               createdBy: userId,
@@ -116,7 +113,7 @@ export function useCreateStockOpname() {
           local_ref_id: opnameRefId,
           date: data.date,
           note: data.note,
-          status: hasDifference ? "DIFFERENCE" : "DONE",
+          status: hasDifference ? 'DIFFERENCE' : 'DONE',
           totalGain,
           totalLoss,
           createdBy: userId,
@@ -131,15 +128,15 @@ export function useCreateStockOpname() {
       return { id: opnameId, ...data };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["stock-opnames"] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['stock-opnames'] });
     },
   });
 }
 
 export function useStockOpnames() {
   return useQuery({
-    queryKey: ["stock-opnames"],
+    queryKey: ['stock-opnames'],
     queryFn: async () => {
       const result = await db
         .select()
@@ -152,7 +149,7 @@ export function useStockOpnames() {
 
 export function useStockOpname(id: string) {
   return useQuery({
-    queryKey: ["stock-opname", id],
+    queryKey: ['stock-opname', id],
     queryFn: async () => {
       // Get Opname
       const [opname] = await db
@@ -171,10 +168,7 @@ export function useStockOpname(id: string) {
           variantName: schema.productVariants.name,
         })
         .from(schema.stockOpnameItems)
-        .leftJoin(
-          schema.products,
-          eq(schema.stockOpnameItems.productId, schema.products.id),
-        )
+        .leftJoin(schema.products, eq(schema.stockOpnameItems.productId, schema.products.id))
         .leftJoin(
           schema.productVariants,
           eq(schema.stockOpnameItems.variantId, schema.productVariants.id),

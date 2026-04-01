@@ -1,8 +1,8 @@
-import { db } from "../db";
-import * as schema from "../db/schema";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { and, eq, isNull } from "drizzle-orm";
-import { useAuthStore } from "@/stores/auth";
+import { db } from '../db';
+import * as schema from '../db/schema';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { and, eq, isNull } from 'drizzle-orm';
+import { useAuthStore } from '@/stores/auth';
 
 export interface CashDrawer {
   id: string;
@@ -30,17 +30,14 @@ export interface UpdateCashDrawerDTO extends Partial<CreateCashDrawerDTO> {
 export function useCashDrawers() {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["cashDrawers", orgId],
+    queryKey: ['cashDrawers', orgId],
     queryFn: async () => {
       if (!orgId) return [];
       const result = await db
         .select()
         .from(schema.cashDrawers)
         .where(
-          and(
-            eq(schema.cashDrawers.organizationId, orgId),
-            isNull(schema.cashDrawers.deletedAt),
-          ),
+          and(eq(schema.cashDrawers.organizationId, orgId), isNull(schema.cashDrawers.deletedAt)),
         );
       return result as CashDrawer[];
     },
@@ -51,7 +48,7 @@ export function useCashDrawers() {
 // Get single cashdrawer
 export function useCashDrawer(id: string) {
   return useQuery({
-    queryKey: ["cashDrawers", id],
+    queryKey: ['cashDrawers', id],
     queryFn: async () => {
       const result = await db
         .select()
@@ -73,9 +70,7 @@ export function useCreateCashDrawer() {
       const orgId = useAuthStore.getState().getOrganizationId();
 
       if (!orgId) {
-        throw new Error(
-          "Gagal menambahkan cashdrawer: ID Organisasi tidak ditemukan.",
-        );
+        throw new Error('Gagal menambahkan cashdrawer: ID Organisasi tidak ditemukan.');
       }
 
       const id = `cd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -104,7 +99,7 @@ export function useCreateCashDrawer() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
-        queryKey: ["cashDrawers", data.organizationId],
+        queryKey: ['cashDrawers', data.organizationId],
       });
     },
   });
@@ -133,8 +128,8 @@ export function useUpdateCashDrawer() {
     },
     onSuccess: (data) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["cashDrawers", orgId] });
-      queryClient.invalidateQueries({ queryKey: ["cashDrawers", data.id] });
+      queryClient.invalidateQueries({ queryKey: ['cashDrawers', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['cashDrawers', data.id] });
     },
   });
 }
@@ -161,7 +156,7 @@ export function useDeleteCashDrawer() {
     },
     onSuccess: () => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["cashDrawers", orgId] });
+      queryClient.invalidateQueries({ queryKey: ['cashDrawers', orgId] });
     },
   });
 }

@@ -27,22 +27,21 @@ import {
   ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
-import { usePurchasingStore } from "@/stores/purchasing";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import z from "zod";
+} from '@/components/ui';
+import { usePurchasingStore } from '@/stores/purchasing';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import z from 'zod';
 
-import { formatNumber } from "@/lib/utils/format";
+import { formatNumber } from '@/lib/utils/format';
 export default function PopupAddProduct() {
   const toast = useToast();
-  const { addProduct, cart, setAddProduct, addCartItem, removeCartItem } =
-    usePurchasingStore();
+  const { addProduct, cart, setAddProduct, addCartItem, removeCartItem } = usePurchasingStore();
 
   const addProductSchema = z.object({
-    purchasePrice: z.number().min(1, "Harga beli harus diisi"),
-    quantity: z.number().min(1, "Jumlah harus minimal 1"),
+    purchasePrice: z.number().min(1, 'Harga beli harus diisi'),
+    quantity: z.number().min(1, 'Jumlah harus minimal 1'),
     addNote: z.boolean(),
     note: z.string(),
   });
@@ -53,7 +52,7 @@ export default function PopupAddProduct() {
     purchasePrice: addProduct?.purchasePrice || 0,
     quantity: 1,
     addNote: false,
-    note: "",
+    note: '',
   };
 
   const form = useForm<AddProductFormValues>({
@@ -61,19 +60,17 @@ export default function PopupAddProduct() {
     defaultValues: initialValues,
   });
 
-  const quantity = form.watch("quantity");
-  const isAddNoteChecked = form.watch("addNote");
+  const quantity = form.watch('quantity');
+  const isAddNoteChecked = form.watch('addNote');
 
-  const currentProductInCart = cart.find(
-    (item) => item.product.id === addProduct?.id,
-  );
+  const currentProductInCart = cart.find((item) => item.product.id === addProduct?.id);
 
   useEffect(() => {
     if (form.formState.errors.quantity) {
       toast.show({
-        placement: "top",
+        placement: 'top',
         render: ({ id }) => {
-          const toastId = "toast-" + id;
+          const toastId = 'toast-' + id;
           return (
             <Toast nativeID={toastId} action="error" variant="solid">
               <ToastTitle>{form.formState.errors.quantity?.message}</ToastTitle>
@@ -91,7 +88,7 @@ export default function PopupAddProduct() {
         purchasePrice: addProduct.purchasePrice || 0,
         quantity: currentProductInCart?.quantity || 0,
         addNote: currentProductInCart?.note ? true : false,
-        note: currentProductInCart?.note || "",
+        note: currentProductInCart?.note || '',
       });
     } else {
       form.reset(initialValues);
@@ -99,9 +96,7 @@ export default function PopupAddProduct() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, addProduct]);
 
-  const onSubmit: SubmitHandler<AddProductFormValues> = (
-    data: AddProductFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<AddProductFormValues> = (data: AddProductFormValues) => {
     if (addProduct) {
       addCartItem({
         product: addProduct,
@@ -138,17 +133,12 @@ export default function PopupAddProduct() {
                   </Text>
                 </VStack>
                 <HStack space="sm">
-                  <Heading size="md">
-                    Rp {formatNumber(addProduct?.purchasePrice ?? 0)}
-                  </Heading>
+                  <Heading size="md">Rp {formatNumber(addProduct?.purchasePrice ?? 0)}</Heading>
                 </HStack>
               </HStack>
             </HStack>
             <VStack space="lg" className="px-4">
-              <HStack
-                space="md"
-                className="w-full justify-between items-center"
-              >
+              <HStack space="md" className="w-full justify-between items-center">
                 <Pressable
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                   disabled={quantity <= 0}
@@ -156,7 +146,7 @@ export default function PopupAddProduct() {
                     const currentQuantity = quantity;
 
                     if (currentQuantity && currentQuantity > 0) {
-                      form.setValue("quantity", currentQuantity - 1);
+                      form.setValue('quantity', currentQuantity - 1);
                     }
                   }}
                 >
@@ -167,15 +157,8 @@ export default function PopupAddProduct() {
                 <Controller
                   name="quantity"
                   control={form.control}
-                  render={({
-                    field: { onChange, onBlur, value },
-                    fieldState: { error },
-                  }) => (
-                    <FormControl
-                      isRequired
-                      isInvalid={!!error}
-                      className="w-44 h-full"
-                    >
+                  render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                    <FormControl isRequired isInvalid={!!error} className="w-44 h-full">
                       <Input className="flex-1 border-transparent data-[focus=true]:border-transparent bg-transparent">
                         <InputField
                           value={value.toString()}
@@ -194,7 +177,7 @@ export default function PopupAddProduct() {
                   onPress={() => {
                     const currentQuantity = quantity;
 
-                    form.setValue("quantity", currentQuantity + 1);
+                    form.setValue('quantity', currentQuantity + 1);
                   }}
                 >
                   <Heading size="2xl" className="text-primary-500">
@@ -206,10 +189,7 @@ export default function PopupAddProduct() {
                 <Controller
                   name="purchasePrice"
                   control={form.control}
-                  render={({
-                    field: { onChange, onBlur, value },
-                    fieldState: { error },
-                  }) => (
+                  render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                     <FormControl isRequired isInvalid={!!error}>
                       <FormControlLabel>
                         <FormControlLabelText>Harga Beli</FormControlLabelText>
@@ -227,9 +207,7 @@ export default function PopupAddProduct() {
                       </Input>
                       {error && (
                         <FormControlError>
-                          <FormControlErrorText>
-                            {error.message}
-                          </FormControlErrorText>
+                          <FormControlErrorText>{error.message}</FormControlErrorText>
                         </FormControlError>
                       )}
                     </FormControl>
@@ -238,10 +216,7 @@ export default function PopupAddProduct() {
                 <Controller
                   name="addNote"
                   control={form.control}
-                  render={({
-                    field: { onChange, onBlur, value },
-                    fieldState: { error },
-                  }) => (
+                  render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                     <FormControl isInvalid={!!error}>
                       <Checkbox
                         value={value.toString()}
@@ -249,7 +224,7 @@ export default function PopupAddProduct() {
                         size="md"
                         onChange={(v) => {
                           onChange(v);
-                          if (!v) form.setValue("note", "");
+                          if (!v) form.setValue('note', '');
                         }}
                         onBlur={onBlur}
                       >
@@ -260,9 +235,7 @@ export default function PopupAddProduct() {
                       </Checkbox>
                       {error && (
                         <FormControlError>
-                          <FormControlErrorText>
-                            {error.message}
-                          </FormControlErrorText>
+                          <FormControlErrorText>{error.message}</FormControlErrorText>
                         </FormControlError>
                       )}
                     </FormControl>
@@ -272,10 +245,7 @@ export default function PopupAddProduct() {
                   <Controller
                     name="note"
                     control={form.control}
-                    render={({
-                      field: { onChange, onBlur, value },
-                      fieldState: { error },
-                    }) => (
+                    render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                       <FormControl isInvalid={!!error}>
                         <FormControlLabel>
                           <FormControlLabelText>Catatan</FormControlLabelText>
@@ -291,9 +261,7 @@ export default function PopupAddProduct() {
                         </Textarea>
                         {error && (
                           <FormControlError>
-                            <FormControlErrorText>
-                              {error.message}
-                            </FormControlErrorText>
+                            <FormControlErrorText>{error.message}</FormControlErrorText>
                           </FormControlError>
                         )}
                       </FormControl>
@@ -326,7 +294,7 @@ export default function PopupAddProduct() {
                   className="flex-1 items-center justify-center h-12 px-4 rounded-lg border border-error-500 bg-error-500 active:bg-error-400"
                   onPress={() => {
                     setAddProduct(null);
-                    removeCartItem(addProduct?.id || "");
+                    removeCartItem(addProduct?.id || '');
                   }}
                 >
                   <Text size="lg" className="text-typography-0 font-bold">

@@ -16,25 +16,23 @@ import {
   Spinner,
   Text,
   VStack,
-} from "@/components/ui";
-import SelectModal from "@/components/ui/select/select-modal";
-import { useCashDrawers } from "@/lib/api/cashdrawers";
-import { useCurrentShift, useLastShift, useStartShift } from "@/lib/api/shifts";
-import { useCashDrawerStore } from "@/stores/cashdrawer";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
-import { CheckIcon, PlusIcon } from "lucide-react-native";
-import { useEffect, useState } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { ScrollView } from "react-native";
-import z from "zod";
+} from '@/components/ui';
+import SelectModal from '@/components/ui/select/select-modal';
+import { useCashDrawers } from '@/lib/api/cashdrawers';
+import { useCurrentShift, useLastShift, useStartShift } from '@/lib/api/shifts';
+import { useCashDrawerStore } from '@/stores/cashdrawer';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'expo-router';
+import { CheckIcon, PlusIcon } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { ScrollView } from 'react-native';
+import z from 'zod';
 
 const shiftSchema = z.object({
-  cashdrawerId: z.string().min(1, "Cashdrawer harus dipilih"),
+  cashdrawerId: z.string().min(1, 'Cashdrawer harus dipilih'),
   isUseLastBalance: z.boolean(),
-  initialBalance: z
-    .number()
-    .min(0, "Saldo awal harus lebih besar atau sama dengan 0"),
+  initialBalance: z.number().min(0, 'Saldo awal harus lebih besar atau sama dengan 0'),
   note: z.string().optional(),
 });
 
@@ -46,16 +44,15 @@ export default function CurrentFormShift() {
   const { data: cashDrawers, refetch: refetchCashDrawers } = useCashDrawers();
   const { data: lastShift } = useLastShift(selectedCashDrawerId);
   const { isLoading: isLoadingCurrentShift } = useCurrentShift();
-  const { setOpen: setOpenCashDrawer, setData: setDataCashDrawer } =
-    useCashDrawerStore();
+  const { setOpen: setOpenCashDrawer, setData: setDataCashDrawer } = useCashDrawerStore();
   const startShiftMutation = useStartShift();
   const isLoading = startShiftMutation.isPending || isLoadingCurrentShift;
 
   const initialValues: ShiftFormValues = {
-    cashdrawerId: "",
+    cashdrawerId: '',
     isUseLastBalance: false,
     initialBalance: 0,
-    note: "",
+    note: '',
   };
 
   const form = useForm<ShiftFormValues>({
@@ -63,20 +60,20 @@ export default function CurrentFormShift() {
     defaultValues: initialValues,
   });
 
-  const isUseLastBalance = form.watch("isUseLastBalance");
+  const isUseLastBalance = form.watch('isUseLastBalance');
 
   useEffect(() => {
     if (isUseLastBalance && lastShift?.finalBalance) {
-      form.setValue("initialBalance", lastShift.finalBalance);
+      form.setValue('initialBalance', lastShift.finalBalance);
     } else if (!isUseLastBalance) {
-      form.setValue("initialBalance", 0);
+      form.setValue('initialBalance', 0);
     }
   }, [isUseLastBalance, lastShift, form]);
 
   const onSubmit: SubmitHandler<ShiftFormValues> = async (data) => {
     try {
       if (!data.cashdrawerId) {
-        console.error("No cash drawer selected");
+        console.error('No cash drawer selected');
         return;
       }
 
@@ -86,9 +83,9 @@ export default function CurrentFormShift() {
         note: data.note,
       });
 
-      router.push("/(main)/transaction");
+      router.push('/(main)/transaction');
     } catch (error) {
-      console.error("Error starting shift:", error);
+      console.error('Error starting shift:', error);
     }
   };
 
@@ -136,7 +133,7 @@ export default function CurrentFormShift() {
                     onPress={() => {
                       setDataCashDrawer(null);
                       setOpenCashDrawer(true, (newCashDrawer) => {
-                        form.setValue("cashdrawerId", newCashDrawer.id);
+                        form.setValue('cashdrawerId', newCashDrawer.id);
                         refetchCashDrawers();
                       });
                     }}
@@ -155,10 +152,7 @@ export default function CurrentFormShift() {
           <Controller
             name="isUseLastBalance"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <Checkbox
                   value={value.toString()}
@@ -186,10 +180,7 @@ export default function CurrentFormShift() {
           <Controller
             name="initialBalance"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl
                 isRequired
                 isInvalid={!!error}
@@ -201,7 +192,7 @@ export default function CurrentFormShift() {
                 </FormControlLabel>
                 <Input>
                   <InputField
-                    value={value?.toString() || ""}
+                    value={value?.toString() || ''}
                     onChangeText={(text) => {
                       onChange(Number(text) || 0);
                     }}

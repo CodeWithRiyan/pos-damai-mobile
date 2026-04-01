@@ -1,13 +1,13 @@
-import { HStack, Icon, Pressable, Text, VStack } from "@/components/ui";
-import { useCurrentShift } from "@/lib/api/shifts";
-import { formatRp } from "@/lib/utils/format";
-import dayjs from "dayjs";
-import { useRouter } from "expo-router";
-import { PlusCircle } from "lucide-react-native";
-import { useState } from "react";
-import { ScrollView } from "react-native";
-import CashDepositForm from "./form-cash-deposit";
-import EndShiftForm from "./form-end-shift";
+import { HStack, Icon, Pressable, Text, VStack } from '@/components/ui';
+import { useCurrentShift } from '@/lib/api/shifts';
+import { formatRp } from '@/lib/utils/format';
+import dayjs from 'dayjs';
+import { useRouter } from 'expo-router';
+import { PlusCircle } from 'lucide-react-native';
+import { useState } from 'react';
+import { ScrollView } from 'react-native';
+import CashDepositForm from './form-cash-deposit';
+import EndShiftForm from './form-end-shift';
 
 export default function CurrentShift() {
   const router = useRouter();
@@ -30,7 +30,7 @@ export default function CurrentShift() {
           <HStack className="w-full flex-row justify-between">
             <Text className="text-typography-600">Shift Mulai</Text>
             <Text className="font-bold">
-              {dayjs(currentShift?.startTime).format("DD-MM-YYYY HH:mm:ss")}
+              {dayjs(currentShift?.startTime).format('DD-MM-YYYY HH:mm:ss')}
             </Text>
           </HStack>
         </VStack>
@@ -72,17 +72,11 @@ export default function CurrentShift() {
               <Icon as={PlusCircle} size="md" />
               <Text className="text-typography-600">Saldo Awal</Text>
             </HStack>
-            <Text className="font-bold">
-              {formatRp(currentShift?.initialBalance ?? 0)}
-            </Text>
+            <Text className="font-bold">{formatRp(currentShift?.initialBalance ?? 0)}</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-blue-100">
-            <Text className="text-typography-600 font-bold">
-              Total pendapatan dari sistem
-            </Text>
-            <Text className="font-bold">
-              {formatRp(currentShift?.initialBalance ?? 0)}
-            </Text>
+            <Text className="text-typography-600 font-bold">Total pendapatan dari sistem</Text>
+            <Text className="font-bold">{formatRp(currentShift?.initialBalance ?? 0)}</Text>
           </HStack>
         </VStack>
       </ScrollView>
@@ -90,7 +84,7 @@ export default function CurrentShift() {
         <HStack space="md">
           <Pressable
             className="flex-1 rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
-            onPress={() => router.push("/(main)/transaction")}
+            onPress={() => router.push('/(main)/transaction')}
           >
             <Text size="sm" className="text-typography-0 font-bold">
               MASUK KE MENU TRANSAKSI

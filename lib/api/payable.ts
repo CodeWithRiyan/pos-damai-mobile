@@ -1,10 +1,10 @@
-import { db } from "../db";
-import * as schema from "../db/schema";
-import { and, eq, isNull } from "drizzle-orm";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "@/stores/auth";
-import { Supplier } from "./suppliers";
-import { generateLocalRefId } from "../utils/reference";
+import { db } from '../db';
+import * as schema from '../db/schema';
+import { and, eq, isNull } from 'drizzle-orm';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/stores/auth';
+import { Supplier } from './suppliers';
+import { generateLocalRefId } from '../utils/reference';
 
 export interface PayableRealization {
   id: string;
@@ -73,7 +73,7 @@ export interface UpdatePayableDTO {
 export function usePayableList() {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["payables", "list", orgId],
+    queryKey: ['payables', 'list', orgId],
     queryFn: async () => {
       const allPayables = await db
         .select({
@@ -81,16 +81,8 @@ export function usePayableList() {
           supplier: schema.suppliers,
         })
         .from(schema.payables)
-        .leftJoin(
-          schema.suppliers,
-          eq(schema.payables.supplierId, schema.suppliers.id),
-        )
-        .where(
-          and(
-            eq(schema.payables.organizationId, orgId),
-            isNull(schema.payables.deletedAt),
-          ),
-        );
+        .leftJoin(schema.suppliers, eq(schema.payables.supplierId, schema.suppliers.id))
+        .where(and(eq(schema.payables.organizationId, orgId), isNull(schema.payables.deletedAt)));
 
       const groupedBySupplier: Record<string, PayableBySupplier> = {};
 
@@ -106,15 +98,12 @@ export function usePayableList() {
             ),
           );
 
-        const totalRealization = realizations.reduce(
-          (sum, r) => sum + r.nominal,
-          0,
-        );
+        const totalRealization = realizations.reduce((sum, r) => sum + r.nominal, 0);
 
         if (!groupedBySupplier[payable.supplierId]) {
           groupedBySupplier[payable.supplierId] = {
             supplierId: payable.supplierId,
-            supplierName: supplier?.name || "Unknown",
+            supplierName: supplier?.name || 'Unknown',
             totalPayable: 0,
             totalRealization: 0,
             nearestDueDate: payable.dueDate,
@@ -128,10 +117,7 @@ export function usePayableList() {
         group.totalPayable += payable.nominal;
         group.totalRealization += totalRealization;
 
-        if (
-          payable.dueDate &&
-          (!group.nearestDueDate || payable.dueDate < group.nearestDueDate)
-        ) {
+        if (payable.dueDate && (!group.nearestDueDate || payable.dueDate < group.nearestDueDate)) {
           group.nearestDueDate = payable.dueDate;
         }
       }
@@ -145,7 +131,7 @@ export function usePayableList() {
 export function usePayableBySupplier(supplierId: string) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["payables", "supplier", supplierId, orgId],
+    queryKey: ['payables', 'supplier', supplierId, orgId],
     queryFn: async () => {
       const payablesWithSupplier = await db
         .select({
@@ -153,10 +139,7 @@ export function usePayableBySupplier(supplierId: string) {
           supplier: schema.suppliers,
         })
         .from(schema.payables)
-        .leftJoin(
-          schema.suppliers,
-          eq(schema.payables.supplierId, schema.suppliers.id),
-        )
+        .leftJoin(schema.suppliers, eq(schema.payables.supplierId, schema.suppliers.id))
         .where(
           and(
             eq(schema.payables.supplierId, supplierId),
@@ -178,10 +161,7 @@ export function usePayableBySupplier(supplierId: string) {
               ),
             );
 
-          const totalRealization = realizations.reduce(
-            (sum, r) => sum + r.nominal,
-            0,
-          );
+          const totalRealization = realizations.reduce((sum, r) => sum + r.nominal, 0);
 
           return {
             ...payable,
@@ -200,7 +180,7 @@ export function usePayableBySupplier(supplierId: string) {
 
 export function usePayableDetail(id: string) {
   return useQuery({
-    queryKey: ["payables", "detail", id],
+    queryKey: ['payables', 'detail', id],
     queryFn: async () => {
       const result = await db
         .select({
@@ -208,10 +188,7 @@ export function usePayableDetail(id: string) {
           supplier: schema.suppliers,
         })
         .from(schema.payables)
-        .leftJoin(
-          schema.suppliers,
-          eq(schema.payables.supplierId, schema.suppliers.id),
-        )
+        .leftJoin(schema.suppliers, eq(schema.payables.supplierId, schema.suppliers.id))
         .where(eq(schema.payables.id, id))
         .limit(1);
 
@@ -228,10 +205,7 @@ export function usePayableDetail(id: string) {
           ),
         );
 
-      const totalRealization = realizations.reduce(
-        (sum, r) => sum + r.nominal,
-        0,
-      );
+      const totalRealization = realizations.reduce((sum, r) => sum + r.nominal, 0);
 
       return {
         ...payable,
@@ -254,9 +228,9 @@ export function useCreatePayable() {
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
 
-      let local_ref_id = "";
+      let local_ref_id = '';
       await db.transaction(async (tx) => {
-        local_ref_id = await generateLocalRefId(tx, schema.payables, "PAY");
+        local_ref_id = await generateLocalRefId(tx, schema.payables, 'PAY');
         await tx.insert(schema.payables).values({
           id,
           local_ref_id,
@@ -275,7 +249,7 @@ export function useCreatePayable() {
       return { id, local_ref_id, ...data };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["payables"] });
+      queryClient.invalidateQueries({ queryKey: ['payables'] });
     },
   });
 }
@@ -290,13 +264,9 @@ export function useCreatePayableRealization() {
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
 
-      let local_ref_id = "";
+      let local_ref_id = '';
       await db.transaction(async (tx) => {
-        local_ref_id = await generateLocalRefId(
-          tx,
-          schema.payableRealizations,
-          "PAY",
-        );
+        local_ref_id = await generateLocalRefId(tx, schema.payableRealizations, 'PAY');
         await tx.insert(schema.payableRealizations).values({
           id,
           local_ref_id,
@@ -316,7 +286,7 @@ export function useCreatePayableRealization() {
       return { id, local_ref_id, ...data };
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["payables"] });
+      queryClient.invalidateQueries({ queryKey: ['payables'] });
     },
   });
 }
@@ -336,7 +306,7 @@ export function useDeletePayable() {
         .where(eq(schema.payables.id, id));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["payables"] });
+      queryClient.invalidateQueries({ queryKey: ['payables'] });
     },
   });
 }
@@ -365,7 +335,7 @@ export function useBulkDeletePayableBySupplier() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["payables"] });
+      queryClient.invalidateQueries({ queryKey: ['payables'] });
     },
   });
 }
@@ -383,24 +353,17 @@ export function useUpdatePayable() {
         .update(schema.payables)
         .set({
           ...updateData,
-          dueDate: updateData.dueDate
-            ? new Date(updateData.dueDate)
-            : undefined,
+          dueDate: updateData.dueDate ? new Date(updateData.dueDate) : undefined,
           updatedBy: useAuthStore.getState().profile?.id,
           updatedAt: now,
           _dirty: true,
         })
-        .where(
-          and(
-            eq(schema.payables.id, id),
-            eq(schema.payables.organizationId, orgId),
-          ),
-        );
+        .where(and(eq(schema.payables.id, id), eq(schema.payables.organizationId, orgId)));
 
       return { id, ...updateData };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["payables"] });
+      queryClient.invalidateQueries({ queryKey: ['payables'] });
     },
   });
 }

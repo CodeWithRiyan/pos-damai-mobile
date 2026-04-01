@@ -1,9 +1,9 @@
-import { FinanceType, ShiftStatus } from "@/lib/constants";
-import { useAuthStore } from "@/stores/auth";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { and, desc, eq, gte, isNull, lte } from "drizzle-orm";
-import { db } from "../db";
-import * as schema from "../db/schema";
+import { FinanceType, ShiftStatus } from '@/lib/constants';
+import { useAuthStore } from '@/stores/auth';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { and, desc, eq, gte, isNull, lte } from 'drizzle-orm';
+import { db } from '../db';
+import * as schema from '../db/schema';
 
 export interface Shift {
   id: string;
@@ -33,15 +33,15 @@ export interface ShiftTransactionHistory {
   ref: string | null;
   transactionDate: Date;
   type:
-    | "INITIAL"
-    | "SALES"
-    | "INCOME"
-    | "PURCHASES"
-    | "PAYABLE_REALIZATION"
-    | "SUPPLIES"
-    | "EQUIPMENT"
-    | "CASH_DEPOSIT"
-    | "OTHER_EXPENSES";
+    | 'INITIAL'
+    | 'SALES'
+    | 'INCOME'
+    | 'PURCHASES'
+    | 'PAYABLE_REALIZATION'
+    | 'SUPPLIES'
+    | 'EQUIPMENT'
+    | 'CASH_DEPOSIT'
+    | 'OTHER_EXPENSES';
   nominal: number;
   note: string;
 }
@@ -62,17 +62,12 @@ export interface EndShiftDTO {
 export function useShifts() {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["shifts", orgId],
+    queryKey: ['shifts', orgId],
     queryFn: async () => {
       const shiftsResult = await db
         .select()
         .from(schema.shifts)
-        .where(
-          and(
-            eq(schema.shifts.organizationId, orgId),
-            isNull(schema.shifts.deletedAt),
-          ),
-        )
+        .where(and(eq(schema.shifts.organizationId, orgId), isNull(schema.shifts.deletedAt)))
         .orderBy(desc(schema.shifts.startTime));
 
       // Join with cashdrawer and user names
@@ -92,8 +87,8 @@ export function useShifts() {
 
           return {
             ...shift,
-            cashDrawerName: cashDrawer[0]?.name || "Unknown",
-            userName: user[0]?.name || "Unknown",
+            cashDrawerName: cashDrawer[0]?.name || 'Unknown',
+            userName: user[0]?.name || 'Unknown',
           };
         }),
       );
@@ -108,7 +103,7 @@ export function useShifts() {
 export function useActiveShift(cashDrawerId?: string) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["shifts", "active", cashDrawerId, orgId],
+    queryKey: ['shifts', 'active', cashDrawerId, orgId],
     queryFn: async () => {
       if (!cashDrawerId || !orgId) return null;
 
@@ -144,8 +139,8 @@ export function useActiveShift(cashDrawerId?: string) {
 
       return {
         ...shift,
-        cashDrawerName: cashDrawer[0]?.name || "Unknown",
-        userName: user[0]?.name || "Unknown",
+        cashDrawerName: cashDrawer[0]?.name || 'Unknown',
+        userName: user[0]?.name || 'Unknown',
       } as Shift;
     },
     enabled: !!cashDrawerId && !!orgId,
@@ -156,7 +151,7 @@ export function useActiveShift(cashDrawerId?: string) {
 export function useCurrentShift() {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["shifts", "current", orgId],
+    queryKey: ['shifts', 'current', orgId],
     queryFn: async () => {
       if (!orgId) return null;
 
@@ -191,8 +186,8 @@ export function useCurrentShift() {
 
       return {
         ...shift,
-        cashDrawerName: cashDrawer[0]?.name || "Unknown",
-        userName: user[0]?.name || "Unknown",
+        cashDrawerName: cashDrawer[0]?.name || 'Unknown',
+        userName: user[0]?.name || 'Unknown',
       } as Shift;
     },
     enabled: !!orgId,
@@ -203,7 +198,7 @@ export function useCurrentShift() {
 export function useLastShift(cashDrawerId?: string) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["shifts", "last", cashDrawerId, orgId],
+    queryKey: ['shifts', 'last', cashDrawerId, orgId],
     queryFn: async () => {
       if (!cashDrawerId || !orgId) return null;
 
@@ -239,11 +234,11 @@ export function useStartShift() {
       const userId = useAuthStore.getState().profile?.id;
 
       if (!orgId) {
-        throw new Error("ID Organisasi tidak ditemukan");
+        throw new Error('ID Organisasi tidak ditemukan');
       }
 
       if (!userId) {
-        throw new Error("User tidak ditemukan");
+        throw new Error('User tidak ditemukan');
       }
 
       // Check if there's already an active shift for this cashdrawer
@@ -261,7 +256,7 @@ export function useStartShift() {
 
       if (activeShift.length > 0) {
         throw new Error(
-          "Shift sudah aktif untuk cashdrawer ini. Silakan tutup shift yang aktif terlebih dahulu.",
+          'Shift sudah aktif untuk cashdrawer ini. Silakan tutup shift yang aktif terlebih dahulu.',
         );
       }
 
@@ -296,7 +291,7 @@ export function useStartShift() {
       return { id: shiftId, ...data };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["shifts"] });
+      queryClient.invalidateQueries({ queryKey: ['shifts'] });
     },
   });
 }
@@ -317,7 +312,7 @@ export function useEndShift() {
         .limit(1);
 
       if (shift.length === 0) {
-        throw new Error("Shift tidak ditemukan");
+        throw new Error('Shift tidak ditemukan');
       }
 
       const expectedBalance = shift[0].initialBalance; // You may want to add logic to calculate expected based on transactions
@@ -341,7 +336,7 @@ export function useEndShift() {
       return { ...data };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["shifts"] });
+      queryClient.invalidateQueries({ queryKey: ['shifts'] });
     },
   });
 }
@@ -351,7 +346,7 @@ export function useShiftDetail(id: string) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
 
   return useQuery({
-    queryKey: ["shifts", "detail", id, orgId],
+    queryKey: ['shifts', 'detail', id, orgId],
     queryFn: async () => {
       if (!id || !orgId) return null;
 
@@ -405,9 +400,9 @@ export function useShiftDetail(id: string) {
         transactionId: null,
         ref: null,
         transactionDate: shift.startTime,
-        type: "INITIAL",
+        type: 'INITIAL',
         nominal: shift.initialBalance,
-        note: "Saldo Awal",
+        note: 'Saldo Awal',
       });
 
       // Sales (return-backed transactions already excluded at query level)
@@ -417,7 +412,7 @@ export function useShiftDetail(id: string) {
           transactionId: s.id,
           ref: s.local_ref_id,
           transactionDate: s.transactionDate,
-          type: "SALES",
+          type: 'SALES',
           nominal: s.totalPaid || s.totalAmount,
           note: `Transaksi Penjualan (${s.local_ref_id || s.id})`,
         });
@@ -432,17 +427,15 @@ export function useShiftDetail(id: string) {
           transactionDate: f.transactionDate,
           type:
             f.type === FinanceType.INCOME
-              ? "INCOME"
-              : (f.expensesType as ShiftTransactionHistory["type"]),
+              ? 'INCOME'
+              : (f.expensesType as ShiftTransactionHistory['type']),
           nominal: f.nominal,
-          note: f.note || "",
+          note: f.note || '',
         });
       });
 
       // Sort by date
-      history.sort(
-        (a, b) => a.transactionDate.getTime() - b.transactionDate.getTime(),
-      );
+      history.sort((a, b) => a.transactionDate.getTime() - b.transactionDate.getTime());
 
       // Get Cashier Name
       const user = await db
@@ -460,14 +453,14 @@ export function useShiftDetail(id: string) {
 
       return {
         id: shift.id,
-        note: shift.note || "Aman Terkendali",
+        note: shift.note || 'Aman Terkendali',
         startShift: shift.startTime,
         endShift: shift.endTime,
         initialBalance: shift.initialBalance,
         finalBalance: shift.expectedBalance || 0, // system calculation
         actualBalance: shift.finalBalance || 0, // user input at shift end
-        cashier: user[0]?.name || "Unknown",
-        cashDrawer: cashDrawer[0]?.name || "Unknown",
+        cashier: user[0]?.name || 'Unknown',
+        cashDrawer: cashDrawer[0]?.name || 'Unknown',
         transactionHistory: history,
       };
     },

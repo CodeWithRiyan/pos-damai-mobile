@@ -1,13 +1,9 @@
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
-import { useCategory } from "@/lib/api/categories";
-import { getErrorMessage } from "@/lib/api/client";
-import {
-  ProductListItem,
-  useAssignProductsToCategory,
-  useProducts,
-} from "@/lib/api/products";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import SelectingProductList from "../product/selecting-product";
+import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { useCategory } from '@/lib/api/categories';
+import { getErrorMessage } from '@/lib/api/client';
+import { ProductListItem, useAssignProductsToCategory, useProducts } from '@/lib/api/products';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import SelectingProductList from '../product/selecting-product';
 
 export default function SelectProductInCategory() {
   const router = useRouter();
@@ -22,7 +18,7 @@ export default function SelectProductInCategory() {
   const handleSubmit = (selectedProducts: ProductListItem[]) => {
     if (selectedProducts.length === 0) {
       toast.show({
-        placement: "top",
+        placement: 'top',
         render: ({ id }) => (
           <Toast nativeID={`toast-${id}`} action="warning" variant="solid">
             <ToastTitle>Pilih minimal 1 produk</ToastTitle>
@@ -39,12 +35,10 @@ export default function SelectProductInCategory() {
       {
         onSuccess: () => {
           toast.show({
-            placement: "top",
+            placement: 'top',
             render: ({ id }) => (
               <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>
-                  {`Produk berhasil ditambahkan ke ${data?.name}`}
-                </ToastTitle>
+                <ToastTitle>{`Produk berhasil ditambahkan ke ${data?.name}`}</ToastTitle>
               </Toast>
             ),
           });
@@ -53,7 +47,7 @@ export default function SelectProductInCategory() {
         },
         onError: (error) => {
           toast.show({
-            placement: "top",
+            placement: 'top',
             render: ({ id }) => (
               <Toast nativeID={`toast-${id}`} action="error" variant="solid">
                 <ToastTitle>{getErrorMessage(error)}</ToastTitle>
@@ -68,7 +62,7 @@ export default function SelectProductInCategory() {
   return (
     <SelectingProductList
       usedFor="category"
-      header={`TAMBAH PRODUK KE ${data?.name?.toUpperCase() ?? "KATEGORI"}`}
+      header={`TAMBAH PRODUK KE ${data?.name?.toUpperCase() ?? 'KATEGORI'}`}
       selectedItems={products?.filter((p) => p.categoryId.includes(categoryId))}
       isLoading={isLoading}
       onSubmit={handleSubmit}

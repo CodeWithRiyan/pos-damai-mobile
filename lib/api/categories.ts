@@ -1,8 +1,8 @@
-import { db } from "../db";
-import * as schema from "../db/schema";
-import { and, eq, isNull, ne } from "drizzle-orm";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "@/stores/auth";
+import { db } from '../db';
+import * as schema from '../db/schema';
+import { and, eq, isNull, ne } from 'drizzle-orm';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/stores/auth';
 
 export interface Category {
   id: string;
@@ -34,17 +34,12 @@ export interface UpdateCategoryDTO extends Partial<CreateCategoryDTO> {
 export function useProductCountsByCategory() {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["productCountsByCategory", orgId],
+    queryKey: ['productCountsByCategory', orgId],
     queryFn: async () => {
       const products = await db
         .select({ categoryId: schema.products.categoryId })
         .from(schema.products)
-        .where(
-          and(
-            eq(schema.products.organizationId, orgId),
-            isNull(schema.products.deletedAt),
-          ),
-        );
+        .where(and(eq(schema.products.organizationId, orgId), isNull(schema.products.deletedAt)));
 
       // Count products per category
       const counts: Record<string, number> = {};
@@ -61,7 +56,7 @@ export function useProductCountsByCategory() {
 export function useCapitalValueByCategory() {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["capitalValueByCategory", orgId],
+    queryKey: ['capitalValueByCategory', orgId],
     queryFn: async () => {
       // Get all products with their category
       const products = await db
@@ -71,12 +66,7 @@ export function useCapitalValueByCategory() {
           purchasePrice: schema.products.purchasePrice,
         })
         .from(schema.products)
-        .where(
-          and(
-            eq(schema.products.organizationId, orgId),
-            isNull(schema.products.deletedAt),
-          ),
-        );
+        .where(and(eq(schema.products.organizationId, orgId), isNull(schema.products.deletedAt)));
 
       // Calculate capital value per category
       const values: Record<string, number> = {};
@@ -89,7 +79,7 @@ export function useCapitalValueByCategory() {
           .where(
             and(
               eq(schema.inventoryTransactions.productId, product.id),
-              eq(schema.inventoryTransactions.status, "COMPLETED"),
+              eq(schema.inventoryTransactions.status, 'COMPLETED'),
             ),
           );
 
@@ -108,16 +98,13 @@ export function useCapitalValueByCategory() {
 export function useCategories() {
   const orgId = useAuthStore((state) => state.getOrganizationId());
   return useQuery({
-    queryKey: ["categories", orgId],
+    queryKey: ['categories', orgId],
     queryFn: async () => {
       const result = await db
         .select()
         .from(schema.categories)
         .where(
-          and(
-            eq(schema.categories.organizationId, orgId),
-            isNull(schema.categories.deletedAt),
-          ),
+          and(eq(schema.categories.organizationId, orgId), isNull(schema.categories.deletedAt)),
         );
       return result as Category[];
     },
@@ -128,7 +115,7 @@ export function useCategories() {
 // Get single category
 export function useCategory(id: string) {
   return useQuery({
-    queryKey: ["categories", id],
+    queryKey: ['categories', id],
     queryFn: async () => {
       const result = await db
         .select()
@@ -151,7 +138,7 @@ export function useCreateCategory() {
 
       if (!orgId) {
         throw new Error(
-          "Gagal menambahkan kategori: ID Organisasi tidak ditemukan. Silakan login kembali.",
+          'Gagal menambahkan kategori: ID Organisasi tidak ditemukan. Silakan login kembali.',
         );
       }
 
@@ -199,7 +186,7 @@ export function useCreateCategory() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
-        queryKey: ["categories", data.organizationId],
+        queryKey: ['categories', data.organizationId],
       });
     },
   });
@@ -250,8 +237,8 @@ export function useUpdateCategory() {
     },
     onSuccess: (data) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["categories", orgId] });
-      queryClient.invalidateQueries({ queryKey: ["categories", data.id] });
+      queryClient.invalidateQueries({ queryKey: ['categories', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['categories', data.id] });
     },
   });
 }
@@ -281,7 +268,7 @@ export function useDeleteCategory() {
     },
     onSuccess: () => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["categories", orgId] });
+      queryClient.invalidateQueries({ queryKey: ['categories', orgId] });
     },
   });
 }
@@ -312,7 +299,7 @@ export function useBulkDeleteCategory() {
     },
     onSuccess: () => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["categories", orgId] });
+      queryClient.invalidateQueries({ queryKey: ['categories', orgId] });
     },
   });
 }

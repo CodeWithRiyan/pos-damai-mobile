@@ -1,33 +1,30 @@
-import Header from "@/components/header";
-import { Box, Text, VStack } from "@/components/ui";
-import { Pressable } from "@/components/ui/pressable";
-import {
-  SolarIconLinear,
-  SolarIconLinearProps,
-} from "@/components/ui/solar-icon-wrapper";
-import { Link } from "expo-router";
-import { ScrollView } from "react-native";
+import Header from '@/components/header';
+import { Box, Text, VStack } from '@/components/ui';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconLinear, SolarIconLinearProps } from '@/components/ui/solar-icon-wrapper';
+import { Link } from 'expo-router';
+import { ScrollView } from 'react-native';
 
 export default function ProductCategoryBrandScreen() {
   const menuItems: {
     label: string;
     href: string;
-    icon: SolarIconLinearProps["name"];
+    icon: SolarIconLinearProps['name'];
   }[] = [
     {
-      label: "Produk",
-      href: "/management/product-category-brand/product",
-      icon: "Box",
+      label: 'Produk',
+      href: '/management/product-category-brand/product',
+      icon: 'Box',
     },
     {
-      label: "Kategori",
-      href: "/management/product-category-brand/category",
-      icon: "Widget",
+      label: 'Kategori',
+      href: '/management/product-category-brand/category',
+      icon: 'Widget',
     },
     {
-      label: "Brand",
-      href: "/management/product-category-brand/brand",
-      icon: "Widget",
+      label: 'Brand',
+      href: '/management/product-category-brand/brand',
+      icon: 'Widget',
     },
   ];
 
@@ -40,14 +37,8 @@ export default function ProductCategoryBrandScreen() {
           {menuItems.map((item) => (
             <Link href={item.href as any} key={item.href} asChild>
               <Pressable className="flex-row items-center gap-4 p-4 border-bottom bg--white active:bg-gray-50">
-                <SolarIconLinear
-                  name={item.icon}
-                  size={20}
-                  className="text-gray-700"
-                />
-                <Text className="font-medium text-gray-700 flex-1">
-                  {item.label}
-                </Text>
+                <SolarIconLinear name={item.icon} size={20} className="text-gray-700" />
+                <Text className="font-medium text-gray-700 flex-1">{item.label}</Text>
                 <Text className="text-gray-400 text-lg">›</Text>
               </Pressable>
             </Link>

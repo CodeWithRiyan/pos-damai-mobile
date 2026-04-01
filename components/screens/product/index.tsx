@@ -1,56 +1,53 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
-import { Input, InputField, InputIcon, InputSlot } from "@/components/ui";
-import { Badge, BadgeText } from "@/components/ui/badge";
-import { Box } from "@/components/ui/box";
-import { Button, ButtonText } from "@/components/ui/button";
-import { Heading } from "@/components/ui/heading";
-import { HStack } from "@/components/ui/hstack";
-import { Pressable } from "@/components/ui/pressable";
-import {
-  SolarIconBold,
-  SolarIconLinear,
-} from "@/components/ui/solar-icon-wrapper";
-import { Spinner } from "@/components/ui/spinner";
-import { Text } from "@/components/ui/text";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
-import { getErrorMessage } from "@/lib/api/client";
-import { useCategories } from "@/lib/api/categories";
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
+import { Input, InputField, InputIcon, InputSlot } from '@/components/ui';
+import { Badge, BadgeText } from '@/components/ui/badge';
+import { Box } from '@/components/ui/box';
+import { Button, ButtonText } from '@/components/ui/button';
+import { Heading } from '@/components/ui/heading';
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold, SolarIconLinear } from '@/components/ui/solar-icon-wrapper';
+import { Spinner } from '@/components/ui/spinner';
+import { Text } from '@/components/ui/text';
+import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
+import { getErrorMessage } from '@/lib/api/client';
+import { useCategories } from '@/lib/api/categories';
 import {
   Product,
   ShowByStock,
   useBulkDeleteProduct,
   useCreateProduct,
   useProducts,
-} from "@/lib/api/products";
-import { bulkDeleteConfirm } from "@/lib/utils/delete-confirm";
-import { exportProducts, importProducts } from "@/lib/utils/excel";
-import { useItemSelection } from "@/hooks/use-item-selection";
-import { useBulkDeleteEntity } from "@/hooks/use-bulk-delete-entity";
-import { useFocusEffect, useRouter } from "expo-router";
-import { debounce } from "lodash";
-import { SearchIcon } from "lucide-react-native";
-import React, { useCallback, useMemo, useState } from "react";
-import { FlatList, RefreshControl } from "react-native";
-import ProductFilter from "./filter";
-import ProductNotification from "./notification";
+} from '@/lib/api/products';
+import { bulkDeleteConfirm } from '@/lib/utils/delete-confirm';
+import { exportProducts, importProducts } from '@/lib/utils/excel';
+import { useItemSelection } from '@/hooks/use-item-selection';
+import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { debounce } from 'lodash';
+import { SearchIcon } from 'lucide-react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { FlatList, RefreshControl } from 'react-native';
+import ProductFilter from './filter';
+import ProductNotification from './notification';
 
-import { formatRp, formatNumber } from "@/lib/utils/format";
+import { formatRp, formatNumber } from '@/lib/utils/format';
 export default function ProductList() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
 
   const [openNotification, setOpenNotification] = useState<boolean>(false);
-  const [stockFilter, setStockFilter] = useState<ShowByStock>("ALL_STOCK");
+  const [stockFilter, setStockFilter] = useState<ShowByStock>('ALL_STOCK');
 
   const [openFilter, setOpenFilter] = useState<boolean>(false);
-  const [brandId, setBrandId] = useState<string>("");
-  const [categoryId, setCategoryId] = useState<string>("");
+  const [brandId, setBrandId] = useState<string>('');
+  const [categoryId, setCategoryId] = useState<string>('');
   const activeFilterCount = [brandId, categoryId].filter(Boolean).length;
 
-  const [search, setSearch] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [search, setSearch] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const { data, isLoading, refetch } = useProducts({
     search: searchQuery,
     showByStock: stockFilter,
@@ -58,13 +55,8 @@ export default function ProductList() {
     categoryId,
     forceParent: true,
   });
-  const {
-    selectedItems,
-    handleItemPress,
-    clearSelection,
-    isSelected,
-    hasSelection,
-  } = useItemSelection<Product>();
+  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } =
+    useItemSelection<Product>();
 
   const { data: categoriesData } = useCategories();
   const categories = categoriesData || [];
@@ -102,7 +94,7 @@ export default function ProductList() {
   const toast = useToast();
 
   const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({
-    successMessage: "Produk berhasil dihapus",
+    successMessage: 'Produk berhasil dihapus',
     deleteMutation,
     onSuccess: () => refetch(),
     clearSelection,
@@ -114,7 +106,7 @@ export default function ProductList() {
       await exportProducts(products);
     } catch (e) {
       toast.show({
-        placement: "top",
+        placement: 'top',
         render: ({ id }) => (
           <Toast nativeID={`toast-${id}`} action="error" variant="solid">
             <ToastTitle>{getErrorMessage(e)}</ToastTitle>
@@ -127,9 +119,7 @@ export default function ProductList() {
   const handleImport = async () => {
     hideActionDrawer();
     try {
-      const dtos = await importProducts(
-        categories.map((c) => ({ id: c.id, name: c.name })),
-      );
+      const dtos = await importProducts(categories.map((c) => ({ id: c.id, name: c.name })));
       if (!dtos) return;
       let successCount = 0;
       for (const dto of dtos) {
@@ -140,7 +130,7 @@ export default function ProductList() {
       }
       refetch();
       toast.show({
-        placement: "top",
+        placement: 'top',
         render: ({ id }) => (
           <Toast nativeID={`toast-${id}`} action="success" variant="solid">
             <ToastTitle>{`${successCount} produk berhasil diimpor`}</ToastTitle>
@@ -149,7 +139,7 @@ export default function ProductList() {
       });
     } catch (e) {
       toast.show({
-        placement: "top",
+        placement: 'top',
         render: ({ id }) => (
           <Toast nativeID={`toast-${id}`} action="error" variant="solid">
             <ToastTitle>{getErrorMessage(e)}</ToastTitle>
@@ -161,7 +151,7 @@ export default function ProductList() {
 
   const handleAdd = () => {
     clearSelection();
-    router.push("/(main)/management/product-category-brand/product/add");
+    router.push('/(main)/management/product-category-brand/product/add');
   };
 
   const PopUp = () => {
@@ -176,9 +166,9 @@ export default function ProductList() {
         <ProductFilter
           open={openFilter}
           setOpen={setOpenFilter}
-          brandId={brandId || ""}
+          brandId={brandId || ''}
           setBrandId={setBrandId}
-          categoryId={categoryId || ""}
+          categoryId={categoryId || ''}
           setCategoryId={setCategoryId}
         />
       </>
@@ -207,9 +197,7 @@ export default function ProductList() {
             ) : (
               <Pressable
                 className="p-6"
-                onPress={() =>
-                  triggerBulkDelete(bulkDeleteConfirm("produk", selectedItems))
-                }
+                onPress={() => triggerBulkDelete(bulkDeleteConfirm('produk', selectedItems))}
               >
                 <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
               </Pressable>
@@ -221,13 +209,13 @@ export default function ProductList() {
                 showActionDrawer({
                   actions: [
                     {
-                      label: "Export Data",
-                      icon: "Export",
+                      label: 'Export Data',
+                      icon: 'Export',
                       onPress: handleExport,
                     },
                     {
-                      label: "Import Data",
-                      icon: "Import",
+                      label: 'Import Data',
+                      icon: 'Import',
                       onPress: handleImport,
                     },
                   ],
@@ -238,7 +226,7 @@ export default function ProductList() {
                 name="MenuDots"
                 size={20}
                 color="#FDFBF9"
-                style={{ transform: [{ rotate: "90deg" }] }}
+                style={{ transform: [{ rotate: '90deg' }] }}
               />
             </Pressable>
           )
@@ -246,10 +234,7 @@ export default function ProductList() {
       />
       <Box className="flex-1 bg-white">
         <VStack className="flex-1">
-          <HStack
-            space="sm"
-            className="p-4 shadow-lg bg-background-0 items-center"
-          >
+          <HStack space="sm" className="p-4 shadow-lg bg-background-0 items-center">
             <Pressable
               className="size-10 items-center justify-center"
               onPress={() => setOpenNotification(true)}
@@ -284,13 +269,11 @@ export default function ProductList() {
             data={products}
             className="flex-1"
             keyExtractor={(product) => product.id}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             renderItem={({ item: product }) => (
               <Pressable
                 className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                  isSelected(product) ? "bg-gray-100" : ""
+                  isSelected(product) ? 'bg-gray-100' : ''
                 }`}
                 onPress={() => {
                   if (hasSelection) {
@@ -328,29 +311,23 @@ export default function ProductList() {
                       Stok: {product.stock ?? 0}
                     </Text>
                     <Text className="text-xs">
-                      Retail:{" "}
+                      Retail:{' '}
                       {`${
-                        product.sellPrices?.filter(
-                          (r) => r.type === "RETAIL",
-                        )?.[0]?.minimumPurchase ?? 0
+                        product.sellPrices?.filter((r) => r.type === 'RETAIL')?.[0]
+                          ?.minimumPurchase ?? 0
                       }@ Rp ${formatNumber(
-                        product.sellPrices?.filter(
-                          (r) => r.type === "RETAIL",
-                        )?.[0]?.price ?? 0,
+                        product.sellPrices?.filter((r) => r.type === 'RETAIL')?.[0]?.price ?? 0,
                       )}`}
                     </Text>
-                    {!!product.sellPrices?.filter((r) => r.type === "WHOLESALE")
-                      .length && (
+                    {!!product.sellPrices?.filter((r) => r.type === 'WHOLESALE').length && (
                       <Text className="text-xs">
-                        Grosir:{" "}
+                        Grosir:{' '}
                         {`${
-                          product.sellPrices?.filter(
-                            (r) => r.type === "WHOLESALE",
-                          )?.[0]?.minimumPurchase ?? 0
+                          product.sellPrices?.filter((r) => r.type === 'WHOLESALE')?.[0]
+                            ?.minimumPurchase ?? 0
                         }@ Rp ${formatNumber(
-                          product.sellPrices?.filter(
-                            (r) => r.type === "WHOLESALE",
-                          )?.[0]?.price ?? 0,
+                          product.sellPrices?.filter((r) => r.type === 'WHOLESALE')?.[0]?.price ??
+                            0,
                         )}`}
                       </Text>
                     )}

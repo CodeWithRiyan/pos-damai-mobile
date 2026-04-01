@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "./client";
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from './client';
 
 export interface SupplierPurchaseReturnSummary {
   supplierId: string;
@@ -20,7 +20,7 @@ export interface SupplierPurchaseReturnDetail {
 
 export function useSupplierPurchaseReturnsSummary() {
   return useQuery({
-    queryKey: ["supplier-purchase-returns-summary"],
+    queryKey: ['supplier-purchase-returns-summary'],
     queryFn: async () => {
       const response = await apiClient.get<SupplierPurchaseReturnSummary[]>(
         `/suppliers/purchase-returns/summary`,
@@ -32,7 +32,7 @@ export function useSupplierPurchaseReturnsSummary() {
 
 export function useSupplierPurchaseReturns(supplierId: string) {
   return useQuery({
-    queryKey: ["supplier-purchase-returns", supplierId],
+    queryKey: ['supplier-purchase-returns', supplierId],
     queryFn: async () => {
       const response = await apiClient.get<SupplierPurchaseReturnDetail[]>(
         `/suppliers/${supplierId}/purchase-returns`,

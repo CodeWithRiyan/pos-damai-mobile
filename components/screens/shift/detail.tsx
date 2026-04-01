@@ -1,18 +1,18 @@
-import Header from "@/components/header";
-import { HStack, Icon, Pressable, Text, VStack } from "@/components/ui";
-import { useShiftDetail } from "@/lib/api/shifts";
-import dayjs from "dayjs";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { PlusCircle } from "lucide-react-native";
-import { useMemo } from "react";
-import { ScrollView } from "react-native";
+import Header from '@/components/header';
+import { HStack, Icon, Pressable, Text, VStack } from '@/components/ui';
+import { useShiftDetail } from '@/lib/api/shifts';
+import dayjs from 'dayjs';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { PlusCircle } from 'lucide-react-native';
+import { useMemo } from 'react';
+import { ScrollView } from 'react-native';
 
-import { formatRp } from "@/lib/utils/format";
+import { formatRp } from '@/lib/utils/format';
 export default function ShiftDetail() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const id = params.id as string;
-  const { data: detailShift } = useShiftDetail(id || "");
+  const { data: detailShift } = useShiftDetail(id || '');
   const totals = useMemo(() => {
     if (!detailShift?.transactionHistory)
       return {
@@ -29,29 +29,23 @@ export default function ShiftDetail() {
 
     return detailShift.transactionHistory.reduce(
       (acc, trx) => {
-        if (trx.type === "INITIAL") return acc;
+        if (trx.type === 'INITIAL') return acc;
 
-        if (trx.type === "SALES") {
+        if (trx.type === 'SALES') {
           acc.sales += trx.nominal;
-        } else if (trx.type === "INCOME") {
+        } else if (trx.type === 'INCOME') {
           acc.income += trx.nominal;
-        } else if (trx.type === "PAYABLE_REALIZATION") {
+        } else if (trx.type === 'PAYABLE_REALIZATION') {
           acc.payableRealization += trx.nominal;
-        } else if (trx.type === "SUPPLIES") {
+        } else if (trx.type === 'SUPPLIES') {
           acc.supplies += trx.nominal;
-        } else if (
-          trx.type === "EQUIPMENT" &&
-          trx.note.includes("Perlengkapan:")
-        ) {
+        } else if (trx.type === 'EQUIPMENT' && trx.note.includes('Perlengkapan:')) {
           acc.equipment1 += trx.nominal;
-        } else if (
-          trx.type === "EQUIPMENT" &&
-          trx.note.includes("Peralatan:")
-        ) {
+        } else if (trx.type === 'EQUIPMENT' && trx.note.includes('Peralatan:')) {
           acc.equipment2 += trx.nominal;
-        } else if (trx.type === "CASH_DEPOSIT") {
+        } else if (trx.type === 'CASH_DEPOSIT') {
           acc.cashDeposit += trx.nominal;
-        } else if (trx.type === "OTHER_EXPENSES") {
+        } else if (trx.type === 'OTHER_EXPENSES') {
           acc.otherExpenses += trx.nominal;
         }
 
@@ -96,7 +90,7 @@ export default function ShiftDetail() {
           <HStack className="w-full flex-row justify-between">
             <Text className="text-typography-600">Shift Mulai</Text>
             <Text className="font-bold">
-              {dayjs(detailShift?.startShift).format("DD-MM-YYYY HH:mm:ss")}
+              {dayjs(detailShift?.startShift).format('DD-MM-YYYY HH:mm:ss')}
             </Text>
           </HStack>
         </VStack>
@@ -122,41 +116,31 @@ export default function ShiftDetail() {
           {!!totals.supplies && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Beli Barang</Text>
-              <Text className="font-bold text-error-500">
-                {formatRp(totals.supplies)}
-              </Text>
+              <Text className="font-bold text-error-500">{formatRp(totals.supplies)}</Text>
             </HStack>
           )}
           {!!totals.equipment1 && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Perlengkapan</Text>
-              <Text className="font-bold text-error-500">
-                {formatRp(totals.equipment1)}
-              </Text>
+              <Text className="font-bold text-error-500">{formatRp(totals.equipment1)}</Text>
             </HStack>
           )}
           {!!totals.equipment2 && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Peralatan</Text>
-              <Text className="font-bold text-error-500">
-                {formatRp(totals.equipment2)}
-              </Text>
+              <Text className="font-bold text-error-500">{formatRp(totals.equipment2)}</Text>
             </HStack>
           )}
           {!!totals.cashDeposit && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Setor Tunai</Text>
-              <Text className="font-bold text-error-500">
-                {formatRp(totals.cashDeposit)}
-              </Text>
+              <Text className="font-bold text-error-500">{formatRp(totals.cashDeposit)}</Text>
             </HStack>
           )}
           {!!totals.otherExpenses && (
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-600">Pengeluaran Lainnya</Text>
-              <Text className="font-bold text-error-500">
-                {formatRp(totals.otherExpenses)}
-              </Text>
+              <Text className="font-bold text-error-500">{formatRp(totals.otherExpenses)}</Text>
             </HStack>
           )}
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-background-100">
@@ -168,23 +152,15 @@ export default function ShiftDetail() {
               <Icon as={PlusCircle} size="md" />
               <Text className="text-typography-600">Saldo Awal</Text>
             </HStack>
-            <Text className="font-bold">
-              {formatRp(detailShift?.initialBalance ?? 0)}
-            </Text>
+            <Text className="font-bold">{formatRp(detailShift?.initialBalance ?? 0)}</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-success-100">
-            <Text className="text-typography-600 font-bold">
-              Penerimaan Sistem
-            </Text>
+            <Text className="text-typography-600 font-bold">Penerimaan Sistem</Text>
             <Text className="font-bold">{formatRp(totals.finalBalance)}</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-warning-100">
-            <Text className="text-typography-600 font-bold">
-              Penerimaan Aktual
-            </Text>
-            <Text className="font-bold">
-              {formatRp(detailShift?.actualBalance || 0)}
-            </Text>
+            <Text className="text-typography-600 font-bold">Penerimaan Aktual</Text>
+            <Text className="font-bold">{formatRp(detailShift?.actualBalance || 0)}</Text>
           </HStack>
         </VStack>
         <VStack space="sm" className="p-4">

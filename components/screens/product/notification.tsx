@@ -14,10 +14,10 @@ import {
   RadioGroup,
   Text,
   VStack,
-} from "@/components/ui";
-import { ShowByStock, useProducts } from "@/lib/api/products";
-import classNames from "classnames";
-import { ChevronRight } from "lucide-react-native";
+} from '@/components/ui';
+import { ShowByStock, useProducts } from '@/lib/api/products';
+import classNames from 'classnames';
+import { ChevronRight } from 'lucide-react-native';
 
 export default function ProductNotification({
   value,
@@ -32,8 +32,7 @@ export default function ProductNotification({
 }) {
   const { data } = useProducts();
   const noStockLength = data?.filter((d) => d.stock === 0).length || 0;
-  const lowStockLength =
-    data?.filter((d) => d.stock <= d.minimumStock && d.stock > 0).length || 0;
+  const lowStockLength = data?.filter((d) => d.stock <= d.minimumStock && d.stock > 0).length || 0;
   const allStockLength = data?.length || 0;
 
   return (
@@ -67,16 +66,15 @@ export default function ProductNotification({
                 isInvalid={false}
                 isDisabled={noStockLength === 0}
                 className={classNames(
-                  "p-4 border bg-background-100 border-background-300 rounded-full flex flex-1 items-center justify-center",
-                  value === "NO_STOCK" &&
-                    "bg-primary-200 text-primary-500 border-primary-500",
-                  noStockLength === 0 && "pointer-events-none opacity-50",
+                  'p-4 border bg-background-100 border-background-300 rounded-full flex flex-1 items-center justify-center',
+                  value === 'NO_STOCK' && 'bg-primary-200 text-primary-500 border-primary-500',
+                  noStockLength === 0 && 'pointer-events-none opacity-50',
                 )}
               >
                 <Box
                   className={classNames(
-                    "size-4 rounded-full bg-background-300",
-                    noStockLength > 0 && " bg-error-500",
+                    'size-4 rounded-full bg-background-300',
+                    noStockLength > 0 && ' bg-error-500',
                   )}
                 />
                 <Text className="flex-1 font-bold">{`Stok Habis : ${noStockLength} Barang`}</Text>
@@ -88,16 +86,15 @@ export default function ProductNotification({
                 isInvalid={false}
                 isDisabled={lowStockLength === 0}
                 className={classNames(
-                  "p-4 border bg-background-100 border-background-300 rounded-full flex flex-1 items-center justify-center",
-                  value === "LOW_STOCK" &&
-                    "bg-primary-200 text-primary-500 border-primary-500",
-                  lowStockLength === 0 && "pointer-events-none opacity-50",
+                  'p-4 border bg-background-100 border-background-300 rounded-full flex flex-1 items-center justify-center',
+                  value === 'LOW_STOCK' && 'bg-primary-200 text-primary-500 border-primary-500',
+                  lowStockLength === 0 && 'pointer-events-none opacity-50',
                 )}
               >
                 <Box
                   className={classNames(
-                    "size-4 rounded-full bg-background-300",
-                    lowStockLength > 0 && " bg-warning-500",
+                    'size-4 rounded-full bg-background-300',
+                    lowStockLength > 0 && ' bg-warning-500',
                   )}
                 />
                 <Text className="flex-1 font-bold">
@@ -111,9 +108,8 @@ export default function ProductNotification({
                 isInvalid={false}
                 isDisabled={false}
                 className={classNames(
-                  "p-4 border bg-background-100 border-background-300 rounded-full flex flex-1 items-center justify-center",
-                  value === "ALL_STOCK" &&
-                    "bg-primary-200 text-primary-500 border-primary-500",
+                  'p-4 border bg-background-100 border-background-300 rounded-full flex flex-1 items-center justify-center',
+                  value === 'ALL_STOCK' && 'bg-primary-200 text-primary-500 border-primary-500',
                 )}
               >
                 <Box className="size-4 bg-primary-500 rounded-full" />

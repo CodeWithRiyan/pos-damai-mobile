@@ -1,18 +1,12 @@
-import {
-  DateFilterType,
-  InventoryTxType,
-  PriceType,
-  ProductType,
-  Status,
-} from "@/lib/constants";
-import { useAuthStore } from "@/stores/auth";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { and, desc, eq, isNull, like } from "drizzle-orm";
-import { db } from "../db";
-import * as schema from "../db/schema";
-import { getDiscountedPrice, isDiscountActive } from "../price";
-import { formatDisplayRefId, generateLocalRefId } from "../utils/reference";
-import { Product } from "./products";
+import { DateFilterType, InventoryTxType, PriceType, ProductType, Status } from '@/lib/constants';
+import { useAuthStore } from '@/stores/auth';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { and, desc, eq, isNull, like } from 'drizzle-orm';
+import { db } from '../db';
+import * as schema from '../db/schema';
+import { getDiscountedPrice, isDiscountActive } from '../price';
+import { formatDisplayRefId, generateLocalRefId } from '../utils/reference';
+import { Product } from './products';
 
 export interface Transaction {
   id: string;
@@ -45,7 +39,7 @@ export interface TransactionItem {
   transactionId: string;
   productId: string;
   productName?: string;
-  productType?: Product["type"];
+  productType?: Product['type'];
   variantId?: string | null;
   variantName?: string;
   quantity: number;
@@ -73,7 +67,7 @@ export interface CreateTransactionDTO {
       id: string;
       discount?: {
         nominal: number;
-        type: "FLAT" | "PERCENTAGE";
+        type: 'FLAT' | 'PERCENTAGE';
         startDate: Date;
         endDate: Date;
       };
@@ -90,7 +84,7 @@ export interface TransactionFilterParams {
   customerId?: string;
   userId?: string;
   paymentTypeIds?: string[];
-  dateType?: "TODAY" | "THIS_WEEK" | "THIS_MONTH" | "THIS_YEAR" | "CUSTOM";
+  dateType?: 'TODAY' | 'THIS_WEEK' | 'THIS_MONTH' | 'THIS_YEAR' | 'CUSTOM';
   startDate?: Date;
   endDate?: Date;
   showReturnData?: boolean;
@@ -118,7 +112,7 @@ export function useTransactions(params?: TransactionFilterParams) {
   }
 
   return useQuery({
-    queryKey: ["transactions", orgId, params],
+    queryKey: ['transactions', orgId, params],
     queryFn: async () => {
       let transactionResult = await db
         .select()
@@ -133,44 +127,16 @@ export function useTransactions(params?: TransactionFilterParams) {
         let filterEnd: Date | undefined;
 
         if (params.dateType === DateFilterType.TODAY) {
-          filterStart = new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate(),
-          );
-          filterEnd = new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate(),
-            23,
-            59,
-            59,
-            999,
-          );
+          filterStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          filterEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
         } else if (params.dateType === DateFilterType.THIS_WEEK) {
           const day = now.getDay();
           const diff = now.getDate() - day + (day === 0 ? -6 : 1);
           filterStart = new Date(now.getFullYear(), now.getMonth(), diff);
-          filterEnd = new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            diff + 6,
-            23,
-            59,
-            59,
-            999,
-          );
+          filterEnd = new Date(now.getFullYear(), now.getMonth(), diff + 6, 23, 59, 59, 999);
         } else if (params.dateType === DateFilterType.THIS_MONTH) {
           filterStart = new Date(now.getFullYear(), now.getMonth(), 1);
-          filterEnd = new Date(
-            now.getFullYear(),
-            now.getMonth() + 1,
-            0,
-            23,
-            59,
-            59,
-            999,
-          );
+          filterEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
         } else if (params.dateType === DateFilterType.THIS_YEAR) {
           filterStart = new Date(now.getFullYear(), 0, 1);
           filterEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
@@ -213,14 +179,14 @@ export function useTransactions(params?: TransactionFilterParams) {
       // Join with customer, employee, and payment type names
       const transactionsWithDetails = await Promise.all(
         transactionResult.map(async (transaction) => {
-          let customerName = "Walk-in Customer";
+          let customerName = 'Walk-in Customer';
           if (transaction.customerId) {
             const customer = await db
               .select({ name: schema.customers.name })
               .from(schema.customers)
               .where(eq(schema.customers.id, transaction.customerId))
               .limit(1);
-            customerName = customer[0]?.name || "Unknown";
+            customerName = customer[0]?.name || 'Unknown';
           }
 
           let employeeName: string | undefined;
@@ -231,9 +197,7 @@ export function useTransactions(params?: TransactionFilterParams) {
               .where(eq(schema.users.id, transaction.employeeId))
               .limit(1);
             employeeName = employee[0]?.name;
-            customerName = employeeName
-              ? `Karyawan: ${employeeName}`
-              : "Karyawan";
+            customerName = employeeName ? `Karyawan: ${employeeName}` : 'Karyawan';
           }
 
           const paymentType = await db
@@ -246,7 +210,7 @@ export function useTransactions(params?: TransactionFilterParams) {
             ...transaction,
             customerName,
             employeeName,
-            paymentTypeName: paymentType[0]?.name || "Unknown",
+            paymentTypeName: paymentType[0]?.name || 'Unknown',
           };
         }),
       );
@@ -256,9 +220,8 @@ export function useTransactions(params?: TransactionFilterParams) {
         const term = params.search.toLowerCase();
         return (transactionsWithDetails as Transaction[]).filter(
           (t) =>
-            (formatDisplayRefId(t.local_ref_id) || t.id)
-              .toLowerCase()
-              .includes(term) || t.customerName?.toLowerCase().includes(term),
+            (formatDisplayRefId(t.local_ref_id) || t.id).toLowerCase().includes(term) ||
+            t.customerName?.toLowerCase().includes(term),
         );
       }
 
@@ -273,9 +236,9 @@ export function useCustomerIdsWithTransactions() {
   const orgId = useAuthStore((state) => state.getOrganizationId());
 
   return useQuery({
-    queryKey: ["customer-ids-with-transactions", orgId],
+    queryKey: ['customer-ids-with-transactions', orgId],
     queryFn: async () => {
-      console.log("orgId in useCustomerIdsWithTransactions:", orgId);
+      console.log('orgId in useCustomerIdsWithTransactions:', orgId);
       if (!orgId) return [];
 
       const rows = await db
@@ -289,13 +252,11 @@ export function useCustomerIdsWithTransactions() {
           ),
         );
 
-      console.log("data: ", rows);
+      console.log('data: ', rows);
 
-      const returnData = rows
-        .map((r) => r.customerId)
-        .filter((id): id is string => id !== null);
+      const returnData = rows.map((r) => r.customerId).filter((id): id is string => id !== null);
 
-      console.log("Fetched customer IDs with transactions:", returnData);
+      console.log('Fetched customer IDs with transactions:', returnData);
       return returnData;
     },
     enabled: !!orgId,
@@ -307,7 +268,7 @@ export function usePurchasedProducts(customerId: string) {
   const orgId = useAuthStore((state) => state.getOrganizationId());
 
   return useQuery({
-    queryKey: ["purchased-products", orgId, customerId],
+    queryKey: ['purchased-products', orgId, customerId],
     queryFn: async () => {
       if (!customerId || !orgId) return [];
 
@@ -345,9 +306,7 @@ export function usePurchasedProducts(customerId: string) {
       }
 
       // Use a set to get unique product IDs
-      const productIds = Array.from(
-        new Set(purchasedItems.map((item) => item.productId)),
-      );
+      const productIds = Array.from(new Set(purchasedItems.map((item) => item.productId)));
 
       // 2. Fetch full product details for these IDs
       // We'll reuse the logic from useProducts but filtered by IDs
@@ -357,10 +316,7 @@ export function usePurchasedProducts(customerId: string) {
           discount: schema.discounts,
         })
         .from(schema.products)
-        .leftJoin(
-          schema.discounts,
-          eq(schema.products.discountId, schema.discounts.id),
-        )
+        .leftJoin(schema.discounts, eq(schema.products.discountId, schema.discounts.id))
         .where(
           and(
             eq(schema.products.organizationId, orgId),
@@ -372,9 +328,7 @@ export function usePurchasedProducts(customerId: string) {
         );
 
       // Filter in memory for simplicity and to match the schema
-      const filteredResult = productResult.filter((r) =>
-        productIds.includes(r.product.id),
-      );
+      const filteredResult = productResult.filter((r) => productIds.includes(r.product.id));
 
       const productsWithDetails = await Promise.all(
         filteredResult.map(async ({ product, discount }) => {
@@ -404,10 +358,7 @@ export function usePurchasedProducts(customerId: string) {
               ),
             );
 
-          const totalStock = transactions.reduce(
-            (sum, tx) => sum + tx.quantity,
-            0,
-          );
+          const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
 
           return {
             ...product,
@@ -415,15 +366,12 @@ export function usePurchasedProducts(customerId: string) {
             minimumStock: product.minimumStock ?? 0,
             isActive: !!product.isActive,
             isFavorite: !!product.isFavorite,
-            type: (product.type || ProductType.DEFAULT) as
-              | "DEFAULT"
-              | "MULTIUNIT"
-              | "VARIANTS",
+            type: (product.type || ProductType.DEFAULT) as 'DEFAULT' | 'MULTIUNIT' | 'VARIANTS',
             code: product.barcode,
             sellPrices: prices.map((p) => ({
               ...p,
               minimumPurchase: p.minimumPurchase ?? 0,
-              type: p.type as "RETAIL" | "WHOLESALE",
+              type: p.type as 'RETAIL' | 'WHOLESALE',
             })),
             variants: variants,
             stock: totalStock,
@@ -433,7 +381,7 @@ export function usePurchasedProducts(customerId: string) {
                   id: discount.id,
                   name: discount.name,
                   nominal: discount.nominal,
-                  type: discount.type as "FLAT" | "PERCENTAGE",
+                  type: discount.type as 'FLAT' | 'PERCENTAGE',
                   startDate: discount.startDate,
                   endDate: discount.endDate,
                 }
@@ -459,9 +407,7 @@ export async function fetchTransaction(
     .select()
     .from(schema.transactions)
     .where(
-      options?.useReturnId
-        ? eq(schema.transactions.returnId, id)
-        : eq(schema.transactions.id, id),
+      options?.useReturnId ? eq(schema.transactions.returnId, id) : eq(schema.transactions.id, id),
     )
     .limit(1);
 
@@ -470,14 +416,14 @@ export async function fetchTransaction(
   const transaction = transactionResult[0];
 
   // Get customer name
-  let customerName = "Walk-in Customer";
+  let customerName = 'Walk-in Customer';
   if (transaction.customerId) {
     const customer = await db
       .select({ name: schema.customers.name })
       .from(schema.customers)
       .where(eq(schema.customers.id, transaction.customerId))
       .limit(1);
-    customerName = customer[0]?.name || "Unknown";
+    customerName = customer[0]?.name || 'Unknown';
   }
 
   // Get employee name
@@ -489,7 +435,7 @@ export async function fetchTransaction(
       .where(eq(schema.users.id, transaction.employeeId))
       .limit(1);
     employeeName = employee[0]?.name;
-    customerName = employeeName ? `Karyawan: ${employeeName}` : "Karyawan";
+    customerName = employeeName ? `Karyawan: ${employeeName}` : 'Karyawan';
   }
 
   // Get payment type name
@@ -526,9 +472,8 @@ export async function fetchTransaction(
 
       return {
         ...item,
-        productName: product[0]?.name || "Unknown",
-        productType: (product[0]?.type ||
-          ProductType.DEFAULT) as Product["type"],
+        productName: product[0]?.name || 'Unknown',
+        productType: (product[0]?.type || ProductType.DEFAULT) as Product['type'],
         variantName,
         discountAmount: item.discountAmount ?? 0,
         purchasePrice: item.purchasePrice ?? 0,
@@ -541,18 +486,15 @@ export async function fetchTransaction(
     ...transaction,
     customerName,
     employeeName,
-    paymentTypeName: paymentType[0]?.name || "Unknown",
+    paymentTypeName: paymentType[0]?.name || 'Unknown',
     items: itemsWithProductNames,
   } as Transaction;
 }
 
 // Get single transaction with items
-export function useTransaction(
-  id: string,
-  options?: { useReturnId?: boolean },
-) {
+export function useTransaction(id: string, options?: { useReturnId?: boolean }) {
   return useQuery({
-    queryKey: ["transactions", options?.useReturnId ? "returnId" : "id", id],
+    queryKey: ['transactions', options?.useReturnId ? 'returnId' : 'id', id],
     queryFn: () => fetchTransaction(id, options),
     enabled: !!id,
   });
@@ -566,22 +508,17 @@ export function useCreateTransaction() {
     mutationFn: async (data: CreateTransactionDTO) => {
       const orgId = useAuthStore.getState().getOrganizationId();
       if (!orgId) {
-        throw new Error("ID Organisasi tidak ditemukan");
+        throw new Error('ID Organisasi tidak ditemukan');
       }
 
       const transactionId =
-        data.id ||
-        `trans_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        data.id || `trans_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
 
       await db.transaction(async (tx) => {
-        const localRefId = await generateLocalRefId(
-          tx,
-          schema.transactions,
-          "TRX",
-        );
+        const localRefId = await generateLocalRefId(tx, schema.transactions, 'TRX');
 
         // 1. Create/Update Transaction record
         const transactionValues = {
@@ -633,10 +570,7 @@ export function useCreateTransaction() {
             .where(
               and(
                 eq(schema.inventoryTransactions.organizationId, orgId),
-                like(
-                  schema.inventoryTransactions.local_ref_id,
-                  `${finalRefId}_%`,
-                ),
+                like(schema.inventoryTransactions.local_ref_id, `${finalRefId}_%`),
               ),
             );
         } else {
@@ -664,15 +598,10 @@ export function useCreateTransaction() {
             .limit(1);
 
           const statusCompleted =
-            data.status === Status.COMPLETED &&
-            existing[0]?.status === Status.DRAFT;
+            data.status === Status.COMPLETED && existing[0]?.status === Status.DRAFT;
 
           if (statusCompleted) {
-            const newRefId = await generateLocalRefId(
-              tx,
-              schema.transactions,
-              "TRX",
-            );
+            const newRefId = await generateLocalRefId(tx, schema.transactions, 'TRX');
 
             await tx
               .update(schema.transactions)
@@ -771,7 +700,7 @@ export function useCreateTransaction() {
             const invTxId = `inv_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             await tx.insert(schema.inventoryTransactions).values({
               id: invTxId,
-              local_ref_id: `${finalLocalRefId}_${item.product.id}_${item.variant?.id || "base"}`,
+              local_ref_id: `${finalLocalRefId}_${item.product.id}_${item.variant?.id || 'base'}`,
               productId: item.product.id,
               variantId: item.variant?.id || null,
               type: InventoryTxType.SALE,
@@ -803,10 +732,7 @@ export function useCreateTransaction() {
               .from(schema.transactions)
               .where(eq(schema.transactions.id, data.id))
               .limit(1);
-            if (
-              existingTx.length > 0 &&
-              existingTx[0].status === Status.COMPLETED
-            ) {
+            if (existingTx.length > 0 && existingTx[0].status === Status.COMPLETED) {
               isNewOrDraft = false;
             }
           }
@@ -831,10 +757,7 @@ export function useCreateTransaction() {
                     purchasePrice: schema.products.purchasePrice,
                   })
                   .from(schema.products)
-                  .leftJoin(
-                    schema.categories,
-                    eq(schema.products.categoryId, schema.categories.id),
-                  )
+                  .leftJoin(schema.categories, eq(schema.products.categoryId, schema.categories.id))
                   .where(eq(schema.products.id, item.product.id))
                   .limit(1);
 
@@ -843,18 +766,14 @@ export function useCreateTransaction() {
 
                   // Points
                   const categoryPoints =
-                    customer.category === PriceType.WHOLESALE
-                      ? p.wholesalePoint
-                      : p.retailPoint;
+                    customer.category === PriceType.WHOLESALE ? p.wholesalePoint : p.retailPoint;
 
                   const variantNetto = item.variant?.netto || 1;
-                  earnedPoints +=
-                    (categoryPoints || 0) * (item.quantity * variantNetto);
+                  earnedPoints += (categoryPoints || 0) * (item.quantity * variantNetto);
 
                   // Purchase Cost
                   const purchasePrice = p.purchasePrice || 0;
-                  totalPurchaseCost +=
-                    purchasePrice * variantNetto * item.quantity;
+                  totalPurchaseCost += purchasePrice * variantNetto * item.quantity;
                 }
               }
 
@@ -880,26 +799,26 @@ export function useCreateTransaction() {
     },
     onSuccess: (responseData) => {
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["products", orgId] });
-      queryClient.invalidateQueries({ queryKey: ["transactions", orgId] });
+      queryClient.invalidateQueries({ queryKey: ['products', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', orgId] });
       queryClient.invalidateQueries({
-        queryKey: ["transactions", responseData.id],
+        queryKey: ['transactions', responseData.id],
       });
-      queryClient.invalidateQueries({ queryKey: ["customers", orgId] });
+      queryClient.invalidateQueries({ queryKey: ['customers', orgId] });
       if (responseData.customerId) {
         queryClient.invalidateQueries({
-          queryKey: ["customers", responseData.customerId],
+          queryKey: ['customers', responseData.customerId],
         });
         queryClient.invalidateQueries({
-          queryKey: ["customer-ids-with-transactions", orgId],
+          queryKey: ['customer-ids-with-transactions', orgId],
         });
         queryClient.invalidateQueries({
-          queryKey: ["purchased-products", orgId, responseData.customerId],
+          queryKey: ['purchased-products', orgId, responseData.customerId],
         });
       }
       if (responseData.returnId) {
         queryClient.invalidateQueries({
-          queryKey: ["transactions", "returnId", responseData.returnId],
+          queryKey: ['transactions', 'returnId', responseData.returnId],
         });
       }
     },
@@ -952,9 +871,7 @@ export function useDeleteTransaction(options?: {
               .from(schema.inventoryTransactions)
               .where(eq(schema.inventoryTransactions.organizationId, orgId));
 
-            const filtered = transactions.filter((t) =>
-              t.local_ref_id?.startsWith(refId),
-            );
+            const filtered = transactions.filter((t) => t.local_ref_id?.startsWith(refId));
             for (const t of filtered) {
               await tx
                 .delete(schema.inventoryTransactions)
@@ -967,10 +884,10 @@ export function useDeleteTransaction(options?: {
       return { id };
     },
     onSuccess: (data) => {
-      console.log("DELETE DRAFT SUCCESS");
+      console.log('DELETE DRAFT SUCCESS');
       const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ["transactions", orgId] });
-      queryClient.invalidateQueries({ queryKey: ["products", orgId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', orgId] });
+      queryClient.invalidateQueries({ queryKey: ['products', orgId] });
       options?.onSuccess?.(data);
     },
   });
@@ -997,9 +914,7 @@ export interface ContinueDraftResult {
 
 export function useContinueDraft() {
   return useMutation({
-    mutationFn: async (
-      transactionId: string,
-    ): Promise<ContinueDraftResult | null> => {
+    mutationFn: async (transactionId: string): Promise<ContinueDraftResult | null> => {
       const detail = await fetchTransaction(transactionId);
 
       if (!detail) return null;
@@ -1044,7 +959,7 @@ export function useContinueDraft() {
         status: detail.status,
         transactionId: detail.id,
         paymentTypeId: detail.paymentTypeId,
-        note: detail.note || "",
+        note: detail.note || '',
       };
     },
   });

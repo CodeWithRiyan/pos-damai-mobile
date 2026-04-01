@@ -1,11 +1,11 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // In-memory cache to provide synchronous access like MMKV
 const cache: Record<string, string> = {};
 const AUTH_CACHE: Record<string, string> = {};
 
-const STORAGE_ID = "pos-damai-storage";
-const AUTH_STORAGE_ID = "pos-damai-auth-storage";
+const STORAGE_ID = 'pos-damai-storage';
+const AUTH_STORAGE_ID = 'pos-damai-auth-storage';
 
 /**
  * Initializes the storage by loading data from AsyncStorage into memory.
@@ -28,9 +28,9 @@ export const initializeStorage = async () => {
       Object.assign(AUTH_CACHE, parsed);
     }
 
-    console.log("[Storage] Initialized successfully");
+    console.log('[Storage] Initialized successfully');
   } catch (error) {
-    console.error("[Storage] Failed to initialize:", error);
+    console.error('[Storage] Failed to initialize:', error);
   }
 };
 
@@ -39,7 +39,7 @@ const persistGeneral = async () => {
   try {
     await AsyncStorage.setItem(STORAGE_ID, JSON.stringify(cache));
   } catch (error) {
-    console.error("[Storage] Failed to persist general data:", error);
+    console.error('[Storage] Failed to persist general data:', error);
   }
 };
 
@@ -48,7 +48,7 @@ const persistAuth = async () => {
   try {
     await AsyncStorage.setItem(AUTH_STORAGE_ID, JSON.stringify(AUTH_CACHE));
   } catch (error) {
-    console.error("[Storage] Failed to persist auth data:", error);
+    console.error('[Storage] Failed to persist auth data:', error);
   }
 };
 
@@ -107,22 +107,22 @@ export const storageAdapter = {
 // Auth-specific storage helpers (Maintains original API)
 export const authStorageAdapter = {
   getToken: (): string | null => {
-    return authStorage.getString("jwt_token") ?? null;
+    return authStorage.getString('jwt_token') ?? null;
   },
   setToken: (token: string): void => {
-    authStorage.set("jwt_token", token);
+    authStorage.set('jwt_token', token);
   },
   removeToken: (): void => {
-    authStorage.remove("jwt_token");
+    authStorage.remove('jwt_token');
   },
   getRefreshToken: (): string | null => {
-    return authStorage.getString("refresh_token") ?? null;
+    return authStorage.getString('refresh_token') ?? null;
   },
   setRefreshToken: (token: string): void => {
-    authStorage.set("refresh_token", token);
+    authStorage.set('refresh_token', token);
   },
   removeRefreshToken: (): void => {
-    authStorage.remove("refresh_token");
+    authStorage.remove('refresh_token');
   },
   clearAll: (): void => {
     authStorage.clearAll();

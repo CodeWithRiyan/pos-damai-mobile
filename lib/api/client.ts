@@ -1,24 +1,17 @@
-import axios, {
-  AxiosError,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
-  isAxiosError,
-} from "axios";
-import { router } from "expo-router";
-import { authStorageAdapter } from "../storage";
+import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig, isAxiosError } from 'axios';
+import { router } from 'expo-router';
+import { authStorageAdapter } from '../storage';
 
 // API base URL
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://api-dev-pos-damai.riyansolusi.com";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api-dev-pos-damai.riyansolusi.com';
 
 // Create axios instance
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
   headers: {
-    "Content-Type": "application/json",
-    "Accept-Language": "id",
+    'Content-Type': 'application/json',
+    'Accept-Language': 'id',
   },
 });
 
@@ -57,7 +50,7 @@ apiClient.interceptors.response.use(
           const { accessToken, token: legacyToken } = response.data.data || {};
           const newToken = accessToken || legacyToken || response.data.token;
 
-          if (!newToken) throw new Error("Refresh failed");
+          if (!newToken) throw new Error('Refresh failed');
 
           authStorageAdapter.setToken(newToken);
 
@@ -68,7 +61,7 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed - clear auth and redirect to login
         authStorageAdapter.clearAll();
-        router.replace("/login");
+        router.replace('/login');
         return Promise.reject(refreshError);
       }
     }
@@ -87,15 +80,15 @@ export function isConnectionError(error: unknown): boolean {
 
     // Check for specific network error codes
     const networkErrorCodes = [
-      "ECONNREFUSED",
-      "ETIMEDOUT",
-      "ENOTFOUND",
-      "ECONNABORTED",
-      "ENETUNREACH",
-      "NETWORK_ERROR",
+      'ECONNREFUSED',
+      'ETIMEDOUT',
+      'ENOTFOUND',
+      'ECONNABORTED',
+      'ENETUNREACH',
+      'NETWORK_ERROR',
     ];
 
-    return networkErrorCodes.includes(error.code || "");
+    return networkErrorCodes.includes(error.code || '');
   }
 
   return false;
@@ -131,14 +124,9 @@ export interface ApiErrorResponse {
 // Unwrap nested API response envelopes: { data: { data: T } } -> T
 export function unwrapResponse<T>(response: AxiosResponse<unknown>): T {
   const body = response.data;
-  if (body && typeof body === "object" && "data" in body) {
+  if (body && typeof body === 'object' && 'data' in body) {
     const inner = (body as { data: unknown }).data;
-    if (
-      inner &&
-      typeof inner === "object" &&
-      !Array.isArray(inner) &&
-      "data" in inner
-    ) {
+    if (inner && typeof inner === 'object' && !Array.isArray(inner) && 'data' in inner) {
       return (inner as { data: T }).data;
     }
     return inner as T;
@@ -159,7 +147,7 @@ export function getErrorMessage(error: unknown): string {
     }
 
     // Fallback to record-based errors
-    if (data?.errors && typeof data.errors === "object") {
+    if (data?.errors && typeof data.errors === 'object') {
       const firstKey = Object.keys(data.errors)[0];
       const messages = (data.errors as Record<string, string[]>)[firstKey];
       if (Array.isArray(messages) && messages.length > 0) {
@@ -167,12 +155,12 @@ export function getErrorMessage(error: unknown): string {
       }
     }
 
-    return error.message || "An error occurred";
+    return error.message || 'An error occurred';
   }
 
   if (error instanceof Error) {
     return error.message;
   }
 
-  return "An unknown error occurred";
+  return 'An unknown error occurred';
 }

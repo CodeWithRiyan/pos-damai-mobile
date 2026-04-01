@@ -10,9 +10,9 @@ import {
   Pressable,
   Text,
   VStack,
-} from "@/components/ui";
-import SelectModal from "@/components/ui/select/select-modal";
-import { useSuppliers } from "@/lib/api/suppliers";
+} from '@/components/ui';
+import SelectModal from '@/components/ui/select/select-modal';
+import { useSuppliers } from '@/lib/api/suppliers';
 
 export default function PurchasingFilter({
   supplierId,
@@ -54,7 +54,7 @@ export default function PurchasingFilter({
                 value: supplier.id,
               }))}
               className="flex-1"
-              onChange={(v) => setSupplierId(v || "")}
+              onChange={(v) => setSupplierId(v || '')}
             />
           </VStack>
         </ModalBody>
@@ -74,7 +74,7 @@ export default function PurchasingFilter({
               <Pressable
                 className="flex-1 flex px-4 h-12 items-center justify-center rounded-lg border border-error-500 bg-error-100 active:bg-error-200"
                 onPress={() => {
-                  setSupplierId("");
+                  setSupplierId('');
                   setOpen(false);
                 }}
               >

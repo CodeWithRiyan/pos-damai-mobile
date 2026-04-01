@@ -1,5 +1,5 @@
-import { Discount } from "@/lib/api/discounts";
-import { create } from "zustand";
+import { Discount } from '@/lib/api/discounts';
+import { create } from 'zustand';
 
 interface DiscountState {
   open: boolean;

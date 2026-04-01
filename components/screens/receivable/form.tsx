@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   FormControl,
   FormControlError,
@@ -19,35 +19,35 @@ import {
   ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
-import SelectModal from "@/components/ui/select/select-modal";
-import { showErrorToast } from "@/lib/utils/toast";
+} from '@/components/ui';
+import SelectModal from '@/components/ui/select/select-modal';
+import { showErrorToast } from '@/lib/utils/toast';
 import {
   useCreateReceivable,
   useReceivableDetail,
   useUpdateReceivable,
-} from "@/lib/api/receivable";
-import { useUsers } from "@/lib/api/users";
-import { zodResolver } from "@hookform/resolvers/zod";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import dayjs from "dayjs";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { CalendarIcon } from "lucide-react-native";
-import { useEffect, useState } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { ScrollView } from "react-native";
-import { z } from "zod";
+} from '@/lib/api/receivable';
+import { useUsers } from '@/lib/api/users';
+import { zodResolver } from '@hookform/resolvers/zod';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { CalendarIcon } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { ScrollView } from 'react-native';
+import { z } from 'zod';
 
 export default function ReceivableForm() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const action = params.action as string;
-  const isAdd = action === "add";
+  const isAdd = action === 'add';
   const receivableId = params.receivableId as string;
 
   const receivableSchema = z.object({
-    nominal: z.number().min(1, "Nominal wajib diisi."),
-    userId: z.string().min(1, "Karyawan wajib diisi."),
+    nominal: z.number().min(1, 'Nominal wajib diisi.'),
+    userId: z.string().min(1, 'Karyawan wajib diisi.'),
     dueDate: z.date().nullable(),
     note: z.string(),
   });
@@ -56,9 +56,9 @@ export default function ReceivableForm() {
 
   const initialValues: ReceivableFormValues = {
     nominal: 0,
-    userId: "",
+    userId: '',
     dueDate: null,
-    note: "",
+    note: '',
   };
 
   const form = useForm<ReceivableFormValues>({
@@ -68,7 +68,7 @@ export default function ReceivableForm() {
 
   const [showDueDatePicker, setShowDueDatePicker] = useState<boolean>(false);
 
-  const { data: receivable } = useReceivableDetail(receivableId || "");
+  const { data: receivable } = useReceivableDetail(receivableId || '');
   const { data: users = [] } = useUsers();
   const createMutation = useCreateReceivable();
   const updateMutation = useUpdateReceivable();
@@ -83,7 +83,7 @@ export default function ReceivableForm() {
         nominal: receivable.nominal,
         userId: receivable.userId,
         dueDate: receivable.dueDate ? new Date(receivable.dueDate) : null,
-        note: receivable.note || "",
+        note: receivable.note || '',
       });
     } else {
       form.reset(initialValues);
@@ -91,9 +91,7 @@ export default function ReceivableForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, receivable, receivableId]);
 
-  const onSubmit: SubmitHandler<ReceivableFormValues> = (
-    data: ReceivableFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<ReceivableFormValues> = (data: ReceivableFormValues) => {
     if (isAdd) {
       createMutation.mutate(
         {
@@ -103,13 +101,9 @@ export default function ReceivableForm() {
         {
           onSuccess: () => {
             toast.show({
-              placement: "top",
+              placement: 'top',
               render: ({ id }) => (
-                <Toast
-                  nativeID={`toast-${id}`}
-                  action="success"
-                  variant="solid"
-                >
+                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
                   <ToastTitle>Piutang berhasil disimpan</ToastTitle>
                 </Toast>
               ),
@@ -131,13 +125,9 @@ export default function ReceivableForm() {
         {
           onSuccess: () => {
             toast.show({
-              placement: "top",
+              placement: 'top',
               render: ({ id }) => (
-                <Toast
-                  nativeID={`toast-${id}`}
-                  action="success"
-                  variant="solid"
-                >
+                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
                   <ToastTitle>Piutang berhasil diupdate</ToastTitle>
                 </Toast>
               ),
@@ -154,7 +144,7 @@ export default function ReceivableForm() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header={isAdd ? "TAMBAH PIUTANG" : "EDIT PIUTANG"} isGoBack />
+      <Header header={isAdd ? 'TAMBAH PIUTANG' : 'EDIT PIUTANG'} isGoBack />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="lg" className="p-4">
@@ -162,10 +152,7 @@ export default function ReceivableForm() {
             name="nominal"
             control={form.control}
             disabled={!isAdd}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Nominal</FormControlLabelText>
@@ -232,13 +219,11 @@ export default function ReceivableForm() {
                 </FormControlLabel>
                 <Pressable
                   onPress={() => setShowDueDatePicker(true)}
-                  className={`border border-background-300 rounded px-3 py-2${error ? " border-red-500" : ""}`}
+                  className={`border border-background-300 rounded px-3 py-2${error ? ' border-red-500' : ''}`}
                 >
                   <HStack className="items-center justify-between">
                     <Text>
-                      {value instanceof Date
-                        ? dayjs(value).format("DD/MM/YYYY")
-                        : "Jatuh Tempo"}
+                      {value instanceof Date ? dayjs(value).format('DD/MM/YYYY') : 'Jatuh Tempo'}
                     </Text>
                     <Icon as={CalendarIcon} size="md" className="mr-2" />
                   </HStack>
@@ -249,7 +234,7 @@ export default function ReceivableForm() {
                     value={value instanceof Date ? value : new Date()}
                     onChange={(event, selectedDate) => {
                       setShowDueDatePicker(false);
-                      if (event.type === "set" && selectedDate) {
+                      if (event.type === 'set' && selectedDate) {
                         onChange(selectedDate);
                       }
                     }}
@@ -266,10 +251,7 @@ export default function ReceivableForm() {
           <Controller
             name="note"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Keterangan</FormControlLabelText>

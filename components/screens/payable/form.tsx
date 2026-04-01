@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   FormControl,
   FormControlError,
@@ -19,35 +19,31 @@ import {
   ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
-import SelectModal from "@/components/ui/select/select-modal";
-import { showErrorToast } from "@/lib/utils/toast";
-import {
-  useCreatePayable,
-  usePayableDetail,
-  useUpdatePayable,
-} from "@/lib/api/payable";
-import { useSuppliers } from "@/lib/api/suppliers";
-import { zodResolver } from "@hookform/resolvers/zod";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import dayjs from "dayjs";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { CalendarIcon } from "lucide-react-native";
-import { useEffect, useState } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { ScrollView } from "react-native";
-import { z } from "zod";
+} from '@/components/ui';
+import SelectModal from '@/components/ui/select/select-modal';
+import { showErrorToast } from '@/lib/utils/toast';
+import { useCreatePayable, usePayableDetail, useUpdatePayable } from '@/lib/api/payable';
+import { useSuppliers } from '@/lib/api/suppliers';
+import { zodResolver } from '@hookform/resolvers/zod';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { CalendarIcon } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { ScrollView } from 'react-native';
+import { z } from 'zod';
 
 export default function PayableForm() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const action = params.action as string;
-  const isAdd = action === "add";
+  const isAdd = action === 'add';
   const payableId = params.payableId as string;
 
   const payableSchema = z.object({
-    nominal: z.number().min(1, "Nominal wajib diisi."),
-    supplierId: z.string().min(1, "Supplier wajib diisi."),
+    nominal: z.number().min(1, 'Nominal wajib diisi.'),
+    supplierId: z.string().min(1, 'Supplier wajib diisi.'),
     dueDate: z.date().nullable(),
     note: z.string(),
   });
@@ -56,9 +52,9 @@ export default function PayableForm() {
 
   const initialValues: PayableFormValues = {
     nominal: 0,
-    supplierId: "",
+    supplierId: '',
     dueDate: null,
-    note: "",
+    note: '',
   };
 
   const form = useForm<PayableFormValues>({
@@ -68,7 +64,7 @@ export default function PayableForm() {
 
   const [showDueDatePicker, setShowDueDatePicker] = useState<boolean>(false);
 
-  const { data: payable } = usePayableDetail(payableId || "");
+  const { data: payable } = usePayableDetail(payableId || '');
   const { data: suppliers = [] } = useSuppliers();
   const createMutation = useCreatePayable();
   const updateMutation = useUpdatePayable();
@@ -83,7 +79,7 @@ export default function PayableForm() {
         nominal: payable.nominal,
         supplierId: payable.supplierId,
         dueDate: payable.dueDate ? new Date(payable.dueDate) : null,
-        note: payable.note || "",
+        note: payable.note || '',
       });
     } else {
       form.reset(initialValues);
@@ -91,9 +87,7 @@ export default function PayableForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, payable, payableId]);
 
-  const onSubmit: SubmitHandler<PayableFormValues> = (
-    data: PayableFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<PayableFormValues> = (data: PayableFormValues) => {
     if (isAdd) {
       createMutation.mutate(
         {
@@ -103,13 +97,9 @@ export default function PayableForm() {
         {
           onSuccess: () => {
             toast.show({
-              placement: "top",
+              placement: 'top',
               render: ({ id }) => (
-                <Toast
-                  nativeID={`toast-${id}`}
-                  action="success"
-                  variant="solid"
-                >
+                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
                   <ToastTitle>Hutang berhasil disimpan</ToastTitle>
                 </Toast>
               ),
@@ -131,13 +121,9 @@ export default function PayableForm() {
         {
           onSuccess: () => {
             toast.show({
-              placement: "top",
+              placement: 'top',
               render: ({ id }) => (
-                <Toast
-                  nativeID={`toast-${id}`}
-                  action="success"
-                  variant="solid"
-                >
+                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
                   <ToastTitle>Hutang berhasil diupdate</ToastTitle>
                 </Toast>
               ),
@@ -154,7 +140,7 @@ export default function PayableForm() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header={isAdd ? "TAMBAH HUTANG" : "EDIT HUTANG"} isGoBack />
+      <Header header={isAdd ? 'TAMBAH HUTANG' : 'EDIT HUTANG'} isGoBack />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="lg" className="p-4">
@@ -162,10 +148,7 @@ export default function PayableForm() {
             name="nominal"
             control={form.control}
             disabled={!isAdd}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Nominal</FormControlLabelText>
@@ -232,13 +215,11 @@ export default function PayableForm() {
                 </FormControlLabel>
                 <Pressable
                   onPress={() => setShowDueDatePicker(true)}
-                  className={`border border-background-300 rounded px-3 py-2${error ? " border-red-500" : ""}`}
+                  className={`border border-background-300 rounded px-3 py-2${error ? ' border-red-500' : ''}`}
                 >
                   <HStack className="items-center justify-between">
                     <Text>
-                      {value instanceof Date
-                        ? dayjs(value).format("DD/MM/YYYY")
-                        : "Jatuh Tempo"}
+                      {value instanceof Date ? dayjs(value).format('DD/MM/YYYY') : 'Jatuh Tempo'}
                     </Text>
                     <Icon as={CalendarIcon} size="md" className="mr-2" />
                   </HStack>
@@ -249,7 +230,7 @@ export default function PayableForm() {
                     value={value instanceof Date ? value : new Date()}
                     onChange={(event, selectedDate) => {
                       setShowDueDatePicker(false);
-                      if (event.type === "set" && selectedDate) {
+                      if (event.type === 'set' && selectedDate) {
                         onChange(selectedDate);
                       }
                     }}
@@ -266,10 +247,7 @@ export default function PayableForm() {
           <Controller
             name="note"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Keterangan</FormControlLabelText>

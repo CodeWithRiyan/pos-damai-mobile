@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   Checkbox,
   CheckboxIcon,
@@ -23,27 +23,24 @@ import {
   ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
-import SelectModal from "@/components/ui/select/select-modal";
-import { SolarIconBoldDuotone } from "@/components/ui/solar-icon-wrapper";
-import {
-  useCreatePayableRealization,
-  usePayableBySupplier,
-} from "@/lib/api/payable";
-import { showErrorToast } from "@/lib/utils/toast";
-import { usePaymentTypes } from "@/lib/api/payment-types";
-import { usePaymentTypeStore } from "@/stores/payment-type";
-import { zodResolver } from "@hookform/resolvers/zod";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import dayjs from "dayjs";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { CalendarIcon, CheckIcon, PlusIcon } from "lucide-react-native";
-import { useState } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { ScrollView } from "react-native";
-import { z } from "zod";
+} from '@/components/ui';
+import SelectModal from '@/components/ui/select/select-modal';
+import { SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
+import { useCreatePayableRealization, usePayableBySupplier } from '@/lib/api/payable';
+import { showErrorToast } from '@/lib/utils/toast';
+import { usePaymentTypes } from '@/lib/api/payment-types';
+import { usePaymentTypeStore } from '@/stores/payment-type';
+import { zodResolver } from '@hookform/resolvers/zod';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { CalendarIcon, CheckIcon, PlusIcon } from 'lucide-react-native';
+import { useState } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { ScrollView } from 'react-native';
+import { z } from 'zod';
 
-import { formatRp } from "@/lib/utils/format";
+import { formatRp } from '@/lib/utils/format';
 export default function PayableRealizationForm() {
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
 
@@ -52,14 +49,14 @@ export default function PayableRealizationForm() {
 
   const supplierId = params.supplierId as string;
   const action = params.actionRealization as string;
-  const isAdd = action === "add";
-  const payableIds = (params.payableIds as string)?.split("-") || [];
+  const isAdd = action === 'add';
+  const payableIds = (params.payableIds as string)?.split('-') || [];
 
   const payableRealizationSchema = z.object({
-    nominal: z.number().min(1, "Nominal wajib diisi."),
+    nominal: z.number().min(1, 'Nominal wajib diisi.'),
     payOff: z.boolean(),
     realizationDate: z.date(),
-    paymentTypeId: z.string().min(1, "Metode pembayaran harus dipilih"),
+    paymentTypeId: z.string().min(1, 'Metode pembayaran harus dipilih'),
     note: z.string(),
   });
 
@@ -69,8 +66,8 @@ export default function PayableRealizationForm() {
     nominal: 0,
     payOff: false,
     realizationDate: new Date(),
-    paymentTypeId: "",
-    note: "",
+    paymentTypeId: '',
+    note: '',
   };
 
   const form = useForm<PayableRealizationFormValues>({
@@ -78,9 +75,8 @@ export default function PayableRealizationForm() {
     defaultValues: initialValues,
   });
 
-  const payOff = form.watch("payOff");
-  const [showRealizationDatePicker, setShowRealizationDatePicker] =
-    useState<boolean>(false);
+  const payOff = form.watch('payOff');
+  const [showRealizationDatePicker, setShowRealizationDatePicker] = useState<boolean>(false);
 
   const { data: payableList = [] } = usePayableBySupplier(supplierId);
   // Flat list of payables from all suppliers if needed, but usually filtered by supplier in detail screen
@@ -90,14 +86,9 @@ export default function PayableRealizationForm() {
   // Wait, I should add usePayables (all payables) or just filter from what I have if I update usePayableList
   // Let's assume we need a usePayables hook.
 
-  const selectedPayables = payableList.filter((payable) =>
-    payableIds.includes(payable.id),
-  );
+  const selectedPayables = payableList.filter((payable) => payableIds.includes(payable.id));
 
-  const totalPayable = selectedPayables.reduce(
-    (total, payable) => total + payable.nominal,
-    0,
-  );
+  const totalPayable = selectedPayables.reduce((total, payable) => total + payable.nominal, 0);
   const totalRealization = selectedPayables.reduce(
     (total, payable) => total + payable.totalRealization,
     0,
@@ -127,13 +118,9 @@ export default function PayableRealizationForm() {
         {
           onSuccess: () => {
             toast.show({
-              placement: "top",
+              placement: 'top',
               render: ({ id }) => (
-                <Toast
-                  nativeID={`toast-${id}`}
-                  action="success"
-                  variant="solid"
-                >
+                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
                   <ToastTitle>Pembayaran berhasil disimpan</ToastTitle>
                 </Toast>
               ),
@@ -147,7 +134,7 @@ export default function PayableRealizationForm() {
       // Bulk logic: distribute nominal across payableIds
       // This requires fetching the current state of those payables to know how much is left on each
       toast.show({
-        placement: "top",
+        placement: 'top',
         render: ({ id }) => (
           <Toast nativeID={`toast-${id}`} action="info" variant="solid">
             <ToastTitle>Bulk payment logic coming soon</ToastTitle>
@@ -159,21 +146,14 @@ export default function PayableRealizationForm() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header
-        header={isAdd ? "REALISASI HUTANG" : "EDIT REALISASI HUTANG"}
-        isGoBack
-      />
+      <Header header={isAdd ? 'REALISASI HUTANG' : 'EDIT REALISASI HUTANG'} isGoBack />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="lg" className="p-4">
           {payableIds?.length <= 1 ? (
             <HStack space="sm">
               <HStack space="sm" className="items-center">
-                <SolarIconBoldDuotone
-                  name="UserCircle"
-                  size={24}
-                  color="#3b82f6"
-                />
+                <SolarIconBoldDuotone name="UserCircle" size={24} color="#3b82f6" />
                 <Text className="text-primary-500 font-bold">
                   {selectedPayables?.[0]?.supplier?.name}
                 </Text>
@@ -189,26 +169,19 @@ export default function PayableRealizationForm() {
             <HStack space="sm" className="justify-between">
               <VStack space="sm">
                 <HStack space="sm" className="items-center">
-                  <SolarIconBoldDuotone
-                    name="UserCircle"
-                    size={24}
-                    color="#3b82f6"
-                  />
+                  <SolarIconBoldDuotone name="UserCircle" size={24} color="#3b82f6" />
                   <Text className="text-primary-500 font-bold">
                     {selectedPayables?.[0]?.supplier?.name}
                   </Text>
                 </HStack>
                 <VStack className="flex-1">
-                  <Text className="text-gray-500 text-sm">
-                    Sisa yang harus dibayar
-                  </Text>
+                  <Text className="text-gray-500 text-sm">Sisa yang harus dibayar</Text>
                   <Text className="text-sm font-bold text-error-500">
                     {formatRp(totalPayable - totalRealization)}
                   </Text>
                 </VStack>
                 <Text className="text-gray-500 text-sm">
-                  Transaksi dengan jatuh tempo paling awal akan dilunasi
-                  terlebih dahulu.
+                  Transaksi dengan jatuh tempo paling awal akan dilunasi terlebih dahulu.
                 </Text>
               </VStack>
               <VStack className="flex-1 items-end">
@@ -222,10 +195,7 @@ export default function PayableRealizationForm() {
             name="nominal"
             control={form.control}
             disabled={!isAdd}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isRequired isDisabled={payOff} isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Nominal</FormControlLabelText>
@@ -259,10 +229,7 @@ export default function PayableRealizationForm() {
           <Controller
             name="payOff"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <Checkbox
                   value={value.toString()}
@@ -271,7 +238,7 @@ export default function PayableRealizationForm() {
                   onChange={(v) => {
                     onChange(v);
                     if (v) {
-                      form.setValue("nominal", remainingTotal);
+                      form.setValue('nominal', remainingTotal);
                     }
                   }}
                   onBlur={onBlur}
@@ -295,19 +262,15 @@ export default function PayableRealizationForm() {
             render={({ field: { onChange, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error} className="flex-1">
                 <FormControlLabel>
-                  <FormControlLabelText>
-                    Tanggal Pembayaran
-                  </FormControlLabelText>
+                  <FormControlLabelText>Tanggal Pembayaran</FormControlLabelText>
                 </FormControlLabel>
                 <Pressable
                   onPress={() => setShowRealizationDatePicker(true)}
-                  className={`border border-background-300 rounded px-3 py-2${error ? " border-red-500" : ""}`}
+                  className={`border border-background-300 rounded px-3 py-2${error ? ' border-red-500' : ''}`}
                 >
                   <HStack className="items-center justify-between">
                     <Text>
-                      {value instanceof Date
-                        ? dayjs(value).format("DD/MM/YYYY")
-                        : "Pilih tanggal"}
+                      {value instanceof Date ? dayjs(value).format('DD/MM/YYYY') : 'Pilih tanggal'}
                     </Text>
                     <Icon as={CalendarIcon} size="md" className="mr-2" />
                   </HStack>
@@ -319,7 +282,7 @@ export default function PayableRealizationForm() {
                     maximumDate={new Date()}
                     onChange={(event, selectedDate) => {
                       setShowRealizationDatePicker(false);
-                      if (event.type === "set" && selectedDate) {
+                      if (event.type === 'set' && selectedDate) {
                         onChange(selectedDate);
                       }
                     }}
@@ -370,10 +333,7 @@ export default function PayableRealizationForm() {
           <Controller
             name="note"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Keterangan</FormControlLabelText>

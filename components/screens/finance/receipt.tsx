@@ -1,18 +1,18 @@
-import Header from "@/components/header";
-import { Box, Heading, HStack, Text, VStack } from "@/components/ui";
-import { Spinner } from "@/components/ui/spinner";
-import { useAuthStore } from "@/stores/auth";
-import { useFinance } from "@/lib/api/finances";
-import { formatDisplayRefId } from "@/lib/utils/reference";
-import dayjs from "dayjs";
-import { useLocalSearchParams } from "expo-router";
-import { ScrollView } from "react-native";
+import Header from '@/components/header';
+import { Box, Heading, HStack, Text, VStack } from '@/components/ui';
+import { Spinner } from '@/components/ui/spinner';
+import { useAuthStore } from '@/stores/auth';
+import { useFinance } from '@/lib/api/finances';
+import { formatDisplayRefId } from '@/lib/utils/reference';
+import dayjs from 'dayjs';
+import { useLocalSearchParams } from 'expo-router';
+import { ScrollView } from 'react-native';
 
-import { FinanceType, Status } from "@/lib/constants";
-import { formatRp, formatNumber } from "@/lib/utils/format";
+import { FinanceType, Status } from '@/lib/constants';
+import { formatRp, formatNumber } from '@/lib/utils/format';
 export default function FinanceTransactionReceipt() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: finance, isLoading } = useFinance(id || "");
+  const { data: finance, isLoading } = useFinance(id || '');
 
   const profile = useAuthStore((state) => state.profile);
 
@@ -47,16 +47,11 @@ export default function FinanceTransactionReceipt() {
         <Box className="p-4 flex-1">
           <VStack className="flex-1 bg-background-0 p-6 shadow">
             <VStack className="items-center">
-              <Heading size="xl">
-                {profile?.selectedOrganization?.name || "Toko Damai"}
-              </Heading>
+              <Heading size="xl">{profile?.selectedOrganization?.name || 'Toko Damai'}</Heading>
               <Text className="text-typography-500 text-center">
-                {profile?.selectedOrganization?.address ||
-                  "Pekalongan Timur, Pekalongan"}
+                {profile?.selectedOrganization?.address || 'Pekalongan Timur, Pekalongan'}
               </Text>
-              <Text className="text-typography-500">
-                ## Struk Transaksi Keuangan ##
-              </Text>
+              <Text className="text-typography-500">## Struk Transaksi Keuangan ##</Text>
               {finance.status === Status.DRAFT && (
                 <Text className="text-red-500 font-bold mt-1">(DRAFT)</Text>
               )}
@@ -66,18 +61,12 @@ export default function FinanceTransactionReceipt() {
               <HStack className="justify-between items-center">
                 <Text
                   className={`font-bold ${
-                    finance.type === FinanceType.INCOME
-                      ? "text-success-500"
-                      : "text-error-500"
+                    finance.type === FinanceType.INCOME ? 'text-success-500' : 'text-error-500'
                   }`}
                 >
-                  {finance.type === FinanceType.INCOME
-                    ? "Transaksi Masuk"
-                    : "Transaksi Keluar"}
+                  {finance.type === FinanceType.INCOME ? 'Transaksi Masuk' : 'Transaksi Keluar'}
                 </Text>
-                <Text className="text-typography-500">
-                  {`Oleh: ${profile?.name || ""}`}
-                </Text>
+                <Text className="text-typography-500">{`Oleh: ${profile?.name || ''}`}</Text>
               </HStack>
               {finance.expensesType ? (
                 <HStack className="justify-between items-center">
@@ -85,14 +74,10 @@ export default function FinanceTransactionReceipt() {
                 </HStack>
               ) : null}
               <HStack className="justify-between items-center mt-2">
-                <Text className="text-typography-500">
-                  {date.format("DD/MM/YYYY")}
-                </Text>
+                <Text className="text-typography-500">{date.format('DD/MM/YYYY')}</Text>
               </HStack>
               <HStack className="justify-between items-center">
-                <Text className="text-typography-500">
-                  {date.format("HH:mm:ss")}
-                </Text>
+                <Text className="text-typography-500">{date.format('HH:mm:ss')}</Text>
               </HStack>
               <HStack className="justify-between items-center mt-2">
                 <Text className="text-typography-500">
@@ -118,9 +103,7 @@ export default function FinanceTransactionReceipt() {
             <VStack space="sm">
               <HStack className="justify-between items-center">
                 <Text className="font-bold">Total</Text>
-                <Text className="font-bold">
-                  Rp {formatNumber(finance.nominal)}
-                </Text>
+                <Text className="font-bold">Rp {formatNumber(finance.nominal)}</Text>
               </HStack>
             </VStack>
           </VStack>

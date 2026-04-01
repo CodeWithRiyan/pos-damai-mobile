@@ -1,6 +1,6 @@
-import dayjs from "dayjs";
-import { CalcType, PriceType } from "@/lib/constants";
-import { ProductPrice, ProductVariant } from "./api/products";
+import dayjs from 'dayjs';
+import { CalcType, PriceType } from '@/lib/constants';
+import { ProductPrice, ProductVariant } from './api/products';
 
 export const findSellPrice = ({
   sellPrices = [],
@@ -10,7 +10,7 @@ export const findSellPrice = ({
 }: {
   sellPrices?: ProductPrice[];
   quantity?: number;
-  type?: ProductPrice["type"];
+  type?: ProductPrice['type'];
   unitVariant?: ProductVariant;
 }) => {
   if (!sellPrices.length) return 0;
@@ -22,7 +22,7 @@ export const findSellPrice = ({
   }
 
   // 2. Find the price that matches the type and quantity (Best Match)
-  const getBestMatch = (targetType: ProductPrice["type"]) => {
+  const getBestMatch = (targetType: ProductPrice['type']) => {
     return sellPrices
       .filter((p) => p.type === targetType && p.minimumPurchase <= quantity)
       .sort((a, b) => b.minimumPurchase - a.minimumPurchase)[0];
@@ -51,18 +51,15 @@ export const isDiscountActive = (discount?: {
 }) => {
   if (!discount) return false;
   const now = dayjs();
-  const start = dayjs(discount.startDate).startOf("day");
-  const end = dayjs(discount.endDate).endOf("day");
+  const start = dayjs(discount.startDate).startOf('day');
+  const end = dayjs(discount.endDate).endOf('day');
 
-  return (
-    (now.isAfter(start) || now.isSame(start)) &&
-    (now.isBefore(end) || now.isSame(end))
-  );
+  return (now.isAfter(start) || now.isSame(start)) && (now.isBefore(end) || now.isSame(end));
 };
 
 export const getDiscountedPrice = (
   unitPrice: number,
-  discount?: { nominal: number; type: "FLAT" | "PERCENTAGE" },
+  discount?: { nominal: number; type: 'FLAT' | 'PERCENTAGE' },
 ) => {
   if (!discount) return unitPrice;
   if (discount.type === CalcType.FLAT) {
@@ -82,7 +79,7 @@ export const calculateLineItemTotal = ({
   unitPrice: number;
   discount?: {
     nominal: number;
-    type: "FLAT" | "PERCENTAGE";
+    type: 'FLAT' | 'PERCENTAGE';
     startDate: Date | string;
     endDate: Date | string;
   };

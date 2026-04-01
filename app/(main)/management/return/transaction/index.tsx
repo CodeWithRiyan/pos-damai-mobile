@@ -1,4 +1,4 @@
-import ReturnTransactionCustomerList from "@/components/screens/return-transaction";
+import ReturnTransactionCustomerList from '@/components/screens/return-transaction';
 
 export default function ReturnTransactionCustomerListScreen() {
   return <ReturnTransactionCustomerList />;

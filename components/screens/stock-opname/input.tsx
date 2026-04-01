@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   Heading,
   Input,
@@ -7,29 +7,28 @@ import {
   InputSlot,
   SearchIcon,
   Text,
-} from "@/components/ui";
-import { Box } from "@/components/ui/box";
-import { HStack } from "@/components/ui/hstack";
-import { Pressable } from "@/components/ui/pressable";
-import { VStack } from "@/components/ui/vstack";
+} from '@/components/ui';
+import { Box } from '@/components/ui/box';
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { VStack } from '@/components/ui/vstack';
 // import { useBulkDeleteStockOpname, StockOpname, useStockOpname } from "@/lib/api/purchasing";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { useProducts } from "@/lib/api/products";
-import { ProductType } from "@/lib/constants";
-import { useStockOpnameStore } from "@/stores/stock-opname";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import classNames from "classnames";
-import dayjs from "dayjs";
-import { Calendar } from "lucide-react-native";
-import React, { useState } from "react";
-import { FlatList, ScrollView } from "react-native";
-import StockOpnameConfirmForm from "./form";
-import PopupAddStockOpname from "./popup-add";
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { useProducts } from '@/lib/api/products';
+import { ProductType } from '@/lib/constants';
+import { useStockOpnameStore } from '@/stores/stock-opname';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import classNames from 'classnames';
+import dayjs from 'dayjs';
+import { Calendar } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { FlatList, ScrollView } from 'react-native';
+import StockOpnameConfirmForm from './form';
+import PopupAddStockOpname from './popup-add';
 
 export default function StockOpnameInput() {
   const [deleteItem, setDeleteItem] = useState<string | null>(null);
-  const { cart, resetCart, setAddProduct, setOpenConfirm, removeCartItem } =
-    useStockOpnameStore();
+  const { cart, resetCart, setAddProduct, setOpenConfirm, removeCartItem } = useStockOpnameStore();
   const { data: products } = useProducts({
     forceParent: true,
   });
@@ -66,10 +65,7 @@ export default function StockOpnameInput() {
       />
       <HStack className="flex-1 bg-white">
         <VStack className="flex-1 border-r border-gray-300">
-          <HStack
-            space="sm"
-            className="p-4 shadow-lg bg-background-0 items-center justify-between"
-          >
+          <HStack space="sm" className="p-4 shadow-lg bg-background-0 items-center justify-between">
             <Input className="flex-1 border border-background-300 rounded-lg h-10">
               <InputSlot className="pl-3">
                 <InputIcon as={SearchIcon} />
@@ -81,18 +77,11 @@ export default function StockOpnameInput() {
               className="flex-row items-center h-10 px-3 border border-background-300 rounded-lg bg-background-0"
             >
               <Calendar size={20} color="#64748B" />
-              <Text className="ml-2 text-slate-600">
-                {dayjs(date).format("DD MMM YYYY")}
-              </Text>
+              <Text className="ml-2 text-slate-600">{dayjs(date).format('DD MMM YYYY')}</Text>
             </Pressable>
           </HStack>
           {showDatePicker && (
-            <DateTimePicker
-              value={date}
-              mode="date"
-              display="default"
-              onChange={onDateChange}
-            />
+            <DateTimePicker value={date} mode="date" display="default" onChange={onDateChange} />
           )}
           <ScrollView className="flex-1">
             <VStack className="flex-1">
@@ -128,9 +117,7 @@ export default function StockOpnameInput() {
           <FlatList
             data={cart}
             className="flex-1"
-            keyExtractor={(item, index) =>
-              `${item.product.id}-${item.variant?.id || ""}-${index}`
-            }
+            keyExtractor={(item, index) => `${item.product.id}-${item.variant?.id || ''}-${index}`}
             renderItem={({ item, index }) => (
               <Pressable
                 className="relative px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
@@ -141,7 +128,7 @@ export default function StockOpnameInput() {
                 onLongPress={() => {
                   const newDeleteItem =
                     item.product.type === ProductType.MULTIUNIT
-                      ? item.variant?.id || ""
+                      ? item.variant?.id || ''
                       : item.product.id;
 
                   if (deleteItem === newDeleteItem) {
@@ -158,14 +145,12 @@ export default function StockOpnameInput() {
                     </Box>
                     <VStack className="flex-1">
                       <Heading size="md" className="line-clamp-2">
-                        {item.variant &&
-                        item.product.type === ProductType.MULTIUNIT
+                        {item.variant && item.product.type === ProductType.MULTIUNIT
                           ? `${item.product.name} - ${item.variant.name}`
                           : item.product.name}
                       </Heading>
                       <Text size="sm" className="text-slate-500">
-                        {item.variant &&
-                        item.product.type === ProductType.MULTIUNIT
+                        {item.variant && item.product.type === ProductType.MULTIUNIT
                           ? item.variant.code
                           : item.product.code}
                       </Text>
@@ -179,16 +164,16 @@ export default function StockOpnameInput() {
                 </HStack>
                 <Pressable
                   className={classNames(
-                    "absolute right-0 top-0 bottom-0 w-0 bg-error-500 items-center justify-center overflow-hidden transaction-all duration-300",
+                    'absolute right-0 top-0 bottom-0 w-0 bg-error-500 items-center justify-center overflow-hidden transaction-all duration-300',
                     item.product.type !== ProductType.MULTIUNIT &&
                       deleteItem === item.product.id &&
-                      "w-16",
+                      'w-16',
                     item.product.type === ProductType.MULTIUNIT &&
                       deleteItem === item.variant?.id &&
-                      "w-16",
+                      'w-16',
                   )}
                   onPress={() => {
-                    removeCartItem(item.product?.id || "", item.variant?.id);
+                    removeCartItem(item.product?.id || '', item.variant?.id);
                     setDeleteItem(null);
                   }}
                 >
@@ -198,9 +183,7 @@ export default function StockOpnameInput() {
             )}
             ListEmptyComponent={
               <Box className="p-8 items-center">
-                <Text className="text-slate-400 italic">
-                  Belum ada barang di keranjang
-                </Text>
+                <Text className="text-slate-400 italic">Belum ada barang di keranjang</Text>
               </Box>
             }
           />

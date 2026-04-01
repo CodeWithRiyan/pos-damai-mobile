@@ -1,11 +1,6 @@
-import { useSyncQueueStore } from "@/stores/sync-queue-store";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  apiClient,
-  ApiResponse,
-  isConnectionError,
-  unwrapResponse,
-} from "./client";
+import { useSyncQueueStore } from '@/stores/sync-queue';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { apiClient, ApiResponse, isConnectionError, unwrapResponse } from './client';
 
 export interface Permission {
   id: string;
@@ -43,11 +38,9 @@ export interface UpdateRoleDTO {
 // Get all roles
 export function useRoles() {
   return useQuery({
-    queryKey: ["roles"],
+    queryKey: ['roles'],
     queryFn: async () => {
-      const response = await apiClient.get<ApiResponse<Role[]> | Role[]>(
-        "/roles",
-      );
+      const response = await apiClient.get<ApiResponse<Role[]> | Role[]>('/roles');
       const data = unwrapResponse<Role[]>(response);
       return Array.isArray(data) ? data : [];
     },
@@ -57,11 +50,11 @@ export function useRoles() {
 // Get all permissions
 export function usePermissions() {
   return useQuery({
-    queryKey: ["permissions"],
+    queryKey: ['permissions'],
     queryFn: async () => {
-      const response = await apiClient.get<
-        ApiResponse<Permission[]> | Permission[]
-      >("/roles/permissions");
+      const response = await apiClient.get<ApiResponse<Permission[]> | Permission[]>(
+        '/roles/permissions',
+      );
       const data = unwrapResponse<Permission[]>(response);
       return Array.isArray(data) ? data : [];
     },
@@ -71,11 +64,9 @@ export function usePermissions() {
 // Get single role
 export function useRole(id: string) {
   return useQuery({
-    queryKey: ["roles", id],
+    queryKey: ['roles', id],
     queryFn: async () => {
-      const response = await apiClient.get<ApiResponse<Role> | Role>(
-        `/roles/${id}`,
-      );
+      const response = await apiClient.get<ApiResponse<Role> | Role>(`/roles/${id}`);
       return unwrapResponse<Role>(response);
     },
     enabled: !!id,
@@ -88,17 +79,14 @@ export function useCreateRole() {
 
   return useMutation({
     mutationFn: async (data: CreateRoleDTO) => {
-      const response = await apiClient.post<ApiResponse<Role> | Role>(
-        "/roles",
-        data,
-      );
+      const response = await apiClient.post<ApiResponse<Role> | Role>('/roles', data);
       return unwrapResponse<Role>(response);
     },
     onError: (error, variables) => {
       if (isConnectionError(error)) {
         addToQueue({
-          type: "create",
-          endpoint: "/roles",
+          type: 'create',
+          endpoint: '/roles',
           data: variables,
         });
       }
@@ -113,16 +101,13 @@ export function useUpdateRole() {
   return useMutation({
     mutationFn: async (data: UpdateRoleDTO) => {
       const { id, ...rest } = data;
-      const response = await apiClient.put<ApiResponse<Role> | Role>(
-        `/roles/${id}`,
-        rest,
-      );
+      const response = await apiClient.put<ApiResponse<Role> | Role>(`/roles/${id}`, rest);
       return unwrapResponse<Role>(response);
     },
     onError: (error, variables) => {
       if (isConnectionError(error)) {
         addToQueue({
-          type: "update",
+          type: 'update',
           endpoint: `/roles/${variables.id}`,
           data: variables,
         });
@@ -137,15 +122,13 @@ export function useDeleteRole() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiClient.delete<ApiResponse<void>>(
-        `/roles/${id}`,
-      );
+      const response = await apiClient.delete<ApiResponse<void>>(`/roles/${id}`);
       return unwrapResponse<void>(response);
     },
     onError: (error, id) => {
       if (isConnectionError(error)) {
         addToQueue({
-          type: "delete",
+          type: 'delete',
           endpoint: `/roles/${id}`,
           data: null,
         });
@@ -160,16 +143,13 @@ export function useBulkDeleteRole() {
   return useMutation({
     mutationFn: async (data: { ids: string[] }) => {
       // Fix: Pass data inside config object
-      const response = await apiClient.delete<ApiResponse<void>>(
-        "/roles/bulk",
-        { data },
-      );
+      const response = await apiClient.delete<ApiResponse<void>>('/roles/bulk', { data });
       return unwrapResponse<void>(response);
     },
     onError: (error, data) => {
       if (isConnectionError(error)) {
         addToQueue({
-          type: "delete",
+          type: 'delete',
           endpoint: `/roles/bulk`,
           data,
         });

@@ -31,32 +31,24 @@ import {
   ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
-import { Input, InputField } from "@/components/ui/input";
-import { useReturnTransactionStore } from "@/stores/return-transaction";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import z from "zod";
+} from '@/components/ui';
+import { Input, InputField } from '@/components/ui/input';
+import { useReturnTransactionStore } from '@/stores/return-transaction';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import z from 'zod';
 
-import { ProductType } from "@/lib/constants";
-import { formatNumber } from "@/lib/utils/format";
+import { ProductType } from '@/lib/constants';
+import { formatNumber } from '@/lib/utils/format';
 export default function PopupAddProduct() {
   const toast = useToast();
-  const {
-    addProduct,
-    addProductVariantId,
-    cart,
-    setAddProduct,
-    addCartItem,
-    removeCartItem,
-  } = useReturnTransactionStore();
+  const { addProduct, addProductVariantId, cart, setAddProduct, addCartItem, removeCartItem } =
+    useReturnTransactionStore();
 
   const currentProductInCart = addProductVariantId
     ? cart.find(
-        (item) =>
-          item.product.id === addProduct?.id &&
-          item.variant?.id === addProductVariantId,
+        (item) => item.product.id === addProduct?.id && item.variant?.id === addProductVariantId,
       )
     : !addProductVariantId && addProduct?.type !== ProductType.MULTIUNIT
       ? cart.find((item) => item.product.id === addProduct?.id)
@@ -70,7 +62,7 @@ export default function PopupAddProduct() {
 
   const addProductSchema = z.object({
     variantUnitId: z.string().nullable(),
-    quantity: z.number().min(1, "Jumlah harus minimal 1"),
+    quantity: z.number().min(1, 'Jumlah harus minimal 1'),
     addNote: z.boolean(),
     note: z.string(),
   });
@@ -81,7 +73,7 @@ export default function PopupAddProduct() {
     variantUnitId: null,
     quantity: 1,
     addNote: false,
-    note: "",
+    note: '',
   };
 
   const form = useForm<AddProductFormValues>({
@@ -89,15 +81,15 @@ export default function PopupAddProduct() {
     defaultValues: initialValues,
   });
 
-  const quantity = form.watch("quantity");
-  const isAddNoteChecked = form.watch("addNote");
+  const quantity = form.watch('quantity');
+  const isAddNoteChecked = form.watch('addNote');
 
   useEffect(() => {
     if (form.formState.errors.quantity) {
       toast.show({
-        placement: "top",
+        placement: 'top',
         render: ({ id }) => {
-          const toastId = "toast-" + id;
+          const toastId = 'toast-' + id;
           return (
             <Toast nativeID={toastId} action="error" variant="solid">
               <ToastTitle>{form.formState.errors.quantity?.message}</ToastTitle>
@@ -115,7 +107,7 @@ export default function PopupAddProduct() {
         quantity: currentProductInCart.quantity || 0,
         variantUnitId: currentProductInCart.variant?.id || null,
         addNote: !!currentProductInCart.note,
-        note: currentProductInCart.note || "",
+        note: currentProductInCart.note || '',
       });
     } else {
       form.reset({
@@ -126,13 +118,9 @@ export default function PopupAddProduct() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, addProduct, addProductVariantId, currentProductInCart]);
 
-  const onSubmit: SubmitHandler<AddProductFormValues> = (
-    data: AddProductFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<AddProductFormValues> = (data: AddProductFormValues) => {
     if (addProduct?.type === ProductType.MULTIUNIT) {
-      const selectedVariant = addProduct.variants.find(
-        (item) => item.id === data.variantUnitId,
-      );
+      const selectedVariant = addProduct.variants.find((item) => item.id === data.variantUnitId);
 
       if (!selectedVariant) return;
 
@@ -184,9 +172,7 @@ export default function PopupAddProduct() {
         return result;
       };
 
-      const totalNetto = parseFloat(
-        (selectedNetto * data.quantity).toFixed(10),
-      );
+      const totalNetto = parseFloat((selectedNetto * data.quantity).toFixed(10));
       const decomposed = decompose(totalNetto, sortedVariants);
 
       // Remove the variant being edited from cart first
@@ -194,16 +180,12 @@ export default function PopupAddProduct() {
 
       for (const { variant, quantity } of decomposed) {
         const existingItem = cart.find(
-          (item) =>
-            item.product.id === addProduct.id &&
-            item.variant?.id === variant.id,
+          (item) => item.product.id === addProduct.id && item.variant?.id === variant.id,
         );
 
         // Prevent double-counting for the variant being edited
         const existingQty =
-          existingItem && variant.id !== selectedVariant.id
-            ? existingItem.quantity
-            : 0;
+          existingItem && variant.id !== selectedVariant.id ? existingItem.quantity : 0;
 
         const finalQty = existingQty + quantity;
         addCartItem({
@@ -225,8 +207,7 @@ export default function PopupAddProduct() {
       addCartItem({
         product: addProduct,
         quantity: data.quantity,
-        sellPrice:
-          addProduct.lastSellPrice ?? addProduct.sellPrices?.[0]?.price ?? 0,
+        sellPrice: addProduct.lastSellPrice ?? addProduct.sellPrices?.[0]?.price ?? 0,
         note: data.addNote ? data.note : undefined,
       });
     }
@@ -258,11 +239,9 @@ export default function PopupAddProduct() {
                 </VStack>
                 <HStack space="sm">
                   <Heading size="md">
-                    Rp{" "}
+                    Rp{' '}
                     {formatNumber(
-                      addProduct?.lastSellPrice ??
-                        addProduct?.sellPrices?.[0]?.price ??
-                        0,
+                      addProduct?.lastSellPrice ?? addProduct?.sellPrices?.[0]?.price ?? 0,
                     )}
                   </Heading>
                 </HStack>
@@ -279,22 +258,16 @@ export default function PopupAddProduct() {
                         <FormControlLabelText>Pilih Unit</FormControlLabelText>
                       </FormControlLabel>
                       <RadioGroup
-                        value={value || ""}
+                        value={value || ''}
                         onChange={(v) => {
-                          const variant = cart?.find(
-                            (f) => f.variant?.id === v,
-                          );
+                          const variant = cart?.find((f) => f.variant?.id === v);
                           onChange(v);
-                          form.setValue("quantity", variant?.quantity || 1);
+                          form.setValue('quantity', variant?.quantity || 1);
                         }}
                       >
                         <VStack space="sm">
                           {variantUnitOptions.map((variant) => (
-                            <Radio
-                              key={variant.value}
-                              value={variant.value}
-                              size="md"
-                            >
+                            <Radio key={variant.value} value={variant.value} size="md">
                               <RadioIndicator>
                                 <RadioIcon as={CircleIcon} />
                               </RadioIndicator>
@@ -307,10 +280,7 @@ export default function PopupAddProduct() {
                   )}
                 />
               )}
-              <HStack
-                space="md"
-                className="w-full justify-between items-center"
-              >
+              <HStack space="md" className="w-full justify-between items-center">
                 <Pressable
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                   disabled={quantity <= 0}
@@ -318,7 +288,7 @@ export default function PopupAddProduct() {
                     const currentQuantity = quantity;
 
                     if (currentQuantity && currentQuantity > 0) {
-                      form.setValue("quantity", currentQuantity - 1);
+                      form.setValue('quantity', currentQuantity - 1);
                     }
                   }}
                 >
@@ -329,15 +299,8 @@ export default function PopupAddProduct() {
                 <Controller
                   name="quantity"
                   control={form.control}
-                  render={({
-                    field: { onChange, onBlur, value },
-                    fieldState: { error },
-                  }) => (
-                    <FormControl
-                      isRequired
-                      isInvalid={!!error}
-                      className="w-44 h-full"
-                    >
+                  render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                    <FormControl isRequired isInvalid={!!error} className="w-44 h-full">
                       <Input className="flex-1 border-transparent data-[focus=true]:border-transparent bg-transparent">
                         <InputField
                           value={value.toString()}
@@ -357,7 +320,7 @@ export default function PopupAddProduct() {
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                   onPress={() => {
                     const currentQuantity = quantity;
-                    form.setValue("quantity", currentQuantity + 1);
+                    form.setValue('quantity', currentQuantity + 1);
                   }}
                 >
                   <Heading size="2xl" className="text-primary-500">
@@ -369,10 +332,7 @@ export default function PopupAddProduct() {
                 <Controller
                   name="addNote"
                   control={form.control}
-                  render={({
-                    field: { onChange, onBlur, value },
-                    fieldState: { error },
-                  }) => (
+                  render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                     <FormControl isInvalid={!!error}>
                       <Checkbox
                         value={value.toString()}
@@ -380,7 +340,7 @@ export default function PopupAddProduct() {
                         size="md"
                         onChange={(v) => {
                           onChange(v);
-                          if (!v) form.setValue("note", "");
+                          if (!v) form.setValue('note', '');
                         }}
                         onBlur={onBlur}
                       >
@@ -391,9 +351,7 @@ export default function PopupAddProduct() {
                       </Checkbox>
                       {error && (
                         <FormControlError>
-                          <FormControlErrorText>
-                            {error.message}
-                          </FormControlErrorText>
+                          <FormControlErrorText>{error.message}</FormControlErrorText>
                         </FormControlError>
                       )}
                     </FormControl>
@@ -403,10 +361,7 @@ export default function PopupAddProduct() {
                   <Controller
                     name="note"
                     control={form.control}
-                    render={({
-                      field: { onChange, onBlur, value },
-                      fieldState: { error },
-                    }) => (
+                    render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                       <FormControl isInvalid={!!error}>
                         <FormControlLabel>
                           <FormControlLabelText>Catatan</FormControlLabelText>
@@ -422,9 +377,7 @@ export default function PopupAddProduct() {
                         </Textarea>
                         {error && (
                           <FormControlError>
-                            <FormControlErrorText>
-                              {error.message}
-                            </FormControlErrorText>
+                            <FormControlErrorText>{error.message}</FormControlErrorText>
                           </FormControlError>
                         )}
                       </FormControl>

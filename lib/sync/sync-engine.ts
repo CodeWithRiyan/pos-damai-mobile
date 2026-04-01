@@ -1,12 +1,12 @@
-import { db } from "../db";
-import * as schema from "../db/schema";
-import { eq, inArray } from "drizzle-orm";
-import type { SQLiteColumn, SQLiteTable } from "drizzle-orm/sqlite-core";
-import { apiClient } from "../api/client";
-import { storageAdapter } from "../storage";
-import { useAuthStore } from "@/stores/auth";
-import { useSyncQueueStore } from "@/stores/sync-queue-store";
-import { queryClient } from "@/providers/query-provider";
+import { db } from '../db';
+import * as schema from '../db/schema';
+import { eq, inArray } from 'drizzle-orm';
+import type { SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
+import { apiClient } from '../api/client';
+import { storageAdapter } from '../storage';
+import { useAuthStore } from '@/stores/auth';
+import { useSyncQueueStore } from '@/stores/sync-queue';
+import { queryClient } from '@/providers/query-provider';
 
 interface SyncRecord {
   [key: string]: unknown;
@@ -34,25 +34,25 @@ export class SyncEngine {
     try {
       // 1. Context Fetch (Verify online and get orgId)
       // apiClient already has the token interceptor
-      const profileResponse = await apiClient.get("/auth/profile");
+      const profileResponse = await apiClient.get('/auth/profile');
 
       const body = profileResponse?.data;
       const dataPayload = body?.data;
       const currentUser = dataPayload?.user;
 
       if (!currentUser) {
-        throw new Error("User object missing from profile response");
+        throw new Error('User object missing from profile response');
       }
 
       const organizationIdForSync = currentUser.selectedOrganizationId;
 
       if (!organizationIdForSync) {
-        throw new Error("No organizationId found on user profile");
+        throw new Error('No organizationId found on user profile');
       }
 
       // Store user profile for local access (used by local CRUD operations)
       useAuthStore.getState().setProfile(currentUser);
-      queryClient.setQueryData(["auth", "profile"], currentUser);
+      queryClient.setQueryData(['auth', 'profile'], currentUser);
 
       // Force insert the current user into local SQLite so that queries relying on
       // the local `schema.users` table (like Shift history) can always resolve the name.
@@ -60,7 +60,7 @@ export class SyncEngine {
         .insert(schema.users)
         .values({
           id: currentUser.id,
-          name: currentUser.name || currentUser.email || "Unknown",
+          name: currentUser.name || currentUser.email || 'Unknown',
           email: currentUser.email,
           username: currentUser.email || currentUser.id, // Fallback if no explicit username mapping
           organizationId: organizationIdForSync,
@@ -70,7 +70,7 @@ export class SyncEngine {
         .onConflictDoUpdate({
           target: schema.users.id,
           set: {
-            name: currentUser.name || currentUser.email || "Unknown",
+            name: currentUser.name || currentUser.email || 'Unknown',
             email: currentUser.email,
             username: currentUser.email || currentUser.id,
             organizationId: organizationIdForSync,
@@ -81,10 +81,8 @@ export class SyncEngine {
       const orgId = organizationIdForSync;
 
       // 2. Determine Pull Type (Bootstrap vs Incremental)
-      const lastSyncAt = storageAdapter.getItem("lastSyncAt");
-      const syncEndpoint = lastSyncAt
-        ? `/sync/incremental?since=${lastSyncAt}`
-        : `/sync/bootstrap`;
+      const lastSyncAt = storageAdapter.getItem('lastSyncAt');
+      const syncEndpoint = lastSyncAt ? `/sync/incremental?since=${lastSyncAt}` : `/sync/bootstrap`;
 
       console.log(`[Sync] Pulling from ${syncEndpoint}`);
       const pullRes = await apiClient.get(syncEndpoint);
@@ -140,9 +138,7 @@ export class SyncEngine {
         for (const [serverKey, records] of Object.entries(serverData)) {
           const table = tableMap[serverKey];
           if (!table) {
-            console.warn(
-              `[Sync] No local table mapping for server key: ${serverKey}`,
-            );
+            console.warn(`[Sync] No local table mapping for server key: ${serverKey}`);
             continue;
           }
 
@@ -151,10 +147,7 @@ export class SyncEngine {
             const processedRecord = { ...record };
             for (const key in processedRecord) {
               const val = processedRecord[key];
-              if (
-                typeof val === "string" &&
-                /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)
-              ) {
+              if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)) {
                 const date = new Date(val);
                 if (!isNaN(date.getTime())) {
                   processedRecord[key] = date;
@@ -165,15 +158,12 @@ export class SyncEngine {
             if (processedRecord.deletedAt) {
               // Handle tables where ID might be different (e.g., transactions use local_ref_id for some cases, but schema still has 'id')
               // The server data for products/categories uses 'id'
-              const idToMatch =
-                processedRecord.id || processedRecord.local_ref_id;
+              const idToMatch = processedRecord.id || processedRecord.local_ref_id;
               if (idToMatch) {
                 // Determine which column to match against
                 const idCol =
                   table.id ||
-                  (table.local_ref_id && processedRecord.local_ref_id
-                    ? table.local_ref_id
-                    : null);
+                  (table.local_ref_id && processedRecord.local_ref_id ? table.local_ref_id : null);
                 if (idCol) {
                   await tx.delete(table).where(eq(idCol, idToMatch));
                 }
@@ -190,11 +180,10 @@ export class SyncEngine {
               const target = (table.local_ref_id || table.id)!;
 
               // Strip nested relationships from server data to prevent Drizzle/SQLite errors
-              const { items, realizations, ...valuesToInsert } =
-                values as SyncRecord & {
-                  items?: unknown;
-                  realizations?: unknown;
-                };
+              const { items, realizations, ...valuesToInsert } = values as SyncRecord & {
+                items?: unknown;
+                realizations?: unknown;
+              };
 
               await tx.insert(table).values(valuesToInsert).onConflictDoUpdate({
                 target: target,
@@ -209,9 +198,9 @@ export class SyncEngine {
       await this.pushDirtyRecords(orgId);
 
       // 5. Finalize
-      storageAdapter.setItem("lastSyncAt", serverTime);
+      storageAdapter.setItem('lastSyncAt', serverTime);
       useSyncQueueStore.getState().setLastSyncAt(Date.now());
-      console.log("[Sync] Completed successfully at", serverTime);
+      console.log('[Sync] Completed successfully at', serverTime);
 
       return { success: true };
     } catch (error: unknown) {
@@ -221,11 +210,11 @@ export class SyncEngine {
       };
       if (err.response) {
         console.error(
-          "[Sync] Engine error (Response):",
+          '[Sync] Engine error (Response):',
           JSON.stringify(err.response.data, null, 2),
         );
       }
-      console.error("[Sync] Engine error:", err.message);
+      console.error('[Sync] Engine error:', err.message);
       throw error;
     }
   }
@@ -239,10 +228,7 @@ export class SyncEngine {
       .select()
       .from(schema.categories)
       .where(eq(schema.categories._dirty, true));
-    const dirtyBrands = await db
-      .select()
-      .from(schema.brands)
-      .where(eq(schema.brands._dirty, true));
+    const dirtyBrands = await db.select().from(schema.brands).where(eq(schema.brands._dirty, true));
     const dirtyProducts = await db
       .select()
       .from(schema.products)
@@ -284,9 +270,7 @@ export class SyncEngine {
 
     // Fetch those products if they aren't already in dirtyProducts
     const existingDirtyProductIds = new Set(dirtyProducts.map((p) => p.id));
-    const missingProductIds = extraProductIds.filter(
-      (id) => !existingDirtyProductIds.has(id),
-    );
+    const missingProductIds = extraProductIds.filter((id) => !existingDirtyProductIds.has(id));
 
     let allProductsToPush = [...dirtyProducts];
     if (missingProductIds.length > 0) {
@@ -338,10 +322,7 @@ export class SyncEngine {
       .select()
       .from(schema.finances)
       .where(eq(schema.finances._dirty, true));
-    const dirtyShifts = await db
-      .select()
-      .from(schema.shifts)
-      .where(eq(schema.shifts._dirty, true));
+    const dirtyShifts = await db.select().from(schema.shifts).where(eq(schema.shifts._dirty, true));
     const dirtyCashDrawers = await db
       .select()
       .from(schema.cashDrawers)
@@ -378,28 +359,16 @@ export class SyncEngine {
       .where(eq(schema.storeSupplyItems._dirty, true));
 
     // Get unique parent IDs for dirty items
-    const extraReturnIds = [
-      ...new Set(dirtyReturnItems.map((i) => i.purchaseReturnId)),
-    ];
-    const extraTxReturnIds = [
-      ...new Set(dirtyTxReturnItems.map((i) => i.transactionReturnId)),
-    ];
-    const extraOpnameIds = [
-      ...new Set(dirtyOpnameItems.map((i) => i.stockOpnameId)),
-    ];
-    const extraSalesTxIds = [
-      ...new Set(dirtySalesTxItems.map((i) => i.transactionId)),
-    ];
-    const extraStoreSupplyIds = [
-      ...new Set(dirtyStoreSupplyItems.map((i) => i.storeSupplyId)),
-    ];
+    const extraReturnIds = [...new Set(dirtyReturnItems.map((i) => i.purchaseReturnId))];
+    const extraTxReturnIds = [...new Set(dirtyTxReturnItems.map((i) => i.transactionReturnId))];
+    const extraOpnameIds = [...new Set(dirtyOpnameItems.map((i) => i.stockOpnameId))];
+    const extraSalesTxIds = [...new Set(dirtySalesTxItems.map((i) => i.transactionId))];
+    const extraStoreSupplyIds = [...new Set(dirtyStoreSupplyItems.map((i) => i.storeSupplyId))];
 
     // Fetch parent records if missing
     let allReturns = [...dirtyReturns];
     const existingReturnIds = new Set(dirtyReturns.map((r) => r.id));
-    const missingReturnIds = extraReturnIds.filter(
-      (id) => !existingReturnIds.has(id),
-    );
+    const missingReturnIds = extraReturnIds.filter((id) => !existingReturnIds.has(id));
     if (missingReturnIds.length > 0) {
       const extraReturns = await db
         .select()
@@ -409,12 +378,8 @@ export class SyncEngine {
     }
 
     let allTxReturns = [...dirtyTransactionReturns];
-    const existingTxReturnIds = new Set(
-      dirtyTransactionReturns.map((r) => r.id),
-    );
-    const missingTxReturnIds = extraTxReturnIds.filter(
-      (id) => !existingTxReturnIds.has(id),
-    );
+    const existingTxReturnIds = new Set(dirtyTransactionReturns.map((r) => r.id));
+    const missingTxReturnIds = extraTxReturnIds.filter((id) => !existingTxReturnIds.has(id));
     if (missingTxReturnIds.length > 0) {
       const extraTxReturns = await db
         .select()
@@ -425,9 +390,7 @@ export class SyncEngine {
 
     let allOpnames = [...dirtyStockOpnames];
     const existingOpnameIds = new Set(dirtyStockOpnames.map((o) => o.id));
-    const missingOpnameIds = extraOpnameIds.filter(
-      (id) => !existingOpnameIds.has(id),
-    );
+    const missingOpnameIds = extraOpnameIds.filter((id) => !existingOpnameIds.has(id));
     if (missingOpnameIds.length > 0) {
       const extraOpnames = await db
         .select()
@@ -438,9 +401,7 @@ export class SyncEngine {
 
     let allSalesTransactions = [...dirtySalesTransactions];
     const existingSalesTxIds = new Set(dirtySalesTransactions.map((t) => t.id));
-    const missingSalesTxIds = extraSalesTxIds.filter(
-      (id) => !existingSalesTxIds.has(id),
-    );
+    const missingSalesTxIds = extraSalesTxIds.filter((id) => !existingSalesTxIds.has(id));
     if (missingSalesTxIds.length > 0) {
       const extraSalesTx = await db
         .select()
@@ -486,7 +447,7 @@ export class SyncEngine {
       allStoreSupplies.length;
 
     if (totalDirty === 0) {
-      console.log("[Sync] No dirty records to push");
+      console.log('[Sync] No dirty records to push');
       return;
     }
 
@@ -501,9 +462,7 @@ export class SyncEngine {
         ? await db
             .select()
             .from(schema.purchaseReturnItems)
-            .where(
-              inArray(schema.purchaseReturnItems.purchaseReturnId, returnIds),
-            )
+            .where(inArray(schema.purchaseReturnItems.purchaseReturnId, returnIds))
         : [];
 
     const transactionReturnIds = allTxReturns.map((r) => r.id);
@@ -512,12 +471,7 @@ export class SyncEngine {
         ? await db
             .select()
             .from(schema.transactionReturnItems)
-            .where(
-              inArray(
-                schema.transactionReturnItems.transactionReturnId,
-                transactionReturnIds,
-              ),
-            )
+            .where(inArray(schema.transactionReturnItems.transactionReturnId, transactionReturnIds))
         : [];
 
     // Fetch ALL items for stock opnames we are pushing
@@ -547,9 +501,7 @@ export class SyncEngine {
         ? await db
             .select()
             .from(schema.storeSupplyItems)
-            .where(
-              inArray(schema.storeSupplyItems.storeSupplyId, storeSupplyIdList),
-            )
+            .where(inArray(schema.storeSupplyItems.storeSupplyId, storeSupplyIdList))
         : [];
 
     // Fetch ALL prices and variants for all products we are pushing
@@ -582,38 +534,17 @@ export class SyncEngine {
           deletedAt: deletedAt ? deletedAt.toISOString() : null,
           prices: allPrices
             .filter((p) => p.productId === rest.id)
-            .map(
-              ({
-                _dirty,
-                _syncedAt,
-                createdAt,
-                updatedAt,
-                deletedAt,
-                ...pRest
-              }) => ({
-                ...pRest,
-                deletedAt: deletedAt ? deletedAt.toISOString() : null,
-              }),
-            ),
+            .map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...pRest }) => ({
+              ...pRest,
+              deletedAt: deletedAt ? deletedAt.toISOString() : null,
+            })),
           variants: allVariants
             .filter((v) => v.productId === rest.id)
-            .map(
-              ({
-                _dirty,
-                _syncedAt,
-                createdAt,
-                updatedAt,
-                deletedAt,
-                ...vRest
-              }) => ({
-                ...vRest,
-                netto:
-                  typeof vRest.netto === "number"
-                    ? vRest.netto
-                    : Number(vRest.netto) || 1,
-                deletedAt: deletedAt ? deletedAt.toISOString() : null,
-              }),
-            ),
+            .map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...vRest }) => ({
+              ...vRest,
+              netto: typeof vRest.netto === 'number' ? vRest.netto : Number(vRest.netto) || 1,
+              deletedAt: deletedAt ? deletedAt.toISOString() : null,
+            })),
         }),
       ),
       customers: dirtyCustomers.map(
@@ -640,16 +571,7 @@ export class SyncEngine {
         }),
       ),
       discounts: dirtyDiscounts.map(
-        ({
-          _dirty,
-          _syncedAt,
-          startDate,
-          endDate,
-          createdAt,
-          updatedAt,
-          deletedAt,
-          ...rest
-        }) => ({
+        ({ _dirty, _syncedAt, startDate, endDate, createdAt, updatedAt, deletedAt, ...rest }) => ({
           ...rest,
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
@@ -678,16 +600,9 @@ export class SyncEngine {
         }) => ({
           ...rest,
           paymentMethodId: paymentTypeId || undefined,
-          totalAmount:
-            typeof totalAmount === "number"
-              ? totalAmount
-              : Number(totalAmount) || 0,
-          totalPaid:
-            typeof totalPaid === "number" ? totalPaid : Number(totalPaid) || 0,
-          commission:
-            typeof commission === "number"
-              ? commission
-              : Number(commission) || 0,
+          totalAmount: typeof totalAmount === 'number' ? totalAmount : Number(totalAmount) || 0,
+          totalPaid: typeof totalPaid === 'number' ? totalPaid : Number(totalPaid) || 0,
+          commission: typeof commission === 'number' ? commission : Number(commission) || 0,
           dueDate: dueDate ? dueDate.toISOString() : undefined,
           createdAt: createdAt ? createdAt.toISOString() : undefined,
           updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
@@ -700,10 +615,7 @@ export class SyncEngine {
           variantId: rest.variantId || undefined,
           inventoryBatchId: rest.inventoryBatchId || undefined,
           note: rest.note || undefined,
-          quantity:
-            typeof rest.quantity === "number"
-              ? rest.quantity
-              : Number(rest.quantity) || 0,
+          quantity: typeof rest.quantity === 'number' ? rest.quantity : Number(rest.quantity) || 0,
           createdAt: createdAt ? createdAt.toISOString() : undefined,
           updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
           deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
@@ -713,223 +625,129 @@ export class SyncEngine {
         ({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
           ...rest,
           totalAmount:
-            typeof rest.totalAmount === "number"
-              ? rest.totalAmount
-              : Number(rest.totalAmount) || 0,
+            typeof rest.totalAmount === 'number' ? rest.totalAmount : Number(rest.totalAmount) || 0,
           createdAt: createdAt ? createdAt.toISOString() : undefined,
           updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
           deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
           items: returnItems
             .filter((i) => i.purchaseReturnId === rest.id)
-            .map(
-              ({
-                _dirty,
-                _syncedAt,
-                createdAt,
-                updatedAt,
-                deletedAt,
-                ...iRest
-              }) => ({
-                ...iRest,
-                quantity:
-                  typeof iRest.quantity === "number"
-                    ? iRest.quantity
-                    : Number(iRest.quantity) || 0,
-                purchasePrice:
-                  typeof iRest.purchasePrice === "number"
-                    ? iRest.purchasePrice
-                    : Number(iRest.purchasePrice) || 0,
-                createdAt: createdAt ? createdAt.toISOString() : undefined,
-                updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
-                deletedAt: deletedAt ? deletedAt.toISOString() : null,
-              }),
-            ),
+            .map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
+              ...iRest,
+              quantity:
+                typeof iRest.quantity === 'number' ? iRest.quantity : Number(iRest.quantity) || 0,
+              purchasePrice:
+                typeof iRest.purchasePrice === 'number'
+                  ? iRest.purchasePrice
+                  : Number(iRest.purchasePrice) || 0,
+              createdAt: createdAt ? createdAt.toISOString() : undefined,
+              updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+              deletedAt: deletedAt ? deletedAt.toISOString() : null,
+            })),
         }),
       ),
       transactionReturns: allTxReturns.map(
         ({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
           ...rest,
           totalAmount:
-            typeof rest.totalAmount === "number"
-              ? rest.totalAmount
-              : Number(rest.totalAmount) || 0,
+            typeof rest.totalAmount === 'number' ? rest.totalAmount : Number(rest.totalAmount) || 0,
           createdAt: createdAt ? createdAt.toISOString() : undefined,
           updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
           deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
           items: transactionReturnItems
             .filter((i) => i.transactionReturnId === rest.id)
-            .map(
-              ({
-                _dirty,
-                _syncedAt,
-                createdAt,
-                updatedAt,
-                deletedAt,
-                ...iRest
-              }) => ({
-                ...iRest,
-                quantity:
-                  typeof iRest.quantity === "number"
-                    ? iRest.quantity
-                    : Number(iRest.quantity) || 0,
-                sellPrice:
-                  typeof iRest.sellPrice === "number"
-                    ? iRest.sellPrice
-                    : Number(iRest.sellPrice) || 0,
-                createdAt: createdAt ? createdAt.toISOString() : undefined,
-                updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
-                deletedAt: deletedAt ? deletedAt.toISOString() : null,
-              }),
-            ),
+            .map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
+              ...iRest,
+              quantity:
+                typeof iRest.quantity === 'number' ? iRest.quantity : Number(iRest.quantity) || 0,
+              sellPrice:
+                typeof iRest.sellPrice === 'number'
+                  ? iRest.sellPrice
+                  : Number(iRest.sellPrice) || 0,
+              createdAt: createdAt ? createdAt.toISOString() : undefined,
+              updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+              deletedAt: deletedAt ? deletedAt.toISOString() : null,
+            })),
         }),
       ),
       stockOpnames: allOpnames.map(
         ({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
           ...rest,
           totalGain:
-            typeof rest.totalGain === "number"
-              ? rest.totalGain
-              : Number(rest.totalGain) || 0,
+            typeof rest.totalGain === 'number' ? rest.totalGain : Number(rest.totalGain) || 0,
           totalLoss:
-            typeof rest.totalLoss === "number"
-              ? rest.totalLoss
-              : Number(rest.totalLoss) || 0,
+            typeof rest.totalLoss === 'number' ? rest.totalLoss : Number(rest.totalLoss) || 0,
           createdAt: createdAt ? createdAt.toISOString() : undefined,
           updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
           deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
           items: opnameItems
             .filter((i) => i.stockOpnameId === rest.id)
-            .map(
-              ({
-                _dirty,
-                _syncedAt,
-                createdAt,
-                updatedAt,
-                deletedAt,
-                ...iRest
-              }) => ({
-                ...iRest,
-                quantitySystem:
-                  typeof iRest.quantitySystem === "number"
-                    ? iRest.quantitySystem
-                    : Number(iRest.quantitySystem) || 0,
-                quantityPhysical:
-                  typeof iRest.quantityPhysical === "number"
-                    ? iRest.quantityPhysical
-                    : Number(iRest.quantityPhysical) || 0,
-                difference:
-                  typeof iRest.difference === "number"
-                    ? iRest.difference
-                    : Number(iRest.difference) || 0,
-                purchasePrice:
-                  typeof iRest.purchasePrice === "number"
-                    ? iRest.purchasePrice
-                    : Number(iRest.purchasePrice) || 0,
-                financialImpact:
-                  typeof iRest.financialImpact === "number"
-                    ? iRest.financialImpact
-                    : Number(iRest.financialImpact) || 0,
-                createdAt: createdAt ? createdAt.toISOString() : undefined,
-                updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
-                deletedAt: deletedAt ? deletedAt.toISOString() : null,
-              }),
-            ),
+            .map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
+              ...iRest,
+              quantitySystem:
+                typeof iRest.quantitySystem === 'number'
+                  ? iRest.quantitySystem
+                  : Number(iRest.quantitySystem) || 0,
+              quantityPhysical:
+                typeof iRest.quantityPhysical === 'number'
+                  ? iRest.quantityPhysical
+                  : Number(iRest.quantityPhysical) || 0,
+              difference:
+                typeof iRest.difference === 'number'
+                  ? iRest.difference
+                  : Number(iRest.difference) || 0,
+              purchasePrice:
+                typeof iRest.purchasePrice === 'number'
+                  ? iRest.purchasePrice
+                  : Number(iRest.purchasePrice) || 0,
+              financialImpact:
+                typeof iRest.financialImpact === 'number'
+                  ? iRest.financialImpact
+                  : Number(iRest.financialImpact) || 0,
+              createdAt: createdAt ? createdAt.toISOString() : undefined,
+              updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+              deletedAt: deletedAt ? deletedAt.toISOString() : null,
+            })),
         }),
       ),
       payables: dirtyPayables.map(
-        ({
-          _dirty,
-          _syncedAt,
-          dueDate,
-          createdAt,
-          updatedAt,
-          deletedAt,
-          ...rest
-        }) => ({
+        ({ _dirty, _syncedAt, dueDate, createdAt, updatedAt, deletedAt, ...rest }) => ({
           ...rest,
           dueDate: dueDate ? dueDate.toISOString() : null,
           deletedAt: deletedAt ? deletedAt.toISOString() : null,
         }),
       ),
       payableRealizations: dirtyPayableRealizations.map(
-        ({
-          _dirty,
-          _syncedAt,
-          realizationDate,
-          createdAt,
-          updatedAt,
-          deletedAt,
-          ...rest
-        }) => ({
+        ({ _dirty, _syncedAt, realizationDate, createdAt, updatedAt, deletedAt, ...rest }) => ({
           ...rest,
-          realizationDate: realizationDate
-            ? realizationDate.toISOString()
-            : null,
+          realizationDate: realizationDate ? realizationDate.toISOString() : null,
           deletedAt: deletedAt ? deletedAt.toISOString() : null,
         }),
       ),
       receivables: dirtyReceivables.map(
-        ({
-          _dirty,
-          _syncedAt,
-          dueDate,
-          createdAt,
-          updatedAt,
-          deletedAt,
-          ...rest
-        }) => ({
+        ({ _dirty, _syncedAt, dueDate, createdAt, updatedAt, deletedAt, ...rest }) => ({
           ...rest,
           dueDate: dueDate ? dueDate.toISOString() : null,
           deletedAt: deletedAt ? deletedAt.toISOString() : null,
         }),
       ),
       receivableRealizations: dirtyReceivableRealizations.map(
-        ({
-          _dirty,
-          _syncedAt,
-          realizationDate,
-          createdAt,
-          updatedAt,
-          deletedAt,
-          ...rest
-        }) => ({
+        ({ _dirty, _syncedAt, realizationDate, createdAt, updatedAt, deletedAt, ...rest }) => ({
           ...rest,
-          realizationDate: realizationDate
-            ? realizationDate.toISOString()
-            : null,
+          realizationDate: realizationDate ? realizationDate.toISOString() : null,
           deletedAt: deletedAt ? deletedAt.toISOString() : null,
         }),
       ),
       finances: dirtyFinances.map(
-        ({
-          _dirty,
-          _syncedAt,
-          transactionDate,
-          createdAt,
-          updatedAt,
-          deletedAt,
-          ...rest
-        }) => ({
+        ({ _dirty, _syncedAt, transactionDate, createdAt, updatedAt, deletedAt, ...rest }) => ({
           ...rest,
-          transactionDate: transactionDate
-            ? transactionDate.toISOString()
-            : undefined,
+          transactionDate: transactionDate ? transactionDate.toISOString() : undefined,
           createdAt: createdAt ? createdAt.toISOString() : undefined,
           updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
           deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
         }),
       ),
       shifts: dirtyShifts.map(
-        ({
-          _dirty,
-          _syncedAt,
-          startTime,
-          endTime,
-          createdAt,
-          updatedAt,
-          deletedAt,
-          ...rest
-        }) => ({
+        ({ _dirty, _syncedAt, startTime, endTime, createdAt, updatedAt, deletedAt, ...rest }) => ({
           ...rest,
           startTime: startTime ? startTime.toISOString() : undefined,
           endTime: endTime ? endTime.toISOString() : undefined,
@@ -965,81 +783,45 @@ export class SyncEngine {
           customerId: rest.customerId || undefined,
           employeeId: rest.employeeId || undefined,
           note: rest.note || undefined,
-          totalAmount:
-            typeof totalAmount === "number"
-              ? totalAmount
-              : Number(totalAmount) || 0,
-          totalPaid:
-            typeof totalPaid === "number" ? totalPaid : Number(totalPaid) || 0,
-          commission:
-            typeof commission === "number"
-              ? commission
-              : Number(commission) || 0,
+          totalAmount: typeof totalAmount === 'number' ? totalAmount : Number(totalAmount) || 0,
+          totalPaid: typeof totalPaid === 'number' ? totalPaid : Number(totalPaid) || 0,
+          commission: typeof commission === 'number' ? commission : Number(commission) || 0,
           totalDiscount:
-            typeof totalDiscount === "number"
-              ? totalDiscount
-              : Number(totalDiscount) || 0,
-          totalProfit:
-            typeof totalProfit === "number"
-              ? totalProfit
-              : Number(totalProfit) || 0,
-          transactionDate: transactionDate
-            ? transactionDate.toISOString()
-            : undefined,
+            typeof totalDiscount === 'number' ? totalDiscount : Number(totalDiscount) || 0,
+          totalProfit: typeof totalProfit === 'number' ? totalProfit : Number(totalProfit) || 0,
+          transactionDate: transactionDate ? transactionDate.toISOString() : undefined,
           createdAt: createdAt ? createdAt.toISOString() : undefined,
           updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
           deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
           items: salesTxItems
             .filter((i) => i.transactionId === rest.id)
-            .map(
-              ({
-                _dirty,
-                _syncedAt,
-                createdAt,
-                updatedAt,
-                deletedAt,
-                ...iRest
-              }) => ({
-                ...iRest,
-                variantId: iRest.variantId || undefined,
-                note: iRest.note || undefined,
-                quantity:
-                  typeof iRest.quantity === "number"
-                    ? iRest.quantity
-                    : Number(iRest.quantity) || 0,
-                sellPrice:
-                  typeof iRest.sellPrice === "number"
-                    ? iRest.sellPrice
-                    : Number(iRest.sellPrice) || 0,
-                discountAmount:
-                  typeof iRest.discountAmount === "number"
-                    ? iRest.discountAmount
-                    : Number(iRest.discountAmount) || 0,
-                purchasePrice:
-                  typeof iRest.purchasePrice === "number"
-                    ? iRest.purchasePrice
-                    : Number(iRest.purchasePrice) || 0,
-                profit:
-                  typeof iRest.profit === "number"
-                    ? iRest.profit
-                    : Number(iRest.profit) || 0,
-                createdAt: createdAt ? createdAt.toISOString() : undefined,
-                updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
-                deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
-              }),
-            ),
+            .map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
+              ...iRest,
+              variantId: iRest.variantId || undefined,
+              note: iRest.note || undefined,
+              quantity:
+                typeof iRest.quantity === 'number' ? iRest.quantity : Number(iRest.quantity) || 0,
+              sellPrice:
+                typeof iRest.sellPrice === 'number'
+                  ? iRest.sellPrice
+                  : Number(iRest.sellPrice) || 0,
+              discountAmount:
+                typeof iRest.discountAmount === 'number'
+                  ? iRest.discountAmount
+                  : Number(iRest.discountAmount) || 0,
+              purchasePrice:
+                typeof iRest.purchasePrice === 'number'
+                  ? iRest.purchasePrice
+                  : Number(iRest.purchasePrice) || 0,
+              profit: typeof iRest.profit === 'number' ? iRest.profit : Number(iRest.profit) || 0,
+              createdAt: createdAt ? createdAt.toISOString() : undefined,
+              updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+              deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
+            })),
         }),
       ),
       storeSupplies: allStoreSupplies.map(
-        ({
-          _dirty,
-          _syncedAt,
-          date,
-          createdAt,
-          updatedAt,
-          deletedAt,
-          ...rest
-        }) => ({
+        ({ _dirty, _syncedAt, date, createdAt, updatedAt, deletedAt, ...rest }) => ({
           ...rest,
           date: date.toISOString(),
           createdAt: createdAt ? createdAt.toISOString() : undefined,
@@ -1047,41 +829,29 @@ export class SyncEngine {
           deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
           items: storeSupplyItems
             .filter((i) => i.storeSupplyId === rest.id)
-            .map(
-              ({
-                _dirty,
-                _syncedAt,
-                createdAt,
-                updatedAt,
-                deletedAt,
-                ...iRest
-              }) => ({
-                ...iRest,
-                quantitySystem:
-                  typeof iRest.quantitySystem === "number"
-                    ? iRest.quantitySystem
-                    : Number(iRest.quantitySystem) || 0,
-                quantityPhysical:
-                  typeof iRest.quantityPhysical === "number"
-                    ? iRest.quantityPhysical
-                    : Number(iRest.quantityPhysical) || 0,
-                usage:
-                  typeof iRest.usage === "number"
-                    ? iRest.usage
-                    : Number(iRest.usage) || 0,
-                purchasePrice:
-                  typeof iRest.purchasePrice === "number"
-                    ? iRest.purchasePrice
-                    : Number(iRest.purchasePrice) || 0,
-                createdAt: createdAt ? createdAt.toISOString() : undefined,
-                updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
-                deletedAt: deletedAt ? deletedAt.toISOString() : null,
-              }),
-            ),
+            .map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
+              ...iRest,
+              quantitySystem:
+                typeof iRest.quantitySystem === 'number'
+                  ? iRest.quantitySystem
+                  : Number(iRest.quantitySystem) || 0,
+              quantityPhysical:
+                typeof iRest.quantityPhysical === 'number'
+                  ? iRest.quantityPhysical
+                  : Number(iRest.quantityPhysical) || 0,
+              usage: typeof iRest.usage === 'number' ? iRest.usage : Number(iRest.usage) || 0,
+              purchasePrice:
+                typeof iRest.purchasePrice === 'number'
+                  ? iRest.purchasePrice
+                  : Number(iRest.purchasePrice) || 0,
+              createdAt: createdAt ? createdAt.toISOString() : undefined,
+              updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
+              deletedAt: deletedAt ? deletedAt.toISOString() : null,
+            })),
         }),
       ),
     };
-    const pushRes = await apiClient.post("/sync/push", pushPayload);
+    const pushRes = await apiClient.post('/sync/push', pushPayload);
 
     // Backend wraps response in StandardResponse { data: { ... }, ... }
     if (pushRes.data && pushRes.data.data) {
@@ -1210,9 +980,7 @@ export class SyncEngine {
               _dirty: false,
               _syncedAt: new Date(),
             })
-            .where(
-              eq(schema.transactionReturnItems.transactionReturnId, res.id),
-            );
+            .where(eq(schema.transactionReturnItems.transactionReturnId, res.id));
         }
 
         for (const res of results.stockOpnames || []) {
@@ -1335,7 +1103,7 @@ export class SyncEngine {
         }
       });
 
-      console.log("[Sync] Push completed and local records updated");
+      console.log('[Sync] Push completed and local records updated');
     }
   }
 }

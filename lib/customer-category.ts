@@ -1,3 +1,3 @@
-export const helperCustomerCategory = (category = "") => {
-  return category === "RETAIL" ? "RETAIL" : "GROSIR";
+export const helperCustomerCategory = (category = '') => {
+  return category === 'RETAIL' ? 'RETAIL' : 'GROSIR';
 };

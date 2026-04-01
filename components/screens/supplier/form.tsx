@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   FormControl,
   FormControlError,
@@ -15,8 +15,8 @@ import {
   ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
-import { showErrorToast } from "@/lib/utils/toast";
+} from '@/components/ui';
+import { showErrorToast } from '@/lib/utils/toast';
 import {
   CreateSupplierDTO,
   UpdateSupplierDTO,
@@ -24,13 +24,13 @@ import {
   useSupplier,
   useSuppliers,
   useUpdateSupplier,
-} from "@/lib/api/suppliers";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { ScrollView } from "react-native";
-import { z } from "zod";
+} from '@/lib/api/suppliers';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { ScrollView } from 'react-native';
+import { z } from 'zod';
 
 export default function SupplierForm() {
   const router = useRouter();
@@ -39,7 +39,7 @@ export default function SupplierForm() {
   const supplierId = id as string;
 
   const supplierSchema = z.object({
-    name: z.string().min(1, "Nama wajib diisi."),
+    name: z.string().min(1, 'Nama wajib diisi.'),
     phone: z.string(),
     address: z.string(),
   });
@@ -47,9 +47,9 @@ export default function SupplierForm() {
   type SupplierFormValues = z.infer<typeof supplierSchema>;
 
   const initialValues: SupplierFormValues = {
-    name: "",
-    phone: "",
-    address: "",
+    name: '',
+    phone: '',
+    address: '',
   };
 
   const form = useForm<SupplierFormValues>({
@@ -58,9 +58,7 @@ export default function SupplierForm() {
   });
 
   const { refetch: refetchSuppliers } = useSuppliers();
-  const { data: supplier, refetch: refetchSupplier } = useSupplier(
-    supplierId || "",
-  );
+  const { data: supplier, refetch: refetchSupplier } = useSupplier(supplierId || '');
 
   const createMutation = useCreateSupplier();
   const updateMutation = useUpdateSupplier();
@@ -73,8 +71,8 @@ export default function SupplierForm() {
     if (supplierId && supplier) {
       form.reset({
         name: supplier.name,
-        phone: supplier.phone || "",
-        address: supplier.address || "",
+        phone: supplier.phone || '',
+        address: supplier.address || '',
       });
     } else {
       form.reset(initialValues);
@@ -93,9 +91,7 @@ export default function SupplierForm() {
     router.back();
   };
 
-  const onSubmit: SubmitHandler<SupplierFormValues> = (
-    data: SupplierFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<SupplierFormValues> = (data: SupplierFormValues) => {
     if (supplierId && supplier) {
       const updateData: UpdateSupplierDTO = {
         ...data,
@@ -106,7 +102,7 @@ export default function SupplierForm() {
           onRefetch();
           handleCancel();
           toast.show({
-            placement: "top",
+            placement: 'top',
             render: ({ id }) => (
               <Toast nativeID={`toast-${id}`} action="success" variant="solid">
                 <ToastTitle>Supplier berhasil diubah</ToastTitle>
@@ -126,7 +122,7 @@ export default function SupplierForm() {
           form.reset(initialValues);
           handleCancel();
           toast.show({
-            placement: "top",
+            placement: 'top',
             render: ({ id }) => (
               <Toast nativeID={`toast-${id}`} action="success" variant="solid">
                 <ToastTitle>Supplier berhasil ditambahkan</ToastTitle>
@@ -143,17 +139,14 @@ export default function SupplierForm() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header={isAdd ? "TAMBAH SUPPLIER" : "EDIT SUPPLIER"} isGoBack />
+      <Header header={isAdd ? 'TAMBAH SUPPLIER' : 'EDIT SUPPLIER'} isGoBack />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="lg" className="p-4">
           <Controller
             name="name"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Nama</FormControlLabelText>
@@ -178,10 +171,7 @@ export default function SupplierForm() {
           <Controller
             name="phone"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>No Handphone</FormControlLabelText>
@@ -206,10 +196,7 @@ export default function SupplierForm() {
           <Controller
             name="address"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Alamat</FormControlLabelText>

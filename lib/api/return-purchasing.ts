@@ -1,16 +1,16 @@
-import { InventoryTxType, ReturnType, Status } from "@/lib/constants";
-import { useAuthStore } from "@/stores/auth";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { desc, eq } from "drizzle-orm";
-import { db } from "../db";
-import { generateLocalRefId } from "../utils/reference";
+import { InventoryTxType, ReturnType, Status } from '@/lib/constants';
+import { useAuthStore } from '@/stores/auth';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { desc, eq } from 'drizzle-orm';
+import { db } from '../db';
+import { generateLocalRefId } from '../utils/reference';
 import {
   inventoryTransactions,
   purchaseReturnItems,
   purchaseReturns,
   suppliers,
   users,
-} from "../db/schema";
+} from '../db/schema';
 
 export interface ReturnPurchasingItem {
   productId: string;
@@ -25,7 +25,7 @@ export interface ReturnPurchasing {
   supplierId: string;
   supplierName?: string;
   totalAmount: number;
-  returnType: "CASH" | "ITEM";
+  returnType: 'CASH' | 'ITEM';
   note: string; // Required field for return reason
   items?: ReturnPurchasingItem[];
   createdBy: string | null;
@@ -41,12 +41,10 @@ export interface PurchaseReturnParams {
 
 export const usePurchaseReturns = (params: PurchaseReturnParams | void) => {
   const isUsedFilter = !!params?.supplierId;
-  const organizationId = useAuthStore(
-    (state) => state.profile?.selectedOrganizationId,
-  );
+  const organizationId = useAuthStore((state) => state.profile?.selectedOrganizationId);
 
   return useQuery({
-    queryKey: ["purchase-returns", organizationId, params?.supplierId],
+    queryKey: ['purchase-returns', organizationId, params?.supplierId],
     queryFn: async () => {
       if (!organizationId) return [];
 
@@ -56,22 +54,17 @@ export const usePurchaseReturns = (params: PurchaseReturnParams | void) => {
           .from(purchaseReturns)
           .where(eq(purchaseReturns.organizationId, organizationId))
           .orderBy(desc(purchaseReturns.createdAt)),
-        db
-          .select()
-          .from(suppliers)
-          .where(eq(suppliers.organizationId, organizationId)),
+        db.select().from(suppliers).where(eq(suppliers.organizationId, organizationId)),
       ]);
 
       const supplierMap = new Map(supdat.map((s) => [s.id, s.name]));
 
       const retData = retdat.map((r) => ({
         ...r,
-        supplierName: supplierMap.get(r.supplierId) || "Unknown",
+        supplierName: supplierMap.get(r.supplierId) || 'Unknown',
       }));
 
-      const filteredRetData = retData.filter(
-        (r) => r.supplierId === params?.supplierId,
-      );
+      const filteredRetData = retData.filter((r) => r.supplierId === params?.supplierId);
 
       return isUsedFilter ? filteredRetData : retData;
     },
@@ -80,12 +73,10 @@ export const usePurchaseReturns = (params: PurchaseReturnParams | void) => {
 };
 
 export const usePurchaseReturn = (id: string) => {
-  const organizationId = useAuthStore(
-    (state) => state.profile?.selectedOrganizationId,
-  );
+  const organizationId = useAuthStore((state) => state.profile?.selectedOrganizationId);
 
   return useQuery({
-    queryKey: ["purchase-return", id],
+    queryKey: ['purchase-return', id],
     queryFn: async () => {
       if (!organizationId || !id) return null;
 
@@ -107,7 +98,7 @@ export const usePurchaseReturn = (id: string) => {
         .limit(1);
 
       // Get creator name
-      let createdByName = "Admin";
+      let createdByName = 'Admin';
       if (returnRecord.createdBy) {
         const creatorResult = await db
           .select({ name: users.name })
@@ -126,7 +117,7 @@ export const usePurchaseReturn = (id: string) => {
         .where(eq(purchaseReturnItems.purchaseReturnId, id));
 
       // Import products to get names
-      const { products } = await import("../db/schema");
+      const { products } = await import('../db/schema');
       const itemsWithNames = await Promise.all(
         items.map(async (item) => {
           const productResult = await db
@@ -136,14 +127,14 @@ export const usePurchaseReturn = (id: string) => {
             .limit(1);
           return {
             ...item,
-            productName: productResult[0]?.name || "Unknown",
+            productName: productResult[0]?.name || 'Unknown',
           };
         }),
       );
 
       return {
         ...returnRecord,
-        supplierName: supplierResult[0]?.name || "Unknown",
+        supplierName: supplierResult[0]?.name || 'Unknown',
         createdByName,
         items: itemsWithNames,
       };
@@ -154,32 +145,25 @@ export const usePurchaseReturn = (id: string) => {
 
 export const useCreatePurchaseReturn = () => {
   const queryClient = useQueryClient();
-  const organizationId = useAuthStore(
-    (state) => state.profile?.selectedOrganizationId,
-  );
+  const organizationId = useAuthStore((state) => state.profile?.selectedOrganizationId);
 
   return useMutation({
     mutationFn: async (
       data: Omit<
         ReturnPurchasing,
-        | "id"
-        | "local_ref_id"
-        | "createdAt"
-        | "updatedAt"
-        | "createdBy"
-        | "updatedBy"
+        'id' | 'local_ref_id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'updatedBy'
       >,
     ) => {
-      if (!organizationId) throw new Error("Organization ID is required");
+      if (!organizationId) throw new Error('Organization ID is required');
 
       const returnId = `ret_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
       const now = new Date();
       const userId = useAuthStore.getState().profile?.id;
-      let finalLocalRefId = "";
+      let finalLocalRefId = '';
 
       await db.transaction(async (tx) => {
-        finalLocalRefId = await generateLocalRefId(tx, purchaseReturns, "RTP");
+        finalLocalRefId = await generateLocalRefId(tx, purchaseReturns, 'RTP');
 
         // 1. Create Return Header
         await tx.insert(purchaseReturns).values({
@@ -222,10 +206,7 @@ export const useCreatePurchaseReturn = () => {
             const txRefIdOut = `${finalLocalRefId}-${item.productId}-out`;
 
             if (!item.productId) {
-              console.error(
-                "❌ [RETURN API] Product ID is missing for item!",
-                item,
-              );
+              console.error('❌ [RETURN API] Product ID is missing for item!', item);
               continue;
             }
 
@@ -272,9 +253,9 @@ export const useCreatePurchaseReturn = () => {
       return { id: returnId, local_ref_id: finalLocalRefId };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["purchase-returns"] });
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["inventory-transactions"] });
+      queryClient.invalidateQueries({ queryKey: ['purchase-returns'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-transactions'] });
     },
   });
 };

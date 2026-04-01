@@ -1,7 +1,7 @@
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
-import { useToast } from "@/components/ui/toast";
-import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
-import { ReactNode, useCallback } from "react";
+import { usePopUpConfirm } from '@/components/pop-up-confirm';
+import { useToast } from '@/components/ui/toast';
+import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
+import { ReactNode, useCallback } from 'react';
 
 interface UseBulkDeleteEntityOptions {
   successMessage: string;
@@ -34,12 +34,12 @@ export function useBulkDeleteEntity({
 
       showPopUpConfirm({
         title,
-        icon: "warning" as const,
+        icon: 'warning' as const,
         description,
         showClose: true,
-        okText: "HAPUS",
-        closeText: "BATAL",
-        okVariant: "destructive" as const,
+        okText: 'HAPUS',
+        closeText: 'BATAL',
+        okVariant: 'destructive' as const,
         onOk: () => {
           deleteMutation.mutate(
             { ids },

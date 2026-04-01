@@ -1,5 +1,5 @@
-import { Product, ProductVariant } from "@/lib/api/products";
-import { create } from "zustand";
+import { Product, ProductVariant } from '@/lib/api/products';
+import { create } from 'zustand';
 
 interface CartItem {
   product: Product;
@@ -30,17 +30,12 @@ export const useStoreSuppliesStore = create<StoreSuppliesState>((set) => ({
     set((state) => {
       const existingItemIndex = state.cart?.findIndex(
         (cartItem) =>
-          cartItem.product.id === item.product.id &&
-          cartItem.variant?.id === item.variant?.id,
+          cartItem.product.id === item.product.id && cartItem.variant?.id === item.variant?.id,
       );
 
       let updatedCart: CartItem[];
 
-      if (
-        existingItemIndex !== undefined &&
-        existingItemIndex !== -1 &&
-        state.cart
-      ) {
+      if (existingItemIndex !== undefined && existingItemIndex !== -1 && state.cart) {
         updatedCart = [...state.cart];
         updatedCart[existingItemIndex] = item;
       } else {
@@ -53,11 +48,7 @@ export const useStoreSuppliesStore = create<StoreSuppliesState>((set) => ({
   removeCartItem: (productId, variantId) =>
     set((state) => {
       const updatedCart = (state.cart ?? []).filter(
-        (cartItem) =>
-          !(
-            cartItem.product.id === productId &&
-            cartItem.variant?.id === variantId
-          ),
+        (cartItem) => !(cartItem.product.id === productId && cartItem.variant?.id === variantId),
       );
 
       return { cart: updatedCart };
