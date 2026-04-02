@@ -20,7 +20,7 @@ import {
   useBulkDeletePaymentType,
   useCreatePaymentType,
   usePaymentTypes,
-} from '@/lib/api/payment-types';
+} from '@/hooks/use-payment-type';
 import { bulkDeleteConfirm } from '@/lib/utils/delete-confirm';
 import { exportPaymentTypes, importPaymentTypes } from '@/lib/utils/excel';
 import { usePaymentTypeStore } from '@/stores/payment-type';

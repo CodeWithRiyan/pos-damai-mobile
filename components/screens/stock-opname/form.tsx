@@ -102,12 +102,9 @@ export default function StockOpnameConfirmForm({ date }: StockOpnameConfirmFormP
       date: date,
       note: data.note,
       items: (cart || []).map((item) => ({
-        product: {
-          id: item.product.id,
-          name: item.product.name,
-          variantId: item.variant?.id,
-        },
-        physicalStock: item.physicalStock,
+        productId: item.product.id,
+        systemQuantity: item.product.stock || 0,
+        physicalQuantity: item.physicalStock,
       })),
     };
 

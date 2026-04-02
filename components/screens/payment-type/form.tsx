@@ -31,7 +31,7 @@ import {
   usePaymentType,
   usePaymentTypes,
   useUpdatePaymentType,
-} from '@/lib/api/payment-types';
+} from '@/hooks/use-payment-type';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Percent } from 'lucide-react-native';

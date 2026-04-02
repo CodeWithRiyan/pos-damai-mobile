@@ -15,7 +15,7 @@ import {
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
-import { useBrand, useBrands, useDeleteBrand } from '@/lib/api/brands';
+import { useBrand, useBrands, useDeleteBrand } from '@/hooks/use-brand';
 import { Product, useProductsByBrand, useUnassignProductsFromBrand } from '@/lib/api/products';
 import { showErrorToast } from '@/lib/utils/toast';
 import { useBrandStore } from '@/stores/brand';
@@ -89,7 +89,7 @@ export default function BrandDetail() {
       okVariant: 'destructive',
       onOk: () => {
         unassignProductMutation.mutate(
-          { productIds },
+          productIds,
           {
             onSuccess: () => {
               hidePopUpConfirm();

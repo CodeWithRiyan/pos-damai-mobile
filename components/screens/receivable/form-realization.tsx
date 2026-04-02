@@ -26,7 +26,7 @@ import {
 } from '@/components/ui';
 import SelectModal from '@/components/ui/select/select-modal';
 import { showErrorToast } from '@/lib/utils/toast';
-import { usePaymentTypes } from '@/lib/api/payment-types';
+import { usePaymentTypes } from '@/hooks/use-payment-type';
 import { useCreateReceivableRealization, useReceivableDetail } from '@/lib/api/receivable';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -105,7 +105,7 @@ export default function ReceivableRealizationForm() {
           receivableId: receivableIds[0],
           nominal: data.nominal,
           paymentMethodId: data.paymentTypeId,
-          realizationDate: data.realizationDate.toISOString(),
+          realizationDate: data.realizationDate,
           note: data.note,
         },
         {

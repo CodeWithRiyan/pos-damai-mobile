@@ -145,7 +145,7 @@ export default function PurchasingReceipt() {
             </VStack>
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack space="md">
-              {purchase.items?.map((item) => (
+              {purchase.items?.map((item: any) => (
                 <HStack key={item.id} className="justify-between items-center">
                   <VStack className="flex-1 mr-2">
                     <Heading size="sm">{item.productName}</Heading>
@@ -191,8 +191,8 @@ export default function PurchasingReceipt() {
                 <Text className={classNames('font-bold', !!purchase.dueDate && 'text-error-500')}>
                   Rp{' '}
                   {!!purchase.dueDate
-                    ? formatNumber(purchase.totalAmount - purchase.totalPaid)
-                    : formatNumber(purchase.totalPaid - purchase.totalAmount)}
+                    ? formatNumber(purchase.totalAmount - (purchase.totalPaid ?? 0))
+                    : formatNumber((purchase.totalPaid ?? 0) - purchase.totalAmount)}
                 </Text>
               </HStack>
             </VStack>

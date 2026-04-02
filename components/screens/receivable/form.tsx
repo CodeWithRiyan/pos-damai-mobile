@@ -96,7 +96,7 @@ export default function ReceivableForm() {
       createMutation.mutate(
         {
           ...data,
-          dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
+          dueDate: data.dueDate ?? undefined,
         },
         {
           onSuccess: () => {
@@ -120,7 +120,7 @@ export default function ReceivableForm() {
         {
           id: receivableId,
           ...data,
-          dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
+          dueDate: data.dueDate ?? undefined,
         },
         {
           onSuccess: () => {

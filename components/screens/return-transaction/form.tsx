@@ -74,13 +74,14 @@ export default function ReturnTransactionConfirmForm() {
       customerId: customerId || '',
       totalAmount,
       returnType: data.returnType as 'CASH' | 'ITEM',
-      note: data.reason, // Map 'reason' from form to 'note' in database
+      note: data.reason,
       items: cart.map((item) => ({
         productId: item.product.id,
         variantId: item.variant?.id,
         productName: item.product.name || '',
         quantity: item.quantity,
         sellPrice: item.sellPrice || 0,
+        profit: (item.sellPrice || 0) - (item.product.purchasePrice || 0),
       })),
     };
 

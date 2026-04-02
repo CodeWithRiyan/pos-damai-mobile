@@ -32,7 +32,8 @@ export default function SelectProductInBrand() {
     const productIds = selectedProducts.map((p) => p.id);
 
     assignMutation.mutate(
-      { productIds, brandId },
+      productIds,
+      brandId,
       {
         onSuccess: () => {
           toast.show({

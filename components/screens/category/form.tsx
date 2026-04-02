@@ -26,7 +26,7 @@ import {
   useCategory,
   useCreateCategory,
   useUpdateCategory,
-} from '@/lib/api/categories';
+} from '@/hooks/use-category';
 import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
 import { useCategoryStore } from '@/stores/category';
 import { zodResolver } from '@hookform/resolvers/zod';

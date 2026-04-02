@@ -10,10 +10,10 @@ export default function ReturnTransactionSuccess() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: returnData } = useTransactionReturn(id || '');
-  const totalAmount = returnData?.items.reduce(
+  const totalAmount = returnData?.items?.reduce(
     (acc, item) => acc + item.quantity * (item.sellPrice || 0),
     0,
-  );
+  ) ?? 0;
 
   return (
     <VStack className="flex-1 bg-white">

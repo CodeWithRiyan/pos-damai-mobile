@@ -80,7 +80,7 @@ export default function UserForm() {
         name: user.firstName || '',
         username: user.username,
         password: '',
-        roleId: user.roles[0].roleId || '',
+        roleId: user.roles?.[0]?.id || '',
         isActive: user.isActive,
       });
     } else {

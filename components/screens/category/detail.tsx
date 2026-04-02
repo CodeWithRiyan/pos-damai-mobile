@@ -15,7 +15,7 @@ import {
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
-import { useCategories, useCategory, useDeleteCategory } from '@/lib/api/categories';
+import { useCategories, useCategory, useDeleteCategory } from '@/hooks/use-category';
 import { showErrorToast } from '@/lib/utils/toast';
 import {
   Product,
@@ -90,7 +90,7 @@ export default function CategoryDetail() {
       okVariant: 'destructive',
       onOk: () => {
         unassignProductMutation.mutate(
-          { productIds },
+          productIds,
           {
             onSuccess: () => {
               hidePopUpConfirm();

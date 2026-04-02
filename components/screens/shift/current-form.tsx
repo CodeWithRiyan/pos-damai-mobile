@@ -42,7 +42,7 @@ export default function CurrentFormShift() {
   const router = useRouter();
   const [selectedCashDrawerId, setSelectedCashDrawerId] = useState<string>();
   const { data: cashDrawers, refetch: refetchCashDrawers } = useCashDrawers();
-  const { data: lastShift } = useLastShift(selectedCashDrawerId);
+  const { data: lastShift } = useLastShift();
   const { isLoading: isLoadingCurrentShift } = useCurrentShift();
   const { setOpen: setOpenCashDrawer, setData: setDataCashDrawer } = useCashDrawerStore();
   const startShiftMutation = useStartShift();

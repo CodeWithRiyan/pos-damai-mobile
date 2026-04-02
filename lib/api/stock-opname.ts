@@ -1,182 +1,213 @@
-import { db } from '../db';
-import * as schema from '../db/schema';
-import { eq, desc, and, getTableColumns } from 'drizzle-orm';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { stockOpnames, stockOpnameItems } from '@/lib/db/schema';
+import { db } from '@/lib/db';
 import { useAuthStore } from '@/stores/auth';
-import { generateLocalRefId } from '../utils/reference';
+import { eq, and, isNull, desc } from 'drizzle-orm';
+import { useCallback, useEffect, useState } from 'react';
 
-export interface StockOpnameDTO {
+export interface StockOpname {
+  id: string;
+  local_ref_id: string;
   date: Date;
-  note: string;
-  items: {
-    product: { id: string; name: string };
-    variant?: { id: string; name: string; netto?: number | null };
-    physicalStock: number;
-  }[];
+  note: string | null;
+  status: string;
+  totalGain: number;
+  totalLoss: number;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  createdBy?: string | null;
+  items?: Array<{
+    id: string;
+    productId: string;
+    systemQuantity: number;
+    quantitySystem: number;
+    physicalQuantity: number;
+    quantityPhysical: number;
+    difference: number;
+    note: string | null;
+    productUnit?: string;
+    purchasePrice: number;
+    financialImpact: number;
+    productName?: string;
+  }>;
 }
 
-export function useCreateStockOpname() {
-  const queryClient = useQueryClient();
+export async function fetchStockOpnames(): Promise<StockOpname[]> {
+  const orgId = useAuthStore.getState().getOrganizationId();
+  if (!orgId) return [];
 
-  return useMutation({
-    mutationFn: async (data: StockOpnameDTO) => {
-      const orgId = useAuthStore.getState().getOrganizationId();
-      const now = new Date();
-      const userId = useAuthStore.getState().profile?.id;
+  const result = await db
+    .select()
+    .from(stockOpnames)
+    .where(and(
+      eq(stockOpnames.organizationId, orgId),
+      isNull(stockOpnames.deletedAt)
+    ))
+    .orderBy(desc(stockOpnames.createdAt));
 
-      let totalGain = 0;
-      let totalLoss = 0;
-      let hasDifference = false;
-      let opnameRefId = '';
-      const opnameId = `opname_${Date.now()}`;
+  return result as unknown as StockOpname[];
+}
 
-      await db.transaction(async (tx) => {
-        opnameRefId = await generateLocalRefId(tx, schema.stockOpnames, 'SO');
-        // 1. Calculate financials & prepare items
+export async function fetchStockOpname(id: string): Promise<StockOpname | null> {
+  const result = await db
+    .select()
+    .from(stockOpnames)
+    .where(eq(stockOpnames.id, id))
+    .limit(1);
 
-        for (const item of data.items) {
-          // Get current system stock
-          const transactions = await tx
-            .select()
-            .from(schema.inventoryTransactions)
-            .where(
-              and(
-                eq(schema.inventoryTransactions.productId, item.product.id),
-                eq(schema.inventoryTransactions.status, 'COMPLETED'),
-              ),
-            );
+  if (result.length === 0) return null;
 
-          const currentStock = transactions.reduce((sum, t) => sum + t.quantity, 0);
+  const items = await db
+    .select()
+    .from(stockOpnameItems)
+    .where(eq(stockOpnameItems.stockOpnameId, result[0].id));
 
-          const variantNetto = item.variant?.netto || 1;
-          const physicalInBaseUnit = item.physicalStock * variantNetto;
-          const difference = physicalInBaseUnit - currentStock;
+  return {
+    ...result[0],
+    items: items.map(item => ({
+      ...item,
+      quantitySystem: item.quantitySystem || 0,
+      quantityPhysical: item.quantityPhysical || 0,
+      difference: (item.quantityPhysical || 0) - (item.quantitySystem || 0),
+    })),
+  } as unknown as StockOpname;
+}
 
-          // Get product purchase price
-          const [product] = await tx
-            .select()
-            .from(schema.products)
-            .where(eq(schema.products.id, item.product.id));
+export async function createStockOpname(data: {
+  date: Date;
+  note?: string;
+  items: Array<{
+    productId: string;
+    systemQuantity: number;
+    physicalQuantity: number;
+    note?: string;
+  }>;
+}): Promise<StockOpname> {
+  const orgId = useAuthStore.getState().getOrganizationId();
+  if (!orgId) throw new Error('Organization not found');
 
-          const purchasePrice = product?.purchasePrice || 0;
-          const financialImpact = difference * purchasePrice;
+  const id = `so_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const now = new Date();
+  const userId = useAuthStore.getState().profile?.id;
 
-          if (difference > 0) totalGain += financialImpact;
-          if (difference < 0) totalLoss += Math.abs(financialImpact);
-          if (difference !== 0) hasDifference = true;
+  const newOpname = {
+    id,
+    local_ref_id: `SO-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+    date: data.date,
+    note: data.note || null,
+    status: 'PENDING',
+    createdBy: userId,
+    updatedBy: userId,
+    organizationId: orgId,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    _dirty: true,
+    _syncedAt: null,
+  };
 
-          const opnameItemId = `opname_item_${Date.now()}_${item.product.id}_${item.variant?.id || 'base'}`;
+  await db.insert(stockOpnames).values(newOpname as any);
 
-          // Insert Opname Item
-          await tx.insert(schema.stockOpnameItems).values({
-            id: opnameItemId,
-            stockOpnameId: opnameId,
-            productId: item.product.id,
-            variantId: item.variant?.id || null,
-            quantitySystem: currentStock,
-            quantityPhysical: item.physicalStock,
-            difference,
-            purchasePrice,
-            financialImpact,
-            organizationId: orgId,
-            createdBy: userId,
-            updatedBy: userId,
-            createdAt: now,
-            updatedAt: now,
-            _dirty: true,
-          });
+  for (const item of data.items) {
+    const itemId = `soi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    await db.insert(stockOpnameItems).values({
+      id: itemId,
+      stockOpnameId: id,
+      productId: item.productId,
+      systemQuantity: item.systemQuantity,
+      physicalQuantity: item.physicalQuantity,
+      difference: item.physicalQuantity - item.systemQuantity,
+      note: item.note || null,
+      organizationId: orgId,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+      _dirty: true,
+      _syncedAt: null,
+    } as any);
+  }
 
-          // Create inventory adjustment if needed
-          if (difference !== 0) {
-            const txId = `inv_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            await tx.insert(schema.inventoryTransactions).values({
-              id: txId,
-              local_ref_id: `${opnameRefId}_${item.product.id}_${item.variant?.id || 'base'}`,
-              productId: item.product.id,
-              variantId: item.variant?.id || null,
-              type: 'STOCK_OPNAME',
-              quantity: difference,
-              organizationId: orgId,
-              createdBy: userId,
-              updatedBy: userId,
-              createdAt: now,
-              updatedAt: now,
-              _dirty: true,
-              _syncedAt: null,
-            });
-          }
-        }
-
-        // 2. Create StockOpname record
-        await tx.insert(schema.stockOpnames).values({
-          id: opnameId,
-          local_ref_id: opnameRefId,
-          date: data.date,
-          note: data.note,
-          status: hasDifference ? 'DIFFERENCE' : 'DONE',
-          totalGain,
-          totalLoss,
-          createdBy: userId,
-          updatedBy: userId,
-          organizationId: orgId,
-          createdAt: now,
-          updatedAt: now,
-          _dirty: true,
-        });
-      });
-
-      return { id: opnameId, ...data };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['stock-opnames'] });
-    },
-  });
+  return newOpname as unknown as StockOpname;
 }
 
 export function useStockOpnames() {
-  return useQuery({
-    queryKey: ['stock-opnames'],
-    queryFn: async () => {
-      const result = await db
-        .select()
-        .from(schema.stockOpnames)
-        .orderBy(desc(schema.stockOpnames.date));
-      return result;
-    },
-  });
+  const [data, setData] = useState<StockOpname[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetch = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await fetchStockOpnames();
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data, isLoading, error, refetch: fetch };
 }
 
 export function useStockOpname(id: string) {
-  return useQuery({
-    queryKey: ['stock-opname', id],
-    queryFn: async () => {
-      // Get Opname
-      const [opname] = await db
-        .select()
-        .from(schema.stockOpnames)
-        .where(eq(schema.stockOpnames.id, id));
+  const [data, setData] = useState<StockOpname | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-      if (!opname) return null;
+  const fetch = useCallback(async () => {
+    if (!id) {
+      setData(null);
+      setIsLoading(false);
+      return;
+    }
 
-      // Get Items with Products & Variants
-      const items = await db
-        .select({
-          ...getTableColumns(schema.stockOpnameItems),
-          productName: schema.products.name,
-          productUnit: schema.products.unit,
-          variantName: schema.productVariants.name,
-        })
-        .from(schema.stockOpnameItems)
-        .leftJoin(schema.products, eq(schema.stockOpnameItems.productId, schema.products.id))
-        .leftJoin(
-          schema.productVariants,
-          eq(schema.stockOpnameItems.variantId, schema.productVariants.id),
-        )
-        .where(eq(schema.stockOpnameItems.stockOpnameId, id));
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await fetchStockOpname(id);
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
 
-      return { ...opname, items };
-    },
-    enabled: !!id,
-  });
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data, isLoading, error, refetch: fetch };
+}
+
+export function useCreateStockOpname() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const mutate = useCallback(async (
+    data: { date: Date; note?: string; items: Array<{ productId: string; systemQuantity: number; physicalQuantity: number; note?: string }> },
+    options?: { onSuccess?: (data: StockOpname) => void; onError?: (error: Error) => void }
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await createStockOpname(data);
+      options?.onSuccess?.(result);
+      return result;
+    } catch (err) {
+      const error = err as Error;
+      setError(error);
+      options?.onError?.(error);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
 }

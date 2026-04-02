@@ -32,7 +32,7 @@ export default function ReturnTransactionReceipt() {
     data: transaction,
     isLoading: isLoadingTransaction,
     refetch: refetchTransaction,
-  } = useTransaction(id || '', { useReturnId: true });
+  } = useTransaction(id || '');
   const profile = useAuthStore((state) => state.profile);
   const isLoading = isLoadingReturnData || isLoadingTransaction;
   const [refreshing, setRefreshing] = useState(false);

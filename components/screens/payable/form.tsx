@@ -92,7 +92,7 @@ export default function PayableForm() {
       createMutation.mutate(
         {
           ...data,
-          dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
+          dueDate: data.dueDate ?? undefined,
         },
         {
           onSuccess: () => {
@@ -116,7 +116,7 @@ export default function PayableForm() {
         {
           id: payableId,
           ...data,
-          dueDate: data.dueDate ? data.dueDate.toISOString() : undefined,
+          dueDate: data.dueDate ?? undefined,
         },
         {
           onSuccess: () => {

@@ -32,9 +32,9 @@ import SelectModal from '@/components/ui/select/select-modal';
 import { useCurrentUser } from '@/lib/api/auth';
 
 import { SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
-import { useCustomer } from '@/lib/api/customers';
+import { useCustomer } from '@/hooks/use-customer';
 import { useCreateFinance } from '@/lib/api/finances';
-import { usePaymentTypes } from '@/lib/api/payment-types';
+import { usePaymentTypes } from '@/hooks/use-payment-type';
 import { useTransactionReturn } from '@/lib/api/return-transaction';
 import { useCreateTransaction, useTransaction } from '@/lib/api/transactions';
 import { useCreateReceivable } from '@/lib/api/receivable';
@@ -306,7 +306,7 @@ export default function TransactionCheckoutForm() {
           await createReceivableMutation.mutateAsync({
             userId: employee.id,
             nominal: grandTotal,
-            dueDate: dueDate.toISOString(),
+            dueDate: dueDate,
             note: `Piutang dari Karyawan ${employee.username} pada tanggal ${dayjs().format('DD/MM/YYYY')}`,
             transactionId: result.id,
           });

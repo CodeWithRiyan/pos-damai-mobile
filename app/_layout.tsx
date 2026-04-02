@@ -13,7 +13,6 @@ import { useSyncManager } from '@/hooks/use-sync-manager';
 import { checkAndResetDbOnUpdate, initializeDb } from '@/lib/db';
 import { authStorageAdapter, initializeStorage } from '@/lib/storage';
 import { SyncFloatingButton } from '@/components/sync-floating-button';
-import { QueryProvider } from '@/providers/query-provider';
 import { useNetworkMonitoring } from '@/stores/network';
 import * as NavigationBar from 'expo-navigation-bar';
 
@@ -82,23 +81,21 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryProvider>
-      <GluestackUIProvider>
-        <ThemeProvider value={DefaultTheme}>
-          <ActionDrawerProvider>
-            <PopUpConfirmProvider>
-              <Stack>
-                <Stack.Screen name="login" options={{ headerShown: false }} />
-                <Stack.Screen name="(main)" options={{ headerShown: false }} />
-                <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-              </Stack>
-              <StatusBar style="dark" hidden />
-              <SyncConfirmationModal isOpen={showSyncModal} onClose={handleCloseSyncModal} />
-              <SyncFloatingButton />
-            </PopUpConfirmProvider>
-          </ActionDrawerProvider>
-        </ThemeProvider>
-      </GluestackUIProvider>
-    </QueryProvider>
+    <GluestackUIProvider>
+      <ThemeProvider value={DefaultTheme}>
+        <ActionDrawerProvider>
+          <PopUpConfirmProvider>
+            <Stack>
+              <Stack.Screen name="login" options={{ headerShown: false }} />
+              <Stack.Screen name="(main)" options={{ headerShown: false }} />
+              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+            </Stack>
+            <StatusBar style="dark" hidden />
+            <SyncConfirmationModal isOpen={showSyncModal} onClose={handleCloseSyncModal} />
+            <SyncFloatingButton />
+          </PopUpConfirmProvider>
+        </ActionDrawerProvider>
+      </ThemeProvider>
+    </GluestackUIProvider>
   );
 }

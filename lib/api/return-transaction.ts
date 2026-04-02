@@ -1,326 +1,268 @@
-import { InventoryTxType, PriceType, ReturnType, Status } from '@/lib/constants';
+import { transactionReturns, transactionReturnItems, customers } from '@/lib/db/schema';
+import { db } from '@/lib/db';
 import { useAuthStore } from '@/stores/auth';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { desc, eq } from 'drizzle-orm';
-import { db } from '../db';
-import { generateLocalRefId } from '../utils/reference';
-import {
-  categories,
-  customers,
-  inventoryTransactions,
-  products,
-  transactionReturnItems,
-  transactionReturns,
-  users,
-} from '../db/schema';
+import { eq, and, isNull, like, desc } from 'drizzle-orm';
+import { useCallback, useEffect, useState } from 'react';
 
-export interface ReturnTransactionItem {
-  productId: string;
-  variantId?: string;
-  productName?: string;
-  quantity: number;
-  sellPrice: number;
-}
-
-export interface ReturnTransaction {
+export interface TransactionReturn {
   id: string;
-  local_ref_id: string;
-  customerId: string;
-  customerName?: string;
+  local_ref_id?: string;
+  customerId: string | null;
+  customerName: string;
   totalAmount: number;
-  returnType: 'CASH' | 'ITEM';
-  note: string; // Required field for return reason
-  items?: ReturnTransactionItem[];
-  createdBy: string | null;
+  returnType: string;
+  note: string;
+  status: string;
   createdByName?: string;
-  updatedBy: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  items?: Array<{
+    id: string;
+    productId: string;
+    variantId: string | null;
+    quantity: number;
+    sellPrice: number;
+    totalPrice: number;
+    productName?: string;
+  }>;
 }
 
-export interface TransactionReturnParams {
-  customerId?: string;
-}
+export async function fetchTransactionReturns(params?: { search?: string; status?: string; customerId?: string }): Promise<TransactionReturn[]> {
+  const orgId = useAuthStore.getState().getOrganizationId();
+  if (!orgId) return [];
 
-async function calcEarnedPoints(
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
-  items: { productId: string; quantity: number; sellPrice: number }[],
-  customerCategory: string | null,
-): Promise<{ points: number; revenue: number; profit: number }> {
-  let points = 0,
-    revenue = 0,
-    profit = 0;
-  for (const item of items) {
-    const [row] = await tx
-      .select({
-        retailPoint: categories.retailPoint,
-        wholesalePoint: categories.wholesalePoint,
-        purchasePrice: products.purchasePrice,
-      })
-      .from(products)
-      .leftJoin(categories, eq(products.categoryId, categories.id))
-      .where(eq(products.id, item.productId))
-      .limit(1);
-    if (row) {
-      const catPoints =
-        customerCategory === PriceType.WHOLESALE ? row.wholesalePoint : row.retailPoint;
-      points += (catPoints ?? 0) * item.quantity;
-      revenue += item.sellPrice * item.quantity;
-      profit += (item.sellPrice - (row.purchasePrice ?? 0)) * item.quantity;
-    }
+  const conditions = [
+    eq(transactionReturns.organizationId, orgId),
+    isNull(transactionReturns.deletedAt),
+  ];
+
+  if (params?.search) {
+    conditions.push(like(transactionReturns.customerName, `%${params.search}%`));
   }
-  return { points, revenue, profit };
-}
 
-export const useTransactionReturns = (params: TransactionReturnParams | void) => {
-  const isUsedFilter = !!params?.customerId;
-  const organizationId = useAuthStore((state) => state.profile?.selectedOrganizationId);
+  if (params?.status) {
+    conditions.push(eq(transactionReturns.status, params.status as any));
+  }
 
-  return useQuery({
-    queryKey: ['transaction-returns', organizationId, params?.customerId],
-    queryFn: async () => {
-      if (!organizationId) return [];
+  if (params?.customerId) {
+    conditions.push(eq(transactionReturns.customerId, params.customerId));
+  }
 
-      const [retdat, custdat] = await Promise.all([
-        db
-          .select()
-          .from(transactionReturns)
-          .where(eq(transactionReturns.organizationId, organizationId))
-          .orderBy(desc(transactionReturns.createdAt)),
-        db.select().from(customers).where(eq(customers.organizationId, organizationId)),
-      ]);
+  const result = await db
+    .select()
+    .from(transactionReturns)
+    .where(and(...conditions))
+    .orderBy(desc(transactionReturns.createdAt));
 
-      const customerMap = new Map(custdat.map((c) => [c.id, c.name]));
-
-      const retData = retdat.map((r) => ({
-        ...r,
-        customerName: r.customerId
-          ? customerMap.get(r.customerId) || 'Walk-in Customer'
-          : 'Walk-in Customer',
-      }));
-
-      const filteredRetData = retData.filter((r) => r.customerId === params?.customerId);
-
-      return isUsedFilter ? filteredRetData : retData;
-    },
-    enabled: !!organizationId,
-  });
-};
-
-export const useTransactionReturn = (id: string) => {
-  const organizationId = useAuthStore((state) => state.profile?.selectedOrganizationId);
-
-  return useQuery({
-    queryKey: ['transaction-return', id],
-    queryFn: async () => {
-      if (!organizationId || !id) return null;
-
-      // Get return record
-      const returnResult = await db
-        .select()
-        .from(transactionReturns)
-        .where(eq(transactionReturns.id, id))
-        .limit(1);
-      if (!returnResult.length) return null;
-
-      const returnRecord = returnResult[0];
-
-      // Get customer name
-      let customerName = 'Walk-in Customer';
-      if (returnRecord.customerId) {
-        const customerResult = await db
-          .select({ name: customers.name })
-          .from(customers)
-          .where(eq(customers.id, returnRecord.customerId))
-          .limit(1);
-        if (customerResult.length > 0) {
-          customerName = customerResult[0].name;
-        }
-      }
-
-      // Get creator name
-      let createdByName = 'Admin';
-      if (returnRecord.createdBy) {
-        const creatorResult = await db
-          .select({ name: users.name })
-          .from(users)
-          .where(eq(users.id, returnRecord.createdBy))
-          .limit(1);
-        if (creatorResult.length > 0) {
-          createdByName = creatorResult[0].name;
-        }
-      }
-
-      // Get items with product names
+  const returnsWithItems: TransactionReturn[] = await Promise.all(
+    result.map(async (r) => {
       const items = await db
         .select()
         .from(transactionReturnItems)
-        .where(eq(transactionReturnItems.transactionReturnId, id));
-
-      // Import products to get names
-      const { products } = await import('../db/schema');
-      const itemsWithNames = await Promise.all(
-        items.map(async (item) => {
-          const productResult = await db
-            .select({ name: products.name })
-            .from(products)
-            .where(eq(products.id, item.productId))
-            .limit(1);
-          return {
-            ...item,
-            productName: productResult[0]?.name || 'Unknown',
-          };
-        }),
-      );
+        .where(eq(transactionReturnItems.transactionReturnId, r.id));
 
       return {
-        ...returnRecord,
-        customerName,
-        createdByName,
-        items: itemsWithNames,
-      };
-    },
-    enabled: !!organizationId && !!id,
-  });
-};
+        ...r,
+        customerName: r.customerName || '',
+        totalAmount: r.totalAmount || 0,
+        returnType: r.returnType || 'CASH',
+        note: r.note || '',
+        status: r.status || 'PENDING',
+        items: items.map(item => ({
+          ...item,
+          sellPrice: item.sellPrice ?? 0,
+          totalPrice: item.quantity * (item.sellPrice ?? 0),
+        })),
+      } as TransactionReturn;
+    })
+  );
 
-export const useCreateTransactionReturn = () => {
-  const queryClient = useQueryClient();
-  const organizationId = useAuthStore((state) => state.profile?.selectedOrganizationId);
+  return returnsWithItems;
+}
 
-  return useMutation({
-    mutationFn: async (
-      data: Omit<
-        ReturnTransaction,
-        'id' | 'local_ref_id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'updatedBy'
-      >,
-    ) => {
-      if (!organizationId) throw new Error('Organization ID is required');
+export async function fetchTransactionReturn(id: string): Promise<TransactionReturn | null> {
+  const result = await db
+    .select()
+    .from(transactionReturns)
+    .where(eq(transactionReturns.id, id))
+    .limit(1);
 
-      const returnId = `tret_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  if (result.length === 0) return null;
 
-      const now = new Date();
-      const userId = useAuthStore.getState().profile?.id;
-      let finalLocalRefId = '';
+  const r = result[0];
+  const items = await db
+    .select()
+    .from(transactionReturnItems)
+    .where(eq(transactionReturnItems.transactionReturnId, r.id));
 
-      await db.transaction(async (tx) => {
-        finalLocalRefId = await generateLocalRefId(tx, transactionReturns, 'RTS');
+  return {
+    ...r,
+    customerName: r.customerName || '',
+    totalAmount: r.totalAmount || 0,
+    returnType: r.returnType || 'CASH',
+    note: r.note || '',
+    status: r.status || 'PENDING',
+    items: items.map(item => ({
+      ...item,
+      sellPrice: item.sellPrice ?? 0,
+      totalPrice: item.quantity * (item.sellPrice ?? 0),
+    })),
+  } as TransactionReturn;
+}
 
-        // 1. Create Return Header
-        await tx.insert(transactionReturns).values({
-          id: returnId,
-          local_ref_id: finalLocalRefId,
-          customerId: data.customerId || null,
-          totalAmount: data.totalAmount,
-          returnType: data.returnType,
-          note: data.note,
-          organizationId,
-          createdBy: userId,
-          updatedBy: userId,
-          _dirty: true,
-          createdAt: now,
-          updatedAt: now,
-        });
+export async function createTransactionReturn(data: {
+  customerId?: string;
+  items: Array<{
+    productId: string;
+    variantId?: string;
+    quantity: number;
+    sellPrice: number;
+    profit: number;
+  }>;
+  returnType: string;
+  note: string;
+}): Promise<TransactionReturn> {
+  const orgId = useAuthStore.getState().getOrganizationId();
+  if (!orgId) throw new Error('Organization not found');
 
-        // 2. Create Items and Transactions
-        if (data.items) {
-          for (const item of data.items) {
-            const itemId = `treti_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const id = `tr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const now = new Date();
+  const userId = useAuthStore.getState().profile?.id;
 
-            // 2a. Save item
-            await tx.insert(transactionReturnItems).values({
-              id: itemId,
-              transactionReturnId: returnId,
-              productId: item.productId,
-              variantId: item.variantId || null,
-              quantity: item.quantity,
-              sellPrice: item.sellPrice,
-              organizationId,
-              createdBy: userId,
-              updatedBy: userId,
-              _dirty: true,
-              createdAt: now,
-              updatedAt: now,
-            });
+  let customerName = '';
+  if (data.customerId) {
+    const customer = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.id, data.customerId))
+      .limit(1);
+    customerName = customer[0]?.name || '';
+  }
 
-            // 2b. Add stock via transaction
-            const txIdIn = `invrt_in_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            const txRefIdIn = `${finalLocalRefId}-${item.productId}-in`;
+  const totalAmount = data.items.reduce((sum, item) => sum + (item.quantity * item.sellPrice), 0);
 
-            if (!item.productId) continue;
+  const newReturn = {
+    id,
+    local_ref_id: `TR-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+    customerId: data.customerId || null,
+    customerName,
+    totalAmount,
+    returnType: data.returnType,
+    note: data.note,
+    status: 'PENDING',
+    createdBy: userId,
+    updatedBy: userId,
+    organizationId: orgId,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    _dirty: true,
+    _syncedAt: null,
+  };
 
-            // Leg 1: Item comes back (Stock IN)
-            await tx.insert(inventoryTransactions).values({
-              id: txIdIn,
-              local_ref_id: txRefIdIn,
-              productId: item.productId,
-              type: InventoryTxType.RETURN_SALE,
-              quantity: item.quantity, // Positive for returned sales
-              status: Status.COMPLETED,
-              organizationId,
-              createdBy: userId,
-              updatedBy: userId,
-              _dirty: true,
-              createdAt: now,
-              updatedAt: now,
-            });
+  await db.insert(transactionReturns).values(newReturn as any);
 
-            // Leg 2: Replacement item goes out (Stock OUT) - only for ITEM return
-            if (data.returnType === ReturnType.ITEM) {
-              const txIdOut = `invrt_out_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-              const txRefIdOut = `${finalLocalRefId}-${item.productId}-out`;
+  for (const item of data.items) {
+    const itemId = `tri_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    await db.insert(transactionReturnItems).values({
+      id: itemId,
+      transactionReturnId: id,
+      productId: item.productId,
+      variantId: item.variantId || null,
+      quantity: item.quantity,
+      sellPrice: item.sellPrice,
+      profit: item.profit,
+      organizationId: orgId,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+      _dirty: true,
+      _syncedAt: null,
+    } as any);
+  }
 
-              await tx.insert(inventoryTransactions).values({
-                id: txIdOut,
-                local_ref_id: txRefIdOut,
-                productId: item.productId,
-                type: InventoryTxType.SALE,
-                quantity: -item.quantity, // Negative for replacement item
-                status: Status.COMPLETED,
-                organizationId,
-                createdBy: userId,
-                updatedBy: userId,
-                _dirty: true,
-                createdAt: now,
-                updatedAt: now,
-              });
-            }
-          }
-        }
+  return newReturn as unknown as TransactionReturn;
+}
 
-        // 3. Customer points adjustment
-        if (data.customerId) {
-          const [cust] = await tx
-            .select()
-            .from(customers)
-            .where(eq(customers.id, data.customerId))
-            .limit(1);
-          if (cust) {
-            const returned = await calcEarnedPoints(tx, data.items ?? [], cust.category);
-            if (data.returnType === ReturnType.CASH) {
-              await tx
-                .update(customers)
-                .set({
-                  points: Math.max(0, (cust.points ?? 0) - returned.points),
-                  totalTransactions: Math.max(0, (cust.totalTransactions ?? 0) - 1),
-                  totalRevenue: Math.max(0, (cust.totalRevenue ?? 0) - returned.revenue),
-                  totalProfit: Math.max(0, (cust.totalProfit ?? 0) - returned.profit),
-                  _dirty: true,
-                })
-                .where(eq(customers.id, cust.id));
-            }
-            // ITEM return: deducted points equal re-awarded points → net 0, no DB write needed
-          }
-        }
-      });
+export function useTransactionReturns(params?: { search?: string; status?: string; customerId?: string }) {
+  const [data, setData] = useState<TransactionReturn[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-      return { id: returnId, local_ref_id: finalLocalRefId };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transaction-returns'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['inventory-transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-    },
-  });
-};
+  const fetch = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await fetchTransactionReturns(params);
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [params?.search, params?.status, params?.customerId]);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data, isLoading, error, refetch: fetch };
+}
+
+export function useTransactionReturn(id: string) {
+  const [data, setData] = useState<TransactionReturn | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetch = useCallback(async () => {
+    if (!id) {
+      setData(null);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await fetchTransactionReturn(id);
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data, isLoading, error, refetch: fetch };
+}
+
+export function useCreateTransactionReturn() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const mutate = useCallback(async (
+    data: { customerId?: string; items: Array<{ productId: string; variantId?: string; quantity: number; sellPrice: number; profit: number }>; returnType: string; note: string },
+    options?: { onSuccess?: (data: TransactionReturn) => void; onError?: (error: Error) => void }
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await createTransactionReturn(data);
+      options?.onSuccess?.(result);
+      return result;
+    } catch (err) {
+      const error = err as Error;
+      setError(error);
+      options?.onError?.(error);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
+}

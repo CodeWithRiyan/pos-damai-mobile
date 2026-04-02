@@ -1,7 +1,7 @@
 import { Box, Heading, HStack, Icon, Text, VStack } from '@/components/ui';
 import { Image } from '@/components/ui/image';
 import { Pressable } from '@/components/ui/pressable';
-import { useCustomer } from '@/lib/api/customers';
+import { useCustomer } from '@/hooks/use-customer';
 import { useTransactionStore } from '@/stores/transaction';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Printer } from 'lucide-react-native';

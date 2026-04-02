@@ -56,8 +56,8 @@ export default function PurchasingHistory({ isReport }: { isReport?: boolean }) 
     userId: purchasingFilter.userId || undefined,
     paymentTypeIds: purchasingFilter.paymentTypeIds || [],
     dateType: purchasingFilter.dateType,
-    startDate: purchasingFilter.startDate,
-    endDate: purchasingFilter.endDate,
+    startDate: purchasingFilter.startDate?.toISOString(),
+    endDate: purchasingFilter.endDate?.toISOString(),
     search: purchasingFilter.search || undefined,
   });
 

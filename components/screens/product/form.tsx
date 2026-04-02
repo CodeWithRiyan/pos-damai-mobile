@@ -25,10 +25,10 @@ import {
 import { Grid, GridItem } from '@/components/ui/grid';
 import SelectModal from '@/components/ui/select/select-modal';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
-import { useBrands } from '@/lib/api/brands';
-import { useCategories } from '@/lib/api/categories';
+import { useBrands } from '@/hooks/use-brand';
+import { useCategories } from '@/hooks/use-category';
+import { useDiscounts, useDeleteDiscount, Discount } from '@/hooks/use-discount';
 import { showErrorToast } from '@/lib/utils/toast';
-import { Discount, useDeleteDiscount, useDiscounts } from '@/lib/api/discounts';
 import {
   CreateProductDTO,
   UpdateProductDTO,
@@ -1512,7 +1512,24 @@ export default function ProductForm() {
           className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
           onPress={form.handleSubmit(onSubmit, (errors) => {
-            console.error('[PRODUCT_FORM] Validation Errors: ', JSON.stringify(errors, null, 2));
+            const findFirstMessage = (obj: any): string | undefined => {
+              if (!obj || typeof obj !== 'object') return undefined;
+              if (obj.message) return obj.message;
+              for (const val of Object.values(obj)) {
+                const msg = findFirstMessage(val);
+                if (msg) return msg;
+              }
+              return undefined;
+            };
+            const message = 'Mohon lengkapi semua field yang wajib diisi.';
+            toast.show({
+              placement: 'top',
+              render: ({ id }) => (
+                <Toast nativeID={`toast-${id}`} action="error" variant="solid">
+                  <ToastTitle>{message}</ToastTitle>
+                </Toast>
+              ),
+            });
           })}
         >
           {isLoading ? (

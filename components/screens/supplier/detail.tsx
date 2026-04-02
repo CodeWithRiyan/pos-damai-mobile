@@ -82,7 +82,7 @@ export default function SupplierDetail() {
       okVariant: 'destructive',
       onOk: () => {
         unassignProductMutation.mutate(
-          { productIds },
+          productIds,
           {
             onSuccess: () => {
               hidePopUpConfirm();

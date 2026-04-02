@@ -134,14 +134,28 @@ export const purchases = sqliteTable('purchases', {
   id: text('id').primaryKey(), // local UUID if offline
   local_ref_id: text('local_ref_id').unique(),
   supplierId: text('supplierId').notNull(),
+  supplierName: text('supplierName'),
   totalAmount: real('totalAmount').notNull(),
   totalPaid: real('totalPaid').default(0),
   paymentType: text('paymentType').default('CASH'),
   paymentTypeId: text('paymentTypeId'),
+  paymentTypeName: text('paymentTypeName'),
   commission: real('commission').default(0),
   status: text('status').default('COMPLETED'),
   dueDate: integer('dueDate', { mode: 'timestamp' }),
   note: text('note'),
+  organizationId: text('organizationId').notNull(),
+  ...syncColumns,
+});
+
+export const purchaseItems = sqliteTable('purchase_items', {
+  id: text('id').primaryKey(),
+  purchaseId: text('purchaseId').notNull(),
+  productId: text('productId').notNull(),
+  variantId: text('variantId'),
+  quantity: real('quantity').notNull(),
+  unitPrice: real('unitPrice').notNull(),
+  totalPrice: real('totalPrice').notNull(),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
 });
@@ -164,9 +178,11 @@ export const purchaseReturns = sqliteTable('purchase_returns', {
   id: text('id').primaryKey(),
   local_ref_id: text('local_ref_id').unique(),
   supplierId: text('supplierId').notNull(),
+  supplierName: text('supplierName'),
   totalAmount: real('totalAmount').notNull(),
   returnType: text('returnType').default('CASH'),
   note: text('note').notNull(), // Required field for return reason
+  status: text('status').default('PENDING'),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
 });
@@ -219,6 +235,8 @@ export const payables = sqliteTable('payables', {
   dueDate: integer('dueDate', { mode: 'timestamp' }),
   note: text('note'),
   supplierId: text('supplierId').notNull(),
+  supplierName: text('supplierName'),
+  status: text('status').default('PENDING'),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
 });
@@ -242,8 +260,11 @@ export const receivables = sqliteTable('receivables', {
   dueDate: integer('dueDate', { mode: 'timestamp' }),
   note: text('note'),
   userId: text('userId').notNull(),
+  customerId: text('customerId'),
+  customerName: text('customerName'),
+  status: text('status').default('PENDING'),
   organizationId: text('organizationId').notNull(),
-  transactionId: text('transactionId'), // NEW: optional link to transaction
+  transactionId: text('transactionId'),
   ...syncColumns,
 });
 
@@ -297,10 +318,12 @@ export const transactionItems = sqliteTable('transaction_items', {
 export const transactionReturns = sqliteTable('transaction_returns', {
   id: text('id').primaryKey(),
   local_ref_id: text('local_ref_id').unique(),
-  customerId: text('customerId'), // Can be null for walk-in customers
+  customerId: text('customerId'),
+  customerName: text('customerName'),
   totalAmount: real('totalAmount').notNull(),
   returnType: text('returnType').default('CASH'), // CASH, REPLACE, etc.
   note: text('note').notNull(), // Required field for return reason
+  status: text('status').default('PENDING'),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
 });
@@ -312,6 +335,7 @@ export const transactionReturnItems = sqliteTable('transaction_return_items', {
   variantId: text('variantId'),
   quantity: real('quantity').notNull(),
   sellPrice: real('sellPrice').default(0),
+  profit: real('profit').default(0),
   organizationId: text('organizationId').notNull(),
   ...syncColumns,
 });
@@ -395,6 +419,8 @@ export type PaymentTypeRow = typeof paymentTypes.$inferSelect;
 export type ProductVariantRow = typeof productVariants.$inferSelect;
 export type ProductPriceRow = typeof productPrices.$inferSelect;
 export type CustomerRow = typeof customers.$inferSelect;
+export type Purchase = typeof purchases.$inferSelect;
+export type PurchaseItem = typeof purchaseItems.$inferSelect;
 export type PurchaseRow = typeof purchases.$inferSelect;
 export type InventoryTransactionRow = typeof inventoryTransactions.$inferSelect;
 export type PurchaseReturnRow = typeof purchaseReturns.$inferSelect;

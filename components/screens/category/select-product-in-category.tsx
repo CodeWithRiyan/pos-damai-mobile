@@ -1,5 +1,5 @@
 import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
-import { useCategory } from '@/lib/api/categories';
+import { useCategory } from '@/hooks/use-category';
 import { getErrorMessage } from '@/lib/api/client';
 import { ProductListItem, useAssignProductsToCategory, useProducts } from '@/lib/api/products';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -31,7 +31,8 @@ export default function SelectProductInCategory() {
     const productIds = selectedProducts.map((p) => p.id);
 
     assignMutation.mutate(
-      { productIds, categoryId },
+      productIds,
+      categoryId,
       {
         onSuccess: () => {
           toast.show({

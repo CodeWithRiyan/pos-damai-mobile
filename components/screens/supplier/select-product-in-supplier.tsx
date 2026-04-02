@@ -32,7 +32,8 @@ export default function SelectProductInSupplier() {
     const productIds = selectedProducts.map((p) => p.id);
 
     assignMutation.mutate(
-      { productIds, supplierId },
+      productIds,
+      supplierId,
       {
         onSuccess: () => {
           toast.show({
@@ -45,7 +46,7 @@ export default function SelectProductInSupplier() {
           });
           router.back();
         },
-        onError: (error) => {
+        onError: (error: Error) => {
           toast.show({
             placement: 'top',
             render: ({ id }) => (

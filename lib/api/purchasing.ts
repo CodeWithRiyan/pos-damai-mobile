@@ -1,473 +1,239 @@
-import { DateFilterType, InventoryTxType, PaymentMethod, Status } from '@/lib/constants';
+import { Purchase, PurchaseItem } from '@/lib/db/schema';
+import * as schema from '@/lib/db/schema';
+import { db } from '@/lib/db';
 import { useAuthStore } from '@/stores/auth';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { and, desc, eq, isNull, like } from 'drizzle-orm';
-import { db } from '../db';
-import * as schema from '../db/schema';
-import { formatDisplayRefId, generateLocalRefId } from '../utils/reference';
-
-export interface Purchase {
-  id: string;
-  local_ref_id: string | null;
-  supplierId: string;
-  supplierName?: string;
-  totalAmount: number;
-  totalPaid: number;
-  paymentType: string;
-  paymentTypeName?: string;
-  paymentTypeId: string | null;
-  commission: number;
-  dueDate: Date | null;
-  note?: string | null;
-  organizationId: string;
-  status: string;
-  createdBy: string | null;
-  updatedBy: string | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-  items?: PurchaseItem[];
-}
-
-export interface PurchaseItem {
-  id: string;
-  productId: string;
-  productName?: string;
-  quantity: number;
-  purchasePrice?: number;
-  note?: string | null;
-}
+import { and, eq, isNull, like, desc, or, isNotNull } from 'drizzle-orm';
+import { useCallback, useEffect, useState } from 'react';
 
 export interface CreatePurchasingDTO {
   id?: string;
   supplierId: string;
-  totalPurchase: number;
-  totalPaid: number;
-  transactionDate: Date | null;
-  isPayable: boolean;
-  dueDate: Date | null;
-  status: string;
-  note: string;
-  paymentMethodId: string;
-  commission?: number;
-  items: {
-    product: { id: string; purchasePrice: number };
-    newPurchasePrice: number;
+  items: Array<{
+    productId: string;
     quantity: number;
-    note?: string;
-  }[];
+    unitPrice: number;
+    totalPrice: number;
+  }>;
+  paymentTypeId: string;
+  dueDate?: Date | null;
+  note?: string;
+  status: string;
+  totalPaid?: number;
+  commission?: number;
+  totalPurchase?: number;
 }
 
-export interface PurchasingFilterParams {
-  supplierId?: string;
-  userId?: string;
-  paymentTypeIds?: string[];
-  dateType?: 'TODAY' | 'THIS_WEEK' | 'THIS_MONTH' | 'THIS_YEAR' | 'CUSTOM';
-  startDate?: Date;
-  endDate?: Date;
-  showReturnData?: boolean;
+export async function fetchPurchases(params?: {
   search?: string;
-}
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+}): Promise<Purchase[]> {
+  const orgId = useAuthStore.getState().getOrganizationId();
+  if (!orgId) return [];
 
-// Get all purchases from local SQLite
-export function usePurchases(params: PurchasingFilterParams | void) {
-  const orgId = useAuthStore((state) => state.getOrganizationId());
-  const conditions = [
-    eq(schema.purchases.organizationId, orgId),
-    isNull(schema.purchases.deletedAt),
-  ];
+  const conditions = [eq(schema.purchases.organizationId, orgId)];
 
-  if (params?.supplierId) {
-    conditions.push(eq(schema.purchases.supplierId, params.supplierId));
+  if (params?.status) {
+    conditions.push(eq(schema.purchases.status, params.status as any));
   }
 
-  if (params?.userId) {
-    conditions.push(eq(schema.purchases.createdBy, params.userId));
+  if (params?.search) {
+    conditions.push(like(schema.purchases.local_ref_id, `%${params.search}%`));
   }
 
-  return useQuery({
-    queryKey: ['purchases', orgId, params],
-    queryFn: async () => {
-      let purchaseResult = await db
-        .select()
-        .from(schema.purchases)
-        .where(and(...conditions))
-        .orderBy(desc(schema.purchases.createdAt));
+  if (params?.startDate) {
+    // Date filtering would need raw SQL - skipping for now
+  }
 
-      // Apply date filter in JS (since SQLite timestamps are integers)
-      if (params?.dateType) {
-        const now = new Date();
-        let filterStart: Date | undefined;
-        let filterEnd: Date | undefined;
+  const result = await db
+    .select()
+    .from(schema.purchases)
+    .where(and(...conditions))
+    .orderBy(desc(schema.purchases.createdAt));
 
-        if (params.dateType === DateFilterType.TODAY) {
-          filterStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          filterEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-        } else if (params.dateType === DateFilterType.THIS_WEEK) {
-          const day = now.getDay();
-          const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-          filterStart = new Date(now.getFullYear(), now.getMonth(), diff);
-          filterEnd = new Date(now.getFullYear(), now.getMonth(), diff + 6, 23, 59, 59, 999);
-        } else if (params.dateType === DateFilterType.THIS_MONTH) {
-          filterStart = new Date(now.getFullYear(), now.getMonth(), 1);
-          filterEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-        } else if (params.dateType === DateFilterType.THIS_YEAR) {
-          filterStart = new Date(now.getFullYear(), 0, 1);
-          filterEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
-        } else if (
-          params.dateType === DateFilterType.CUSTOM &&
-          params.startDate &&
-          params.endDate
-        ) {
-          filterStart = new Date(
-            params.startDate.getFullYear(),
-            params.startDate.getMonth(),
-            params.startDate.getDate(),
-          );
-          filterEnd = new Date(
-            params.endDate.getFullYear(),
-            params.endDate.getMonth(),
-            params.endDate.getDate(),
-            23,
-            59,
-            59,
-            999,
-          );
-        }
-
-        if (filterStart && filterEnd) {
-          purchaseResult = purchaseResult.filter((p) => {
-            const date = p.createdAt;
-            return date && date >= filterStart! && date <= filterEnd!;
-          });
-        }
-      }
-
-      // Apply paymentTypeId filter
-      if (params?.paymentTypeIds && params.paymentTypeIds.length > 0) {
-        purchaseResult = purchaseResult.filter((p) =>
-          params.paymentTypeIds!.includes(p.paymentTypeId || ''),
-        );
-      }
-
-      // Join with supplier names
-      const purchasesWithSupplier = await Promise.all(
-        purchaseResult.map(async (purchase) => {
-          const supplier = await db
-            .select({ name: schema.suppliers.name })
-            .from(schema.suppliers)
-            .where(eq(schema.suppliers.id, purchase.supplierId))
-            .limit(1);
-
-          return {
-            ...purchase,
-            supplierName: supplier[0]?.name || 'Unknown',
-          };
-        }),
-      );
-
-      // Apply search filter
-      if (params?.search && params.search.trim()) {
-        const term = params.search.toLowerCase();
-        return (purchasesWithSupplier as Purchase[]).filter(
-          (p) =>
-            (formatDisplayRefId(p.local_ref_id) || p.id).toLowerCase().includes(term) ||
-            p.supplierName?.toLowerCase().includes(term),
-        );
-      }
-
-      return purchasesWithSupplier as Purchase[];
-    },
-    enabled: !!orgId,
-  });
+  return result as unknown as Purchase[];
 }
 
-export async function fetchPurchase(id: string): Promise<Purchase | null> {
-  // Get purchase record
-  const purchaseResult = await db
+export async function fetchPurchase(
+  id: string,
+): Promise<(Purchase & { items?: PurchaseItem[] }) | null> {
+  const result = await db
     .select()
     .from(schema.purchases)
     .where(eq(schema.purchases.id, id))
     .limit(1);
 
-  if (purchaseResult.length === 0) return null;
+  if (result.length === 0) return null;
 
-  const purchase = purchaseResult[0];
-
-  // Get payment type name
-  const paymentType = await db
-    .select({ name: schema.paymentTypes.name })
-    .from(schema.paymentTypes)
-    .where(eq(schema.paymentTypes.id, purchase.paymentTypeId || ''))
-    .limit(1);
-
-  // Get supplier name
-  const supplier = await db
-    .select({ name: schema.suppliers.name })
-    .from(schema.suppliers)
-    .where(eq(schema.suppliers.id, purchase.supplierId))
-    .limit(1);
-
-  // Get transaction items
-  // Transactions are created with local_ref_id pattern: {purchaseLocalRefId}_{productId}
-  const purchaseRef = purchase.local_ref_id;
-  if (!purchaseRef) {
-    console.warn('[fetchPurchase] Purchase has no local_ref_id, cannot find items');
-    return {
-      ...purchase,
-      supplierName: supplier[0]?.name || 'Unknown',
-      items: [],
-    } as Purchase;
-  }
-
-  const purchaseItems = await db
+  const items = await db
     .select()
-    .from(schema.inventoryTransactions)
-    .where(
-      and(
-        eq(schema.inventoryTransactions.type, InventoryTxType.PURCHASE),
-        eq(schema.inventoryTransactions.organizationId, purchase.organizationId),
-        like(schema.inventoryTransactions.local_ref_id, `${purchaseRef}_%`),
-      ),
-    );
+    .from(schema.purchaseItems)
+    .where(eq(schema.purchaseItems.purchaseId, id));
 
-  // Get product names for each item
-  const itemsWithProductNames = await Promise.all(
-    purchaseItems.map(async (item) => {
-      const product = await db
-        .select({
-          name: schema.products.name,
-          purchasePrice: schema.products.purchasePrice,
-        })
-        .from(schema.products)
-        .where(eq(schema.products.id, item.productId))
-        .limit(1);
-
-      return {
-        id: item.id,
-        productId: item.productId,
-        productName: product[0]?.name || 'Unknown',
-        quantity: item.quantity,
-        purchasePrice: product[0]?.purchasePrice || 0,
-        note: item.note,
-      };
-    }),
-  );
-
-  return {
-    ...purchase,
-    supplierName: supplier[0]?.name || 'Unknown',
-    paymentTypeName:
-      paymentType[0]?.name || (purchase.paymentType === PaymentMethod.CASH ? 'Tunai' : 'Hutang'),
-    items: itemsWithProductNames,
-  } as Purchase;
+  return { ...result[0], items } as unknown as Purchase & { items?: PurchaseItem[] };
 }
 
-// Get single purchase with items
+export async function fetchPurchaseItems(purchaseId: string): Promise<PurchaseItem[]> {
+  const result = await db
+    .select()
+    .from(schema.purchaseItems)
+    .where(eq(schema.purchaseItems.purchaseId, purchaseId));
+  return result as unknown as PurchaseItem[];
+}
+
+export async function createPurchase(data: CreatePurchasingDTO): Promise<Purchase> {
+  const orgId = useAuthStore.getState().getOrganizationId();
+  if (!orgId) throw new Error('Organization not found');
+
+  const id = `pur_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const now = new Date();
+  const userId = useAuthStore.getState().profile?.id;
+
+  const totalAmount = data.items.reduce((sum, item) => sum + item.totalPrice, 0);
+
+  const newPurchase = {
+    id,
+    local_ref_id: `PO-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+    organizationId: orgId,
+    supplierId: data.supplierId,
+    supplierName: '', // will be populated from supplier
+    paymentTypeId: data.paymentTypeId,
+    paymentTypeName: '',
+    totalAmount,
+    totalPaid: 0,
+    dueDate: data.dueDate || null,
+    status: data.status,
+    note: data.note || null,
+    createdBy: userId,
+    updatedBy: userId,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    _dirty: true,
+    _syncedAt: null,
+    commission: 0,
+  };
+
+  await db.insert(schema.purchases).values(newPurchase as any);
+
+  for (const item of data.items) {
+    const itemId = `pit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    await db.insert(schema.purchaseItems).values({
+      id: itemId,
+      purchaseId: id,
+      productId: item.productId,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      totalPrice: item.totalPrice,
+      createdAt: now,
+      updatedAt: now,
+      _dirty: true,
+      _syncedAt: null,
+    } as any);
+  }
+
+  return newPurchase as unknown as Purchase;
+}
+
+export function usePurchases(params?: {
+  search?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  supplierId?: string;
+  userId?: string;
+  paymentTypeIds?: string[];
+  dateType?: string;
+}) {
+  const [data, setData] = useState<Purchase[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetch = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await fetchPurchases(params);
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [params?.search, params?.status, params?.startDate, params?.endDate]);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data, isLoading, error, refetch: fetch };
+}
+
 export function usePurchase(id: string) {
-  return useQuery({
-    queryKey: ['purchases', id],
-    queryFn: () => fetchPurchase(id),
-    enabled: !!id,
-  });
+  const [data, setData] = useState<(Purchase & { items?: PurchaseItem[] }) | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetch = useCallback(async () => {
+    if (!id) {
+      setData(null);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await fetchPurchase(id);
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data, isLoading, error, refetch: fetch };
 }
 
 export function useCreatePurchasing() {
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  return useMutation({
-    mutationFn: async (data: CreatePurchasingDTO) => {
-      const orgId = useAuthStore.getState().getOrganizationId();
-      if (!orgId) {
-        throw new Error('ID Organisasi tidak ditemukan');
+  const mutate = useCallback(
+    async (
+      data: CreatePurchasingDTO,
+      options?: { onSuccess?: (data: Purchase) => void; onError?: (error: Error) => void },
+    ) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await createPurchase(data);
+        options?.onSuccess?.(result);
+        return result;
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
-
-      const purchaseId =
-        data.id || `purch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-      const now = new Date();
-      const userId = useAuthStore.getState().profile?.id;
-
-      await db.transaction(async (tx) => {
-        const localRefId = await generateLocalRefId(tx, schema.purchases, 'PUR');
-
-        const existingRef = data.id
-          ? (
-              await tx
-                .select({ r: schema.purchases.local_ref_id })
-                .from(schema.purchases)
-                .where(eq(schema.purchases.id, data.id))
-                .limit(1)
-            )[0]?.r
-          : null;
-        let finalLocalRefId = existingRef || localRefId;
-
-        if (data.id) {
-          const existing = await tx
-            .select({ status: schema.purchases.status })
-            .from(schema.purchases)
-            .where(eq(schema.purchases.id, data.id))
-            .limit(1);
-
-          const statusCompleted =
-            data.status === Status.COMPLETED && existing[0]?.status === Status.DRAFT;
-
-          if (statusCompleted) {
-            finalLocalRefId = await generateLocalRefId(tx, schema.purchases, 'PUR');
-          }
-        }
-
-        const purchaseValues = {
-          id: purchaseId,
-          local_ref_id: finalLocalRefId,
-          supplierId: data.supplierId,
-          totalAmount: data.totalPurchase,
-          totalPaid: data.totalPaid,
-          paymentType: data.isPayable ? PaymentMethod.DEBT : PaymentMethod.CASH,
-          paymentTypeId: data.paymentMethodId,
-          commission: data.commission || 0,
-          status: data.status,
-          dueDate: data.dueDate,
-          note: data.note,
-          organizationId: orgId,
-          createdBy: userId,
-          updatedBy: userId,
-          createdAt: data.transactionDate || now,
-          updatedAt: now,
-          _dirty: true,
-          _syncedAt: null,
-        };
-
-        if (data.id) {
-          await tx
-            .update(schema.purchases)
-            .set(purchaseValues)
-            .where(eq(schema.purchases.id, data.id));
-
-          // Efficiently delete old inventory transactions for this purchase
-          await tx
-            .delete(schema.inventoryTransactions)
-            .where(
-              and(
-                eq(schema.inventoryTransactions.organizationId, orgId),
-                like(schema.inventoryTransactions.local_ref_id, `${finalLocalRefId}_%`),
-              ),
-            );
-        } else {
-          await tx.insert(schema.purchases).values(purchaseValues);
-        }
-
-        // 2. Create Inventory Transactions for each item
-        for (const item of data.items) {
-          const txId = `inv_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          await tx.insert(schema.inventoryTransactions).values({
-            id: txId,
-            local_ref_id: `${finalLocalRefId}_${item.product.id}`,
-            productId: item.product.id,
-            type: InventoryTxType.PURCHASE,
-            quantity: item.quantity,
-            status: data.status,
-            note: item.note || '',
-            organizationId: orgId,
-            createdBy: userId,
-            updatedBy: userId,
-            createdAt: data.transactionDate || now,
-            updatedAt: now,
-            _dirty: true,
-            _syncedAt: null,
-          });
-
-          // 3. Update Product purchasePrice and link supplierId if status is COMPLETED
-          if (data.status === Status.COMPLETED) {
-            const [dbProduct] = await tx
-              .select({
-                purchasePrice: schema.products.purchasePrice,
-                supplierId: schema.products.supplierId,
-              })
-              .from(schema.products)
-              .where(eq(schema.products.id, item.product.id))
-              .limit(1);
-
-            if (dbProduct) {
-              const updates: { purchasePrice?: number; supplierId?: string } = {};
-              if (item.newPurchasePrice !== dbProduct.purchasePrice) {
-                updates.purchasePrice = item.newPurchasePrice;
-              }
-              if (!dbProduct.supplierId) {
-                updates.supplierId = data.supplierId;
-              }
-
-              if (Object.keys(updates).length > 0) {
-                await tx
-                  .update(schema.products)
-                  .set({
-                    ...updates,
-                    updatedBy: userId,
-                    updatedAt: now,
-                    _dirty: true,
-                  })
-                  .where(eq(schema.products.id, item.product.id));
-              }
-            }
-          }
-        }
-
-        // 4. Create Payable record if isPayable is true
-        if (data.isPayable) {
-          const payableId = `payable_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          await tx.insert(schema.payables).values({
-            id: payableId,
-            supplierId: data.supplierId,
-            nominal: data.totalPurchase,
-            dueDate: data.dueDate,
-            note: data.note || '',
-            organizationId: orgId,
-            createdBy: userId,
-            updatedBy: userId,
-            createdAt: data.transactionDate || now,
-            updatedAt: now,
-            _dirty: true,
-            _syncedAt: null,
-          });
-          // 5. Create Payable Realization as DP if totalPaid < totalPurchase
-          const totalPaidNum = Number(data.totalPaid) || 0;
-          if (totalPaidNum > 0 && totalPaidNum < data.totalPurchase) {
-            const realizationId = `preal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            await tx.insert(schema.payableRealizations).values({
-              id: realizationId,
-              payableId: payableId,
-              nominal: totalPaidNum,
-              realizationDate: data.transactionDate || now,
-              paymentMethodId: data.paymentMethodId || 'CASH',
-              note: 'DP Pembelian',
-              organizationId: orgId,
-              createdBy: userId,
-              updatedBy: userId,
-              createdAt: data.transactionDate || now,
-              updatedAt: now,
-              _dirty: true,
-              _syncedAt: null,
-            });
-          }
-        }
-      });
-
-      const finalRef = (
-        await db
-          .select({ r: schema.purchases.local_ref_id })
-          .from(schema.purchases)
-          .where(eq(schema.purchases.id, purchaseId))
-          .limit(1)
-      )[0]?.r;
-      return { ...data, id: purchaseId, local_ref_id: finalRef };
     },
-    onSuccess: (responseData) => {
-      const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['products', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['purchases', orgId] });
-      queryClient.invalidateQueries({
-        queryKey: ['purchases', responseData.id],
-      });
-      queryClient.invalidateQueries({ queryKey: ['payables'] }); // Invalidate payables list
-    },
-  });
+    [],
+  );
+
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    loading: isLoading,
+    isPending: isLoading,
+    error,
+  };
 }

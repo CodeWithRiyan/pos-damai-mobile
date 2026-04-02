@@ -36,7 +36,7 @@ import { usePopUpConfirm } from '@/components/pop-up-confirm';
 import InputVirtualKeyboard from '@/components/ui/input-virtual-keyboard';
 import SelectModal from '@/components/ui/select/select-modal';
 import { useCurrentUser } from '@/lib/api/auth';
-import { usePaymentTypes } from '@/lib/api/payment-types';
+import { usePaymentTypes } from '@/hooks/use-payment-type';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import { usePurchasingStore } from '@/stores/purchasing';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -207,14 +207,12 @@ export default function PurchasingCheckoutForm() {
       totalPaid: Number(data.totalPaid),
       commission: 0,
       totalPurchase: grandTotal,
+      paymentTypeId: data.paymentMethodId,
       items: cart.map((item) => ({
-        product: {
-          id: item.product.id,
-          purchasePrice: item.product.purchasePrice,
-        },
-        newPurchasePrice: item.newPurchasePrice,
+        productId: item.product.id,
         quantity: item.quantity,
-        note: item.note,
+        unitPrice: item.newPurchasePrice,
+        totalPrice: item.newPurchasePrice * item.quantity,
       })),
     };
 

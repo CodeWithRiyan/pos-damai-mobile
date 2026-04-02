@@ -19,7 +19,7 @@ import {
   useBulkResetCustomerPoints,
   useCreateCustomer,
   useCustomers,
-} from '@/lib/api/customers';
+} from '@/hooks/use-customer';
 import { bulkDeleteConfirm } from '@/lib/utils/delete-confirm';
 import { exportCustomers, importCustomers } from '@/lib/utils/excel';
 import { showErrorToast } from '@/lib/utils/toast';
@@ -136,7 +136,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
     if (!ids.length) return;
 
     resetPointMutation.mutate(
-      { ids },
+      ids,
       {
         onSuccess: () => {
           clearSelection();
@@ -152,7 +152,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
             ),
           });
         },
-        onError: (error) => {
+        onError: (error: Error) => {
           showErrorToast(toast, error);
           hidePopUpConfirm();
         },

@@ -70,11 +70,11 @@ export default function EndShiftForm({
         note: data.note,
       },
       {
-        onSuccess: (newEndShift) => {
+        onSuccess: () => {
           showSuccessToast(toast, 'Shift Telah Berakhir');
           form.reset(initialValues);
           setOpen(false);
-          router.push(`/shift/detail/${newEndShift.id}`);
+          router.push(`/shift/detail/${currentShift?.id}`);
         },
         onError: (error: unknown) => {
           showErrorToast(toast, error);

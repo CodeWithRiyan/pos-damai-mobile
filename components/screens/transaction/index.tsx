@@ -24,7 +24,7 @@ import GridProductLayout from '@/components/ui/layout/grid-product-layout';
 import ListProductLayout from '@/components/ui/layout/list-product-layout';
 import SelectModal from '@/components/ui/select/select-modal';
 import { Spinner } from '@/components/ui/spinner';
-import { useCustomer, useCustomers } from '@/lib/api/customers';
+import { useCustomer, useCustomers } from '@/hooks/use-customer';
 import { useProducts } from '@/lib/api/products';
 import { useCurrentShift } from '@/lib/api/shifts';
 import { useLocalUsers } from '@/lib/api/users';

@@ -10,14 +10,12 @@ import { resetDb, initializeDb } from '@/lib/db';
 import { showErrorToast } from '@/lib/utils/toast';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth';
 import { Pressable, ScrollView } from 'react-native';
 import { authStorageAdapter, storageAdapter } from '@/lib/storage';
 
 export default function SettingScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const toast = useToast();
 
@@ -40,8 +38,6 @@ export default function SettingScreen() {
           await resetDb();
           await initializeDb();
 
-          // Clear query cache from memory
-          queryClient.clear();
           // Clear Zustand auth profile from memory
           useAuthStore.getState().setProfile(null);
           authStorageAdapter.clearAll();

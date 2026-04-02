@@ -333,8 +333,8 @@ export async function importSuppliers(): Promise<
   return rows
     .map((r) => ({
       name: str(r['Nama']),
-      phone: str(r['Telepon']) || null,
-      address: str(r['Alamat']) || null,
+      phone: str(r['Telepon']) || undefined,
+      address: str(r['Alamat']) || undefined,
     }))
     .filter((d) => d.name.length > 0);
 }

@@ -9,7 +9,7 @@ import {
   useCustomers,
   useDeleteCustomer,
   useResetCustomerPoints,
-} from '@/lib/api/customers';
+} from '@/hooks/use-customer';
 import { showErrorToast } from '@/lib/utils/toast';
 import { helperCustomerCategory } from '@/lib/customer-category';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
@@ -79,7 +79,7 @@ export default function CustomerDetail() {
           ),
         });
       },
-      onError: (error) => {
+      onError: (error: Error) => {
         showErrorToast(toast, error);
         hidePopUpConfirm();
       },

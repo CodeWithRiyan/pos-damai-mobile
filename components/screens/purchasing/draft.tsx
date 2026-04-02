@@ -5,7 +5,6 @@ import { Status } from '@/lib/constants';
 import { db } from '@/lib/db';
 import * as schema from '@/lib/db/schema';
 import { usePurchasingStore } from '@/stores/purchasing';
-import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { eq } from 'drizzle-orm';
 import { useRouter } from 'expo-router';
@@ -17,7 +16,6 @@ export default function PurchasingDraft() {
   const router = useRouter();
   const { data: purchases, isLoading } = usePurchases();
   const { addCartItem, resetCart, setStatus, setPurchaseId } = usePurchasingStore();
-  const queryClient = useQueryClient();
 
   // Filter only DRAFT status
   const drafts = purchases?.filter((p) => p.status === Status.DRAFT) || [];
@@ -39,7 +37,7 @@ export default function PurchasingDraft() {
         if (productResult.length > 0) {
           addCartItem({
             product: productResult[0] as any,
-            newPurchasePrice: item.purchasePrice || productResult[0].purchasePrice || 0,
+            newPurchasePrice: item.unitPrice || productResult[0].purchasePrice || 0,
             quantity: item.quantity,
           });
         }
@@ -80,8 +78,6 @@ export default function PurchasingDraft() {
       // 3. Delete purchase
       await tx.delete(schema.purchases).where(eq(schema.purchases.id, purchaseId));
     });
-
-    queryClient.invalidateQueries({ queryKey: ['purchases'] });
   };
 
   if (isLoading) {

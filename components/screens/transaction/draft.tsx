@@ -70,11 +70,10 @@ export default function TransactionDraft() {
         addCartItem({
           product: {
             ...item.product,
-            code: item.product.barcode,
           } as any,
           tempSellPrice: item.sellPrice,
           quantity: item.quantity,
-          note: item.note,
+          note: item.note ?? undefined,
         });
       }
     }

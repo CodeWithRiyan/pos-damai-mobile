@@ -1,369 +1,551 @@
-import { db } from '../db';
-import * as schema from '../db/schema';
-import { and, eq, isNull } from 'drizzle-orm';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { payables, payableRealizations, suppliers, users } from '@/lib/db/schema';
+import { db } from '@/lib/db';
 import { useAuthStore } from '@/stores/auth';
-import { Supplier } from './suppliers';
-import { generateLocalRefId } from '../utils/reference';
-
-export interface PayableRealization {
-  id: string;
-  payableId: string;
-  nominal: number;
-  realizationDate: Date;
-  paymentMethodId: string;
-  note: string | null;
-  organizationId: string;
-  createdBy: string | null;
-  updatedBy: string | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-}
+import { eq, and, isNull, like, desc, sql, sum } from 'drizzle-orm';
+import { useCallback, useEffect, useState } from 'react';
 
 export interface Payable {
   id: string;
   supplierId: string;
+  supplierName: string;
   nominal: number;
-  dueDate: Date | null;
-  note: string | null;
-  organizationId: string;
-  createdBy: string | null;
-  updatedBy: string | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-  supplier?: Supplier;
-  realizations: PayableRealization[];
   totalRealization: number;
+  totalPayable: number;
+  status: string;
+  createdAt: Date | null;
+  dueDate: Date | null;
+  nearestDueDate?: Date | null;
+  note?: string;
+  supplier?: { name: string; phone?: string | null; address?: string | null };
+  realizations?: Array<{ id: string; nominal: number; createdAt: Date; realizationDate?: Date; note?: string }>;
+  local_ref_id?: string;
 }
 
 export interface PayableBySupplier {
   supplierId: string;
   supplierName: string;
-  totalPayable: number;
+  phone?: string | null;
+  address?: string | null;
+  totalNominal: number;
   totalRealization: number;
-  nearestDueDate: Date | null;
-  organizationId: string;
-  address: string | null;
-  phone: string | null;
+  totalPayable: number;
+  nearestDueDate?: Date | null;
+  payables: Payable[];
 }
 
-export interface CreatePayableDTO {
+export async function fetchPayables(params?: { search?: string; status?: string }): Promise<Payable[]> {
+  const orgId = useAuthStore.getState().getOrganizationId();
+  if (!orgId) return [];
+
+  const conditions = [
+    eq(payables.organizationId, orgId),
+    isNull(payables.deletedAt),
+  ];
+
+  if (params?.search) {
+    conditions.push(like(payables.supplierName, `%${params.search}%`));
+  }
+
+  if (params?.status) {
+    conditions.push(eq(payables.status, params.status as any));
+  }
+
+  const result = await db
+    .select()
+    .from(payables)
+    .where(and(...conditions))
+    .orderBy(desc(payables.createdAt));
+
+  const payablesWithRealizations: Payable[] = await Promise.all(
+    result.map(async (p) => {
+      const realizations = await db
+        .select()
+        .from(payableRealizations)
+        .where(eq(payableRealizations.payableId, p.id));
+
+      const totalRealization = realizations.reduce((sum, r) => sum + (r.nominal || 0), 0);
+
+      return {
+        ...p,
+        supplierName: p.supplierName || '',
+        totalRealization,
+        totalPayable: (p.nominal || 0) - totalRealization,
+        status: p.status || 'PENDING',
+        realizations: realizations.map(r => ({
+          id: r.id,
+          nominal: r.nominal,
+          createdAt: r.createdAt,
+          realizationDate: r.realizationDate,
+          note: r.note,
+        })),
+      } as Payable;
+    })
+  );
+
+  return payablesWithRealizations;
+}
+
+export async function fetchPayableBySupplier(): Promise<PayableBySupplier[]> {
+  const orgId = useAuthStore.getState().getOrganizationId();
+  if (!orgId) return [];
+
+  const allPayables = await fetchPayables();
+
+  const grouped = new Map<string, Payable[]>();
+  for (const payable of allPayables) {
+    const existing = grouped.get(payable.supplierId) || [];
+    existing.push(payable);
+    grouped.set(payable.supplierId, existing);
+  }
+
+  const result: PayableBySupplier[] = [];
+  for (const [supplierId, payablesList] of grouped) {
+    const totalNominal = payablesList.reduce((sum, p) => sum + (p.nominal || 0), 0);
+    const totalRealization = payablesList.reduce((sum, p) => sum + (p.totalRealization || 0), 0);
+    const totalPayable = totalNominal - totalRealization;
+    const supplierName = payablesList[0]?.supplierName || 'Unknown';
+    const nearestDueDate = payablesList.reduce((nearest, p) => {
+      if (!p.dueDate) return nearest;
+      if (!nearest || p.dueDate < nearest) return p.dueDate;
+      return nearest;
+    }, null as Date | null);
+    result.push({
+      supplierId,
+      supplierName,
+      phone: payablesList[0]?.supplier?.phone || null,
+      address: payablesList[0]?.supplier?.address || null,
+      totalNominal,
+      totalRealization,
+      totalPayable,
+      nearestDueDate,
+      payables: payablesList,
+    });
+  }
+
+  return result;
+}
+
+export async function fetchPayableDetail(id: string): Promise<Payable | null> {
+  const result = await db
+    .select()
+    .from(payables)
+    .where(eq(payables.id, id))
+    .limit(1);
+
+  if (result.length === 0) return null;
+
+  const p = result[0];
+  const realizations = await db
+    .select()
+    .from(payableRealizations)
+    .where(eq(payableRealizations.payableId, p.id));
+
+  const totalRealization = realizations.reduce((sum, r) => sum + (r.nominal || 0), 0);
+
+  return {
+    ...p,
+    supplierName: p.supplierName || '',
+    totalRealization,
+    totalPayable: (p.nominal || 0) - totalRealization,
+    status: p.status || 'PENDING',
+    realizations: realizations.map(r => ({
+      id: r.id,
+      nominal: r.nominal,
+      createdAt: r.createdAt,
+      realizationDate: r.realizationDate,
+      note: r.note,
+    })),
+  } as Payable;
+}
+
+export async function createPayable(data: {
   supplierId: string;
   nominal: number;
-  dueDate?: string;
+  dueDate?: Date | string | null;
   note?: string;
+}): Promise<Payable> {
+  const orgId = useAuthStore.getState().getOrganizationId();
+  if (!orgId) throw new Error('Organization not found');
+
+  const id = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const now = new Date();
+  const userId = useAuthStore.getState().profile?.id;
+
+  const supplier = await db
+    .select()
+    .from(suppliers)
+    .where(eq(suppliers.id, data.supplierId))
+    .limit(1);
+
+  const newPayable = {
+    id,
+    local_ref_id: `PAY-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+    nominal: data.nominal,
+    dueDate: data.dueDate ? (typeof data.dueDate === 'string' ? new Date(data.dueDate) : data.dueDate) : null,
+    note: data.note || null,
+    supplierId: data.supplierId,
+    supplierName: supplier[0]?.name || '',
+    status: 'PENDING',
+    createdBy: userId,
+    organizationId: orgId,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    _dirty: true,
+    _syncedAt: null,
+  };
+
+  await db.insert(payables).values(newPayable as any);
+
+  return {
+    ...newPayable,
+    totalRealization: 0,
+    totalPayable: data.nominal,
+  } as Payable;
 }
 
-export interface CreatePayableRealizationDTO {
+export async function createPayableRealization(data: {
   payableId: string;
   nominal: number;
-  realizationDate: string;
+  realizationDate: Date;
   paymentMethodId: string;
   note?: string;
+}): Promise<void> {
+  const orgId = useAuthStore.getState().getOrganizationId();
+  if (!orgId) throw new Error('Organization not found');
+
+  const id = `pr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const now = new Date();
+
+  await db.insert(payableRealizations).values({
+    id,
+    local_ref_id: `PR-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+    payableId: data.payableId,
+    nominal: data.nominal,
+    realizationDate: data.realizationDate,
+    paymentMethodId: data.paymentMethodId,
+    note: data.note || null,
+    organizationId: orgId,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    _dirty: true,
+    _syncedAt: null,
+  } as any);
 }
 
-export interface UpdatePayableDTO {
-  id: string;
-  nominal?: number;
-  supplierId?: string;
-  dueDate?: string;
-  note?: string;
+export function usePayables(params?: { search?: string; status?: string }) {
+  const [data, setData] = useState<Payable[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetch = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await fetchPayables(params);
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [params?.search, params?.status]);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data, isLoading, error, refetch: fetch };
 }
 
 export function usePayableList() {
-  const orgId = useAuthStore((state) => state.getOrganizationId());
-  return useQuery({
-    queryKey: ['payables', 'list', orgId],
-    queryFn: async () => {
-      const allPayables = await db
-        .select({
-          payable: schema.payables,
-          supplier: schema.suppliers,
-        })
-        .from(schema.payables)
-        .leftJoin(schema.suppliers, eq(schema.payables.supplierId, schema.suppliers.id))
-        .where(and(eq(schema.payables.organizationId, orgId), isNull(schema.payables.deletedAt)));
+  const [data, setData] = useState<PayableBySupplier[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-      const groupedBySupplier: Record<string, PayableBySupplier> = {};
+  const fetch = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await fetchPayableBySupplier();
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-      for (const item of allPayables) {
-        const { payable, supplier } = item;
-        const realizations = await db
-          .select()
-          .from(schema.payableRealizations)
-          .where(
-            and(
-              eq(schema.payableRealizations.payableId, payable.id),
-              isNull(schema.payableRealizations.deletedAt),
-            ),
-          );
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
 
-        const totalRealization = realizations.reduce((sum, r) => sum + r.nominal, 0);
-
-        if (!groupedBySupplier[payable.supplierId]) {
-          groupedBySupplier[payable.supplierId] = {
-            supplierId: payable.supplierId,
-            supplierName: supplier?.name || 'Unknown',
-            totalPayable: 0,
-            totalRealization: 0,
-            nearestDueDate: payable.dueDate,
-            organizationId: payable.organizationId,
-            address: supplier?.address || null,
-            phone: supplier?.phone || null,
-          };
-        }
-
-        const group = groupedBySupplier[payable.supplierId];
-        group.totalPayable += payable.nominal;
-        group.totalRealization += totalRealization;
-
-        if (payable.dueDate && (!group.nearestDueDate || payable.dueDate < group.nearestDueDate)) {
-          group.nearestDueDate = payable.dueDate;
-        }
-      }
-
-      return Object.values(groupedBySupplier);
-    },
-    enabled: !!orgId,
-  });
+  return { data, isLoading, error, refetch: fetch };
 }
 
-export function usePayableBySupplier(supplierId: string) {
-  const orgId = useAuthStore((state) => state.getOrganizationId());
-  return useQuery({
-    queryKey: ['payables', 'supplier', supplierId, orgId],
-    queryFn: async () => {
-      const payablesWithSupplier = await db
-        .select({
-          payable: schema.payables,
-          supplier: schema.suppliers,
-        })
-        .from(schema.payables)
-        .leftJoin(schema.suppliers, eq(schema.payables.supplierId, schema.suppliers.id))
-        .where(
-          and(
-            eq(schema.payables.supplierId, supplierId),
-            eq(schema.payables.organizationId, orgId),
-            isNull(schema.payables.deletedAt),
-          ),
-        );
+export function usePayableBySupplier(supplierId?: string) {
+  const [data, setData] = useState<Payable[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-      const detailedPayables = await Promise.all(
-        payablesWithSupplier.map(async (row) => {
-          const { payable, supplier } = row;
-          const realizations = await db
-            .select()
-            .from(schema.payableRealizations)
-            .where(
-              and(
-                eq(schema.payableRealizations.payableId, payable.id),
-                isNull(schema.payableRealizations.deletedAt),
-              ),
-            );
+  const fetch = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await fetchPayables({ search: supplierId ? undefined : undefined });
+      const filtered = supplierId ? result.filter(p => p.supplierId === supplierId) : result;
+      setData(filtered);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [supplierId]);
 
-          const totalRealization = realizations.reduce((sum, r) => sum + r.nominal, 0);
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
 
-          return {
-            ...payable,
-            supplier,
-            realizations,
-            totalRealization,
-          };
-        }),
-      );
-
-      return detailedPayables as Payable[];
-    },
-    enabled: !!supplierId && !!orgId,
-  });
+  return { data, isLoading, error, refetch: fetch };
 }
 
 export function usePayableDetail(id: string) {
-  return useQuery({
-    queryKey: ['payables', 'detail', id],
-    queryFn: async () => {
-      const result = await db
-        .select({
-          payable: schema.payables,
-          supplier: schema.suppliers,
-        })
-        .from(schema.payables)
-        .leftJoin(schema.suppliers, eq(schema.payables.supplierId, schema.suppliers.id))
-        .where(eq(schema.payables.id, id))
-        .limit(1);
+  const [data, setData] = useState<Payable | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-      if (result.length === 0) return undefined;
+  const fetch = useCallback(async () => {
+    if (!id) {
+      setData(null);
+      setIsLoading(false);
+      return;
+    }
 
-      const { payable, supplier } = result[0];
-      const realizations = await db
-        .select()
-        .from(schema.payableRealizations)
-        .where(
-          and(
-            eq(schema.payableRealizations.payableId, id),
-            isNull(schema.payableRealizations.deletedAt),
-          ),
-        );
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await fetchPayableDetail(id);
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
 
-      const totalRealization = realizations.reduce((sum, r) => sum + r.nominal, 0);
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
 
-      return {
-        ...payable,
-        supplier,
-        realizations,
-        totalRealization,
-      } as Payable;
-    },
-    enabled: !!id,
-  });
+  return { data, isLoading, error, refetch: fetch };
 }
 
 export function useCreatePayable() {
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  return useMutation({
-    mutationFn: async (data: CreatePayableDTO) => {
-      const orgId = useAuthStore.getState().getOrganizationId();
-      const id = `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const now = new Date();
-      const userId = useAuthStore.getState().profile?.id;
+  const mutate = useCallback(async (
+    data: { supplierId: string; nominal: number; dueDate?: Date; note?: string },
+    options?: { onSuccess?: (data: Payable) => void; onError?: (error: Error) => void }
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await createPayable(data);
+      options?.onSuccess?.(result);
+      return result;
+    } catch (err) {
+      const error = err as Error;
+      setError(error);
+      options?.onError?.(error);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-      let local_ref_id = '';
-      await db.transaction(async (tx) => {
-        local_ref_id = await generateLocalRefId(tx, schema.payables, 'PAY');
-        await tx.insert(schema.payables).values({
-          id,
-          local_ref_id,
-          ...data,
-          dueDate: data.dueDate ? new Date(data.dueDate) : null,
-          organizationId: orgId,
-          createdBy: userId,
-          updatedBy: userId,
-          createdAt: now,
-          updatedAt: now,
-          _dirty: true,
-          _syncedAt: null,
-        });
-      });
-
-      return { id, local_ref_id, ...data };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payables'] });
-    },
-  });
-}
-
-export function useCreatePayableRealization() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: CreatePayableRealizationDTO) => {
-      const orgId = useAuthStore.getState().getOrganizationId();
-      const id = `payrel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const now = new Date();
-      const userId = useAuthStore.getState().profile?.id;
-
-      let local_ref_id = '';
-      await db.transaction(async (tx) => {
-        local_ref_id = await generateLocalRefId(tx, schema.payableRealizations, 'PAY');
-        await tx.insert(schema.payableRealizations).values({
-          id,
-          local_ref_id,
-          ...data,
-          realizationDate: new Date(data.realizationDate),
-          organizationId: orgId,
-          createdBy: userId,
-          updatedBy: userId,
-          createdAt: now,
-          updatedAt: now,
-          deletedAt: null,
-          _dirty: true,
-          _syncedAt: null,
-        });
-      });
-
-      return { id, local_ref_id, ...data };
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['payables'] });
-    },
-  });
-}
-
-export function useDeletePayable() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      await db
-        .update(schema.payables)
-        .set({
-          deletedAt: new Date(),
-          updatedBy: useAuthStore.getState().profile?.id,
-          updatedAt: new Date(),
-          _dirty: true,
-        })
-        .where(eq(schema.payables.id, id));
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payables'] });
-    },
-  });
-}
-
-export function useBulkDeletePayableBySupplier() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (supplierIds: string[]) => {
-      const orgId = useAuthStore.getState().getOrganizationId();
-      const now = new Date();
-      for (const supplierId of supplierIds) {
-        await db
-          .update(schema.payables)
-          .set({
-            deletedAt: now,
-            updatedBy: useAuthStore.getState().profile?.id,
-            updatedAt: now,
-            _dirty: true,
-          })
-          .where(
-            and(
-              eq(schema.payables.supplierId, supplierId),
-              eq(schema.payables.organizationId, orgId),
-            ),
-          );
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payables'] });
-    },
-  });
+  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
 }
 
 export function useUpdatePayable() {
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  return useMutation({
-    mutationFn: async (data: UpdatePayableDTO) => {
-      const orgId = useAuthStore.getState().getOrganizationId();
-      const { id, ...updateData } = data;
+  const mutate = useCallback(async (
+    data: { id: string; nominal?: number; dueDate?: Date | string | null; note?: string; status?: string },
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
       const now = new Date();
-
+      const { id, nominal, dueDate, note, status } = data;
+      const updateFields: any = {
+        updatedAt: now,
+        _dirty: true,
+      };
+      if (nominal !== undefined) updateFields.nominal = nominal;
+      if (dueDate !== undefined) updateFields.dueDate = dueDate ? (typeof dueDate === 'string' ? new Date(dueDate) : dueDate) : null;
+      if (note !== undefined) updateFields.note = note;
+      if (status !== undefined) updateFields.status = status;
+      
       await db
-        .update(schema.payables)
+        .update(payables)
+        .set(updateFields)
+        .where(eq(payables.id, id));
+      options?.onSuccess?.();
+    } catch (err) {
+      const error = err as Error;
+      setError(error);
+      options?.onError?.(error);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
+}
+
+export function useDeletePayable() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const mutate = useCallback(async (
+    id: string,
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const now = new Date();
+      await db
+        .update(payables)
         .set({
-          ...updateData,
-          dueDate: updateData.dueDate ? new Date(updateData.dueDate) : undefined,
-          updatedBy: useAuthStore.getState().profile?.id,
+          deletedAt: now,
           updatedAt: now,
           _dirty: true,
         })
-        .where(and(eq(schema.payables.id, id), eq(schema.payables.organizationId, orgId)));
+        .where(eq(payables.id, id));
+      options?.onSuccess?.();
+    } catch (err) {
+      const error = err as Error;
+      setError(error);
+      options?.onError?.(error);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-      return { id, ...updateData };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payables'] });
-    },
-  });
+  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
+}
+
+export function useBulkDeletePayable() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const mutate = useCallback(async (
+    ids: string[],
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const now = new Date();
+      await Promise.all(
+        ids.map(async (id) => {
+          await db
+            .update(payables)
+            .set({
+              deletedAt: now,
+              updatedAt: now,
+              _dirty: true,
+            })
+            .where(eq(payables.id, id));
+        })
+      );
+      options?.onSuccess?.();
+    } catch (err) {
+      const error = err as Error;
+      setError(error);
+      options?.onError?.(error);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
+}
+
+export function useCreatePayableRealization() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const mutate = useCallback(async (
+    data: { payableId: string; nominal: number; realizationDate: Date; paymentMethodId: string; note?: string },
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await createPayableRealization(data);
+      options?.onSuccess?.();
+    } catch (err) {
+      const error = err as Error;
+      setError(error);
+      options?.onError?.(error);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
+}
+
+export function useBulkDeletePayableBySupplier() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const mutate = useCallback(async (
+    supplierId: string,
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const now = new Date();
+      const allPayables = await db
+        .select()
+        .from(payables)
+        .where(and(
+          eq(payables.supplierId, supplierId),
+          isNull(payables.deletedAt)
+        ));
+
+      for (const p of allPayables) {
+        await db
+          .update(payables)
+          .set({
+            deletedAt: now,
+            updatedAt: now,
+            _dirty: true,
+          })
+          .where(eq(payables.id, p.id));
+      }
+      options?.onSuccess?.();
+    } catch (err) {
+      const error = err as Error;
+      setError(error);
+      options?.onError?.(error);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
 }

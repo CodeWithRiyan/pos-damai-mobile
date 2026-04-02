@@ -31,7 +31,7 @@ import {
   useDiscount,
   useDiscounts,
   useUpdateDiscount,
-} from '@/lib/api/discounts';
+} from '@/hooks/use-discount';
 import { useDiscountStore } from '@/stores/discount';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';

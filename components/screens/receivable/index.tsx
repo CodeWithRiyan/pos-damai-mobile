@@ -30,8 +30,8 @@ import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import { showErrorToast } from '@/lib/utils/toast';
 import {
-  ReceivableByUser,
-  useBulkDeleteReceivableByUser,
+  Receivable,
+  useBulkDeleteReceivable,
   useReceivableList,
 } from '@/lib/api/receivable';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -46,10 +46,10 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data: receivableByUser = [], isLoading: isLoadingFetch } = useReceivableList();
-  const deleteMutation = useBulkDeleteReceivableByUser();
+  const deleteMutation = useBulkDeleteReceivable();
 
   const isLoading = isLoadingFetch || deleteMutation.isPending;
-  const [selectedItems, setSelectedItems] = useState<ReceivableByUser[] | null>(null);
+  const [selectedItems, setSelectedItems] = useState<Receivable[] | null>(null);
   const [showDueDatePicker, setShowDueDatePicker] = useState<boolean>(false);
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [statuses, setStatuses] = useState<string[]>(['Lunas', 'Belum Lunas']);
@@ -57,7 +57,7 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
 
   const toast = useToast();
 
-  const handleReceivablePress = (receivable: ReceivableByUser) => {
+  const handleReceivablePress = (receivable: Receivable) => {
     setSelectedItems((prev) => {
       if (prev?.some((r) => r.userId === receivable.userId)) {
         return prev.filter((r) => r.userId !== receivable.userId);
@@ -94,7 +94,9 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
 
   const confirmDelete = async (userIds: string[]) => {
     if (!userIds.length) return;
-    deleteMutation.mutate(userIds, {
+    // Get all receivable IDs from selected users
+    const receivableIds = selectedItems?.map((item) => item.id) || [];
+    deleteMutation.mutate(receivableIds, {
       onSuccess: () => {
         setSelectedItems(null);
         hidePopUpConfirm();
@@ -267,7 +269,7 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
                   r.totalReceivable - r.totalRealization > 0 ? 'Belum Lunas' : 'Lunas',
                 ),
               )
-              ?.filter((r) => r.userName.toLowerCase().includes(searchQuery.toLowerCase()))}
+              ?.filter((r) => (r.userName ?? '').toLowerCase().includes(searchQuery.toLowerCase()))}
             className="flex-1"
             keyExtractor={(receivable) => receivable.userId}
             renderItem={({ item: receivable }) => (

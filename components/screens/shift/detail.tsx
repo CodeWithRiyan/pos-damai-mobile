@@ -28,7 +28,20 @@ export default function ShiftDetail() {
       };
 
     return detailShift.transactionHistory.reduce(
-      (acc, trx) => {
+      (
+        acc: {
+          sales: any;
+          income: any;
+          payableRealization: number;
+          supplies: number;
+          equipment1: number;
+          equipment2: number;
+          cashDeposit: number;
+          otherExpenses: number;
+          finalBalance: number;
+        },
+        trx: { type: string; nominal: any; note: string | string[] },
+      ) => {
         if (trx.type === 'INITIAL') return acc;
 
         if (trx.type === 'SALES') {

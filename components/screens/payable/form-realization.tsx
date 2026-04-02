@@ -28,7 +28,7 @@ import SelectModal from '@/components/ui/select/select-modal';
 import { SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
 import { useCreatePayableRealization, usePayableBySupplier } from '@/lib/api/payable';
 import { showErrorToast } from '@/lib/utils/toast';
-import { usePaymentTypes } from '@/lib/api/payment-types';
+import { usePaymentTypes } from '@/hooks/use-payment-type';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -112,7 +112,7 @@ export default function PayableRealizationForm() {
           payableId: payableIds[0],
           nominal: data.nominal,
           paymentMethodId: data.paymentTypeId,
-          realizationDate: data.realizationDate.toISOString(),
+          realizationDate: data.realizationDate,
           note: data.note,
         },
         {

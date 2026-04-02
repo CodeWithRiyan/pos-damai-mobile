@@ -1,13 +1,12 @@
-import { db } from '../db';
-import * as schema from '../db/schema';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { and, eq, isNull } from 'drizzle-orm';
+import { cashDrawers } from '@/lib/db/schema';
+import { db } from '@/lib/db';
 import { useAuthStore } from '@/stores/auth';
+import { eq, and, isNull, desc } from 'drizzle-orm';
+import { useCallback, useEffect, useState } from 'react';
 
 export interface CashDrawer {
   id: string;
   name: string;
-  description: string | null;
   isActive: boolean;
   organizationId: string;
   createdBy: string | null;
@@ -16,147 +15,177 @@ export interface CashDrawer {
   updatedAt: Date | null;
 }
 
-export interface CreateCashDrawerDTO {
-  name: string;
-  description?: string;
-  isActive?: boolean;
+export async function fetchCashDrawers(): Promise<CashDrawer[]> {
+  const orgId = useAuthStore.getState().getOrganizationId();
+  if (!orgId) return [];
+
+  const result = await db
+    .select()
+    .from(cashDrawers)
+    .where(and(eq(cashDrawers.organizationId, orgId), isNull(cashDrawers.deletedAt)))
+    .orderBy(desc(cashDrawers.createdAt));
+
+  return result as unknown as CashDrawer[];
 }
 
-export interface UpdateCashDrawerDTO extends Partial<CreateCashDrawerDTO> {
-  id: string;
+export async function fetchCashDrawer(id: string): Promise<CashDrawer | null> {
+  const result = await db
+    .select()
+    .from(cashDrawers)
+    .where(eq(cashDrawers.id, id))
+    .limit(1);
+
+  if (result.length === 0) return null;
+  return result[0] as unknown as CashDrawer;
 }
 
-// Get all cashdraw from local SQLite
+export async function createCashDrawer(data: { name: string; isActive?: boolean }): Promise<CashDrawer> {
+  const orgId = useAuthStore.getState().getOrganizationId();
+  if (!orgId) throw new Error('Organization not found');
+
+  const id = `cd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const now = new Date();
+  const userId = useAuthStore.getState().profile?.id;
+
+  const newCashDrawer = {
+    id,
+    name: data.name,
+    isActive: data.isActive ?? true,
+    organizationId: orgId,
+    createdBy: userId,
+    updatedBy: userId,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    _dirty: true,
+    _syncedAt: null,
+  };
+
+  await db.insert(cashDrawers).values(newCashDrawer as any);
+
+  return newCashDrawer as unknown as CashDrawer;
+}
+
+export async function updateCashDrawer(data: { id: string; name?: string; isActive?: boolean }): Promise<void> {
+  const now = new Date();
+  const userId = useAuthStore.getState().profile?.id;
+
+  await db
+    .update(cashDrawers)
+    .set({
+      ...data,
+      updatedBy: userId,
+      updatedAt: now,
+      _dirty: true,
+    })
+    .where(eq(cashDrawers.id, data.id));
+}
+
 export function useCashDrawers() {
-  const orgId = useAuthStore((state) => state.getOrganizationId());
-  return useQuery({
-    queryKey: ['cashDrawers', orgId],
-    queryFn: async () => {
-      if (!orgId) return [];
-      const result = await db
-        .select()
-        .from(schema.cashDrawers)
-        .where(
-          and(eq(schema.cashDrawers.organizationId, orgId), isNull(schema.cashDrawers.deletedAt)),
-        );
-      return result as CashDrawer[];
-    },
-    enabled: !!orgId,
-  });
+  const [data, setData] = useState<CashDrawer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetch = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await fetchCashDrawers();
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data, isLoading, error, refetch: fetch };
 }
 
-// Get single cashdrawer
 export function useCashDrawer(id: string) {
-  return useQuery({
-    queryKey: ['cashDrawers', id],
-    queryFn: async () => {
-      const result = await db
-        .select()
-        .from(schema.cashDrawers)
-        .where(eq(schema.cashDrawers.id, id))
-        .limit(1);
-      return result[0] as CashDrawer | undefined;
-    },
-    enabled: !!id,
-  });
+  const [data, setData] = useState<CashDrawer | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetch = useCallback(async () => {
+    if (!id) {
+      setData(null);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await fetchCashDrawer(id);
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data, isLoading, error, refetch: fetch };
 }
 
-// Create cashdrawer
 export function useCreateCashDrawer() {
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  return useMutation({
-    mutationFn: async (data: CreateCashDrawerDTO) => {
-      const orgId = useAuthStore.getState().getOrganizationId();
+  const mutate = useCallback(async (
+    data: { name: string; isActive?: boolean },
+    options?: { onSuccess?: (data: CashDrawer) => void; onError?: (error: Error) => void }
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await createCashDrawer(data);
+      options?.onSuccess?.(result);
+      return result;
+    } catch (err) {
+      const error = err as Error;
+      setError(error);
+      options?.onError?.(error);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-      if (!orgId) {
-        throw new Error('Gagal menambahkan cashdrawer: ID Organisasi tidak ditemukan.');
-      }
-
-      const id = `cd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const now = new Date();
-      const local_ref_id = `L-CD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const userId = useAuthStore.getState().profile?.id;
-
-      const newCashDrawer = {
-        id,
-        local_ref_id,
-        name: data.name,
-        description: data.description || null,
-        isActive: data.isActive ?? true,
-        organizationId: orgId,
-        createdBy: userId,
-        updatedBy: userId,
-        createdAt: now,
-        updatedAt: now,
-        deletedAt: null,
-        _dirty: true,
-        _syncedAt: null,
-      };
-
-      await db.insert(schema.cashDrawers).values(newCashDrawer);
-      return newCashDrawer as CashDrawer;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({
-        queryKey: ['cashDrawers', data.organizationId],
-      });
-    },
-  });
+  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
 }
 
-// Update cashdrawer
 export function useUpdateCashDrawer() {
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  return useMutation({
-    mutationFn: async (data: UpdateCashDrawerDTO) => {
-      const { id, ...rest } = data;
-      const now = new Date();
+  const mutate = useCallback(async (
+    data: { id: string; name?: string; isActive?: boolean },
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await updateCashDrawer(data);
+      options?.onSuccess?.();
+    } catch (err) {
+      const error = err as Error;
+      setError(error);
+      options?.onError?.(error);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-      await db
-        .update(schema.cashDrawers)
-        .set({
-          ...rest,
-          updatedBy: useAuthStore.getState().profile?.id,
-          updatedAt: now,
-          _dirty: true,
-        })
-        .where(eq(schema.cashDrawers.id, id));
-
-      return { id, ...rest };
-    },
-    onSuccess: (data) => {
-      const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['cashDrawers', orgId] });
-      queryClient.invalidateQueries({ queryKey: ['cashDrawers', data.id] });
-    },
-  });
-}
-
-// Delete cashdrawer
-export function useDeleteCashDrawer() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const now = new Date();
-
-      await db
-        .update(schema.cashDrawers)
-        .set({
-          deletedAt: now,
-          updatedBy: useAuthStore.getState().profile?.id,
-          updatedAt: now,
-          _dirty: true,
-        })
-        .where(eq(schema.cashDrawers.id, id));
-
-      return { id };
-    },
-    onSuccess: () => {
-      const orgId = useAuthStore.getState().getOrganizationId();
-      queryClient.invalidateQueries({ queryKey: ['cashDrawers', orgId] });
-    },
-  });
+  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
 }

@@ -8,7 +8,7 @@ import {
   usePaymentType,
   usePaymentTypes,
   useSetDefaultPaymentType,
-} from '@/lib/api/payment-types';
+} from '@/hooks/use-payment-type';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import classNames from 'classnames';
 import { useLocalSearchParams } from 'expo-router';

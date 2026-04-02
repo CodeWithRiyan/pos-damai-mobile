@@ -29,7 +29,7 @@ export default function UserLog() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header={`LOG AKTIVITAS ${user?.firstName.toUpperCase()}`} isGoBack />
+      <Header header={`LOG AKTIVITAS ${user?.firstName?.toUpperCase() ?? ''}`} isGoBack />
 
       <VStack className="flex-1">
         {/* Log List */}

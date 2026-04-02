@@ -12,8 +12,8 @@ import {
   VStack,
 } from '@/components/ui';
 import SelectModal from '@/components/ui/select/select-modal';
-import { useBrands } from '@/lib/api/brands';
-import { useCategories } from '@/lib/api/categories';
+import { useBrands } from '@/hooks/use-brand';
+import { useCategories } from '@/hooks/use-category';
 
 export default function ProductFilter({
   brandId,

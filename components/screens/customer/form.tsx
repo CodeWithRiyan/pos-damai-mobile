@@ -15,7 +15,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
-import { useCreateCustomer, useCustomer, useUpdateCustomer } from '@/lib/api/customers';
+import { useCreateCustomer, useCustomer, useUpdateCustomer } from '@/hooks/use-customer';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
@@ -55,7 +55,7 @@ export default function CustomerForm() {
   });
   const isRetail = form.watch('category') === PriceType.RETAIL;
 
-  const { data: customer, isLoading: loadingCustomer } = useCustomer(id || '');
+  const { data: customer, loading: loadingCustomer } = useCustomer(id || '');
   const createMutation = useCreateCustomer();
   const updateMutation = useUpdateCustomer();
 

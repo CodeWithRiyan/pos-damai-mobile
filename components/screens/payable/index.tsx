@@ -30,7 +30,7 @@ import { VStack } from '@/components/ui/vstack';
 import { getErrorMessage } from '@/lib/api/client';
 import {
   PayableBySupplier,
-  useBulkDeletePayableBySupplier,
+  useBulkDeletePayable,
   usePayableList,
 } from '@/lib/api/payable';
 import { exportPayables } from '@/lib/utils/excel';
@@ -48,7 +48,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data: payableBySupplier = [], isLoading: isLoadingFetch, refetch } = usePayableList();
-  const deleteMutation = useBulkDeletePayableBySupplier();
+  const deleteMutation = useBulkDeletePayable();
 
   const isLoading = isLoadingFetch || deleteMutation.isPending;
   const [selectedItems, setSelectedItems] = useState<PayableBySupplier[] | null>(null);
@@ -109,7 +109,10 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
   const confirmDelete = async (supplierIds: string[]) => {
     if (!supplierIds.length) return;
 
-    deleteMutation.mutate(supplierIds, {
+    // Get all payable IDs from selected suppliers
+    const payableIds = selectedItems?.flatMap((item) => item.payables.map((p) => p.id)) || [];
+
+    deleteMutation.mutate(payableIds, {
       onSuccess: () => {
         setSelectedItems(null);
         hidePopUpConfirm();

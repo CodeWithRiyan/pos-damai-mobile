@@ -13,7 +13,7 @@ import { Text } from '@/components/ui/text';
 import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import { getErrorMessage } from '@/lib/api/client';
-import { useCategories } from '@/lib/api/categories';
+import { useCategories } from '@/hooks/use-category';
 import {
   Product,
   ShowByStock,

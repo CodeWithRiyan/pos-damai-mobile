@@ -4,7 +4,7 @@ import { Grid, GridItem } from '@/components/ui/grid';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
 import SelectModal from '@/components/ui/select/select-modal';
 import { VStack } from '@/components/ui/vstack';
-import { usePaymentTypes } from '@/lib/api/payment-types';
+import { usePaymentTypes } from '@/hooks/use-payment-type';
 import { useUsers } from '@/lib/api/users';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -200,7 +200,7 @@ export default function TransactionFilter({
                 options={[
                   { label: 'Semua karyawan', value: '' },
                   ...(users?.map((u) => ({
-                    label: u.firstName,
+                    label: u.firstName || u.name || u.username,
                     value: u.id,
                   })) ?? []),
                 ]}

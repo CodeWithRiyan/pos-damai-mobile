@@ -20,7 +20,7 @@ import {
   useCategories,
   useCreateCategory,
   useProductCountsByCategory,
-} from '@/lib/api/categories';
+} from '@/hooks/use-category';
 import { getErrorMessage } from '@/lib/api/client';
 import { bulkDeleteConfirm } from '@/lib/utils/delete-confirm';
 import { exportCategories, importCategories } from '@/lib/utils/excel';
