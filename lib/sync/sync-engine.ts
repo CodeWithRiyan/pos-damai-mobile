@@ -6,7 +6,6 @@ import { apiClient } from '../api/client';
 import { storageAdapter } from '../storage';
 import { useAuthStore } from '@/stores/auth';
 import { useSyncQueueStore } from '@/stores/sync-queue';
-import { queryClient } from '@/providers/query-provider';
 
 interface SyncRecord {
   [key: string]: unknown;
@@ -52,7 +51,6 @@ export class SyncEngine {
 
       // Store user profile for local access (used by local CRUD operations)
       useAuthStore.getState().setProfile(currentUser);
-      queryClient.setQueryData(['auth', 'profile'], currentUser);
 
       // Force insert the current user into local SQLite so that queries relying on
       // the local `schema.users` table (like Shift history) can always resolve the name.

@@ -8,7 +8,7 @@ import { useProduct } from '@/lib/api/products';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
 import { useLocalSearchParams } from 'expo-router';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 // Note: Update imports if useProductLog is missing
 import { useProductLog, IProductLog } from '@/lib/api/products';
 
@@ -72,7 +72,7 @@ export default function ProductLog() {
             </GridItem>
           </Grid>
         </Pressable>
-        <FlatList
+        <FlashList
           data={dataLog}
           className="flex-1"
           keyExtractor={(item, index) => item.id || index.toString()}

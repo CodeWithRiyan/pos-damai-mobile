@@ -30,7 +30,7 @@ import { useItemSelection } from '@/hooks/use-item-selection';
 import { useRouter } from 'expo-router';
 import { SearchIcon } from 'lucide-react-native';
 import React from 'react';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 
 export default function CategoryList() {
   const { setOpen, setData } = useCategoryStore();
@@ -178,7 +178,7 @@ export default function CategoryList() {
               <InputField placeholder="Cari nama kategori" />
             </Input>
           </HStack>
-          <FlatList
+          <FlashList
             data={categories}
             className="flex-1"
             keyExtractor={(item) => item.id}

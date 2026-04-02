@@ -35,7 +35,8 @@ import classNames from 'classnames';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AlertCircle, PlusIcon } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, LayoutChangeEvent } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { LayoutChangeEvent } from 'react-native';
 import PopupAddProduct from './popup-add';
 
 import { formatNumber, formatRp } from '@/lib/utils/format';
@@ -305,18 +306,17 @@ export default function TransactionList() {
             </Pressable>
           </HStack>
           {layout === 'grid' ? (
-            <FlatList
+            <FlashList
               key={`grid-${numColumns}`}
               data={filteredProducts}
               className="flex-1"
               numColumns={numColumns}
               contentContainerStyle={{ padding: 16, gap: 16 }}
-              columnWrapperStyle={{ gap: 16 }}
               keyExtractor={(item) => item.id}
               renderItem={({ item: product }) => {
                 const productInChart = cart?.find((f) => f.product.id === product.id);
                 return (
-                  <Box className="flex-1">
+                  <Box className="flex-1 px-1">
                     <GridProductLayout
                       name={product.name}
                       price={findSellPrice({
@@ -346,7 +346,7 @@ export default function TransactionList() {
               }
             />
           ) : (
-            <FlatList
+            <FlashList
               key="list"
               data={filteredProducts}
               className="flex-1"
@@ -383,7 +383,7 @@ export default function TransactionList() {
           )}
         </VStack>
         <VStack space="lg" className="flex-1">
-          <FlatList
+          <FlashList
             data={cart}
             className="flex-1"
             keyExtractor={(item, index) => `${item.product.id}-${item.variant?.id || ''}-${index}`}

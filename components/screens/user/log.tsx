@@ -7,7 +7,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useUser } from '@/lib/api/users';
 import dayjs from 'dayjs';
 import { useLocalSearchParams } from 'expo-router';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 
 import { useUserLog } from '@/lib/api/users';
 
@@ -43,7 +43,7 @@ export default function UserLog() {
             </GridItem>
           </Grid>
         </Pressable>
-        <FlatList
+        <FlashList
           data={dataLog}
           className="flex-1"
           keyExtractor={(item, index) => item.id || index.toString()}

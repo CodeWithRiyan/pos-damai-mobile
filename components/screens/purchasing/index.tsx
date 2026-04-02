@@ -20,7 +20,7 @@ import { usePurchasingStore } from '@/stores/purchasing';
 import { useRouter } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import ProductNotification from '../product/notification';
 import PurchasingFilter from './filter';
 import PopupAddProduct from './popup-add';
@@ -93,7 +93,7 @@ export default function PurchasingList() {
               <InputField placeholder="Cari nama atau kode" />
             </Input>
           </HStack>
-          <FlatList
+          <FlashList
             data={products}
             className="flex-1"
             keyExtractor={(product) => product.id}
@@ -154,7 +154,7 @@ export default function PurchasingList() {
           />
         </VStack>
         <VStack space="lg" className="flex-1">
-          <FlatList
+          <FlashList
             data={cart}
             className="flex-1"
             keyExtractor={(item) => item.product.id}

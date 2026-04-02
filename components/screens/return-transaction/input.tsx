@@ -16,7 +16,7 @@ import { usePurchasedProducts } from '@/lib/api/transactions';
 import { useReturnTransactionStore } from '@/stores/return-transaction';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import ReturnTransactionConfirmForm from './form';
 import PopupAddProduct from './popup-add';
 
@@ -87,17 +87,16 @@ export default function ReturnTransactionInput() {
             </Pressable>
           </HStack>
           {layout === 'grid' ? (
-            <FlatList
+            <FlashList
               key={`grid-${numColumns}`}
               data={products}
               className="flex-1"
               numColumns={numColumns}
               contentContainerStyle={{ padding: 16, gap: 16 }}
-              columnWrapperStyle={{ gap: 16 }}
               keyExtractor={(item) => item.id}
               renderItem={({ item: product }) => {
                 return (
-                  <Box className="flex-1">
+                  <Box className="flex-1 px-1">
                     <GridProductLayout
                       name={product.name}
                       price={product.lastSellPrice ?? product.sellPrices?.[0]?.price ?? 0}
@@ -115,7 +114,7 @@ export default function ReturnTransactionInput() {
               }
             />
           ) : (
-            <FlatList
+            <FlashList
               key="list"
               data={products}
               className="flex-1"
@@ -140,7 +139,7 @@ export default function ReturnTransactionInput() {
           )}
         </VStack>
         <VStack space="lg" className="flex-1">
-          <FlatList
+          <FlashList
             data={cart}
             className="flex-1"
             keyExtractor={(item, index) => `${item.product.id}-${item.variant?.id || ''}-${index}`}

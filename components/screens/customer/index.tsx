@@ -26,7 +26,7 @@ import { showErrorToast } from '@/lib/utils/toast';
 import { useItemSelection } from '@/hooks/use-item-selection';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 
 import { formatNumber } from '@/lib/utils/format';
 export default function CustomerList({ isReport }: { isReport?: boolean }) {
@@ -249,7 +249,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
       />
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
-          <FlatList
+          <FlashList
             data={customers}
             className="flex-1"
             keyExtractor={(item) => item.id}

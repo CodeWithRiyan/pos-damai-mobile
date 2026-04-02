@@ -18,7 +18,7 @@ import { bulkDeleteConfirm } from '@/lib/utils/delete-confirm';
 import { exportRoles } from '@/lib/utils/excel';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 
 export default function RoleList() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -125,7 +125,7 @@ export default function RoleList() {
       />
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
-          <FlatList
+          <FlashList
             data={roles}
             className="flex-1"
             keyExtractor={(role) => role.id}

@@ -1,7 +1,7 @@
 import { BarcodeScanningResult, CameraType, CameraView, useCameraPermissions } from 'expo-camera';
 import { debounce } from 'lodash';
 import { useEffect, useRef, useState } from 'react';
-import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Button, StyleSheet, Text, Pressable, View } from 'react-native';
 
 export default function BarcodeScanner({
   onBarcodeScanned,
@@ -52,9 +52,9 @@ export default function BarcodeScanner({
         onBarcodeScanned={handleBarcodeScanned}
       />
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
+        <Pressable style={styles.button} onPress={toggleCameraFacing}>
           <Text style={styles.text}>Flip Camera</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );

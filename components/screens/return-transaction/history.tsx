@@ -16,7 +16,7 @@ import { useTransactionReturns } from '@/lib/api/return-transaction';
 import { formatDisplayRefId } from '@/lib/utils/reference';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 
 import { formatNumber } from '@/lib/utils/format';
 export default function ReturnTransactionHistory({ isReport }: { isReport?: boolean }) {
@@ -47,7 +47,7 @@ export default function ReturnTransactionHistory({ isReport }: { isReport?: bool
           <Spinner />
         </VStack>
       ) : (
-        <FlatList
+        <FlashList
           data={returns}
           className="flex-1"
           keyExtractor={(item) => item.id}

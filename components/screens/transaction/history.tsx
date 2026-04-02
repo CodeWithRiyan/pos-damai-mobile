@@ -23,7 +23,8 @@ import classNames from 'classnames';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { FlatList, ScrollView } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { ScrollView } from 'react-native';
 import TransactionFilter, {
   TransactionFilterFormValues,
   transactionFilterInitialValues,
@@ -322,7 +323,7 @@ export default function TransactionHistory({ isReport }: { isReport?: boolean })
           </GridItem>
         )}
         <GridItem _extra={{ className: isReport ? 'col-span-1' : 'col-span-2' }}>
-          <FlatList
+          <FlashList
             data={transactions}
             className="flex-1"
             showsVerticalScrollIndicator={false}

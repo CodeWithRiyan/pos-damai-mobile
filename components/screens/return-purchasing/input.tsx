@@ -16,7 +16,8 @@ import { useProducts } from '@/lib/api/products';
 import { useReturnPurchasingStore } from '@/stores/return-purchasing';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { FlatList, LayoutChangeEvent, ScrollView } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { LayoutChangeEvent, ScrollView } from 'react-native';
 import ReturnPurchasingConfirmForm from './form';
 import PopupAddProduct from './popup-add';
 
@@ -89,17 +90,16 @@ export default function ReturnPurchasingInput() {
             </Pressable>
           </HStack>
           {layout === 'grid' ? (
-            <FlatList
+            <FlashList
               key={`grid-${numColumns}`}
               data={products}
               className="flex-1"
               numColumns={numColumns}
               contentContainerStyle={{ padding: 16, gap: 16 }}
-              columnWrapperStyle={{ gap: 16 }}
               keyExtractor={(item) => item.id}
               renderItem={({ item: product }) => {
                 return (
-                  <Box className="flex-1">
+                  <Box className="flex-1 px-1">
                     <GridProductLayout
                       name={product.name}
                       price={product.purchasePrice ?? 0}
@@ -119,7 +119,7 @@ export default function ReturnPurchasingInput() {
               }
             />
           ) : (
-            <FlatList
+            <FlashList
               key="list"
               data={products}
               className="flex-1"

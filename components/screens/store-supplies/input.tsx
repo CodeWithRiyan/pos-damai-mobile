@@ -22,7 +22,8 @@ import classNames from 'classnames';
 import dayjs from 'dayjs';
 import { Calendar } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { FlatList, ScrollView } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { ScrollView } from 'react-native';
 import StoreSuppliesConfirmForm from './form';
 import PopupAddStoreSupplies from './popup-add';
 
@@ -115,7 +116,7 @@ export default function StoreSuppliesInput() {
           </ScrollView>
         </VStack>
         <VStack space="lg" className="flex-1">
-          <FlatList
+          <FlashList
             data={cart}
             className="flex-1"
             keyExtractor={(item, index) => `${item.product.id}-${item.variant?.id || ''}-${index}`}

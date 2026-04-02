@@ -29,7 +29,8 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { debounce } from 'lodash';
 import { SearchIcon } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList, RefreshControl } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { RefreshControl } from 'react-native';
 import ProductFilter from './filter';
 import ProductNotification from './notification';
 
@@ -265,7 +266,7 @@ export default function ProductList() {
               />
             </Input>
           </HStack>
-          <FlatList
+          <FlashList
             data={products}
             className="flex-1"
             keyExtractor={(product) => product.id}

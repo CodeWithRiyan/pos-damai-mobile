@@ -9,7 +9,7 @@ import { VStack } from '@/components/ui/vstack';
 import { ProductListItem, useProducts } from '@/lib/api/products';
 import { CheckIcon } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 
 export default function SelectingProductList({
   usedFor,
@@ -81,7 +81,7 @@ export default function SelectingProductList({
       />
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
-          <FlatList
+          <FlashList
             data={filteredProduct}
             className="flex-1"
             keyExtractor={(product) => product.id}

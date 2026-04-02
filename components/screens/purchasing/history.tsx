@@ -16,7 +16,8 @@ import { DateFilterType, PaymentMethod, Status } from '@/lib/constants';
 import { formatDisplayRefId } from '@/lib/utils/reference';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
-import { FlatList, ScrollView } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { ScrollView } from 'react-native';
 
 import AreaChart from '@/components/area-chart';
 import BarChart from '@/components/bar-chart';
@@ -305,7 +306,7 @@ export default function PurchasingHistory({ isReport }: { isReport?: boolean }) 
         )}
       </Grid>
       <GridItem _extra={{ className: isReport ? 'col-span-1' : 'col-span-2' }}>
-        <FlatList
+        <FlashList
           data={purchasing}
           className="flex-1"
           showsVerticalScrollIndicator={false}

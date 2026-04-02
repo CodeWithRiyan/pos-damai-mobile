@@ -21,7 +21,7 @@ import { showSuccessToast } from '@/lib/utils/toast';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 
 export default function UserList() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -155,7 +155,7 @@ export default function UserList() {
       />
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
-          <FlatList
+          <FlashList
             data={users}
             className="flex-1"
             keyExtractor={(user) => user.id}

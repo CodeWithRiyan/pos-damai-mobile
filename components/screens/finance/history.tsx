@@ -19,7 +19,7 @@ import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
 import { useState } from 'react';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useFinances } from '@/lib/api/finances';
 import { formatDisplayRefId } from '@/lib/utils/reference';
 
@@ -83,7 +83,7 @@ export default function FinanceHistory() {
           )}
         </>
       </HStack>
-      <FlatList
+      <FlashList
         data={finance}
         className="flex-1"
         keyExtractor={(item) => item.id}

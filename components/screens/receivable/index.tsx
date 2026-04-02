@@ -39,7 +39,7 @@ import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 
 import { formatRp } from '@/lib/utils/format';
 export default function ReceivableList({ isReport }: { isReport?: boolean }) {
@@ -262,7 +262,7 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
               </Checkbox>
             </HStack>
           </VStack>
-          <FlatList
+          <FlashList
             data={receivableByUser
               ?.filter((r) =>
                 statuses.includes(

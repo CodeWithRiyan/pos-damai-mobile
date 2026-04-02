@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { UserProfile } from '@/lib/api/auth';
 import { storageAdapter, authStorageAdapter } from '@/lib/storage';
 import { apiClient } from '@/lib/api/client';
-import { queryClient } from '@/providers/query-provider';
 
 interface AuthState {
   profile: UserProfile | null;
@@ -75,7 +74,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     set({ profile: currentUser, isAuthenticated: true });
     storageAdapter.setItem('userProfile', JSON.stringify(currentUser));
-    queryClient.setQueryData(['auth', 'profile'], currentUser);
   },
   logout: () => {
     set({ profile: null, isAuthenticated: false });

@@ -1,7 +1,7 @@
 import { Box, HStack, Pressable, Text, VStack } from '@/components/ui';
 import { useShifts } from '@/lib/api/shifts';
 import { useRouter } from 'expo-router';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Spinner } from '@/components/ui/spinner';
 import dayjs from 'dayjs';
 
@@ -19,7 +19,7 @@ export default function HistoryShift() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <FlatList
+      <FlashList
         data={shifts}
         className="flex-1"
         keyExtractor={(item) => item.id}

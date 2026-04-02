@@ -17,7 +17,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useSuppliers } from '@/lib/api/suppliers';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 
 export default function PurchasingSupplierList() {
   const { data: suppliers, isLoading: loadingSuppliers } = useSuppliers();
@@ -59,7 +59,7 @@ export default function PurchasingSupplierList() {
             <Spinner />
           </VStack>
         ) : (
-          <FlatList
+          <FlashList
             data={filteredSuppliers}
             className="flex-1"
             keyExtractor={(item) => item.id}

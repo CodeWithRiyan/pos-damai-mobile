@@ -27,7 +27,7 @@ import { usePaymentTypeStore } from '@/stores/payment-type';
 import { useRouter } from 'expo-router';
 import { SearchIcon } from 'lucide-react-native';
 import React from 'react';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 
 import { formatRp, formatNumber } from '@/lib/utils/format';
 export default function PaymentTypeList() {
@@ -185,7 +185,7 @@ export default function PaymentTypeList() {
               <InputField placeholder="Cari nama pembayaran" />
             </Input>
           </HStack>
-          <FlatList
+          <FlashList
             data={paymentTypes}
             className="flex-1"
             keyExtractor={(item) => item.id}

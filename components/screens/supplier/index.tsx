@@ -23,7 +23,7 @@ import { exportSuppliers, importSuppliers } from '@/lib/utils/excel';
 import { useItemSelection } from '@/hooks/use-item-selection';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 
 export default function SupplierList() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -172,7 +172,7 @@ export default function SupplierList() {
       />
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
-          <FlatList
+          <FlashList
             data={suppliers}
             className="flex-1"
             keyExtractor={(supplier) => supplier.id}

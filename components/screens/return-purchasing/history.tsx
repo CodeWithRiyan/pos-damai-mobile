@@ -15,7 +15,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { usePurchaseReturns } from '@/lib/api/return-purchasing';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { FlatList } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 
 import { formatNumber } from '@/lib/utils/format';
 export default function ReturnPurchasingHistory({ isReport }: { isReport?: boolean }) {
@@ -44,7 +44,7 @@ export default function ReturnPurchasingHistory({ isReport }: { isReport?: boole
           <Spinner />
         </VStack>
       ) : (
-        <FlatList
+        <FlashList
           data={returns}
           className="flex-1"
           keyExtractor={(item) => item.id}

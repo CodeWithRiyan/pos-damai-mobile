@@ -18,7 +18,8 @@ import { useCustomers } from '@/lib/api/customers';
 import { useCustomerIdsWithTransactions } from '@/lib/api/transactions';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { FlatList, RefreshControl } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { RefreshControl } from 'react-native';
 
 export default function PurchasingCustomerList() {
   const {
@@ -83,7 +84,7 @@ export default function PurchasingCustomerList() {
             />
           </Input>
         </HStack>
-        <FlatList
+        <FlashList
           data={filteredCustomers}
           className="flex-1"
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
