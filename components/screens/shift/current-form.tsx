@@ -18,8 +18,8 @@ import {
   VStack,
 } from '@/components/ui';
 import SelectModal from '@/components/ui/select/select-modal';
-import { useCashDrawers } from '@/lib/api/cashdrawers';
-import { useCurrentShift, useLastShift, useStartShift } from '@/lib/api/shifts';
+import { useCashDrawers } from '@/hooks/use-cashdrawer';
+import { useCurrentShift, useLastShift, useStartShift } from '@/hooks/use-shift';
 import { useCashDrawerStore } from '@/stores/cashdrawer';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';

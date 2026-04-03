@@ -15,7 +15,7 @@ import {
   Text,
   VStack,
 } from '@/components/ui';
-import { ShowByStock, useProducts } from '@/lib/api/products';
+import { ShowByStock, useProducts } from '@/hooks/use-product';
 import classNames from 'classnames';
 import { ChevronRight } from 'lucide-react-native';
 

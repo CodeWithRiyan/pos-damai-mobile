@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { UserProfile } from '@/lib/api/auth';
-import { storageAdapter, authStorageAdapter } from '@/lib/storage';
-import { apiClient } from '@/lib/api/client';
+import { UserProfile } from '@/hooks/use-auth';
+import { storageAdapter, authStorageAdapter } from '@/utils/storage';
+import { apiClient } from '@/db/client';
 
 interface AuthState {
   profile: UserProfile | null;

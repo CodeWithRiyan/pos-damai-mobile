@@ -15,11 +15,10 @@ import {
   Text,
   Textarea,
   TextareaInput,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
 } from '@/components/ui';
+import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
@@ -29,24 +28,24 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import InputVirtualKeyboard from '@/components/ui/input-virtual-keyboard';
 import SelectModal from '@/components/ui/select/select-modal';
-import { useCurrentUser } from '@/lib/api/auth';
+import { useCurrentUser } from '@/hooks/use-auth';
 
 import { SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
 import { useCustomer } from '@/hooks/use-customer';
-import { useCreateFinance } from '@/lib/api/finances';
+import { useCreateFinance } from '@/hooks/use-finance';
 import { usePaymentTypes } from '@/hooks/use-payment-type';
-import { useTransactionReturn } from '@/lib/api/return-transaction';
-import { useCreateTransaction, useTransaction } from '@/lib/api/transactions';
-import { useCreateReceivable } from '@/lib/api/receivable';
-import { CalcType, FinanceType, Status } from '@/lib/constants';
-import { findSellPrice, getDiscountedPrice, isDiscountActive } from '@/lib/price';
+import { useTransactionReturn } from '@/hooks/use-return-transaction';
+import { useCreateTransaction, useTransaction } from '@/hooks/use-transaction';
+import { useCreateReceivable } from '@/hooks/use-receivable';
+import { CalcType, FinanceType, Status } from '@/constants';
+import { findSellPrice, getDiscountedPrice, isDiscountActive } from '@/utils/price';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import { useTransactionStore } from '@/stores/transaction';
 import classNames from 'classnames';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CalendarIcon, Check, CheckIcon, PlusIcon } from 'lucide-react-native';
 
-import { formatNumber, formatRp } from '@/lib/utils/format';
+import { formatNumber, formatRp } from '@/utils/format';
 // Payment types are now loaded from the database via usePaymentTypes hook
 
 export default function TransactionCheckoutForm() {
@@ -238,14 +237,7 @@ export default function TransactionCheckoutForm() {
   const excessAndLackAmount = (returnData?.totalAmount || 0) - totalPurchase;
 
   const showValidationError = (message?: string) => {
-    toast.show({
-      placement: 'top',
-      render: ({ id }) => (
-        <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-          <ToastTitle>{message || 'Terjadi kesalahan validasi'}</ToastTitle>
-        </Toast>
-      ),
-    });
+    showToast(toast, { action: 'error', message: message || 'Terjadi kesalahan validasi' });
   };
 
   const onSubmit: SubmitHandler<TransactionFormValues> = async (data: TransactionFormValues) => {
@@ -365,25 +357,11 @@ export default function TransactionCheckoutForm() {
       },
       {
         onSuccess: (_responseData) => {
-          toast.show({
-            placement: 'top',
-            render: ({ id }) => (
-              <Toast nativeID={id} action="success" variant="solid">
-                <ToastTitle>Berhasil Tukar Barang</ToastTitle>
-              </Toast>
-            ),
-          });
+          showSuccessToast(toast, 'Berhasil Tukar Barang');
           form.reset(initialValues);
         },
         onError: (error) => {
-          toast.show({
-            placement: 'top',
-            render: ({ id }) => (
-              <Toast nativeID={id} action="error" variant="solid">
-                <ToastTitle>{`Gagal menyimpan: ${error.message}`}</ToastTitle>
-              </Toast>
-            ),
-          });
+          showErrorToast(toast, `Gagal menyimpan: ${error.message}`);
         },
       },
     );

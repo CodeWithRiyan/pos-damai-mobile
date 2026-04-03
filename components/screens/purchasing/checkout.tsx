@@ -17,25 +17,23 @@ import {
   Text,
   Textarea,
   TextareaInput,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
 } from '@/components/ui';
-import { CreatePurchasingDTO, useCreatePurchasing, usePurchase } from '@/lib/api/purchasing';
-import { useSuppliers } from '@/lib/api/suppliers';
-import { showErrorToast } from '@/lib/utils/toast';
+import { CreatePurchasingDTO, useCreatePurchasing, usePurchase } from '@/hooks/use-purchasing';
+import { useSuppliers } from '@/hooks/use-supplier';
+import { showErrorToast, showToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 import { z } from 'zod';
-// import { usePurchasing } from "@/lib/api/purchasing";
+// import { usePurchasing } from "@/hooks/use-purchasing";
 import { usePopUpConfirm } from '@/components/pop-up-confirm';
 import InputVirtualKeyboard from '@/components/ui/input-virtual-keyboard';
 import SelectModal from '@/components/ui/select/select-modal';
-import { useCurrentUser } from '@/lib/api/auth';
+import { useCurrentUser } from '@/hooks/use-auth';
 import { usePaymentTypes } from '@/hooks/use-payment-type';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import { usePurchasingStore } from '@/stores/purchasing';
@@ -43,8 +41,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { ArrowRight, CalendarIcon, Check, PlusIcon } from 'lucide-react-native';
 
-import { Status } from '@/lib/constants';
-import { formatNumber, formatRp } from '@/lib/utils/format';
+import { Status } from '@/constants';
+import { formatNumber, formatRp } from '@/utils/format';
 const purchasingSchema = z
   .object({
     totalPurchase: z.number().min(0, 'Total pembelian harus lebih besar atau sama dengan 0'),
@@ -149,8 +147,7 @@ export default function PurchasingCheckoutForm() {
     } else {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, cartTotal, paymentTypesData, status, purchase]);
+  }, [form, cartTotal, paymentTypesData, status, purchase, suppliers.length]);
 
   useEffect(() => {
     form.setValue('totalPurchase', grandTotal);
@@ -162,13 +159,9 @@ export default function PurchasingCheckoutForm() {
       Number(data.totalPaid) < data.totalPurchase &&
       !isPayable
     ) {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>Total pembayaran tidak boleh kurang dari total pembelian</ToastTitle>
-          </Toast>
-        ),
+      showToast(toast, {
+        action: 'error',
+        message: 'Total pembayaran tidak boleh kurang dari total pembelian',
       });
     } else if (
       data.status === Status.COMPLETED &&

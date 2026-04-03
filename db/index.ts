@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { migrate } from 'drizzle-orm/expo-sqlite/migrator';
 import * as Application from 'expo-application';
 import * as SQLite from 'expo-sqlite';
-import migrations from '../../drizzle/migrations.js';
+import migrations from '../drizzle/migrations.js';
 import * as schema from './schema';
 
 const expoDb = SQLite.openDatabaseSync('pos_damai.db');

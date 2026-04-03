@@ -22,7 +22,7 @@ import {
   Text,
   VStack,
 } from '@/components/ui';
-import { ProductType } from '@/lib/constants';
+import { ProductType } from '@/constants';
 import { useStockOpnameStore } from '@/stores/stock-opname';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
@@ -78,7 +78,6 @@ export default function PopupAddStockOpname() {
         variantUnitId: addProductVariantId || null,
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, addProduct]);
 
   const onSubmit: SubmitHandler<AddStockOpnameFormValues> = (data: AddStockOpnameFormValues) => {

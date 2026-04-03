@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { db } from '@/lib/db';
-import * as schema from '@/lib/db/schema';
+import { db } from '@/db';
+import * as schema from '@/db/schema';
 import { useAuthStore } from '@/stores/auth';
 import { and, eq, isNull, desc } from 'drizzle-orm';
 
@@ -53,11 +53,7 @@ export async function fetchFinances(): Promise<Finance[]> {
 }
 
 export async function fetchFinance(id: string): Promise<Finance | null> {
-  const result = await db
-    .select()
-    .from(schema.finances)
-    .where(eq(schema.finances.id, id))
-    .limit(1);
+  const result = await db.select().from(schema.finances).where(eq(schema.finances.id, id)).limit(1);
 
   if (result.length === 0) return null;
   return result[0] as unknown as Finance;
@@ -172,22 +168,28 @@ export function useCreateFinance() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (data: CreateFinanceDTO, options?: { onSuccess?: (data: Finance) => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await createFinance(data);
-      options?.onSuccess?.(result);
-      return result;
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: CreateFinanceDTO,
+      options?: { onSuccess?: (data: Finance) => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await createFinance(data);
+        options?.onSuccess?.(result);
+        return result;
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -196,21 +198,24 @@ export function useDeleteFinance() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (id: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await deleteFinance(id);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (id: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await deleteFinance(id);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }

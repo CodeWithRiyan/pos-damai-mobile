@@ -1,18 +1,30 @@
+import { useCallback } from 'react';
 import Header from '@/components/header';
 import { Box, HStack, Spinner, Text, VStack } from '@/components/ui';
 import { Grid, GridItem } from '@/components/ui/grid';
 import { Pressable } from '@/components/ui/pressable';
-import { useStoreSupply } from '@/lib/api/store-supplies';
+import { useStoreSupply } from '@/hooks/use-store-supplies';
 import dayjs from 'dayjs';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ScrollView } from 'react-native';
 
-import { formatMoney } from '@/lib/utils/format';
+import { formatMoney } from '@/utils/format';
 export default function StoreSuppliesDetail() {
   const { id } = useLocalSearchParams();
   const storeSuppliesId = id as string;
 
-  const { data: storeSupplies, isLoading } = useStoreSupply(storeSuppliesId);
+  const {
+    data: storeSupplies,
+    isLoading,
+    refetch: refetchStoreSupplies,
+  } = useStoreSupply(storeSuppliesId);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchStoreSupplies();
+    }, []),
+  );
+
   if (isLoading) {
     return (
       <Box className="flex-1 justify-center items-center bg-white">

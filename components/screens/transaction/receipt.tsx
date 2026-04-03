@@ -3,10 +3,10 @@ import Header from '@/components/header';
 import { Box, Heading, HStack, Icon, Pressable, Text, VStack } from '@/components/ui';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
-import { TransactionItem, useTransaction } from '@/lib/api/transactions';
-import { formatDisplayRefId } from '@/lib/utils/reference';
-import { getReceiptActions } from '@/lib/utils/receipt-actions';
-import { ProductType, Status } from '@/lib/constants';
+import { TransactionItem, useTransaction } from '@/hooks/use-transaction';
+import { formatDisplayRefId } from '@/utils/reference';
+import { getReceiptActions } from '@/utils/receipt-actions';
+import { ProductType, Status } from '@/constants';
 import { useAuthStore } from '@/stores/auth';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -14,7 +14,7 @@ import { Check, Printer } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { ScrollView } from 'react-native';
 
-import { formatRp, formatNumber } from '@/lib/utils/format';
+import { formatRp, formatNumber } from '@/utils/format';
 export default function TransactionReceipt() {
   const router = useRouter();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();

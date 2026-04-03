@@ -1,6 +1,6 @@
-import { Purchase, PurchaseItem } from '@/lib/db/schema';
-import * as schema from '@/lib/db/schema';
-import { db } from '@/lib/db';
+import { Purchase, PurchaseItem } from '@/db/schema';
+import * as schema from '@/db/schema';
+import { db } from '@/db';
 import { useAuthStore } from '@/stores/auth';
 import { and, eq, isNull, like, desc, or, isNotNull } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
@@ -43,7 +43,6 @@ export async function fetchPurchases(params?: {
   }
 
   if (params?.startDate) {
-    // Date filtering would need raw SQL - skipping for now
   }
 
   const result = await db
@@ -97,7 +96,7 @@ export async function createPurchase(data: CreatePurchasingDTO): Promise<Purchas
     local_ref_id: `PO-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
     organizationId: orgId,
     supplierId: data.supplierId,
-    supplierName: '', // will be populated from supplier
+    supplierName: '',
     paymentTypeId: data.paymentTypeId,
     paymentTypeName: '',
     totalAmount,

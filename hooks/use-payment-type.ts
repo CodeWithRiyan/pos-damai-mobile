@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { db } from '@/lib/db';
-import * as schema from '@/lib/db/schema';
+import { db } from '@/db';
+import * as schema from '@/db/schema';
 import { useAuthStore } from '@/stores/auth';
 import { and, eq, isNull } from 'drizzle-orm';
 
@@ -145,7 +145,9 @@ export async function setDefaultPaymentType(id: string): Promise<void> {
     await tx
       .update(schema.paymentTypes)
       .set({ isDefault: false, updatedAt: now, _dirty: true })
-      .where(and(eq(schema.paymentTypes.organizationId, orgId), isNull(schema.paymentTypes.deletedAt)));
+      .where(
+        and(eq(schema.paymentTypes.organizationId, orgId), isNull(schema.paymentTypes.deletedAt)),
+      );
 
     await tx
       .update(schema.paymentTypes)
@@ -211,22 +213,28 @@ export function useCreatePaymentType() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (data: CreatePaymentTypeDTO, options?: { onSuccess?: (data: PaymentType) => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await createPaymentType(data);
-      options?.onSuccess?.(result);
-      return result;
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: CreatePaymentTypeDTO,
+      options?: { onSuccess?: (data: PaymentType) => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await createPaymentType(data);
+        options?.onSuccess?.(result);
+        return result;
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -235,21 +243,30 @@ export function useUpdatePaymentType() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (data: UpdatePaymentTypeDTO, options?: { onSuccess?: (data: UpdatePaymentTypeDTO) => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await updatePaymentType(data);
-      options?.onSuccess?.(data);
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: UpdatePaymentTypeDTO,
+      options?: {
+        onSuccess?: (data: UpdatePaymentTypeDTO) => void;
+        onError?: (error: Error) => void;
+      },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await updatePaymentType(data);
+        options?.onSuccess?.(data);
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -258,21 +275,24 @@ export function useDeletePaymentType() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (id: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await deletePaymentType(id);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (id: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await deletePaymentType(id);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -281,21 +301,24 @@ export function useSetDefaultPaymentType() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (id: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await setDefaultPaymentType(id);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (id: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await setDefaultPaymentType(id);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -304,21 +327,27 @@ export function useBulkDeletePaymentType() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (ids: string[], options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await bulkDeletePaymentTypes(ids);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      ids: string[],
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await bulkDeletePaymentTypes(ids);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }

@@ -1,1 +1,0 @@
-export function useOrganizations() { return { data: [], loading: false, error: null, refetch: () => {} }; }

@@ -10,9 +10,9 @@ import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold, SolarIconLinear } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
-import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { getErrorMessage } from '@/lib/api/client';
+import { getErrorMessage } from '@/db/client';
 import { useCategories } from '@/hooks/use-category';
 import {
   Product,
@@ -20,9 +20,10 @@ import {
   useBulkDeleteProduct,
   useCreateProduct,
   useProducts,
-} from '@/lib/api/products';
-import { bulkDeleteConfirm } from '@/lib/utils/delete-confirm';
-import { exportProducts, importProducts } from '@/lib/utils/excel';
+} from '@/hooks/use-product';
+import { bulkDeleteConfirm } from '@/utils/delete-confirm';
+import { exportProducts, importProducts } from '@/utils/excel';
+import { showSuccessToast, showToast } from '@/utils/toast';
 import { useItemSelection } from '@/hooks/use-item-selection';
 import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -34,7 +35,7 @@ import { RefreshControl } from 'react-native';
 import ProductFilter from './filter';
 import ProductNotification from './notification';
 
-import { formatRp, formatNumber } from '@/lib/utils/format';
+import { formatRp, formatNumber } from '@/utils/format';
 export default function ProductList() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
@@ -106,14 +107,7 @@ export default function ProductList() {
     try {
       await exportProducts(products);
     } catch (e) {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 
@@ -130,23 +124,9 @@ export default function ProductList() {
         } catch {}
       }
       refetch();
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-            <ToastTitle>{`${successCount} produk berhasil diimpor`}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showSuccessToast(toast, `${successCount} produk berhasil diimpor`);
     } catch (e) {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 

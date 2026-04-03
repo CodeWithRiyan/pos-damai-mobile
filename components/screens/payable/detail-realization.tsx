@@ -10,13 +10,13 @@ import {
 } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { useDeletePayable, usePayableDetail } from '@/lib/api/payable';
-import { singleDeleteConfirm } from '@/lib/utils/delete-confirm';
+import { useDeletePayable, usePayableDetail } from '@/hooks/use-payable';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView } from 'react-native';
 
-import { formatRp } from '@/lib/utils/format';
+import { formatRp } from '@/utils/format';
 export default function PayableRealizationDetail({ isReport }: { isReport?: boolean }) {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();

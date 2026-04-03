@@ -26,14 +26,10 @@ import {
 } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
-import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { showErrorToast } from '@/lib/utils/toast';
-import {
-  Receivable,
-  useBulkDeleteReceivable,
-  useReceivableList,
-} from '@/lib/api/receivable';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { Receivable, useBulkDeleteReceivable, useReceivableList } from '@/hooks/use-receivable';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
@@ -41,7 +37,7 @@ import { CalendarIcon } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { FlashList } from '@shopify/flash-list';
 
-import { formatRp } from '@/lib/utils/format';
+import { formatRp } from '@/utils/format';
 export default function ReceivableList({ isReport }: { isReport?: boolean }) {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
@@ -100,17 +96,7 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
       onSuccess: () => {
         setSelectedItems(null);
         hidePopUpConfirm();
-        // Since useReceivableList is a hook that likely uses queryKey ['receivables'],
-        // the mutation should invalidate it. But adding refetch explicitly is safer if defined.
-
-        toast.show({
-          placement: 'top',
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-              <ToastTitle>Piutang berhasil dihapus</ToastTitle>
-            </Toast>
-          ),
-        });
+        showSuccessToast(toast, 'Piutang berhasil dihapus');
       },
       onError: (error) => {
         showErrorToast(toast, error);

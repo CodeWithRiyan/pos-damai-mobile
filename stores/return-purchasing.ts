@@ -1,5 +1,5 @@
-import { Product } from '@/lib/api/products';
-import { BaseCartItem as CartItem, ConfirmData } from '@/lib/types/cart';
+import { Product } from '@/hooks/use-product';
+import { BaseCartItem as CartItem, ConfirmData } from '@/types/cart';
 import { create } from 'zustand';
 
 interface ReturnPurchasingState {

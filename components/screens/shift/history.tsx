@@ -1,5 +1,5 @@
 import { Box, HStack, Pressable, Text, VStack } from '@/components/ui';
-import { useShifts } from '@/lib/api/shifts';
+import { useShifts } from '@/hooks/use-shift';
 import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Spinner } from '@/components/ui/spinner';

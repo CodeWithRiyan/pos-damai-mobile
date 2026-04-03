@@ -19,13 +19,13 @@ import {
 import { Box } from '@/components/ui/box';
 import { Grid, GridItem } from '@/components/ui/grid';
 import { Spinner } from '@/components/ui/spinner';
-import { ShiftTransactionHistory, useShiftDetail } from '@/lib/api/shifts';
+import { ShiftTransactionHistory, useShiftDetail } from '@/hooks/use-shift';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useState } from 'react';
 import { ScrollView } from 'react-native';
 
-import { formatNumber } from '@/lib/utils/format';
+import { formatNumber } from '@/utils/format';
 type TypeState = 'IN' | 'OUT';
 
 export const helperInOut = (type: ShiftTransactionHistory['type']): TypeState => {
@@ -54,9 +54,11 @@ export default function ShiftDetailRecap() {
 
   const { data: detailShift, isLoading } = useShiftDetail(id || '');
 
-  const transactionHistory = detailShift?.transactionHistory.filter((f: { type: string }) => {
-    return types.some((s) => s === helperInOut(f.type as ShiftTransactionHistory['type']));
-  });
+  const transactionHistory = (detailShift?.transactionHistory || []).filter(
+    (f: { type: string }) => {
+      return types.some((s) => s === helperInOut(f.type as ShiftTransactionHistory['type']));
+    },
+  );
 
   if (isLoading) {
     return (

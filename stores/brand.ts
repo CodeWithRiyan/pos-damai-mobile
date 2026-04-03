@@ -1,4 +1,4 @@
-import { Brand } from '@/lib/api/brands';
+import { Brand } from '@/hooks/use-brand';
 import { create } from 'zustand';
 
 interface BrandState {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { db } from '@/lib/db';
-import * as schema from '@/lib/db/schema';
+import { db } from '@/db';
+import * as schema from '@/db/schema';
 import { useAuthStore } from '@/stores/auth';
 import { and, eq, isNull, ne } from 'drizzle-orm';
 
@@ -215,22 +215,28 @@ export function useCreateBrand() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (data: CreateBrandDTO, options?: { onSuccess?: (data: Brand) => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await createBrand(data);
-      options?.onSuccess?.(result);
-      return result;
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: CreateBrandDTO,
+      options?: { onSuccess?: (data: Brand) => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await createBrand(data);
+        options?.onSuccess?.(result);
+        return result;
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -239,21 +245,27 @@ export function useUpdateBrand() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (data: UpdateBrandDTO, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await updateBrand(data);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: UpdateBrandDTO,
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await updateBrand(data);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -262,21 +274,24 @@ export function useDeleteBrand() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (id: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await deleteBrand(id);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (id: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await deleteBrand(id);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -285,21 +300,27 @@ export function useBulkDeleteBrand() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (ids: string[], options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await bulkDeleteBrands(ids);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      ids: string[],
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await bulkDeleteBrands(ids);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }

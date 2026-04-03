@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
-import { CalcType, PriceType } from '@/lib/constants';
-import { ProductPrice, ProductVariant } from './api/products';
+import { CalcType, PriceType } from '@/constants';
+import { ProductPrice, ProductVariant } from '@/hooks/use-product';
 
 export const findSellPrice = ({
   sellPrices = [],

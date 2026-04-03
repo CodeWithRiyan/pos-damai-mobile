@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { db } from '@/lib/db';
-import * as schema from '@/lib/db/schema';
+import { db } from '@/db';
+import * as schema from '@/db/schema';
 import { useAuthStore } from '@/stores/auth';
 import { and, eq, isNull, like, or, desc } from 'drizzle-orm';
-import { InventoryTxType, ProductType, Status } from '@/lib/constants';
+import { InventoryTxType, ProductType, Status } from '@/constants';
 
 export interface Product {
   id: string;
@@ -109,15 +109,12 @@ export async function fetchProducts(params?: ProductParams): Promise<Product[]> 
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) return [];
 
-  const conditions = [
-    eq(schema.products.organizationId, orgId),
-    isNull(schema.products.deletedAt),
-  ];
+  const conditions = [eq(schema.products.organizationId, orgId), isNull(schema.products.deletedAt)];
 
   if (params?.search) {
     const searchTerm = `%${params.search}%`;
     conditions.push(
-      or(like(schema.products.name, searchTerm), like(schema.products.barcode, searchTerm)) as any
+      or(like(schema.products.name, searchTerm), like(schema.products.barcode, searchTerm)) as any,
     );
   }
 
@@ -156,7 +153,7 @@ export async function fetchProducts(params?: ProductParams): Promise<Product[]> 
           and(
             eq(schema.productVariants.productId, product.id),
             isNull(schema.productVariants.deletedAt),
-          )
+          ),
         );
 
       const transactions = await db
@@ -166,7 +163,7 @@ export async function fetchProducts(params?: ProductParams): Promise<Product[]> 
           and(
             eq(schema.inventoryTransactions.productId, product.id),
             eq(schema.inventoryTransactions.status, Status.COMPLETED),
-          )
+          ),
         );
 
       const totalStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
@@ -189,32 +186,36 @@ export async function fetchProducts(params?: ProductParams): Promise<Product[]> 
             }
           : undefined,
       };
-    })
+    }),
   );
 
   const flattenedProducts = productsWithPrices.flatMap((product) => {
     if (product.type === ProductType.MULTIUNIT && params?.forceParentMultiUnit) {
-      return [{
-        ...product,
-        isVariant: false,
-        variantData: undefined,
-        purchasePrice: product.purchasePrice ?? 0,
-        minimumStock: product.minimumStock ?? 0,
-        isActive: !!product.isActive,
-        isFavorite: !!product.isFavorite,
-      } as Product];
+      return [
+        {
+          ...product,
+          isVariant: false,
+          variantData: undefined,
+          purchasePrice: product.purchasePrice ?? 0,
+          minimumStock: product.minimumStock ?? 0,
+          isActive: !!product.isActive,
+          isFavorite: !!product.isFavorite,
+        } as Product,
+      ];
     }
 
     if (params?.forceParent) {
-      return [{
-        ...product,
-        isVariant: false,
-        variantData: undefined,
-        purchasePrice: product.purchasePrice ?? 0,
-        minimumStock: product.minimumStock ?? 0,
-        isActive: !!product.isActive,
-        isFavorite: !!product.isFavorite,
-      } as Product];
+      return [
+        {
+          ...product,
+          isVariant: false,
+          variantData: undefined,
+          purchasePrice: product.purchasePrice ?? 0,
+          minimumStock: product.minimumStock ?? 0,
+          isActive: !!product.isActive,
+          isFavorite: !!product.isFavorite,
+        } as Product,
+      ];
     }
 
     const items: Product[] = [];
@@ -304,7 +305,7 @@ export async function fetchProducts(params?: ProductParams): Promise<Product[]> 
 
 export async function fetchProduct(id: string): Promise<Product | null> {
   const baseProductId = id.includes('-var_') ? id.substring(0, id.indexOf('-var_')) : id;
-  
+
   const productResult = await db
     .select({
       product: schema.products,
@@ -382,7 +383,7 @@ export async function fetchProduct(id: string): Promise<Product | null> {
 export async function createProduct(data: CreateProductDTO): Promise<Product> {
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) throw new Error('Organization not found');
-  
+
   const id = `prod_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const now = new Date();
   const userId = useAuthStore.getState().profile?.id;
@@ -457,7 +458,18 @@ export async function createProduct(data: CreateProductDTO): Promise<Product> {
     }
   });
 
-  return { id, ...data, barcode: data.code, organizationId: orgId ?? '', createdBy: userId ?? null, updatedBy: userId ?? null, createdAt: now, updatedAt: now, sellPrices: data.prices ?? [], variants: data.variants ?? [] } as unknown as Product;
+  return {
+    id,
+    ...data,
+    barcode: data.code,
+    organizationId: orgId ?? '',
+    createdBy: userId ?? null,
+    updatedBy: userId ?? null,
+    createdAt: now,
+    updatedAt: now,
+    sellPrices: data.prices ?? [],
+    variants: data.variants ?? [],
+  } as unknown as Product;
 }
 
 export async function updateProduct(data: UpdateProductDTO): Promise<void> {
@@ -578,7 +590,10 @@ export async function bulkDeleteProducts(ids: string[]): Promise<void> {
   }
 }
 
-export async function assignProductsToCategory(productIds: string[], categoryId: string): Promise<void> {
+export async function assignProductsToCategory(
+  productIds: string[],
+  categoryId: string,
+): Promise<void> {
   const now = new Date();
   const userId = useAuthStore.getState().profile?.id;
 
@@ -595,7 +610,10 @@ export async function assignProductsToCategory(productIds: string[], categoryId:
   }
 }
 
-export async function assignProductsToSupplier(productIds: string[], supplierId: string): Promise<void> {
+export async function assignProductsToSupplier(
+  productIds: string[],
+  supplierId: string,
+): Promise<void> {
   const now = new Date();
   const userId = useAuthStore.getState().profile?.id;
 
@@ -715,7 +733,15 @@ export function useProducts(params?: ProductParams) {
     } finally {
       setLoading(false);
     }
-  }, [params?.search, params?.showByStock, params?.brandId, params?.categoryId, params?.supplierId, params?.forceParent, params?.forceParentMultiUnit]);
+  }, [
+    params?.search,
+    params?.showByStock,
+    params?.brandId,
+    params?.categoryId,
+    params?.supplierId,
+    params?.forceParent,
+    params?.forceParentMultiUnit,
+  ]);
 
   useEffect(() => {
     fetch();
@@ -802,22 +828,28 @@ export function useCreateProduct() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (data: CreateProductDTO, options?: { onSuccess?: (data: Product) => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await createProduct(data);
-      options?.onSuccess?.(result);
-      return result;
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: CreateProductDTO,
+      options?: { onSuccess?: (data: Product) => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await createProduct(data);
+        options?.onSuccess?.(result);
+        return result;
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -826,21 +858,27 @@ export function useUpdateProduct() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (data: UpdateProductDTO, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await updateProduct(data);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: UpdateProductDTO,
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await updateProduct(data);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -849,21 +887,24 @@ export function useDeleteProduct() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (id: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await deleteProduct(id);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (id: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await deleteProduct(id);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -872,21 +913,27 @@ export function useBulkDeleteProduct() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (ids: string[], options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await bulkDeleteProducts(ids);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      ids: string[],
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await bulkDeleteProducts(ids);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -895,21 +942,28 @@ export function useAssignProductsToCategory() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (productIds: string[], categoryId: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await assignProductsToCategory(productIds, categoryId);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      productIds: string[],
+      categoryId: string,
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await assignProductsToCategory(productIds, categoryId);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -918,21 +972,28 @@ export function useAssignProductsToSupplier() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (productIds: string[], supplierId: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await assignProductsToSupplier(productIds, supplierId);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      productIds: string[],
+      supplierId: string,
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await assignProductsToSupplier(productIds, supplierId);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -941,21 +1002,28 @@ export function useAssignProductsToBrand() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (productIds: string[], brandId: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await assignProductsToBrand(productIds, brandId);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      productIds: string[],
+      brandId: string,
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await assignProductsToBrand(productIds, brandId);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -964,21 +1032,27 @@ export function useUnassignProductsFromCategory() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (productIds: string[], options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await unassignProductsFromCategory(productIds);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      productIds: string[],
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await unassignProductsFromCategory(productIds);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -987,21 +1061,27 @@ export function useUnassignProductsFromSupplier() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (productIds: string[], options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await unassignProductsFromSupplier(productIds);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      productIds: string[],
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await unassignProductsFromSupplier(productIds);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -1010,21 +1090,27 @@ export function useUnassignProductsFromBrand() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (productIds: string[], options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await unassignProductsFromBrand(productIds);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      productIds: string[],
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await unassignProductsFromBrand(productIds);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }

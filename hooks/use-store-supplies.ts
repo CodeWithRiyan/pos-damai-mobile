@@ -1,5 +1,5 @@
-import { storeSupplies, storeSupplyItems } from '@/lib/db/schema';
-import { db } from '@/lib/db';
+import { storeSupplies, storeSupplyItems } from '@/db/schema';
+import { db } from '@/db';
 import { useAuthStore } from '@/stores/auth';
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
@@ -35,21 +35,14 @@ export async function fetchStoreSupplies(): Promise<StoreSupply[]> {
   const result = await db
     .select()
     .from(storeSupplies)
-    .where(and(
-      eq(storeSupplies.organizationId, orgId),
-      isNull(storeSupplies.deletedAt)
-    ))
+    .where(and(eq(storeSupplies.organizationId, orgId), isNull(storeSupplies.deletedAt)))
     .orderBy(desc(storeSupplies.createdAt));
 
   return result as unknown as StoreSupply[];
 }
 
 export async function fetchStoreSupply(id: string): Promise<StoreSupply | null> {
-  const result = await db
-    .select()
-    .from(storeSupplies)
-    .where(eq(storeSupplies.id, id))
-    .limit(1);
+  const result = await db.select().from(storeSupplies).where(eq(storeSupplies.id, id)).limit(1);
 
   if (result.length === 0) return null;
 
@@ -60,7 +53,7 @@ export async function fetchStoreSupply(id: string): Promise<StoreSupply | null> 
 
   return {
     ...result[0],
-    items: items.map(item => ({
+    items: items.map((item) => ({
       ...item,
       quantity: item.quantitySystem || 0,
       unitPrice: item.purchasePrice || 0,
@@ -85,7 +78,7 @@ export async function createStoreSupply(data: {
   const now = new Date();
   const userId = useAuthStore.getState().profile?.id;
 
-  const totalAmount = data.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+  const totalAmount = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 
   const newSupply = {
     id,
@@ -186,25 +179,39 @@ export function useCreateStoreSupply() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (
-    data: { date: Date; note?: string; items: Array<{ productId: string; quantity: number; unitPrice: number }> },
-    options?: { onSuccess?: (data: StoreSupply) => void; onError?: (error: Error) => void }
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const result = await createStoreSupply(data);
-      options?.onSuccess?.(result);
-      return result;
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: {
+        date: Date;
+        note?: string;
+        items: Array<{ productId: string; quantity: number; unitPrice: number }>;
+      },
+      options?: { onSuccess?: (data: StoreSupply) => void; onError?: (error: Error) => void },
+    ) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await createStoreSupply(data);
+        options?.onSuccess?.(result);
+        return result;
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
 
-  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    loading: isLoading,
+    isPending: isLoading,
+    error,
+  };
 }

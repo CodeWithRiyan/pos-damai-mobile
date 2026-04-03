@@ -1,6 +1,6 @@
 import { HStack, Icon, Pressable, Text, VStack } from '@/components/ui';
-import { useCurrentShift } from '@/lib/api/shifts';
-import { formatRp } from '@/lib/utils/format';
+import { useCurrentShift } from '@/hooks/use-shift';
+import { formatRp } from '@/utils/format';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { PlusCircle } from 'lucide-react-native';

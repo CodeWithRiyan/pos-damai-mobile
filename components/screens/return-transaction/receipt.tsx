@@ -3,9 +3,9 @@ import Header from '@/components/header';
 import { Box, Heading, HStack, Icon, Pressable, Text, VStack } from '@/components/ui';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
-import { useTransactionReturn } from '@/lib/api/return-transaction';
-import { TransactionItem, useTransaction } from '@/lib/api/transactions';
-import { formatDisplayRefId } from '@/lib/utils/reference';
+import { useTransactionReturn } from '@/hooks/use-return-transaction';
+import { TransactionItem, useTransaction } from '@/hooks/use-transaction';
+import { formatDisplayRefId } from '@/utils/reference';
 import { useAuthStore } from '@/stores/auth';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -13,9 +13,9 @@ import { Check, Printer, Send } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView } from 'react-native';
 
-import { getReceiptActions } from '@/lib/utils/receipt-actions';
-import { ProductType, ReturnType } from '@/lib/constants';
-import { formatRp, formatNumber } from '@/lib/utils/format';
+import { getReceiptActions } from '@/utils/receipt-actions';
+import { ProductType, ReturnType } from '@/constants';
+import { formatRp, formatNumber } from '@/utils/format';
 export default function ReturnTransactionReceipt() {
   const router = useRouter();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();

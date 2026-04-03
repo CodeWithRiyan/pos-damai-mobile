@@ -29,21 +29,20 @@ import {
   Text,
   Textarea,
   TextareaInput,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
 } from '@/components/ui';
-import { ProductVariant } from '@/lib/api/products';
-import { findSellPrice } from '@/lib/price';
+import { ProductVariant } from '@/hooks/use-product';
+import { findSellPrice } from '@/utils/price';
 import { useTransactionStore } from '@/stores/transaction';
-import { PriceType, ProductType } from '@/lib/constants';
+import { PriceType, ProductType } from '@/constants';
+import { showToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import z from 'zod';
 
-import { formatRp } from '@/lib/utils/format';
+import { formatRp } from '@/utils/format';
 export default function PopupAddProduct() {
   const toast = useToast();
   const {
@@ -123,17 +122,7 @@ export default function PopupAddProduct() {
   const variantUnitId = form.watch('variantUnitId');
 
   const showValidationError = (message?: string) => {
-    toast.show({
-      placement: 'top',
-      render: ({ id }) => {
-        const toastId = 'toast-' + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{message || 'Terjadi kesalahan'}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
+    showToast(toast, { action: 'error', message: message || 'Terjadi kesalahan' });
   };
 
   useEffect(() => {
@@ -153,22 +142,11 @@ export default function PopupAddProduct() {
     } else {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, currentProductInCart, addProductVariantId, addProduct]);
 
   const onSubmit: SubmitHandler<AddProductFormValues> = (data: AddProductFormValues) => {
     if (addProduct?.type === ProductType.MULTIUNIT && !data.variantUnitId) {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => {
-          const toastId = 'toast-' + id;
-          return (
-            <Toast nativeID={toastId} action="error" variant="solid">
-              <ToastTitle>Unit belum dipilih</ToastTitle>
-            </Toast>
-          );
-        },
-      });
+      showToast(toast, { action: 'error', message: 'Unit belum dipilih' });
       return;
     }
 

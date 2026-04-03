@@ -2,15 +2,15 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import XLSX from 'xlsx';
-import { Brand, CreateBrandDTO } from '../api/brands';
-import { Category, CreateCategoryDTO } from '../api/categories';
-import { CreateCustomerDTO, Customer, CustomerCategory } from '../api/customers';
-import { PayableBySupplier } from '../api/payable';
-import { CreatePaymentTypeDTO, PaymentType } from '../api/payment-types';
-import { CreateProductDTO, Product, ProductPrice } from '../api/products';
-import { Role } from '../api/roles';
-import { CreateSupplierDTO, Supplier } from '../api/suppliers';
-import { CreateUserDTO, User } from '../api/users';
+import { Brand, CreateBrandDTO } from '@/hooks/use-brand';
+import { Category, CreateCategoryDTO } from '@/hooks/use-category';
+import { CreateCustomerDTO, Customer, CustomerCategory } from '@/hooks/use-customer';
+import { PayableBySupplier } from '@/hooks/use-payable';
+import { CreatePaymentTypeDTO, PaymentType } from '@/hooks/use-payment-type';
+import { CreateProductDTO, Product, ProductPrice } from '@/hooks/use-product';
+import { Role } from '@/hooks/use-role';
+import { CreateSupplierDTO, Supplier } from '@/hooks/use-supplier';
+import { CreateUserDTO, User } from '@/hooks/use-user';
 
 // ─── Generic helpers ──────────────────────────────────────────────────────────
 

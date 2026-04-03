@@ -6,7 +6,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
 import useBreakpoint from '@/hooks/use-breakpoint';
-import { useLogout } from '@/lib/api/auth';
+import { useLogout } from '@/hooks/use-auth';
 import { useSidebarStore } from '@/stores/sidebar';
 import { Link, LinkProps, usePathname, useRouter } from 'expo-router';
 import React, { useMemo } from 'react';

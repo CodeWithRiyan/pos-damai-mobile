@@ -21,17 +21,17 @@ import {
   FormControlLabelText,
 } from '@/components/ui/form-control';
 import { Radio, RadioGroup, RadioLabel } from '@/components/ui/radio';
-import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 // import {
 //   useReturnTransaction,
 //   useCreateReturnTransaction,
 //   useUpdateReturnTransaction,
-// } from "@/lib/api/return-transaction";
-import { useCreateFinance } from '@/lib/api/finances';
-import { useCreateTransactionReturn } from '@/lib/api/return-transaction';
-import { FinanceType, ReturnType, Status } from '@/lib/constants';
-import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
+// } from "@/hooks/use-return-transaction";
+import { useCreateFinance } from '@/hooks/use-finance';
+import { useCreateTransactionReturn } from '@/hooks/use-return-transaction';
+import { FinanceType, ReturnType, Status } from '@/constants';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useReturnTransactionStore } from '@/stores/return-transaction';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -120,14 +120,7 @@ export default function ReturnTransactionConfirmForm() {
       },
       {
         onError: (error) => {
-          toast.show({
-            placement: 'top',
-            render: ({ id }) => (
-              <Toast nativeID={id} action="error" variant="solid">
-                <ToastTitle>{`Gagal menyimpan: ${error.message}`}</ToastTitle>
-              </Toast>
-            ),
-          });
+          showErrorToast(toast, `Gagal menyimpan: ${error.message}`);
         },
       },
     );

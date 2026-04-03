@@ -17,8 +17,6 @@ import {
   Spinner,
   Switch,
   Text,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
 } from '@/components/ui';
@@ -28,7 +26,7 @@ import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { useBrands } from '@/hooks/use-brand';
 import { useCategories } from '@/hooks/use-category';
 import { useDiscounts, useDeleteDiscount, Discount } from '@/hooks/use-discount';
-import { showErrorToast } from '@/lib/utils/toast';
+import { showErrorToast, showToast } from '@/utils/toast';
 import {
   CreateProductDTO,
   UpdateProductDTO,
@@ -36,8 +34,8 @@ import {
   useProduct,
   useProducts,
   useUpdateProduct,
-} from '@/lib/api/products';
-import { unitSuffixHelper } from '@/lib/unit';
+} from '@/hooks/use-product';
+import { unitSuffixHelper } from '@/utils/unit';
 import { useBrandStore } from '@/stores/brand';
 import { useCategoryStore } from '@/stores/category';
 import { useDiscountStore } from '@/stores/discount';
@@ -49,7 +47,7 @@ import { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 import { z } from 'zod';
-import { PriceType, ProductType } from '@/lib/constants';
+import { PriceType, ProductType } from '@/constants';
 
 export default function ProductForm() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -340,7 +338,6 @@ export default function ProductForm() {
         netto: (field.netto ?? 0).toString(),
       })),
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unitVariantFields.length]);
 
   useEffect(() => {
@@ -379,8 +376,7 @@ export default function ProductForm() {
     } else {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, product, productId]);
+  }, [form, product, productId, categories.length, brands.length]);
 
   const onRefetch = () => {
     refetchProducts();
@@ -422,14 +418,7 @@ export default function ProductForm() {
         hidePopUpConfirm();
         onRefetch();
 
-        toast.show({
-          placement: 'top',
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-              <ToastTitle>Diskon berhasil dihapus</ToastTitle>
-            </Toast>
-          ),
-        });
+        showToast(toast, { action: 'success', message: 'Diskon berhasil dihapus' });
       },
       onError: (error) => {
         showErrorToast(toast, error);
@@ -505,14 +494,7 @@ export default function ProductForm() {
         onSuccess: () => {
           onRefetch();
           handleCancel();
-          toast.show({
-            placement: 'top',
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Produk berhasil diubah</ToastTitle>
-              </Toast>
-            ),
-          });
+          showToast(toast, { action: 'success', message: 'Produk berhasil diubah' });
         },
         onError: (error) => {
           showErrorToast(toast, error);
@@ -530,14 +512,7 @@ export default function ProductForm() {
           onRefetch();
           form.reset(initialValues);
           handleCancel();
-          toast.show({
-            placement: 'top',
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Produk berhasil ditambahkan</ToastTitle>
-              </Toast>
-            ),
-          });
+          showToast(toast, { action: 'success', message: 'Produk berhasil ditambahkan' });
         },
         onError: (error) => {
           showErrorToast(toast, error);
@@ -1511,25 +1486,18 @@ export default function ProductForm() {
         <Pressable
           className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
-          onPress={form.handleSubmit(onSubmit, (errors) => {
-            const findFirstMessage = (obj: any): string | undefined => {
-              if (!obj || typeof obj !== 'object') return undefined;
-              if (obj.message) return obj.message;
-              for (const val of Object.values(obj)) {
-                const msg = findFirstMessage(val);
-                if (msg) return msg;
-              }
-              return undefined;
-            };
+          onPress={form.handleSubmit(onSubmit, () => {
+            // const findFirstMessage = (obj: any): string | undefined => {
+            //   if (!obj || typeof obj !== 'object') return undefined;
+            //   if (obj.message) return obj.message;
+            //   for (const val of Object.values(obj)) {
+            //     const msg = findFirstMessage(val);
+            //     if (msg) return msg;
+            //   }
+            //   return undefined;
+            // };
             const message = 'Mohon lengkapi semua field yang wajib diisi.';
-            toast.show({
-              placement: 'top',
-              render: ({ id }) => (
-                <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-                  <ToastTitle>{message}</ToastTitle>
-                </Toast>
-              ),
-            });
+            showToast(toast, { action: 'error', message });
           })}
         >
           {isLoading ? (

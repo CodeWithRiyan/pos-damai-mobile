@@ -9,17 +9,18 @@ import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
-import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { getErrorMessage } from '@/lib/api/client';
+import { getErrorMessage } from '@/db/client';
 import {
   Supplier,
   useBulkDeleteSupplier,
   useCreateSupplier,
   useSuppliers,
-} from '@/lib/api/suppliers';
-import { bulkDeleteConfirm } from '@/lib/utils/delete-confirm';
-import { exportSuppliers, importSuppliers } from '@/lib/utils/excel';
+} from '@/hooks/use-supplier';
+import { bulkDeleteConfirm } from '@/utils/delete-confirm';
+import { exportSuppliers, importSuppliers } from '@/utils/excel';
+import { showSuccessToast, showToast } from '@/utils/toast';
 import { useItemSelection } from '@/hooks/use-item-selection';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
@@ -55,14 +56,7 @@ export default function SupplierList() {
     try {
       await exportSuppliers(suppliers);
     } catch (e) {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 
@@ -83,23 +77,9 @@ export default function SupplierList() {
         } catch {}
       }
       refetch();
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-            <ToastTitle>{`${successCount} supplier berhasil diimpor`}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showSuccessToast(toast, `${successCount} supplier berhasil diimpor`);
     } catch (e) {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 

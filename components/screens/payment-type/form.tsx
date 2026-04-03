@@ -25,7 +25,7 @@ import { Input, InputField } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import {
   useCreatePaymentType,
   usePaymentType,
@@ -37,7 +37,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Percent } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { CalcType } from '@/lib/constants';
+import { CalcType } from '@/constants';
 import z from 'zod';
 
 export default function PaymentTypeForm() {
@@ -103,7 +103,6 @@ export default function PaymentTypeForm() {
       setCommisionInput('');
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataPaymentType, form]);
 
   const onSubmit: SubmitHandler<PaymentTypeFormValues> = (data: PaymentTypeFormValues) => {
@@ -188,7 +187,10 @@ export default function PaymentTypeForm() {
             <Controller
               name="commission"
               control={form.control}
-              render={({ field: { onChange, onBlur, value: _commissionValue }, fieldState: { error } }) => (
+              render={({
+                field: { onChange, onBlur, value: _commissionValue },
+                fieldState: { error },
+              }) => (
                 <FormControl isInvalid={!!error} className="flex-1">
                   <FormControlLabel>
                     <FormControlLabelText>Komisi</FormControlLabelText>
@@ -217,7 +219,7 @@ export default function PaymentTypeForm() {
                     <Controller
                       name="commissionType"
                       control={form.control}
-              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                      render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                         <FormControl isRequired isInvalid={!!error}>
                           <RadioGroup
                             value={value}

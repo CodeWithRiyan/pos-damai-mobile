@@ -4,10 +4,10 @@ import { Pressable } from '@/components/ui/pressable';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Printer } from 'lucide-react-native';
 import { ScrollView } from 'react-native';
-import { useFinance } from '@/lib/api/finances';
+import { useFinance } from '@/hooks/use-finance';
 import { useAuthStore } from '@/stores/auth';
 
-import { formatRp } from '@/lib/utils/format';
+import { formatRp } from '@/utils/format';
 export default function FinanceTransactionSuccess() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();

@@ -20,11 +20,11 @@ import { useRouter } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { FlashList } from '@shopify/flash-list';
-import { useFinances } from '@/lib/api/finances';
-import { formatDisplayRefId } from '@/lib/utils/reference';
+import { useFinances } from '@/hooks/use-finance';
+import { formatDisplayRefId } from '@/utils/reference';
 
-import { FinanceType, Status } from '@/lib/constants';
-import { formatNumber } from '@/lib/utils/format';
+import { FinanceType, Status } from '@/constants';
+import { formatNumber } from '@/utils/format';
 export default function FinanceHistory() {
   const router = useRouter();
   const [showTransactionDatePicker, setShowTransactionDatePicker] = useState<boolean>(false);

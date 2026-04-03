@@ -19,15 +19,13 @@ import {
   Text,
   Textarea,
   TextareaInput,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
 } from '@/components/ui';
 import SelectModal from '@/components/ui/select/select-modal';
-import { showErrorToast } from '@/lib/utils/toast';
+import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { usePaymentTypes } from '@/hooks/use-payment-type';
-import { useCreateReceivableRealization, useReceivableDetail } from '@/lib/api/receivable';
+import { useCreateReceivableRealization, useReceivableDetail } from '@/hooks/use-receivable';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -39,7 +37,7 @@ import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 import { z } from 'zod';
 
-import { formatRp } from '@/lib/utils/format';
+import { formatRp } from '@/utils/format';
 export default function ReceivableRealizationForm() {
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
 
@@ -110,28 +108,14 @@ export default function ReceivableRealizationForm() {
         },
         {
           onSuccess: () => {
-            toast.show({
-              placement: 'top',
-              render: ({ id }) => (
-                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                  <ToastTitle>Penerimaan berhasil disimpan</ToastTitle>
-                </Toast>
-              ),
-            });
+            showSuccessToast(toast, 'Penerimaan berhasil disimpan');
             router.back();
           },
           onError: (error) => showErrorToast(toast, error),
         },
       );
     } else {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="info" variant="solid">
-            <ToastTitle>Bulk receipt logic coming soon</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'info', message: 'Bulk receipt logic coming soon' });
     }
   };
 

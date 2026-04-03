@@ -1,5 +1,5 @@
-import { Product, ProductVariant } from '@/lib/api/products';
-import { BaseCartItem, ConfirmData } from '@/lib/types/cart';
+import { Product, ProductVariant } from '@/hooks/use-product';
+import { BaseCartItem, ConfirmData } from '@/types/cart';
 import { create } from 'zustand';
 
 interface CartItem extends BaseCartItem {

@@ -15,19 +15,17 @@ import {
   Text,
   Textarea,
   TextareaInput,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
 } from '@/components/ui';
 import SelectModal from '@/components/ui/select/select-modal';
-import { showErrorToast } from '@/lib/utils/toast';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import {
   useCreateReceivable,
   useReceivableDetail,
   useUpdateReceivable,
-} from '@/lib/api/receivable';
-import { useUsers } from '@/lib/api/users';
+} from '@/hooks/use-receivable';
+import { useUsers } from '@/hooks/use-user';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
@@ -88,8 +86,7 @@ export default function ReceivableForm() {
     } else {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, receivable, receivableId]);
+  }, [form, receivable, receivableId, users.length]);
 
   const onSubmit: SubmitHandler<ReceivableFormValues> = (data: ReceivableFormValues) => {
     if (isAdd) {
@@ -100,14 +97,7 @@ export default function ReceivableForm() {
         },
         {
           onSuccess: () => {
-            toast.show({
-              placement: 'top',
-              render: ({ id }) => (
-                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                  <ToastTitle>Piutang berhasil disimpan</ToastTitle>
-                </Toast>
-              ),
-            });
+            showSuccessToast(toast, 'Piutang berhasil disimpan');
             router.back();
           },
           onError: (error) => {
@@ -124,14 +114,7 @@ export default function ReceivableForm() {
         },
         {
           onSuccess: () => {
-            toast.show({
-              placement: 'top',
-              render: ({ id }) => (
-                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                  <ToastTitle>Piutang berhasil diupdate</ToastTitle>
-                </Toast>
-              ),
-            });
+            showSuccessToast(toast, 'Piutang berhasil diupdate');
             router.back();
           },
           onError: (error) => {

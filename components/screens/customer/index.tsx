@@ -10,9 +10,9 @@ import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
-import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { getErrorMessage } from '@/lib/api/client';
+import { getErrorMessage } from '@/db/client';
 import {
   CustomerWithStats,
   useBulkDeleteCustomer,
@@ -20,15 +20,15 @@ import {
   useCreateCustomer,
   useCustomers,
 } from '@/hooks/use-customer';
-import { bulkDeleteConfirm } from '@/lib/utils/delete-confirm';
-import { exportCustomers, importCustomers } from '@/lib/utils/excel';
-import { showErrorToast } from '@/lib/utils/toast';
+import { bulkDeleteConfirm } from '@/utils/delete-confirm';
+import { exportCustomers, importCustomers } from '@/utils/excel';
+import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { useItemSelection } from '@/hooks/use-item-selection';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import { FlashList } from '@shopify/flash-list';
 
-import { formatNumber } from '@/lib/utils/format';
+import { formatNumber } from '@/utils/format';
 export default function CustomerList({ isReport }: { isReport?: boolean }) {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -61,14 +61,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
     try {
       await exportCustomers(customers);
     } catch (e) {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 
@@ -85,23 +78,9 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
         } catch {}
       }
       refetch();
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-            <ToastTitle>{`${successCount} pelanggan berhasil diimpor`}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showSuccessToast(toast, `${successCount} pelanggan berhasil diimpor`);
     } catch (e) {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 
@@ -135,29 +114,19 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
   const confirmResetPoint = async (ids: string[]) => {
     if (!ids.length) return;
 
-    resetPointMutation.mutate(
-      ids,
-      {
-        onSuccess: () => {
-          clearSelection();
-          hidePopUpConfirm();
-          refetch();
+    resetPointMutation.mutate(ids, {
+      onSuccess: () => {
+        clearSelection();
+        hidePopUpConfirm();
+        refetch();
 
-          toast.show({
-            placement: 'top',
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Poin Pelanggan berhasil direset</ToastTitle>
-              </Toast>
-            ),
-          });
-        },
-        onError: (error: Error) => {
-          showErrorToast(toast, error);
-          hidePopUpConfirm();
-        },
+        showSuccessToast(toast, 'Poin Pelanggan berhasil direset');
       },
-    );
+      onError: (error: Error) => {
+        showErrorToast(toast, error);
+        hidePopUpConfirm();
+      },
+    });
   };
 
   if (isLoading) {

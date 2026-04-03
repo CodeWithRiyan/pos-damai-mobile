@@ -20,9 +20,9 @@ import { Pressable } from '@/components/ui/pressable';
 import { Radio, RadioGroup, RadioLabel } from '@/components/ui/radio';
 import SelectModal from '@/components/ui/select/select-modal';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
-import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { useCreateFinance, useFinance } from '@/lib/api/finances';
+import { useCreateFinance, useFinance } from '@/hooks/use-finance';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
@@ -31,8 +31,9 @@ import { CalendarIcon } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
-import { FinanceType, Status } from '@/lib/constants';
+import { FinanceType, Status } from '@/constants';
 import z from 'zod';
+import { showToast } from '@/utils/toast';
 
 // Dummy data removed
 
@@ -143,17 +144,13 @@ export default function FinanceTransaction() {
       },
       {
         onSuccess: (responseData) => {
-          toast.show({
+          showToast(toast, {
+            action: 'success',
+            message:
+              status === Status.COMPLETED
+                ? 'Transaksi berhasil disimpan'
+                : 'Draft berhasil disimpan',
             placement: 'top',
-            render: ({ id }) => (
-              <Toast nativeID={id} action="success" variant="solid">
-                <ToastTitle>
-                  {status === Status.COMPLETED
-                    ? 'Transaksi berhasil disimpan'
-                    : 'Draft berhasil disimpan'}
-                </ToastTitle>
-              </Toast>
-            ),
           });
 
           if (status === Status.COMPLETED) {
@@ -164,13 +161,10 @@ export default function FinanceTransaction() {
           form.reset(initialValues);
         },
         onError: (error) => {
-          toast.show({
+          showToast(toast, {
+            action: 'error',
+            message: error.message || 'Terjadi kesalahan saat menyimpan transaksi',
             placement: 'top',
-            render: ({ id }) => (
-              <Toast nativeID={id} action="error" variant="solid">
-                <ToastTitle>{`Gagal menyimpan: ${error.message}`}</ToastTitle>
-              </Toast>
-            ),
           });
         },
       },

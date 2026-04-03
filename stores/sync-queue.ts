@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { storage } from '../lib/storage';
+import { storage } from '@/utils/storage';
 
 export interface QueuedOperation {
   id: string;

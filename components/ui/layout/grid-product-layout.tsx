@@ -1,5 +1,5 @@
 import { Badge, BadgeText, Box, Heading, Pressable, Text, VStack } from '@/components/ui';
-import { formatRp } from '@/lib/utils/format';
+import { formatRp } from '@/utils/format';
 
 export default function GridProductLayout({
   name,

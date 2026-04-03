@@ -1,6 +1,7 @@
+import { useCallback } from 'react';
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
-import { Box, Spinner, Text, Toast, ToastTitle, useToast, VStack } from '@/components/ui';
+import { Box, Spinner, Text, useToast, VStack } from '@/components/ui';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import {
@@ -11,13 +12,13 @@ import {
 } from '@/hooks/use-payment-type';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import classNames from 'classnames';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ScrollView } from 'react-native';
 
-import { formatNumber } from '@/lib/utils/format';
-import { showErrorToast } from '@/lib/utils/toast';
+import { formatNumber } from '@/utils/format';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { singleDeleteConfirm } from '@/lib/utils/delete-confirm';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
 export default function PaymentTypeDetail() {
   const { setOpen, setData } = usePaymentTypeStore();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -36,6 +37,12 @@ export default function PaymentTypeDetail() {
     refetchPaymentTypes();
     refetchPaymentType();
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      onRefetch();
+    }, []),
+  );
 
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Jenis pembayaran berhasil dihapus',
@@ -126,14 +133,7 @@ export default function PaymentTypeDetail() {
             if (paymentType?.id) {
               setDefaultMutation.mutate(paymentType.id, {
                 onSuccess: () => {
-                  toast.show({
-                    placement: 'top',
-                    render: ({ id }) => (
-                      <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                        <ToastTitle>Berhasil diatur sebagai default</ToastTitle>
-                      </Toast>
-                    ),
-                  });
+                  showSuccessToast(toast, 'Berhasil diatur sebagai default');
                   onRefetch();
                 },
                 onError: (error) => showErrorToast(toast, error),

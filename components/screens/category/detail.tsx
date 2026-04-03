@@ -1,36 +1,26 @@
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { usePopUpConfirm } from '@/components/pop-up-confirm';
-import {
-  Box,
-  Heading,
-  HStack,
-  Spinner,
-  Text,
-  Toast,
-  ToastTitle,
-  useToast,
-  VStack,
-} from '@/components/ui';
+import { Box, Heading, HStack, Spinner, Text, useToast, VStack } from '@/components/ui';
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { useCategories, useCategory, useDeleteCategory } from '@/hooks/use-category';
-import { showErrorToast } from '@/lib/utils/toast';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import {
   Product,
   useProductsByCategory,
   useUnassignProductsFromCategory,
-} from '@/lib/api/products';
+} from '@/hooks/use-product';
 import { useCategoryStore } from '@/stores/category';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { singleDeleteConfirm } from '@/lib/utils/delete-confirm';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import { useItemSelection } from '@/hooks/use-item-selection';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useCallback, useMemo } from 'react';
 import { ScrollView } from 'react-native';
 
-import { formatRp, formatNumber } from '@/lib/utils/format';
+import { formatRp, formatNumber } from '@/utils/format';
 export default function CategoryDetail() {
   const { setOpen, setData } = useCategoryStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -65,6 +55,12 @@ export default function CategoryDetail() {
     refetchCategory();
   };
 
+  useFocusEffect(
+    useCallback(() => {
+      onRefetch();
+    }, []),
+  );
+
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Kategori berhasil dihapus',
     deleteMutation,
@@ -89,28 +85,18 @@ export default function CategoryDetail() {
       closeText: 'BATAL',
       okVariant: 'destructive',
       onOk: () => {
-        unassignProductMutation.mutate(
-          productIds,
-          {
-            onSuccess: () => {
-              hidePopUpConfirm();
-              clearProductSelection();
-              onRefetch();
-              toast.show({
-                placement: 'top',
-                render: ({ id }) => (
-                  <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                    <ToastTitle>Produk berhasil dihapus dari kategori</ToastTitle>
-                  </Toast>
-                ),
-              });
-            },
-            onError: (error) => {
-              showErrorToast(toast, error);
-              hidePopUpConfirm();
-            },
+        unassignProductMutation.mutate(productIds, {
+          onSuccess: () => {
+            hidePopUpConfirm();
+            clearProductSelection();
+            onRefetch();
+            showSuccessToast(toast, 'Produk berhasil dihapus dari kategori');
           },
-        );
+          onError: (error) => {
+            showErrorToast(toast, error);
+            hidePopUpConfirm();
+          },
+        });
       },
       loading: unassignProductMutation.isPending,
     });

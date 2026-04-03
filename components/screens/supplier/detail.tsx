@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { usePopUpConfirm } from '@/components/pop-up-confirm';
@@ -9,8 +10,6 @@ import {
   HStack,
   Spinner,
   Text,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
 } from '@/components/ui';
@@ -20,16 +19,16 @@ import {
   Product,
   useProductsBySupplier,
   useUnassignProductsFromSupplier,
-} from '@/lib/api/products';
-import { showErrorToast } from '@/lib/utils/toast';
-import { useDeleteSupplier, useSupplier, useSuppliers } from '@/lib/api/suppliers';
+} from '@/hooks/use-product';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useDeleteSupplier, useSupplier, useSuppliers } from '@/hooks/use-supplier';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { singleDeleteConfirm } from '@/lib/utils/delete-confirm';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import { useItemSelection } from '@/hooks/use-item-selection';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { ScrollView } from 'react-native';
 
-import { formatRp } from '@/lib/utils/format';
+import { formatRp } from '@/utils/format';
 export default function SupplierDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -57,6 +56,12 @@ export default function SupplierDetail() {
     refetchSupplier();
   };
 
+  useFocusEffect(
+    useCallback(() => {
+      onRefetch();
+    }, []),
+  );
+
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Supplier berhasil dihapus',
     deleteMutation,
@@ -81,28 +86,18 @@ export default function SupplierDetail() {
       closeText: 'BATAL',
       okVariant: 'destructive',
       onOk: () => {
-        unassignProductMutation.mutate(
-          productIds,
-          {
-            onSuccess: () => {
-              hidePopUpConfirm();
-              clearProductSelection();
-              onRefetch();
-              toast.show({
-                placement: 'top',
-                render: ({ id }) => (
-                  <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                    <ToastTitle>Produk berhasil dihapus dari supplier</ToastTitle>
-                  </Toast>
-                ),
-              });
-            },
-            onError: (error) => {
-              showErrorToast(toast, error);
-              hidePopUpConfirm();
-            },
+        unassignProductMutation.mutate(productIds, {
+          onSuccess: () => {
+            hidePopUpConfirm();
+            clearProductSelection();
+            onRefetch();
+            showSuccessToast(toast, 'Produk berhasil dihapus dari supplier');
           },
-        );
+          onError: (error) => {
+            showErrorToast(toast, error);
+            hidePopUpConfirm();
+          },
+        });
       },
       loading: unassignProductMutation.isPending,
     });

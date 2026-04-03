@@ -1,5 +1,5 @@
-import { purchases, purchaseItems } from '@/lib/db/schema';
-import { db } from '@/lib/db';
+import { purchases, purchaseItems } from '@/db/schema';
+import { db } from '@/db';
 import { useAuthStore } from '@/stores/auth';
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
@@ -31,10 +31,7 @@ export async function fetchProductSuppliers(productId?: string): Promise<Supplie
   const purchasesData = await db
     .select()
     .from(purchases)
-    .where(and(
-      eq(purchases.organizationId, orgId),
-      isNull(purchases.deletedAt)
-    ))
+    .where(and(eq(purchases.organizationId, orgId), isNull(purchases.deletedAt)))
     .orderBy(desc(purchases.createdAt));
 
   const supplierMap = new Map<string, SupplierSummary>();
@@ -45,8 +42,10 @@ export async function fetchProductSuppliers(productId?: string): Promise<Supplie
       .from(purchaseItems)
       .where(eq(purchaseItems.purchaseId, purchase.id));
 
-    const productItem = items.find((item: any) => productId ? item.productId === productId : true);
-    
+    const productItem = items.find((item: any) =>
+      productId ? item.productId === productId : true,
+    );
+
     if (!productItem && productId) continue;
 
     const existing = supplierMap.get(purchase.supplierId);
@@ -54,7 +53,10 @@ export async function fetchProductSuppliers(productId?: string): Promise<Supplie
       existing.totalQuantity += productItem?.quantity || 0;
       existing.totalValue += productItem?.totalPrice || 0;
       existing.transactionCount += 1;
-      if (purchase.createdAt && (!existing.lastPurchaseDate || purchase.createdAt > existing.lastPurchaseDate)) {
+      if (
+        purchase.createdAt &&
+        (!existing.lastPurchaseDate || purchase.createdAt > existing.lastPurchaseDate)
+      ) {
         existing.lastPurchaseDate = purchase.createdAt;
       }
     } else {
@@ -72,15 +74,15 @@ export async function fetchProductSuppliers(productId?: string): Promise<Supplie
   return Array.from(supplierMap.values());
 }
 
-export async function fetchProductSupplierTransactions(productId: string, supplierId?: string): Promise<ProductSupplierTransaction[]> {
+export async function fetchProductSupplierTransactions(
+  productId: string,
+  supplierId?: string,
+): Promise<ProductSupplierTransaction[]> {
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) return [];
 
-  const purchaseConditions = [
-    eq(purchases.organizationId, orgId),
-    isNull(purchases.deletedAt),
-  ];
-  
+  const purchaseConditions = [eq(purchases.organizationId, orgId), isNull(purchases.deletedAt)];
+
   if (supplierId) {
     purchaseConditions.push(eq(purchases.supplierId, supplierId));
   }
@@ -99,8 +101,9 @@ export async function fetchProductSupplierTransactions(productId: string, suppli
       .from(purchaseItems)
       .where(eq(purchaseItems.purchaseId, purchase.id));
 
-    const filteredItems = items.filter((item: any) => 
-      item.productId === productId && (!supplierId || purchase.supplierId === supplierId)
+    const filteredItems = items.filter(
+      (item: any) =>
+        item.productId === productId && (!supplierId || purchase.supplierId === supplierId),
     );
 
     for (const item of filteredItems) {
@@ -174,25 +177,27 @@ export function useAssignProductsToSupplier() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (
-    supplierId: string,
-    productIds: string[],
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // For now this would need implementation
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      supplierId: string,
+      productIds: string[],
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, error };
 }

@@ -22,7 +22,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import { useBrand, useBrands, useCreateBrand, useUpdateBrand } from '@/hooks/use-brand';
-import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useBrandStore } from '@/stores/brand';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect } from 'react';
@@ -65,7 +65,6 @@ export default function BrandForm() {
     } else {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataBrand, form]);
 
   const onSubmit: SubmitHandler<BrandFormValues> = (data: BrandFormValues) => {

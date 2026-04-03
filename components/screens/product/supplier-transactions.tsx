@@ -4,15 +4,15 @@ import { Grid, GridItem } from '@/components/ui/grid';
 import { Heading } from '@/components/ui/heading';
 import { SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
-import { useProductSupplierTransactions } from '@/lib/api/product-suppliers';
-import { useProduct } from '@/lib/api/products';
-import { useSupplier } from '@/lib/api/suppliers';
+import { useProductSupplierTransactions } from '@/hooks/use-product-supplier';
+import { useProduct } from '@/hooks/use-product';
+import { useSupplier } from '@/hooks/use-supplier';
 import dayjs from 'dayjs';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useMemo } from 'react';
 import { ScrollView } from 'react-native';
 
-import { formatNumber } from '@/lib/utils/format';
+import { formatNumber } from '@/utils/format';
 export default function ProductSupplierTransactions() {
   const { productId, supplierId } = useLocalSearchParams<{
     productId: string;

@@ -12,24 +12,25 @@ import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold, SolarIconLinear } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
-import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { getErrorMessage } from '@/lib/api/client';
+import { getErrorMessage } from '@/db/client';
 import {
   PaymentType,
   useBulkDeletePaymentType,
   useCreatePaymentType,
   usePaymentTypes,
 } from '@/hooks/use-payment-type';
-import { bulkDeleteConfirm } from '@/lib/utils/delete-confirm';
-import { exportPaymentTypes, importPaymentTypes } from '@/lib/utils/excel';
+import { bulkDeleteConfirm } from '@/utils/delete-confirm';
+import { exportPaymentTypes, importPaymentTypes } from '@/utils/excel';
+import { showSuccessToast, showToast } from '@/utils/toast';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import { useRouter } from 'expo-router';
 import { SearchIcon } from 'lucide-react-native';
 import React from 'react';
 import { FlashList } from '@shopify/flash-list';
 
-import { formatRp, formatNumber } from '@/lib/utils/format';
+import { formatRp, formatNumber } from '@/utils/format';
 export default function PaymentTypeList() {
   const { setOpen, setData } = usePaymentTypeStore();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -56,14 +57,7 @@ export default function PaymentTypeList() {
     try {
       await exportPaymentTypes(paymentTypes);
     } catch (e) {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 
@@ -80,23 +74,9 @@ export default function PaymentTypeList() {
         } catch {}
       }
       refetch();
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-            <ToastTitle>{`${successCount} jenis pembayaran berhasil diimpor`}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showSuccessToast(toast, `${successCount} jenis pembayaran berhasil diimpor`);
     } catch (e) {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 

@@ -36,7 +36,7 @@ Anda dapat menggunakan alat seperti **Drizzle Studio** atau browser SQLite ekste
 ### 🔄 Reset Database
 
 Database **TIDAK** lagi di-reset otomatis setiap update aplikasi untuk mencegah kehilangan data `_dirty`. Log peringatan akan muncul di console jika versi aplikasi berubah.
-Untuk reset manual dari kode, panggil fungsi `resetDb()` dari `@/lib/db`.
+Untuk reset manual dari kode, panggil fungsi `resetDb()` dari `@/db`.
 
 ---
 
@@ -64,7 +64,7 @@ console.log('Cart state:', JSON.stringify(cart, null, 2));
 
 ## 🔄 Debugging Sinkronisasi (Sync Engine)
 
-Mekanisme sinkronisasi diatur oleh `SyncEngine` di `@/lib/sync/sync-engine.ts`.
+Mekanisme sinkronisasi diatur oleh `SyncEngine` di `@/db/sync-engine.ts`.
 
 ### Alur Sinkronisasi:
 

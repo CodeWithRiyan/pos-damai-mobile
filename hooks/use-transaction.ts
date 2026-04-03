@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { db } from '@/lib/db';
-import * as schema from '@/lib/db/schema';
+import { db } from '@/db';
+import * as schema from '@/db/schema';
 import { useAuthStore } from '@/stores/auth';
 import { and, desc, eq, isNull, like, sql } from 'drizzle-orm';
-import { DateFilterType, InventoryTxType, ProductType, Status } from '@/lib/constants';
+import { DateFilterType, InventoryTxType, ProductType, Status } from '@/constants';
 
 export type ProductTypeEnum = 'DEFAULT' | 'MULTIUNIT' | 'VARIANTS';
 
@@ -95,17 +95,27 @@ export interface TransactionFilterParams {
 async function generateLocalRefId(tx: any, table: any, prefix: string): Promise<string> {
   const today = new Date();
   const dateStr = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}`;
-  
+
   const result = await tx
     .select({ count: sql<number>`count(*)` })
     .from(table)
-    .where(and(eq(table.organizationId, useAuthStore.getState().getOrganizationId()), like(table.local_ref_id, `${prefix}%`)));
-  
+    .where(
+      and(
+        eq(table.organizationId, useAuthStore.getState().getOrganizationId()),
+        like(table.local_ref_id, `${prefix}%`),
+      ),
+    );
+
   const count = (result[0]?.count || 0) + 1;
   return `${prefix}${dateStr}${String(count).padStart(4, '0')}`;
 }
 
-async function getDiscountedPrice(price: number, discount: { nominal: number; type: 'FLAT' | 'PERCENTAGE'; startDate: Date; endDate: Date } | undefined): Promise<number> {
+async function getDiscountedPrice(
+  price: number,
+  discount:
+    | { nominal: number; type: 'FLAT' | 'PERCENTAGE'; startDate: Date; endDate: Date }
+    | undefined,
+): Promise<number> {
   if (!discount || !isDiscountActive(discount.startDate, discount.endDate)) {
     return price;
   }
@@ -167,8 +177,20 @@ export async function fetchTransactions(params?: TransactionFilterParams): Promi
       filterStart = new Date(now.getFullYear(), 0, 1);
       filterEnd = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
     } else if (params.dateType === DateFilterType.CUSTOM && params.startDate && params.endDate) {
-      filterStart = new Date(params.startDate.getFullYear(), params.startDate.getMonth(), params.startDate.getDate());
-      filterEnd = new Date(params.endDate.getFullYear(), params.endDate.getMonth(), params.endDate.getDate(), 23, 59, 59, 999);
+      filterStart = new Date(
+        params.startDate.getFullYear(),
+        params.startDate.getMonth(),
+        params.startDate.getDate(),
+      );
+      filterEnd = new Date(
+        params.endDate.getFullYear(),
+        params.endDate.getMonth(),
+        params.endDate.getDate(),
+        23,
+        59,
+        59,
+        999,
+      );
     }
 
     if (filterStart && filterEnd) {
@@ -180,7 +202,9 @@ export async function fetchTransactions(params?: TransactionFilterParams): Promi
   }
 
   if (params?.paymentTypeIds && params.paymentTypeIds.length > 0) {
-    transactionResult = transactionResult.filter((t) => params.paymentTypeIds!.includes(t.paymentTypeId));
+    transactionResult = transactionResult.filter((t) =>
+      params.paymentTypeIds!.includes(t.paymentTypeId),
+    );
   }
 
   const transactionsWithDetails = await Promise.all(
@@ -364,7 +388,9 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
 
     for (const item of data.items) {
       const product = item.product;
-      const productId = product.id.includes('-var_') ? product.id.substring(0, product.id.indexOf('-var_')) : product.id;
+      const productId = product.id.includes('-var_')
+        ? product.id.substring(0, product.id.indexOf('-var_'))
+        : product.id;
 
       let productData: any;
       if (item.product.id.includes('-var_')) {
@@ -389,7 +415,7 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
         sellPrice = await getDiscountedPrice(item.tempSellPrice, product.discount);
       }
 
-      const itemDiscount = item.isManualPrice ? 0 : (item.tempSellPrice - sellPrice);
+      const itemDiscount = item.isManualPrice ? 0 : item.tempSellPrice - sellPrice;
       const itemProfit = (sellPrice - purchasePrice) * item.quantity;
 
       totalDiscount += itemDiscount;
@@ -468,7 +494,13 @@ export async function fetchCustomerIdsWithTransactions(): Promise<string[]> {
   const result = await db
     .select({ customerId: schema.transactions.customerId })
     .from(schema.transactions)
-    .where(and(eq(schema.transactions.organizationId, orgId), isNull(schema.transactions.deletedAt), isNull(schema.transactions.returnId)));
+    .where(
+      and(
+        eq(schema.transactions.organizationId, orgId),
+        isNull(schema.transactions.deletedAt),
+        isNull(schema.transactions.returnId),
+      ),
+    );
 
   const uniqueIds = [...new Set(result.map((r) => r.customerId).filter(Boolean))];
   return uniqueIds as string[];
@@ -478,7 +510,13 @@ export async function fetchPurchasedProducts(customerId: string): Promise<any[]>
   const transactions = await db
     .select()
     .from(schema.transactions)
-    .where(and(eq(schema.transactions.customerId, customerId), isNull(schema.transactions.deletedAt), isNull(schema.transactions.returnId)));
+    .where(
+      and(
+        eq(schema.transactions.customerId, customerId),
+        isNull(schema.transactions.deletedAt),
+        isNull(schema.transactions.returnId),
+      ),
+    );
 
   const productMap = new Map();
 
@@ -489,15 +527,17 @@ export async function fetchPurchasedProducts(customerId: string): Promise<any[]>
       .where(eq(schema.transactionItems.transactionId, tx.id));
 
     for (const item of items) {
-      const productId = item.productId.includes('-var_') ? item.productId.substring(0, item.productId.indexOf('-var_')) : item.productId;
-      
+      const productId = item.productId.includes('-var_')
+        ? item.productId.substring(0, item.productId.indexOf('-var_'))
+        : item.productId;
+
       if (!productMap.has(productId)) {
         const product = await db
           .select()
           .from(schema.products)
           .where(eq(schema.products.id, productId))
           .limit(1);
-        
+
         if (product[0]) {
           productMap.set(productId, {
             ...product[0],
@@ -532,7 +572,15 @@ export function useTransactions(params?: TransactionFilterParams) {
     } finally {
       setLoading(false);
     }
-  }, [params?.customerId, params?.userId, params?.dateType, params?.startDate, params?.endDate, params?.showReturnData, params?.paymentTypeIds?.join(',')]);
+  }, [
+    params?.customerId,
+    params?.userId,
+    params?.dateType,
+    params?.startDate,
+    params?.endDate,
+    params?.showReturnData,
+    params?.paymentTypeIds?.join(','),
+  ]);
 
   useEffect(() => {
     fetch();
@@ -632,47 +680,59 @@ export function useCreateTransaction() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (data: CreateTransactionDTO, options?: { onSuccess?: (data: Transaction) => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await createTransaction(data);
-      options?.onSuccess?.(result);
-      return result;
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: CreateTransactionDTO,
+      options?: { onSuccess?: (data: Transaction) => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await createTransaction(data);
+        options?.onSuccess?.(result);
+        return result;
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
 
-export function useDeleteTransaction(options?: { onSuccess?: () => void; onError?: (error: Error) => void }) {
+export function useDeleteTransaction(options?: {
+  onSuccess?: () => void;
+  onError?: (error: Error) => void;
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (id: string, opts?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await deleteTransaction(id);
-      options?.onSuccess?.();
-      opts?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      opts?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (id: string, opts?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await deleteTransaction(id);
+        options?.onSuccess?.();
+        opts?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        opts?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -681,55 +741,69 @@ export function useContinueDraft() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (id: string, options?: { onSuccess?: (data: { transactionId: string; items: any[]; customerId?: string; employeeId?: string }) => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await db
-        .update(schema.transactions)
-        .set({
-          status: 'DRAFT',
-          _dirty: true,
-        })
-        .where(eq(schema.transactions.id, id));
+  const mutate = useCallback(
+    async (
+      id: string,
+      options?: {
+        onSuccess?: (data: {
+          transactionId: string;
+          items: any[];
+          customerId?: string;
+          employeeId?: string;
+        }) => void;
+        onError?: (error: Error) => void;
+      },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await db
+          .update(schema.transactions)
+          .set({
+            status: 'DRAFT',
+            _dirty: true,
+          })
+          .where(eq(schema.transactions.id, id));
 
-      // Fetch the transaction with items
-      const transaction = await db
-        .select()
-        .from(schema.transactions)
-        .where(eq(schema.transactions.id, id))
-        .limit(1);
+        // Fetch the transaction with items
+        const transaction = await db
+          .select()
+          .from(schema.transactions)
+          .where(eq(schema.transactions.id, id))
+          .limit(1);
 
-      if (transaction.length === 0) {
-        throw new Error('Transaction not found');
+        if (transaction.length === 0) {
+          throw new Error('Transaction not found');
+        }
+
+        const items = await db
+          .select()
+          .from(schema.transactionItems)
+          .where(eq(schema.transactionItems.transactionId, id));
+
+        const resultData = {
+          transactionId: transaction[0].id,
+          items: items.map((item) => ({
+            ...item,
+            product: { id: item.productId },
+          })),
+          customerId: transaction[0].customerId || undefined,
+          employeeId: transaction[0].employeeId || undefined,
+        };
+
+        options?.onSuccess?.(resultData);
+        return resultData;
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
       }
-
-      const items = await db
-        .select()
-        .from(schema.transactionItems)
-        .where(eq(schema.transactionItems.transactionId, id));
-
-      const resultData = {
-        transactionId: transaction[0].id,
-        items: items.map(item => ({
-          ...item,
-          product: { id: item.productId },
-        })),
-        customerId: transaction[0].customerId || undefined,
-        employeeId: transaction[0].employeeId || undefined,
-      };
-
-      options?.onSuccess?.(resultData);
-      return resultData;
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }

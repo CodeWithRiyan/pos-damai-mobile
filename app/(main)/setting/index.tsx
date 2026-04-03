@@ -6,13 +6,13 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { resetDb, initializeDb } from '@/lib/db';
-import { showErrorToast } from '@/lib/utils/toast';
+import { resetDb, initializeDb } from '@/db';
+import { showErrorToast } from '@/utils/toast';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { useAuthStore } from '@/stores/auth';
 import { Pressable, ScrollView } from 'react-native';
-import { authStorageAdapter, storageAdapter } from '@/lib/storage';
+import { authStorageAdapter, storageAdapter } from '@/utils/storage';
 
 export default function SettingScreen() {
   const router = useRouter();
@@ -47,7 +47,6 @@ export default function SettingScreen() {
         } catch (error) {
           hidePopUpConfirm();
           showErrorToast(toast, error);
-          console.error(error);
         }
       },
     });

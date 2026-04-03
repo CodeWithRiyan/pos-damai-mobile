@@ -14,8 +14,8 @@ import { HStack } from '@/components/ui/hstack';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold, SolarIconLinear } from '@/components/ui/solar-icon-wrapper';
 import { VStack } from '@/components/ui/vstack';
-// import { useBulkDeletePurchasing, Purchasing, usePurchasing } from "@/lib/api/purchasing";
-import { ShowByStock, useProducts } from '@/lib/api/products';
+// import { useBulkDeletePurchasing, Purchasing, usePurchasing } from "@/hooks/use-purchasing";
+import { ShowByStock, useProducts } from '@/hooks/use-product';
 import { usePurchasingStore } from '@/stores/purchasing';
 import { useRouter } from 'expo-router';
 import { Plus } from 'lucide-react-native';
@@ -25,8 +25,8 @@ import ProductNotification from '../product/notification';
 import PurchasingFilter from './filter';
 import PopupAddProduct from './popup-add';
 
-import { Status } from '@/lib/constants';
-import { formatRp, formatNumber } from '@/lib/utils/format';
+import { Status } from '@/constants';
+import { formatRp, formatNumber } from '@/utils/format';
 export default function PurchasingList() {
   const [openNotification, setOpenNotification] = useState<boolean>(false);
   const [stockFilter, setStockFilter] = useState<ShowByStock>('ALL_STOCK');

@@ -8,10 +8,7 @@ export interface UseDataResult<T> {
   refresh: () => void;
 }
 
-export function useData<T>(
-  fetchFn: () => Promise<T[]>,
-  defaultData: T[] = []
-): UseDataResult<T> {
+export function useData<T>(fetchFn: () => Promise<T[]>, defaultData: T[] = []): UseDataResult<T> {
   const [data, setData] = useState<T[]>(defaultData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -40,10 +37,7 @@ export function useData<T>(
   return { data, loading, error, refetch, refresh };
 }
 
-export function useDataById<T>(
-  fetchFn: (id: string) => Promise<T | null>,
-  id: string | null
-) {
+export function useDataById<T>(fetchFn: (id: string) => Promise<T | null>, id: string | null) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);

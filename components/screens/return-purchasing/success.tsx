@@ -1,7 +1,7 @@
 import { Box, Heading, HStack, Icon, Text, VStack } from '@/components/ui';
 import { Image } from '@/components/ui/image';
 import { Pressable } from '@/components/ui/pressable';
-import { usePurchaseReturn } from '@/lib/api/return-purchasing';
+import { usePurchaseReturn } from '@/hooks/use-supplier-return';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Printer } from 'lucide-react-native';
 import { ScrollView } from 'react-native';
@@ -10,10 +10,9 @@ export default function ReturnPurchasingSuccess() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: returnData } = usePurchaseReturn(id || '');
-  const totalAmount = returnData?.items?.reduce(
-    (acc, item) => acc + item.quantity * (item.purchasePrice || 0),
-    0,
-  ) ?? 0;
+  const totalAmount =
+    returnData?.items?.reduce((acc, item) => acc + item.quantity * (item.purchasePrice || 0), 0) ??
+    0;
 
   return (
     <VStack className="flex-1 bg-white">

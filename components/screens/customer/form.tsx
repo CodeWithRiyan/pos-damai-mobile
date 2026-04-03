@@ -14,14 +14,14 @@ import SelectModal from '@/components/ui/select/select-modal';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useCreateCustomer, useCustomer, useUpdateCustomer } from '@/hooks/use-customer';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
-import { PriceType } from '@/lib/constants';
+import { PriceType } from '@/constants';
 import z from 'zod';
 
 export default function CustomerForm() {
@@ -76,7 +76,6 @@ export default function CustomerForm() {
     } else {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customer, customerId, form]);
 
   const onSubmit: SubmitHandler<CustomerFormValues> = (data: CustomerFormValues) => {

@@ -19,10 +19,11 @@ import {
 } from '@/components/ui/form-control';
 import { Input, InputField, InputSlot } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
-import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { FinanceType, Status } from '@/lib/constants';
-import { useCreateFinance } from '@/lib/api/finances';
+import { FinanceType, Status } from '@/constants';
+import { useCreateFinance } from '@/hooks/use-finance';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
@@ -71,26 +72,12 @@ export default function CashDepositForm({
       },
       {
         onSuccess: (_responseData) => {
-          toast.show({
-            placement: 'top',
-            render: ({ id }) => (
-              <Toast nativeID={id} action="success" variant="solid">
-                <ToastTitle>Berhasil Setor Tunai</ToastTitle>
-              </Toast>
-            ),
-          });
+          showSuccessToast(toast, 'Berhasil Setor Tunai');
           setOpen(false);
           form.reset(initialValues);
         },
         onError: (error) => {
-          toast.show({
-            placement: 'top',
-            render: ({ id }) => (
-              <Toast nativeID={id} action="error" variant="solid">
-                <ToastTitle>{`Gagal menyimpan: ${error.message}`}</ToastTitle>
-              </Toast>
-            ),
-          });
+          showErrorToast(toast, `Gagal menyimpan: ${error.message}`);
         },
       },
     );

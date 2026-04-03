@@ -22,7 +22,7 @@ import {
   Text,
   VStack,
 } from '@/components/ui';
-import { ProductType } from '@/lib/constants';
+import { ProductType } from '@/constants';
 import { useStoreSuppliesStore } from '@/stores/store-supplies';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
@@ -78,7 +78,6 @@ export default function PopupAddStoreSupplies() {
         variantUnitId: addProductVariantId || null,
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, addProduct, addProductVariantId, currentProductInCart]);
 
   const onSubmit: SubmitHandler<AddStoreSuppliesFormValues> = (

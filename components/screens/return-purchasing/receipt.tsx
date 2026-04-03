@@ -3,15 +3,15 @@ import Header from '@/components/header';
 import { Box, Heading, HStack, Pressable, Text, VStack } from '@/components/ui';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
-import { usePurchaseReturn } from '@/lib/api/return-purchasing';
+import { usePurchaseReturn } from '@/hooks/use-supplier-return';
 import { useAuthStore } from '@/stores/auth';
 import dayjs from 'dayjs';
 import { useLocalSearchParams } from 'expo-router';
 import { ScrollView } from 'react-native';
 
-import { getReceiptActions } from '@/lib/utils/receipt-actions';
-import { ReturnType } from '@/lib/constants';
-import { formatNumber, formatRp } from '@/lib/utils/format';
+import { getReceiptActions } from '@/utils/receipt-actions';
+import { ReturnType } from '@/constants';
+import { formatNumber, formatRp } from '@/utils/format';
 export default function ReturnPurchasingReceipt() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const { id } = useLocalSearchParams<{ id: string }>();

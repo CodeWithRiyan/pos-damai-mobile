@@ -12,7 +12,7 @@ import {
   VStack,
 } from '@/components/ui';
 import SelectModal from '@/components/ui/select/select-modal';
-import { useSuppliers } from '@/lib/api/suppliers';
+import { useSuppliers } from '@/hooks/use-supplier';
 
 export default function PurchasingFilter({
   supplierId,

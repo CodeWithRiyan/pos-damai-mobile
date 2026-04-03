@@ -25,16 +25,12 @@ import {
 } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
-import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { getErrorMessage } from '@/lib/api/client';
-import {
-  PayableBySupplier,
-  useBulkDeletePayable,
-  usePayableList,
-} from '@/lib/api/payable';
-import { exportPayables } from '@/lib/utils/excel';
-import { showErrorToast } from '@/lib/utils/toast';
+import { getErrorMessage } from '@/db/client';
+import { PayableBySupplier, useBulkDeletePayable, usePayableList } from '@/hooks/use-payable';
+import { exportPayables } from '@/utils/excel';
+import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
@@ -42,7 +38,7 @@ import { CalendarIcon } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { FlashList } from '@shopify/flash-list';
 
-import { formatRp } from '@/lib/utils/format';
+import { formatRp } from '@/utils/format';
 export default function PayableList({ isReport }: { isReport?: boolean }) {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -64,14 +60,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
     try {
       await exportPayables(payableBySupplier);
     } catch (e) {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 
@@ -118,14 +107,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
         hidePopUpConfirm();
         refetch();
 
-        toast.show({
-          placement: 'top',
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-              <ToastTitle>Hutang berhasil dihapus</ToastTitle>
-            </Toast>
-          ),
-        });
+        showSuccessToast(toast, 'Hutang berhasil dihapus');
       },
       onError: (error) => {
         showErrorToast(toast, error);

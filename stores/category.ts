@@ -1,4 +1,4 @@
-import { Category } from '@/lib/api/categories';
+import { Category } from '@/hooks/use-category';
 import { create } from 'zustand';
 
 interface CategoryState {

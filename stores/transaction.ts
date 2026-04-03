@@ -1,8 +1,8 @@
-import { Customer } from '@/lib/api/customers';
-import { Product, ProductVariant } from '@/lib/api/products';
-import { PriceType, Status } from '@/lib/constants';
-import { calculateLineItemTotal, findSellPrice } from '@/lib/price';
-import { BaseCartItem } from '@/lib/types/cart';
+import { Customer } from '@/hooks/use-customer';
+import { Product, ProductVariant } from '@/hooks/use-product';
+import { PriceType, Status } from '@/constants';
+import { calculateLineItemTotal, findSellPrice } from '@/utils/price';
+import { BaseCartItem } from '@/types/cart';
 import { create } from 'zustand';
 
 interface CartItem extends BaseCartItem {

@@ -19,19 +19,17 @@ import {
   InputSlot,
   Spinner,
   Text,
-  Toast,
-  ToastDescription,
-  ToastTitle,
   useToast,
   VStack,
 } from '@/components/ui';
-import { useLogin } from '@/lib/api/auth';
-import { getErrorMessage } from '@/lib/api/client';
-import { SyncEngine } from '@/lib/sync/sync-engine';
+import { useLogin } from '@/hooks/use-auth';
+import { getErrorMessage } from '@/db/client';
+import { SyncEngine } from '@/db/sync-engine';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image } from 'expo-image';
 import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
+import { showToast } from '@/utils/toast';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -50,19 +48,10 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!username || !password) {
-      toast.show({
+      showToast(toast, {
+        action: 'error',
+        message: 'Please enter both username and password.',
         placement: 'top',
-        render: ({ id }) => {
-          const toastId = 'toast-' + id;
-          return (
-            <Toast nativeID={toastId} action="error" variant="outline">
-              <VStack space="xs">
-                <ToastTitle>Validation Error</ToastTitle>
-                <ToastDescription>Please fill in all fields.</ToastDescription>
-              </VStack>
-            </Toast>
-          );
-        },
       });
       return;
     }
@@ -80,24 +69,14 @@ export default function LoginScreen() {
 
             router.replace('/');
           } catch (syncError: any) {
-            console.error('Initial sync failed:', syncError);
             // Even if sync fails, we might want to let them in if offline is allowed
             // but for first login, it's better to ensure they have data.
-            toast.show({
+            showToast(toast, {
+              action: 'error',
+              message:
+                syncError.message ||
+                'Login successful, but initial data synchronization failed. Please try again.',
               placement: 'top',
-              render: ({ id }) => {
-                const toastId = 'toast-' + id;
-                return (
-                  <Toast nativeID={toastId} action="warning" variant="outline">
-                    <VStack space="xs">
-                      <ToastTitle>Sync Warning</ToastTitle>
-                      <ToastDescription>
-                        Login successful, but initial data sync failed. Some data may be missing.
-                      </ToastDescription>
-                    </VStack>
-                  </Toast>
-                );
-              },
             });
             router.replace('/');
           } finally {
@@ -107,19 +86,10 @@ export default function LoginScreen() {
         onError: (error: any) => {
           const errorMessage =
             error.response?.data?.message || 'Login failed. Please check your credentials.';
-          toast.show({
+          showToast(toast, {
+            action: 'error',
+            message: errorMessage,
             placement: 'top',
-            render: ({ id }) => {
-              const toastId = 'toast-' + id;
-              return (
-                <Toast nativeID={toastId} action="error" variant="outline">
-                  <VStack space="xs">
-                    <ToastTitle>Login Error</ToastTitle>
-                    <ToastDescription>{errorMessage}</ToastDescription>
-                  </VStack>
-                </Toast>
-              );
-            },
           });
         },
       },

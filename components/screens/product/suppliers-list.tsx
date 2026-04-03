@@ -14,14 +14,14 @@ import { Heading } from '@/components/ui/heading';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
-import { useProductSuppliers } from '@/lib/api/product-suppliers';
-import { useProduct } from '@/lib/api/products';
+import { useProductSuppliers } from '@/hooks/use-product-supplier';
+import { useProduct } from '@/hooks/use-product';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView } from 'react-native';
 
-import { formatNumber } from '@/lib/utils/format';
+import { formatNumber } from '@/utils/format';
 export default function ProductSuppliersList() {
   const router = useRouter();
   const { productId } = useLocalSearchParams<{ productId: string }>();

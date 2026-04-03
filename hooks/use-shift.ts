@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { db } from '@/lib/db';
-import * as schema from '@/lib/db/schema';
+import { db } from '@/db';
+import * as schema from '@/db/schema';
 import { useAuthStore } from '@/stores/auth';
 import { and, eq, isNull, desc } from 'drizzle-orm';
-import { ShiftStatus } from '@/lib/constants';
+import { ShiftStatus } from '@/constants';
 
 export interface Shift {
   id: string;
@@ -88,7 +88,7 @@ export async function fetchShifts(): Promise<Shift[]> {
         cashDrawerName: cashDrawer[0]?.name || 'Unknown',
         userName: user[0]?.name || 'Unknown',
       };
-    })
+    }),
   );
 
   return shiftsWithDetails as unknown as Shift[];
@@ -136,11 +136,7 @@ export async function fetchCurrentShift(): Promise<Shift | null> {
 }
 
 export async function fetchShift(id: string): Promise<Shift | null> {
-  const result = await db
-    .select()
-    .from(schema.shifts)
-    .where(eq(schema.shifts.id, id))
-    .limit(1);
+  const result = await db.select().from(schema.shifts).where(eq(schema.shifts.id, id)).limit(1);
 
   if (result.length === 0) return null;
   return result[0] as unknown as Shift;
@@ -316,22 +312,28 @@ export function useStartShift() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (data: StartShiftDTO, options?: { onSuccess?: (data: Shift) => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await createShift(data);
-      options?.onSuccess?.(result);
-      return result;
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: StartShiftDTO,
+      options?: { onSuccess?: (data: Shift) => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await createShift(data);
+        options?.onSuccess?.(result);
+        return result;
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -340,21 +342,27 @@ export function useEndShift() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (params: { id: string; finalBalance: number; note?: string }, options?: { onSuccess?: (data: any) => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await endShift(params.id, params.finalBalance, params.note);
-      options?.onSuccess?.(params);
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      params: { id: string; finalBalance: number; note?: string },
+      options?: { onSuccess?: (data: any) => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await endShift(params.id, params.finalBalance, params.note);
+        options?.onSuccess?.(params);
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   return { mutate, mutateAsync: mutate, loading, isPending: loading, error };
 }
@@ -406,3 +414,5 @@ export function useLastShift() {
 
   return { data, isLoading: loading, loading: loading, error, refetch: fetch };
 }
+
+export const useShiftDetail = (id: string) => useShift(id);

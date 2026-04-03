@@ -10,14 +10,14 @@ import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
-import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { getErrorMessage } from '@/lib/api/client';
-import { useRoles } from '@/lib/api/roles';
-import { useBulkDeleteUser, useCreateUser, User, useUsers } from '@/lib/api/users';
-import { bulkDeleteConfirm } from '@/lib/utils/delete-confirm';
-import { exportUsers, importUsers } from '@/lib/utils/excel';
-import { showSuccessToast } from '@/lib/utils/toast';
+import { getErrorMessage } from '@/db/client';
+import { useRoles } from '@/hooks/use-role';
+import { useBulkDeleteUser, useCreateUser, User, useUsers } from '@/hooks/use-user';
+import { bulkDeleteConfirm } from '@/utils/delete-confirm';
+import { exportUsers, importUsers } from '@/utils/excel';
+import { showSuccessToast, showToast } from '@/utils/toast';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -49,14 +49,7 @@ export default function UserList() {
     try {
       await exportUsers(users);
     } catch (e) {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 
@@ -75,14 +68,7 @@ export default function UserList() {
       refetch();
       showSuccessToast(toast, `${successCount} karyawan berhasil diimpor`);
     } catch (e) {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 

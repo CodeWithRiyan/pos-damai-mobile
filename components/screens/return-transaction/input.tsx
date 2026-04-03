@@ -12,7 +12,7 @@ import {
 import { Box } from '@/components/ui/box';
 import { HStack } from '@/components/ui/hstack';
 import { Pressable } from '@/components/ui/pressable';
-import { usePurchasedProducts } from '@/lib/api/transactions';
+import { usePurchasedProducts } from '@/hooks/use-transaction';
 import { useReturnTransactionStore } from '@/stores/return-transaction';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
@@ -23,8 +23,8 @@ import PopupAddProduct from './popup-add';
 import GridProductLayout from '@/components/ui/layout/grid-product-layout';
 import ListProductLayout from '@/components/ui/layout/list-product-layout';
 import { SolarIconBold, SolarIconOutline } from '@/components/ui/solar-icon-wrapper';
-import { ProductType } from '@/lib/constants';
-import { formatNumber } from '@/lib/utils/format';
+import { ProductType } from '@/constants';
+import { formatNumber } from '@/utils/format';
 import classNames from 'classnames';
 import { LayoutChangeEvent } from 'react-native';
 export default function ReturnTransactionInput() {

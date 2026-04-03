@@ -4,17 +4,17 @@ import { HStack, Text, VStack } from '@/components/ui';
 import { Grid, GridItem } from '@/components/ui/grid';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
-import { useDeleteProduct, useProduct, useProducts } from '@/lib/api/products';
-import { PriceType, ProductType } from '@/lib/constants';
-import { findSellPrice } from '@/lib/price';
-import { unitSuffixHelper } from '@/lib/unit';
+import { useDeleteProduct, useProduct, useProducts } from '@/hooks/use-product';
+import { PriceType, ProductType } from '@/constants';
+import { findSellPrice } from '@/utils/price';
+import { unitSuffixHelper } from '@/utils/unit';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { singleDeleteConfirm } from '@/lib/utils/delete-confirm';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { RefreshControl, ScrollView } from 'react-native';
 
-import { formatRp } from '@/lib/utils/format';
+import { formatRp } from '@/utils/format';
 export default function ProductDetail() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
@@ -30,6 +30,13 @@ export default function ProductDetail() {
   };
 
   const [refreshing, setRefreshing] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      onRefetch();
+    }, []),
+  );
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await refetchProducts();

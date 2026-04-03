@@ -1,7 +1,7 @@
 import Header from '@/components/header';
 import { HStack, Pressable, Text, VStack } from '@/components/ui';
 import { Badge, BadgeText } from '@/components/ui/badge';
-import { useCurrentShift } from '@/lib/api/shifts';
+import { useCurrentShift } from '@/hooks/use-shift';
 import classNames from 'classnames';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';

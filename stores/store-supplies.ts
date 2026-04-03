@@ -1,4 +1,4 @@
-import { Product, ProductVariant } from '@/lib/api/products';
+import { Product, ProductVariant } from '@/hooks/use-product';
 import { create } from 'zustand';
 
 interface CartItem {

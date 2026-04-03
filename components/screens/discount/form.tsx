@@ -25,7 +25,7 @@ import { Radio, RadioGroup, RadioLabel } from '@/components/ui/radio';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import {
   useCreateDiscount,
   useDiscount,
@@ -38,7 +38,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Percent } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { CalcType } from '@/lib/constants';
+import { CalcType } from '@/constants';
 import z from 'zod';
 
 export default function DiscountForm() {
@@ -94,7 +94,6 @@ export default function DiscountForm() {
     } else {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataDiscount, form]);
 
   const onSubmit: SubmitHandler<DiscountFormValues> = (data: DiscountFormValues) => {

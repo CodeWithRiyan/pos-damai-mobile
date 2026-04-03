@@ -1,19 +1,30 @@
+import { useCallback } from 'react';
 import Header from '@/components/header';
 import { Box, HStack, Spinner, Text, VStack } from '@/components/ui';
 import { Grid, GridItem } from '@/components/ui/grid';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
-import { useStockOpname } from '@/lib/api/stock-opname';
-import { formatMoney } from '@/lib/utils/format';
+import { useStockOpname } from '@/hooks/use-stock-opname';
+import { formatMoney } from '@/utils/format';
 import dayjs from 'dayjs';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ScrollView } from 'react-native';
 
 export default function StockOpnameDetail() {
   const { id } = useLocalSearchParams();
   const stockOpnameId = id as string;
 
-  const { data: stockOpname, isLoading } = useStockOpname(stockOpnameId);
+  const {
+    data: stockOpname,
+    isLoading,
+    refetch: refetchStockOpname,
+  } = useStockOpname(stockOpnameId);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchStockOpname();
+    }, []),
+  );
 
   if (isLoading) {
     return (

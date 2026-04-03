@@ -4,13 +4,13 @@ import { Grid, GridItem } from '@/components/ui/grid';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
-import { useProduct } from '@/lib/api/products';
+import { useProduct } from '@/hooks/use-product';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
 import { useLocalSearchParams } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 // Note: Update imports if useProductLog is missing
-import { useProductLog, IProductLog } from '@/lib/api/products';
+import { useProductLog, IProductLog } from '@/hooks/use-product';
 
 export default function ProductLog() {
   const { productId } = useLocalSearchParams<{ productId: string }>();

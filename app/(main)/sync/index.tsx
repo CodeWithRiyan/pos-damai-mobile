@@ -3,7 +3,7 @@ import { Box, Text, VStack, HStack, Button, ButtonText, Icon } from '@/component
 import { ScrollView } from 'react-native';
 import { useDirtyCount } from '@/hooks/use-dirty-count';
 import { useSyncQueueStore } from '@/stores/sync-queue';
-import { SyncEngine } from '@/lib/sync/sync-engine';
+import { SyncEngine } from '@/db/sync-engine';
 import { useNetworkStore } from '@/stores/network';
 import { useState } from 'react';
 import { usePopUpConfirm } from '@/components/pop-up-confirm';
@@ -39,7 +39,7 @@ export default function SyncScreen() {
           await refetch();
           setLastSyncResult('Sinkronisasi berhasil!');
         } catch (error) {
-          console.error('[SyncScreen] Sync failed:', error);
+          console.error('Sync failed:', error);
           setLastSyncResult('Sinkronisasi gagal. Silakan coba lagi.');
         } finally {
           setIsSyncing(false);

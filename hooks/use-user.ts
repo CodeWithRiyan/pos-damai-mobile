@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { db } from '@/lib/db';
-import * as schema from '@/lib/db/schema';
+import { db } from '@/db';
+import * as schema from '@/db/schema';
 import { useAuthStore } from '@/stores/auth';
 import { and, eq } from 'drizzle-orm';
-import { apiClient } from '@/lib/api/client';
+import { apiClient } from '@/db/client';
 
 export interface User {
   id: string;

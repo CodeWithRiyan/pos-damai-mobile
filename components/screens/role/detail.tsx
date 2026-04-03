@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { Box, HStack, Text, VStack } from '@/components/ui';
@@ -5,9 +6,9 @@ import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import useBreakpoint from '@/hooks/use-breakpoint';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { singleDeleteConfirm } from '@/lib/utils/delete-confirm';
-import { useDeleteRole, useRole, useRoles } from '@/lib/api/roles';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { useDeleteRole, useRole, useRoles } from '@/hooks/use-role';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { ScrollView } from 'react-native';
 
 export default function RoleDetail() {
@@ -26,6 +27,12 @@ export default function RoleDetail() {
     refetchRoles();
     refetchRole();
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      onRefetch();
+    }, []),
+  );
 
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Role berhasil dihapus',

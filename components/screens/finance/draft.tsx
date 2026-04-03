@@ -1,14 +1,14 @@
 import Header from '@/components/header';
 import { usePopUpConfirm } from '@/components/pop-up-confirm';
 import { Box, Heading, HStack, Icon, Pressable, Spinner, Text, VStack } from '@/components/ui';
-import { FinanceType, Status } from '@/lib/constants';
-import { useDeleteFinance, useFinances } from '@/lib/api/finances';
+import { FinanceType, Status } from '@/constants';
+import { useDeleteFinance, useFinances } from '@/hooks/use-finance';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { Trash2 } from 'lucide-react-native';
 import { ScrollView } from 'react-native';
 
-import { formatNumber } from '@/lib/utils/format';
+import { formatNumber } from '@/utils/format';
 export default function FinanceDraft() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();

@@ -8,8 +8,6 @@ import {
   InputSlot,
   SearchIcon,
   Text,
-  Toast,
-  ToastTitle,
   useToast,
 } from '@/components/ui';
 import { Box } from '@/components/ui/box';
@@ -17,7 +15,7 @@ import { HStack } from '@/components/ui/hstack';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold, SolarIconOutline } from '@/components/ui/solar-icon-wrapper';
 import { VStack } from '@/components/ui/vstack';
-// import { useBulkDeleteTransaction, Transaction, useTransaction } from "@/lib/api/transaction";
+// import { useBulkDeleteTransaction, Transaction, useTransaction } from "@/hooks/transaction";
 import BarcodeScanner from '@/components/barcode-scanner';
 import { Button, ButtonText } from '@/components/ui/button';
 import GridProductLayout from '@/components/ui/layout/grid-product-layout';
@@ -25,12 +23,12 @@ import ListProductLayout from '@/components/ui/layout/list-product-layout';
 import SelectModal from '@/components/ui/select/select-modal';
 import { Spinner } from '@/components/ui/spinner';
 import { useCustomer, useCustomers } from '@/hooks/use-customer';
-import { useProducts } from '@/lib/api/products';
-import { useCurrentShift } from '@/lib/api/shifts';
-import { useLocalUsers } from '@/lib/api/users';
-import { calculateLineItemTotal, findSellPrice } from '@/lib/price';
+import { useProducts } from '@/hooks/use-product';
+import { useCurrentShift } from '@/hooks/use-shift';
+import { useLocalUsers } from '@/hooks/use-user';
+import { calculateLineItemTotal, findSellPrice } from '@/utils/price';
 import { useTransactionStore } from '@/stores/transaction';
-import { PriceType, ProductType, Status } from '@/lib/constants';
+import { PriceType, ProductType, Status } from '@/constants';
 import classNames from 'classnames';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AlertCircle, PlusIcon } from 'lucide-react-native';
@@ -39,7 +37,8 @@ import { FlashList } from '@shopify/flash-list';
 import { LayoutChangeEvent } from 'react-native';
 import PopupAddProduct from './popup-add';
 
-import { formatNumber, formatRp } from '@/lib/utils/format';
+import { formatNumber, formatRp } from '@/utils/format';
+import { showToast } from '@/utils/toast';
 export default function TransactionList() {
   const searchParams = useLocalSearchParams<{
     returnCustomerId: string;
@@ -538,13 +537,9 @@ export default function TransactionList() {
 
           // 3. Validasi hasil pencarian
           if (!foundProduct) {
-            toast.show({
-              placement: 'top',
-              render: ({ id }) => (
-                <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-                  <ToastTitle>{`Produk dengan barcode ${scannedData} tidak ditemukan`}</ToastTitle>
-                </Toast>
-              ),
+            showToast(toast, {
+              action: 'error',
+              message: `Produk dengan barcode ${scannedData} tidak ditemukan`,
             });
             return;
           }

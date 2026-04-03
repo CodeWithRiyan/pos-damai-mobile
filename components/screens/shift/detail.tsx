@@ -1,18 +1,24 @@
 import Header from '@/components/header';
 import { HStack, Icon, Pressable, Text, VStack } from '@/components/ui';
-import { useShiftDetail } from '@/lib/api/shifts';
+import { useShiftDetail } from '@/hooks/use-shift';
 import dayjs from 'dayjs';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { PlusCircle } from 'lucide-react-native';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { ScrollView } from 'react-native';
 
-import { formatRp } from '@/lib/utils/format';
+import { formatRp } from '@/utils/format';
 export default function ShiftDetail() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const id = params.id as string;
-  const { data: detailShift } = useShiftDetail(id || '');
+  const { data: detailShift, refetch: refetchShift } = useShiftDetail(id || '');
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchShift();
+    }, []),
+  );
   const totals = useMemo(() => {
     if (!detailShift?.transactionHistory)
       return {
@@ -94,16 +100,16 @@ export default function ShiftDetail() {
         <VStack space="sm" className="p-4 border-b border-background-300">
           <HStack className="w-full flex-row justify-between">
             <Text className="text-typography-600">Nama Karyawan</Text>
-            <Text className="font-bold">{detailShift?.cashier}</Text>
+            <Text className="font-bold">{detailShift?.userName}</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between">
             <Text className="text-typography-600">Cashdrawer</Text>
-            <Text className="font-bold">{detailShift?.cashDrawer}</Text>
+            <Text className="font-bold">{detailShift?.cashDrawerName}</Text>
           </HStack>
           <HStack className="w-full flex-row justify-between">
             <Text className="text-typography-600">Shift Mulai</Text>
             <Text className="font-bold">
-              {dayjs(detailShift?.startShift).format('DD-MM-YYYY HH:mm:ss')}
+              {dayjs(detailShift?.startTime).format('DD-MM-YYYY HH:mm:ss')}
             </Text>
           </HStack>
         </VStack>
@@ -173,7 +179,7 @@ export default function ShiftDetail() {
           </HStack>
           <HStack className="w-full flex-row justify-between px-4 py-1 rounded-md bg-warning-100">
             <Text className="text-typography-600 font-bold">Penerimaan Aktual</Text>
-            <Text className="font-bold">{formatRp(detailShift?.actualBalance || 0)}</Text>
+            <Text className="font-bold">{formatRp(detailShift?.finalBalance || 0)}</Text>
           </HStack>
         </VStack>
         <VStack space="sm" className="p-4">

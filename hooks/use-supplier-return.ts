@@ -1,5 +1,5 @@
-import { purchaseReturns, purchaseReturnItems, suppliers } from '@/lib/db/schema';
-import { db } from '@/lib/db';
+import { purchaseReturns, purchaseReturnItems, suppliers } from '@/db/schema';
+import { db } from '@/db';
 import { useAuthStore } from '@/stores/auth';
 import { eq, and, isNull, like, desc } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
@@ -26,14 +26,15 @@ export interface SupplierReturn {
   }>;
 }
 
-export async function fetchSupplierReturns(params?: { search?: string; status?: string; supplierId?: string }): Promise<SupplierReturn[]> {
+export async function fetchSupplierReturns(params?: {
+  search?: string;
+  status?: string;
+  supplierId?: string;
+}): Promise<SupplierReturn[]> {
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) return [];
 
-  const conditions = [
-    eq(purchaseReturns.organizationId, orgId),
-    isNull(purchaseReturns.deletedAt),
-  ];
+  const conditions = [eq(purchaseReturns.organizationId, orgId), isNull(purchaseReturns.deletedAt)];
 
   if (params?.search) {
     conditions.push(like(purchaseReturns.supplierName, `%${params.search}%`));
@@ -67,24 +68,20 @@ export async function fetchSupplierReturns(params?: { search?: string; status?: 
         returnType: r.returnType || 'CASH',
         note: r.note || '',
         status: r.status || 'PENDING',
-        items: items.map(item => ({
+        items: items.map((item) => ({
           ...item,
           purchasePrice: item.purchasePrice ?? 0,
           totalPrice: item.quantity * (item.purchasePrice ?? 0),
         })),
       } as SupplierReturn;
-    })
+    }),
   );
 
   return returnsWithItems;
 }
 
 export async function fetchSupplierReturn(id: string): Promise<SupplierReturn | null> {
-  const result = await db
-    .select()
-    .from(purchaseReturns)
-    .where(eq(purchaseReturns.id, id))
-    .limit(1);
+  const result = await db.select().from(purchaseReturns).where(eq(purchaseReturns.id, id)).limit(1);
 
   if (result.length === 0) return null;
 
@@ -101,7 +98,7 @@ export async function fetchSupplierReturn(id: string): Promise<SupplierReturn | 
     returnType: r.returnType || 'CASH',
     note: r.note || '',
     status: r.status || 'PENDING',
-    items: items.map(item => ({
+    items: items.map((item) => ({
       ...item,
       purchasePrice: item.purchasePrice ?? 0,
       totalPrice: item.quantity * (item.purchasePrice ?? 0),
@@ -132,7 +129,7 @@ export async function createSupplierReturn(data: {
     .where(eq(suppliers.id, data.supplierId))
     .limit(1);
 
-  const totalAmount = data.items.reduce((sum, item) => sum + (item.quantity * item.purchasePrice), 0);
+  const totalAmount = data.items.reduce((sum, item) => sum + item.quantity * item.purchasePrice, 0);
 
   const newReturn = {
     id,
@@ -175,7 +172,11 @@ export async function createSupplierReturn(data: {
   return newReturn as unknown as SupplierReturn;
 }
 
-export function useSupplierReturns(params?: { search?: string; status?: string; supplierId?: string }) {
+export function useSupplierReturns(params?: {
+  search?: string;
+  status?: string;
+  supplierId?: string;
+}) {
   const [data, setData] = useState<SupplierReturn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -235,25 +236,44 @@ export function useCreateSupplierReturn() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (
-    data: { supplierId: string; items: Array<{ productId: string; quantity: number; purchasePrice: number }>; returnType: string; note: string },
-    options?: { onSuccess?: (data: SupplierReturn) => void; onError?: (error: Error) => void }
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const result = await createSupplierReturn(data);
-      options?.onSuccess?.(result);
-      return result;
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: {
+        supplierId: string;
+        items: Array<{ productId: string; quantity: number; purchasePrice: number }>;
+        returnType: string;
+        note: string;
+      },
+      options?: { onSuccess?: (data: SupplierReturn) => void; onError?: (error: Error) => void },
+    ) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await createSupplierReturn(data);
+        options?.onSuccess?.(result);
+        return result;
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
 
-  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    loading: isLoading,
+    isPending: isLoading,
+    error,
+  };
 }
+
+export const usePurchaseReturns = useSupplierReturns;
+export const usePurchaseReturn = useSupplierReturn;
+export const useCreatePurchaseReturn = useCreateSupplierReturn;

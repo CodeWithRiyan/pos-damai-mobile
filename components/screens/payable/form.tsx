@@ -15,15 +15,13 @@ import {
   Text,
   Textarea,
   TextareaInput,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
 } from '@/components/ui';
 import SelectModal from '@/components/ui/select/select-modal';
-import { showErrorToast } from '@/lib/utils/toast';
-import { useCreatePayable, usePayableDetail, useUpdatePayable } from '@/lib/api/payable';
-import { useSuppliers } from '@/lib/api/suppliers';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useCreatePayable, usePayableDetail, useUpdatePayable } from '@/hooks/use-payable';
+import { useSuppliers } from '@/hooks/use-supplier';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
@@ -84,8 +82,7 @@ export default function PayableForm() {
     } else {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, payable, payableId]);
+  }, [form, payable, payableId, suppliers.length]);
 
   const onSubmit: SubmitHandler<PayableFormValues> = (data: PayableFormValues) => {
     if (isAdd) {
@@ -96,14 +93,7 @@ export default function PayableForm() {
         },
         {
           onSuccess: () => {
-            toast.show({
-              placement: 'top',
-              render: ({ id }) => (
-                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                  <ToastTitle>Hutang berhasil disimpan</ToastTitle>
-                </Toast>
-              ),
-            });
+            showSuccessToast(toast, 'Hutang berhasil disimpan');
             router.back();
           },
           onError: (error) => {
@@ -120,14 +110,7 @@ export default function PayableForm() {
         },
         {
           onSuccess: () => {
-            toast.show({
-              placement: 'top',
-              render: ({ id }) => (
-                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                  <ToastTitle>Hutang berhasil diupdate</ToastTitle>
-                </Toast>
-              ),
-            });
+            showSuccessToast(toast, 'Hutang berhasil diupdate');
             router.back();
           },
           onError: (error) => {

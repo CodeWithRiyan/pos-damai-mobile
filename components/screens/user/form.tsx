@@ -12,14 +12,12 @@ import {
   Spinner,
   Switch,
   Text,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
 } from '@/components/ui';
 import SelectModal from '@/components/ui/select/select-modal';
-import { showErrorToast } from '@/lib/utils/toast';
-import { useRoles } from '@/lib/api/roles';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useRoles } from '@/hooks/use-role';
 import {
   CreateUserDTO,
   UpdateUserDTO,
@@ -27,7 +25,7 @@ import {
   useUpdateUser,
   useUser,
   useUsers,
-} from '@/lib/api/users';
+} from '@/hooks/use-user';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
@@ -86,8 +84,7 @@ export default function UserForm() {
     } else {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, user, userId]);
+  }, [form, user, userId, roles.length]);
 
   const onRefetch = () => {
     refetchUsers();
@@ -114,14 +111,7 @@ export default function UserForm() {
           onRefetch();
           handleCancel();
 
-          toast.show({
-            placement: 'top',
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Karyawan berhasil diubah</ToastTitle>
-              </Toast>
-            ),
-          });
+          showSuccessToast(toast, 'Karyawan berhasil diubah');
         },
         onError: (error) => {
           showErrorToast(toast, error);
@@ -137,14 +127,7 @@ export default function UserForm() {
           onRefetch();
           handleCancel();
 
-          toast.show({
-            placement: 'top',
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Karyawan berhasil diubah</ToastTitle>
-              </Toast>
-            ),
-          });
+          showSuccessToast(toast, 'Karyawan berhasil diubah');
         },
         onError: (error) => {
           showErrorToast(toast, error);

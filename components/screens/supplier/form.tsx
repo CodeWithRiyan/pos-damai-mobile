@@ -11,12 +11,10 @@ import {
   Pressable,
   Spinner,
   Text,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
 } from '@/components/ui';
-import { showErrorToast } from '@/lib/utils/toast';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import {
   CreateSupplierDTO,
   UpdateSupplierDTO,
@@ -24,7 +22,7 @@ import {
   useSupplier,
   useSuppliers,
   useUpdateSupplier,
-} from '@/lib/api/suppliers';
+} from '@/hooks/use-supplier';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
@@ -77,7 +75,6 @@ export default function SupplierForm() {
     } else {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, supplier, supplierId]);
 
   const onRefetch = () => {
@@ -101,14 +98,7 @@ export default function SupplierForm() {
         onSuccess: () => {
           onRefetch();
           handleCancel();
-          toast.show({
-            placement: 'top',
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Supplier berhasil diubah</ToastTitle>
-              </Toast>
-            ),
-          });
+          showSuccessToast(toast, 'Supplier berhasil diubah');
         },
         onError: (error) => {
           showErrorToast(toast, error);
@@ -121,14 +111,7 @@ export default function SupplierForm() {
           onRefetch();
           form.reset(initialValues);
           handleCancel();
-          toast.show({
-            placement: 'top',
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Supplier berhasil ditambahkan</ToastTitle>
-              </Toast>
-            ),
-          });
+          showSuccessToast(toast, 'Supplier berhasil ditambahkan');
         },
         onError: (error) => {
           showErrorToast(toast, error);

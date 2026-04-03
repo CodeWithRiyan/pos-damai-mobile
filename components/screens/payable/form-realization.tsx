@@ -19,15 +19,13 @@ import {
   Text,
   Textarea,
   TextareaInput,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
 } from '@/components/ui';
 import SelectModal from '@/components/ui/select/select-modal';
 import { SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
-import { useCreatePayableRealization, usePayableBySupplier } from '@/lib/api/payable';
-import { showErrorToast } from '@/lib/utils/toast';
+import { useCreatePayableRealization, usePayableBySupplier } from '@/hooks/use-payable';
+import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { usePaymentTypes } from '@/hooks/use-payment-type';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -40,7 +38,7 @@ import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 import { z } from 'zod';
 
-import { formatRp } from '@/lib/utils/format';
+import { formatRp } from '@/utils/format';
 export default function PayableRealizationForm() {
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
 
@@ -117,30 +115,14 @@ export default function PayableRealizationForm() {
         },
         {
           onSuccess: () => {
-            toast.show({
-              placement: 'top',
-              render: ({ id }) => (
-                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                  <ToastTitle>Pembayaran berhasil disimpan</ToastTitle>
-                </Toast>
-              ),
-            });
+            showSuccessToast(toast, 'Pembayaran berhasil disimpan');
             router.back();
           },
           onError: (error) => showErrorToast(toast, error),
         },
       );
     } else {
-      // Bulk logic: distribute nominal across payableIds
-      // This requires fetching the current state of those payables to know how much is left on each
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="info" variant="solid">
-            <ToastTitle>Bulk payment logic coming soon</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'info', message: 'Bulk payment logic coming soon' });
     }
   };
 

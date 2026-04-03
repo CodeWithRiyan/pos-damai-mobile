@@ -10,12 +10,13 @@ import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
-import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { getErrorMessage } from '@/lib/api/client';
-import { Role, useBulkDeleteRole, useRoles } from '@/lib/api/roles';
-import { bulkDeleteConfirm } from '@/lib/utils/delete-confirm';
-import { exportRoles } from '@/lib/utils/excel';
+import { getErrorMessage } from '@/db/client';
+import { Role, useBulkDeleteRole, useRoles } from '@/hooks/use-role';
+import { bulkDeleteConfirm } from '@/utils/delete-confirm';
+import { exportRoles } from '@/utils/excel';
+import { showToast } from '@/utils/toast';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { FlashList } from '@shopify/flash-list';
@@ -43,14 +44,7 @@ export default function RoleList() {
     try {
       await exportRoles(roles);
     } catch (e) {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 

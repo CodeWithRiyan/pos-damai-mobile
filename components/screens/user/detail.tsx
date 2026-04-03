@@ -1,13 +1,14 @@
+import { useCallback } from 'react';
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { Box, HStack, Text, VStack } from '@/components/ui';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { singleDeleteConfirm } from '@/lib/utils/delete-confirm';
-import { useDeleteUser, useUser, useUsers } from '@/lib/api/users';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { useDeleteUser, useUser, useUsers } from '@/hooks/use-user';
 import dayjs from 'dayjs';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { ScrollView } from 'react-native';
 
 export default function UserDetail() {
@@ -24,6 +25,12 @@ export default function UserDetail() {
     refetchUsers();
     refetchUser();
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      onRefetch();
+    }, []),
+  );
 
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Karyawan berhasil dihapus',

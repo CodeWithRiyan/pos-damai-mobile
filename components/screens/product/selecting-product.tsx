@@ -6,7 +6,7 @@ import { HStack } from '@/components/ui/hstack';
 import { Pressable } from '@/components/ui/pressable';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
-import { ProductListItem, useProducts } from '@/lib/api/products';
+import { ProductListItem, useProducts } from '@/hooks/use-product';
 import { CheckIcon } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import { FlashList } from '@shopify/flash-list';

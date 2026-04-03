@@ -26,8 +26,8 @@ import {
   useCashDrawers,
   useCreateCashDrawer,
   useUpdateCashDrawer,
-} from '@/lib/api/cashdrawers';
-import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
+} from '@/hooks/use-cashdrawer';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useCashDrawerStore } from '@/stores/cashdrawer';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect } from 'react';
@@ -70,7 +70,6 @@ export default function CashDrawerForm() {
     } else {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataCashDrawer, form]);
 
   const onSubmit: SubmitHandler<CashDrawerFormValues> = (data: CashDrawerFormValues) => {

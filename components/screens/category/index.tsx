@@ -11,7 +11,7 @@ import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
-import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import {
   Category,
@@ -21,10 +21,10 @@ import {
   useCreateCategory,
   useProductCountsByCategory,
 } from '@/hooks/use-category';
-import { getErrorMessage } from '@/lib/api/client';
-import { bulkDeleteConfirm } from '@/lib/utils/delete-confirm';
-import { exportCategories, importCategories } from '@/lib/utils/excel';
-import { showErrorToast } from '@/lib/utils/toast';
+import { getErrorMessage } from '@/db/client';
+import { bulkDeleteConfirm } from '@/utils/delete-confirm';
+import { exportCategories, importCategories } from '@/utils/excel';
+import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { useCategoryStore } from '@/stores/category';
 import { useItemSelection } from '@/hooks/use-item-selection';
 import { useRouter } from 'expo-router';
@@ -59,14 +59,7 @@ export default function CategoryList() {
     try {
       await exportCategories(categories);
     } catch (e) {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 
@@ -84,14 +77,7 @@ export default function CategoryList() {
       }
       refetch();
       refetchCounts();
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-            <ToastTitle>{`${successCount} kategori berhasil diimpor`}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showSuccessToast(toast, `${successCount} kategori berhasil diimpor`);
     } catch (e) {
       showErrorToast(toast, e);
     }

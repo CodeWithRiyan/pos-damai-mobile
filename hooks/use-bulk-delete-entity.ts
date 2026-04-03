@@ -1,6 +1,6 @@
 import { usePopUpConfirm } from '@/components/pop-up-confirm';
 import { useToast } from '@/components/ui/toast';
-import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { ReactNode, useCallback } from 'react';
 
 interface UseBulkDeleteEntityOptions {

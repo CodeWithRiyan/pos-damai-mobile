@@ -1,5 +1,5 @@
-import { transactionReturns, transactionReturnItems, customers } from '@/lib/db/schema';
-import { db } from '@/lib/db';
+import { transactionReturns, transactionReturnItems, customers } from '@/db/schema';
+import { db } from '@/db';
 import { useAuthStore } from '@/stores/auth';
 import { eq, and, isNull, like, desc } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
@@ -27,7 +27,11 @@ export interface TransactionReturn {
   }>;
 }
 
-export async function fetchTransactionReturns(params?: { search?: string; status?: string; customerId?: string }): Promise<TransactionReturn[]> {
+export async function fetchTransactionReturns(params?: {
+  search?: string;
+  status?: string;
+  customerId?: string;
+}): Promise<TransactionReturn[]> {
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) return [];
 
@@ -68,13 +72,13 @@ export async function fetchTransactionReturns(params?: { search?: string; status
         returnType: r.returnType || 'CASH',
         note: r.note || '',
         status: r.status || 'PENDING',
-        items: items.map(item => ({
+        items: items.map((item) => ({
           ...item,
           sellPrice: item.sellPrice ?? 0,
           totalPrice: item.quantity * (item.sellPrice ?? 0),
         })),
       } as TransactionReturn;
-    })
+    }),
   );
 
   return returnsWithItems;
@@ -102,7 +106,7 @@ export async function fetchTransactionReturn(id: string): Promise<TransactionRet
     returnType: r.returnType || 'CASH',
     note: r.note || '',
     status: r.status || 'PENDING',
-    items: items.map(item => ({
+    items: items.map((item) => ({
       ...item,
       sellPrice: item.sellPrice ?? 0,
       totalPrice: item.quantity * (item.sellPrice ?? 0),
@@ -139,7 +143,7 @@ export async function createTransactionReturn(data: {
     customerName = customer[0]?.name || '';
   }
 
-  const totalAmount = data.items.reduce((sum, item) => sum + (item.quantity * item.sellPrice), 0);
+  const totalAmount = data.items.reduce((sum, item) => sum + item.quantity * item.sellPrice, 0);
 
   const newReturn = {
     id,
@@ -184,7 +188,11 @@ export async function createTransactionReturn(data: {
   return newReturn as unknown as TransactionReturn;
 }
 
-export function useTransactionReturns(params?: { search?: string; status?: string; customerId?: string }) {
+export function useTransactionReturns(params?: {
+  search?: string;
+  status?: string;
+  customerId?: string;
+}) {
   const [data, setData] = useState<TransactionReturn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -244,25 +252,46 @@ export function useCreateTransactionReturn() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (
-    data: { customerId?: string; items: Array<{ productId: string; variantId?: string; quantity: number; sellPrice: number; profit: number }>; returnType: string; note: string },
-    options?: { onSuccess?: (data: TransactionReturn) => void; onError?: (error: Error) => void }
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const result = await createTransactionReturn(data);
-      options?.onSuccess?.(result);
-      return result;
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: {
+        customerId?: string;
+        items: Array<{
+          productId: string;
+          variantId?: string;
+          quantity: number;
+          sellPrice: number;
+          profit: number;
+        }>;
+        returnType: string;
+        note: string;
+      },
+      options?: { onSuccess?: (data: TransactionReturn) => void; onError?: (error: Error) => void },
+    ) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await createTransactionReturn(data);
+        options?.onSuccess?.(result);
+        return result;
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
 
-  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    loading: isLoading,
+    isPending: isLoading,
+    error,
+  };
 }

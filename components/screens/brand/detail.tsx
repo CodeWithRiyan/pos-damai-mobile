@@ -1,33 +1,23 @@
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { usePopUpConfirm } from '@/components/pop-up-confirm';
-import {
-  Box,
-  Heading,
-  HStack,
-  Spinner,
-  Text,
-  Toast,
-  ToastTitle,
-  useToast,
-  VStack,
-} from '@/components/ui';
+import { Box, Heading, HStack, Spinner, Text, useToast, VStack } from '@/components/ui';
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { useBrand, useBrands, useDeleteBrand } from '@/hooks/use-brand';
-import { Product, useProductsByBrand, useUnassignProductsFromBrand } from '@/lib/api/products';
-import { showErrorToast } from '@/lib/utils/toast';
+import { Product, useProductsByBrand, useUnassignProductsFromBrand } from '@/hooks/use-product';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useBrandStore } from '@/stores/brand';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { singleDeleteConfirm } from '@/lib/utils/delete-confirm';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import { useItemSelection } from '@/hooks/use-item-selection';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useCallback, useMemo } from 'react';
 import { ScrollView } from 'react-native';
 
-import { PriceType } from '@/lib/constants';
-import { formatRp, formatNumber } from '@/lib/utils/format';
+import { PriceType } from '@/constants';
+import { formatRp, formatNumber } from '@/utils/format';
 export default function BrandDetail() {
   const { setOpen, setData } = useBrandStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -64,6 +54,12 @@ export default function BrandDetail() {
     refetchBrand();
   };
 
+  useFocusEffect(
+    useCallback(() => {
+      onRefetch();
+    }, []),
+  );
+
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Brand berhasil dihapus',
     deleteMutation,
@@ -88,28 +84,18 @@ export default function BrandDetail() {
       closeText: 'BATAL',
       okVariant: 'destructive',
       onOk: () => {
-        unassignProductMutation.mutate(
-          productIds,
-          {
-            onSuccess: () => {
-              hidePopUpConfirm();
-              clearProductSelection();
-              onRefetch();
-              toast.show({
-                placement: 'top',
-                render: ({ id }) => (
-                  <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                    <ToastTitle>Produk berhasil dihapus dari brand</ToastTitle>
-                  </Toast>
-                ),
-              });
-            },
-            onError: (error) => {
-              showErrorToast(toast, error);
-              hidePopUpConfirm();
-            },
+        unassignProductMutation.mutate(productIds, {
+          onSuccess: () => {
+            hidePopUpConfirm();
+            clearProductSelection();
+            onRefetch();
+            showSuccessToast(toast, 'Produk berhasil dihapus dari brand');
           },
-        );
+          onError: (error) => {
+            showErrorToast(toast, error);
+            hidePopUpConfirm();
+          },
+        });
       },
       loading: unassignProductMutation.isPending,
     });

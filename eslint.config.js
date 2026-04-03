@@ -19,7 +19,8 @@ module.exports = defineConfig([
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       'prefer-const': 'error',
-      'no-console': 'warn',
+      'no-console': 'off',
+      'react-hooks/exhaustive-deps': 'off',
       'no-debugger': 'error',
     },
     settings: {

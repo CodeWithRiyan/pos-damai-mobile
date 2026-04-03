@@ -27,7 +27,7 @@ import {
   useCreateCategory,
   useUpdateCategory,
 } from '@/hooks/use-category';
-import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useCategoryStore } from '@/stores/category';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect } from 'react';
@@ -78,7 +78,6 @@ export default function CategoryForm() {
     } else {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataCategory, form]);
 
   const onSubmit: SubmitHandler<CategoryFormValues> = (data: CategoryFormValues) => {

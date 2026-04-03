@@ -14,7 +14,7 @@ import { HStack } from '@/components/ui/hstack';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
-import { useSuppliers } from '@/lib/api/suppliers';
+import { useSuppliers } from '@/hooks/use-supplier';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { FlashList } from '@shopify/flash-list';

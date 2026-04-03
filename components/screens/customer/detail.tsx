@@ -1,7 +1,8 @@
+import { useCallback } from 'react';
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { usePopUpConfirm } from '@/components/pop-up-confirm';
-import { Box, HStack, Text, Toast, ToastTitle, useToast, VStack } from '@/components/ui';
+import { Box, HStack, Text, useToast, VStack } from '@/components/ui';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import {
@@ -10,14 +11,14 @@ import {
   useDeleteCustomer,
   useResetCustomerPoints,
 } from '@/hooks/use-customer';
-import { showErrorToast } from '@/lib/utils/toast';
-import { helperCustomerCategory } from '@/lib/customer-category';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { helperCustomerCategory } from '@/utils/customer-category';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { singleDeleteConfirm } from '@/lib/utils/delete-confirm';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { ScrollView } from 'react-native';
 
-import { formatNumber } from '@/lib/utils/format';
+import { formatNumber } from '@/utils/format';
 export default function CustomerDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -35,6 +36,12 @@ export default function CustomerDetail() {
     refetchCustomers();
     refetchCustomer();
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      onRefetch();
+    }, []),
+  );
 
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Pelanggan berhasil dihapus',
@@ -70,14 +77,7 @@ export default function CustomerDetail() {
         hidePopUpConfirm();
         onRefetch();
 
-        toast.show({
-          placement: 'top',
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-              <ToastTitle>Poin Pelanggan berhasil direset</ToastTitle>
-            </Toast>
-          ),
-        });
+        showSuccessToast(toast, 'Poin Pelanggan berhasil direset');
       },
       onError: (error: Error) => {
         showErrorToast(toast, error);

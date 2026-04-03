@@ -1,6 +1,6 @@
-import { Product } from '@/lib/api/products';
-import { Status } from '@/lib/constants';
-import { BaseCartItem } from '@/lib/types/cart';
+import { Product } from '@/hooks/use-product';
+import { Status } from '@/constants';
+import { BaseCartItem } from '@/types/cart';
 import { create } from 'zustand';
 
 interface CartItem extends BaseCartItem {

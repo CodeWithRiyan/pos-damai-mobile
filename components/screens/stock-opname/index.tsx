@@ -7,7 +7,7 @@ import { Pressable } from '@/components/ui/pressable';
 import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
-import { useStockOpnames } from '@/lib/api/stock-opname';
+import { useStockOpnames } from '@/hooks/use-stock-opname';
 import { useStockOpnameStore } from '@/stores/stock-opname';
 import dayjs from 'dayjs';
 import { useFocusEffect, useRouter } from 'expo-router';

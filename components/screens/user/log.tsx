@@ -4,12 +4,12 @@ import { Grid, GridItem } from '@/components/ui/grid';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
-import { useUser } from '@/lib/api/users';
+import { useUser } from '@/hooks/use-user';
 import dayjs from 'dayjs';
 import { useLocalSearchParams } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 
-import { useUserLog } from '@/lib/api/users';
+import { useUserLog } from '@/hooks/use-user';
 
 export default function UserLog() {
   const { userId } = useLocalSearchParams<{ userId: string }>();

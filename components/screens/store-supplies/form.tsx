@@ -22,8 +22,8 @@ import {
 } from '@/components/ui/form-control';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { useCreateStoreSupply } from '@/lib/api/store-supplies';
-import { showErrorToast, showSuccessToast } from '@/lib/utils/toast';
+import { useCreateStoreSupply } from '@/hooks/use-store-supplies';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useStoreSuppliesStore } from '@/stores/store-supplies';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';

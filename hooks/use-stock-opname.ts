@@ -1,5 +1,5 @@
-import { stockOpnames, stockOpnameItems } from '@/lib/db/schema';
-import { db } from '@/lib/db';
+import { stockOpnames, stockOpnameItems } from '@/db/schema';
+import { db } from '@/db';
 import { useAuthStore } from '@/stores/auth';
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
@@ -38,21 +38,14 @@ export async function fetchStockOpnames(): Promise<StockOpname[]> {
   const result = await db
     .select()
     .from(stockOpnames)
-    .where(and(
-      eq(stockOpnames.organizationId, orgId),
-      isNull(stockOpnames.deletedAt)
-    ))
+    .where(and(eq(stockOpnames.organizationId, orgId), isNull(stockOpnames.deletedAt)))
     .orderBy(desc(stockOpnames.createdAt));
 
   return result as unknown as StockOpname[];
 }
 
 export async function fetchStockOpname(id: string): Promise<StockOpname | null> {
-  const result = await db
-    .select()
-    .from(stockOpnames)
-    .where(eq(stockOpnames.id, id))
-    .limit(1);
+  const result = await db.select().from(stockOpnames).where(eq(stockOpnames.id, id)).limit(1);
 
   if (result.length === 0) return null;
 
@@ -63,7 +56,7 @@ export async function fetchStockOpname(id: string): Promise<StockOpname | null> 
 
   return {
     ...result[0],
-    items: items.map(item => ({
+    items: items.map((item) => ({
       ...item,
       quantitySystem: item.quantitySystem || 0,
       quantityPhysical: item.quantityPhysical || 0,
@@ -189,25 +182,44 @@ export function useCreateStockOpname() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (
-    data: { date: Date; note?: string; items: Array<{ productId: string; systemQuantity: number; physicalQuantity: number; note?: string }> },
-    options?: { onSuccess?: (data: StockOpname) => void; onError?: (error: Error) => void }
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const result = await createStockOpname(data);
-      options?.onSuccess?.(result);
-      return result;
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: {
+        date: Date;
+        note?: string;
+        items: Array<{
+          productId: string;
+          systemQuantity: number;
+          physicalQuantity: number;
+          note?: string;
+        }>;
+      },
+      options?: { onSuccess?: (data: StockOpname) => void; onError?: (error: Error) => void },
+    ) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await createStockOpname(data);
+        options?.onSuccess?.(result);
+        return result;
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
 
-  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    loading: isLoading,
+    isPending: isLoading,
+    error,
+  };
 }

@@ -12,8 +12,6 @@ import {
   Spinner,
   Switch,
   Text,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
 } from '@/components/ui';
@@ -24,7 +22,7 @@ import {
   useRole,
   useRoles,
   useUpdateRole,
-} from '@/lib/api/roles';
+} from '@/hooks/use-role';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
@@ -32,7 +30,7 @@ import { usePermission } from '@/hooks/use-permission';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 import z from 'zod';
-import { showErrorToast } from '@/lib/utils/toast';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 
 const roleSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi.'),
@@ -106,14 +104,7 @@ export default function RoleForm() {
             onRefetch();
             handleCancel();
 
-            toast.show({
-              placement: 'top',
-              render: ({ id }) => (
-                <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                  <ToastTitle>Role berhasil diubah</ToastTitle>
-                </Toast>
-              ),
-            });
+            showSuccessToast(toast, 'Role berhasil diubah');
           },
           onError: (error) => {
             showErrorToast(toast, error);
@@ -126,14 +117,7 @@ export default function RoleForm() {
           onRefetch();
           handleCancel();
 
-          toast.show({
-            placement: 'top',
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Role berhasil dibuat</ToastTitle>
-              </Toast>
-            ),
-          });
+          showSuccessToast(toast, 'Role berhasil dibuat');
         },
         onError: (error) => {
           showErrorToast(toast, error);

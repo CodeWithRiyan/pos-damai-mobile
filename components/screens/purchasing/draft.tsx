@@ -1,9 +1,9 @@
 import Header from '@/components/header';
 import { Box, Heading, HStack, Icon, Pressable, Spinner, Text, VStack } from '@/components/ui';
-import { fetchPurchase, usePurchases } from '@/lib/api/purchasing';
-import { Status } from '@/lib/constants';
-import { db } from '@/lib/db';
-import * as schema from '@/lib/db/schema';
+import { fetchPurchase, usePurchases } from '@/hooks/use-purchasing';
+import { Status } from '@/constants';
+import { db } from '@/db';
+import * as schema from '@/db/schema';
 import { usePurchasingStore } from '@/stores/purchasing';
 import dayjs from 'dayjs';
 import { eq } from 'drizzle-orm';
@@ -11,7 +11,7 @@ import { useRouter } from 'expo-router';
 import { Trash2 } from 'lucide-react-native';
 import { ScrollView } from 'react-native';
 
-import { formatNumber } from '@/lib/utils/format';
+import { formatNumber } from '@/utils/format';
 export default function PurchasingDraft() {
   const router = useRouter();
   const { data: purchases, isLoading } = usePurchases();

@@ -1,9 +1,9 @@
-import { db } from '../db';
-import * as schema from '../db/schema';
+import { db } from './index';
+import * as schema from './schema';
 import { eq, inArray } from 'drizzle-orm';
 import type { SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
-import { apiClient } from '../api/client';
-import { storageAdapter } from '../storage';
+import { apiClient } from './client';
+import { storageAdapter } from '@/utils/storage';
 import { useAuthStore } from '@/stores/auth';
 import { useSyncQueueStore } from '@/stores/sync-queue';
 

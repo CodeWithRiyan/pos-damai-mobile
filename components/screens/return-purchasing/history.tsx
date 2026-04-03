@@ -12,12 +12,12 @@ import {
   VStack,
 } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
-import { usePurchaseReturns } from '@/lib/api/return-purchasing';
+import { usePurchaseReturns } from '@/hooks/use-supplier-return';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 
-import { formatNumber } from '@/lib/utils/format';
+import { formatNumber } from '@/utils/format';
 export default function ReturnPurchasingHistory({ isReport }: { isReport?: boolean }) {
   const { supplierId } = useLocalSearchParams<{ supplierId: string }>();
   const router = useRouter();

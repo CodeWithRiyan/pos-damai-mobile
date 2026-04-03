@@ -21,8 +21,6 @@ import {
   Text,
   Textarea,
   TextareaInput,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
 } from '@/components/ui';
@@ -33,7 +31,8 @@ import { useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import z from 'zod';
 
-import { formatNumber } from '@/lib/utils/format';
+import { formatNumber } from '@/utils/format';
+import { showToast } from '@/utils/toast';
 export default function PopupAddProduct() {
   const toast = useToast();
   const { addProduct, cart, setAddProduct, addCartItem } = useReturnPurchasingStore();
@@ -62,19 +61,12 @@ export default function PopupAddProduct() {
 
   useEffect(() => {
     if (form.formState.errors.quantity) {
-      toast.show({
+      showToast(toast, {
+        action: 'error',
+        message: form.formState.errors.quantity.message || 'Jumlah tidak valid',
         placement: 'top',
-        render: ({ id }) => {
-          const toastId = 'toast-' + id;
-          return (
-            <Toast nativeID={toastId} action="error" variant="solid">
-              <ToastTitle>{form.formState.errors.quantity?.message}</ToastTitle>
-            </Toast>
-          );
-        },
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.formState.errors.quantity]);
 
   useEffect(() => {
@@ -87,7 +79,6 @@ export default function PopupAddProduct() {
     } else {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, addProduct]);
 
   const onSubmit: SubmitHandler<AddProductFormValues> = (data: AddProductFormValues) => {

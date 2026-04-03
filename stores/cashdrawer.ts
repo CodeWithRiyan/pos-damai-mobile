@@ -1,4 +1,4 @@
-import { CashDrawer } from '@/lib/api/cashdrawers';
+import { CashDrawer } from '@/hooks/use-cashdrawer';
 import { create } from 'zustand';
 
 interface CashDrawerState {

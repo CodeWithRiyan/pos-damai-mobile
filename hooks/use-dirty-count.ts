@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { db } from '@/lib/db';
-import * as schema from '@/lib/db/schema';
+import { db } from '@/db';
+import * as schema from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
 
 export function useDirtyCount() {

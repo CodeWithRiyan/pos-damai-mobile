@@ -2,14 +2,14 @@ import Header from '@/components/header';
 import { Box, Heading, HStack, Text, VStack } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuthStore } from '@/stores/auth';
-import { useFinance } from '@/lib/api/finances';
-import { formatDisplayRefId } from '@/lib/utils/reference';
+import { useFinance } from '@/hooks/use-finance';
+import { formatDisplayRefId } from '@/utils/reference';
 import dayjs from 'dayjs';
 import { useLocalSearchParams } from 'expo-router';
 import { ScrollView } from 'react-native';
 
-import { FinanceType, Status } from '@/lib/constants';
-import { formatRp, formatNumber } from '@/lib/utils/format';
+import { FinanceType, Status } from '@/constants';
+import { formatRp, formatNumber } from '@/utils/format';
 export default function FinanceTransactionReceipt() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: finance, isLoading } = useFinance(id || '');

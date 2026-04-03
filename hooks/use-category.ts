@@ -1,11 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { db } from '@/lib/db';
-import * as schema from '@/lib/db/schema';
+import { db } from '@/db';
+import * as schema from '@/db/schema';
 import { useAuthStore } from '@/stores/auth';
-import { and, eq, isNull } from 'drizzle-orm';
-import { fetchCategories, fetchCategory, createCategory, updateCategory, deleteCategory, bulkDeleteCategory } from '@/lib/api/categories';
-
-
+import { and, eq, isNull, like, desc } from 'drizzle-orm';
 
 export interface Category {
   id: string;
@@ -31,6 +28,117 @@ export interface CreateCategoryDTO {
 
 export interface UpdateCategoryDTO extends Partial<CreateCategoryDTO> {
   id: string;
+}
+
+export async function fetchCategories(params?: { search?: string }): Promise<Category[]> {
+  const orgId = useAuthStore.getState().getOrganizationId();
+  if (!orgId) return [];
+
+  const conditions = [
+    eq(schema.categories.organizationId, orgId),
+    isNull(schema.categories.deletedAt),
+  ];
+
+  if (params?.search) {
+    conditions.push(like(schema.categories.name, `%${params.search}%`));
+  }
+
+  const result = await db
+    .select()
+    .from(schema.categories)
+    .where(and(...conditions))
+    .orderBy(desc(schema.categories.createdAt));
+
+  return result as unknown as Category[];
+}
+
+export async function fetchCategory(id: string): Promise<Category | null> {
+  const result = await db
+    .select()
+    .from(schema.categories)
+    .where(eq(schema.categories.id, id))
+    .limit(1);
+
+  if (result.length === 0) return null;
+  return result[0] as unknown as Category;
+}
+
+export async function createCategory(data: CreateCategoryDTO): Promise<Category> {
+  const orgId = useAuthStore.getState().getOrganizationId();
+  if (!orgId) throw new Error('Organization not found');
+
+  const id = `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const now = new Date();
+  const userId = useAuthStore.getState().profile?.id;
+
+  const newCategory = {
+    id,
+    name: data.name,
+    point: data.point ?? 0,
+    retailPoint: data.retailPoint ?? 0,
+    wholesalePoint: data.wholesalePoint ?? 0,
+    description: data.description ?? null,
+    organizationId: orgId,
+    createdBy: userId,
+    updatedBy: userId,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    _dirty: true,
+    _syncedAt: null,
+  };
+
+  await db.insert(schema.categories).values(newCategory as any);
+
+  return newCategory as unknown as Category;
+}
+
+export async function updateCategory(data: UpdateCategoryDTO): Promise<void> {
+  const { id, ...rest } = data;
+  const now = new Date();
+  const userId = useAuthStore.getState().profile?.id;
+
+  await db
+    .update(schema.categories)
+    .set({
+      ...rest,
+      updatedBy: userId,
+      updatedAt: now,
+      _dirty: true,
+    })
+    .where(eq(schema.categories.id, id));
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  const now = new Date();
+  const userId = useAuthStore.getState().profile?.id;
+
+  await db
+    .update(schema.categories)
+    .set({
+      deletedAt: now,
+      updatedBy: userId,
+      updatedAt: now,
+      _dirty: true,
+    })
+    .where(eq(schema.categories.id, id));
+}
+
+export async function bulkDeleteCategory(ids: string[]): Promise<void> {
+  const now = new Date();
+  const userId = useAuthStore.getState().profile?.id;
+
+  for (const id of ids) {
+    await db
+      .update(schema.categories)
+      .set({
+        deletedAt: now,
+        updatedBy: userId,
+        updatedAt: now,
+        _dirty: true,
+      })
+      .where(eq(schema.categories.id, id));
+  }
 }
 
 export interface UseCategoriesResult {
@@ -103,7 +211,10 @@ export function useCategory(id: string): UseCategoryResult {
 }
 
 export interface UseCreateCategoryResult {
-  mutate: (data: CreateCategoryDTO, options?: { onSuccess?: (data: Category) => void; onError?: (error: Error) => void }) => Promise<Category | undefined>;
+  mutate: (
+    data: CreateCategoryDTO,
+    options?: { onSuccess?: (data: Category) => void; onError?: (error: Error) => void },
+  ) => Promise<Category | undefined>;
   mutateAsync: (data: CreateCategoryDTO) => Promise<Category>;
   loading: boolean;
   isPending: boolean;
@@ -114,34 +225,43 @@ export function useCreateCategory(): UseCreateCategoryResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (data: CreateCategoryDTO, options?: { onSuccess?: (data: Category) => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await createCategory(data);
-      options?.onSuccess?.(result);
-      return result;
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: CreateCategoryDTO,
+      options?: { onSuccess?: (data: Category) => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await createCategory(data);
+        options?.onSuccess?.(result);
+        return result;
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
-  return { 
-    mutate, 
+  return {
+    mutate,
     mutateAsync: mutate,
-    loading, 
-    isPending: loading, 
-    error 
+    loading,
+    isPending: loading,
+    error,
   };
 }
 
 export interface UseUpdateCategoryResult {
-  mutate: (data: UpdateCategoryDTO, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => Promise<void>;
+  mutate: (
+    data: UpdateCategoryDTO,
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+  ) => Promise<void>;
   mutateAsync: (data: UpdateCategoryDTO) => Promise<void>;
   loading: boolean;
   isPending: boolean;
@@ -152,33 +272,42 @@ export function useUpdateCategory(): UseUpdateCategoryResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (data: UpdateCategoryDTO, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await updateCategory(data);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: UpdateCategoryDTO,
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await updateCategory(data);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
-  return { 
-    mutate, 
+  return {
+    mutate,
     mutateAsync: mutate,
-    loading, 
-    isPending: loading, 
-    error 
+    loading,
+    isPending: loading,
+    error,
   };
 }
 
 export interface UseDeleteCategoryResult {
-  mutate: (id: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => Promise<void>;
+  mutate: (
+    id: string,
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+  ) => Promise<void>;
   mutateAsync: (id: string) => Promise<void>;
   loading: boolean;
   isPending: boolean;
@@ -189,33 +318,39 @@ export function useDeleteCategory(): UseDeleteCategoryResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (id: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await deleteCategory(id);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (id: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await deleteCategory(id);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
-  return { 
-    mutate, 
+  return {
+    mutate,
     mutateAsync: mutate,
-    loading, 
-    isPending: loading, 
-    error 
+    loading,
+    isPending: loading,
+    error,
   };
 }
 
 export interface UseBulkDeleteCategoryResult {
-  mutate: (ids: string[], options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => Promise<void>;
+  mutate: (
+    ids: string[],
+    options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+  ) => Promise<void>;
   mutateAsync: (ids: string[]) => Promise<void>;
   loading: boolean;
   isPending: boolean;
@@ -226,28 +361,34 @@ export function useBulkDeleteCategory(): UseBulkDeleteCategoryResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (ids: string[], options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
-    setLoading(true);
-    setError(null);
-    try {
-      await bulkDeleteCategory(ids);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      ids: string[],
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        await bulkDeleteCategory(ids);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
-  return { 
-    mutate, 
+  return {
+    mutate,
     mutateAsync: mutate,
-    loading, 
-    isPending: loading, 
-    error 
+    loading,
+    isPending: loading,
+    error,
   };
 }
 

@@ -1,5 +1,5 @@
-import { payables, payableRealizations, suppliers, users } from '@/lib/db/schema';
-import { db } from '@/lib/db';
+import { payables, payableRealizations, suppliers, users } from '@/db/schema';
+import { db } from '@/db';
 import { useAuthStore } from '@/stores/auth';
 import { eq, and, isNull, like, desc, sql, sum } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
@@ -17,7 +17,13 @@ export interface Payable {
   nearestDueDate?: Date | null;
   note?: string;
   supplier?: { name: string; phone?: string | null; address?: string | null };
-  realizations?: Array<{ id: string; nominal: number; createdAt: Date; realizationDate?: Date; note?: string }>;
+  realizations?: Array<{
+    id: string;
+    nominal: number;
+    createdAt: Date;
+    realizationDate?: Date;
+    note?: string;
+  }>;
   local_ref_id?: string;
 }
 
@@ -33,14 +39,14 @@ export interface PayableBySupplier {
   payables: Payable[];
 }
 
-export async function fetchPayables(params?: { search?: string; status?: string }): Promise<Payable[]> {
+export async function fetchPayables(params?: {
+  search?: string;
+  status?: string;
+}): Promise<Payable[]> {
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) return [];
 
-  const conditions = [
-    eq(payables.organizationId, orgId),
-    isNull(payables.deletedAt),
-  ];
+  const conditions = [eq(payables.organizationId, orgId), isNull(payables.deletedAt)];
 
   if (params?.search) {
     conditions.push(like(payables.supplierName, `%${params.search}%`));
@@ -71,7 +77,7 @@ export async function fetchPayables(params?: { search?: string; status?: string 
         totalRealization,
         totalPayable: (p.nominal || 0) - totalRealization,
         status: p.status || 'PENDING',
-        realizations: realizations.map(r => ({
+        realizations: realizations.map((r) => ({
           id: r.id,
           nominal: r.nominal,
           createdAt: r.createdAt,
@@ -79,7 +85,7 @@ export async function fetchPayables(params?: { search?: string; status?: string 
           note: r.note,
         })),
       } as Payable;
-    })
+    }),
   );
 
   return payablesWithRealizations;
@@ -104,11 +110,14 @@ export async function fetchPayableBySupplier(): Promise<PayableBySupplier[]> {
     const totalRealization = payablesList.reduce((sum, p) => sum + (p.totalRealization || 0), 0);
     const totalPayable = totalNominal - totalRealization;
     const supplierName = payablesList[0]?.supplierName || 'Unknown';
-    const nearestDueDate = payablesList.reduce((nearest, p) => {
-      if (!p.dueDate) return nearest;
-      if (!nearest || p.dueDate < nearest) return p.dueDate;
-      return nearest;
-    }, null as Date | null);
+    const nearestDueDate = payablesList.reduce(
+      (nearest, p) => {
+        if (!p.dueDate) return nearest;
+        if (!nearest || p.dueDate < nearest) return p.dueDate;
+        return nearest;
+      },
+      null as Date | null,
+    );
     result.push({
       supplierId,
       supplierName,
@@ -126,11 +135,7 @@ export async function fetchPayableBySupplier(): Promise<PayableBySupplier[]> {
 }
 
 export async function fetchPayableDetail(id: string): Promise<Payable | null> {
-  const result = await db
-    .select()
-    .from(payables)
-    .where(eq(payables.id, id))
-    .limit(1);
+  const result = await db.select().from(payables).where(eq(payables.id, id)).limit(1);
 
   if (result.length === 0) return null;
 
@@ -148,7 +153,7 @@ export async function fetchPayableDetail(id: string): Promise<Payable | null> {
     totalRealization,
     totalPayable: (p.nominal || 0) - totalRealization,
     status: p.status || 'PENDING',
-    realizations: realizations.map(r => ({
+    realizations: realizations.map((r) => ({
       id: r.id,
       nominal: r.nominal,
       createdAt: r.createdAt,
@@ -181,7 +186,11 @@ export async function createPayable(data: {
     id,
     local_ref_id: `PAY-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
     nominal: data.nominal,
-    dueDate: data.dueDate ? (typeof data.dueDate === 'string' ? new Date(data.dueDate) : data.dueDate) : null,
+    dueDate: data.dueDate
+      ? typeof data.dueDate === 'string'
+        ? new Date(data.dueDate)
+        : data.dueDate
+      : null,
     note: data.note || null,
     supplierId: data.supplierId,
     supplierName: supplier[0]?.name || '',
@@ -294,7 +303,7 @@ export function usePayableBySupplier(supplierId?: string) {
     setError(null);
     try {
       const result = await fetchPayables({ search: supplierId ? undefined : undefined });
-      const filtered = supplierId ? result.filter(p => p.supplierId === supplierId) : result;
+      const filtered = supplierId ? result.filter((p) => p.supplierId === supplierId) : result;
       setData(filtered);
     } catch (err) {
       setError(err as Error);
@@ -345,188 +354,107 @@ export function useCreatePayable() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (
-    data: { supplierId: string; nominal: number; dueDate?: Date; note?: string },
-    options?: { onSuccess?: (data: Payable) => void; onError?: (error: Error) => void }
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const result = await createPayable(data);
-      options?.onSuccess?.(result);
-      return result;
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: { supplierId: string; nominal: number; dueDate?: Date; note?: string },
+      options?: { onSuccess?: (data: Payable) => void; onError?: (error: Error) => void },
+    ) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await createPayable(data);
+        options?.onSuccess?.(result);
+        return result;
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
 
-  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    loading: isLoading,
+    isPending: isLoading,
+    error,
+  };
 }
 
 export function useUpdatePayable() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (
-    data: { id: string; nominal?: number; dueDate?: Date | string | null; note?: string; status?: string },
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const now = new Date();
-      const { id, nominal, dueDate, note, status } = data;
-      const updateFields: any = {
-        updatedAt: now,
-        _dirty: true,
-      };
-      if (nominal !== undefined) updateFields.nominal = nominal;
-      if (dueDate !== undefined) updateFields.dueDate = dueDate ? (typeof dueDate === 'string' ? new Date(dueDate) : dueDate) : null;
-      if (note !== undefined) updateFields.note = note;
-      if (status !== undefined) updateFields.status = status;
-      
-      await db
-        .update(payables)
-        .set(updateFields)
-        .where(eq(payables.id, id));
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const mutate = useCallback(
+    async (
+      data: {
+        id: string;
+        nominal?: number;
+        dueDate?: Date | string | null;
+        note?: string;
+        status?: string;
+      },
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const now = new Date();
+        const { id, nominal, dueDate, note, status } = data;
+        const updateFields: any = {
+          updatedAt: now,
+          _dirty: true,
+        };
+        if (nominal !== undefined) updateFields.nominal = nominal;
+        if (dueDate !== undefined)
+          updateFields.dueDate = dueDate
+            ? typeof dueDate === 'string'
+              ? new Date(dueDate)
+              : dueDate
+            : null;
+        if (note !== undefined) updateFields.note = note;
+        if (status !== undefined) updateFields.status = status;
 
-  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
+        await db.update(payables).set(updateFields).where(eq(payables.id, id));
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    loading: isLoading,
+    isPending: isLoading,
+    error,
+  };
 }
 
 export function useDeletePayable() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const mutate = useCallback(async (
-    id: string,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const now = new Date();
-      await db
-        .update(payables)
-        .set({
-          deletedAt: now,
-          updatedAt: now,
-          _dirty: true,
-        })
-        .where(eq(payables.id, id));
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
-}
-
-export function useBulkDeletePayable() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const mutate = useCallback(async (
-    ids: string[],
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const now = new Date();
-      await Promise.all(
-        ids.map(async (id) => {
-          await db
-            .update(payables)
-            .set({
-              deletedAt: now,
-              updatedAt: now,
-              _dirty: true,
-            })
-            .where(eq(payables.id, id));
-        })
-      );
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
-}
-
-export function useCreatePayableRealization() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const mutate = useCallback(async (
-    data: { payableId: string; nominal: number; realizationDate: Date; paymentMethodId: string; note?: string },
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await createPayableRealization(data);
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
-}
-
-export function useBulkDeletePayableBySupplier() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const mutate = useCallback(async (
-    supplierId: string,
-    options?: { onSuccess?: () => void; onError?: (error: Error) => void }
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const now = new Date();
-      const allPayables = await db
-        .select()
-        .from(payables)
-        .where(and(
-          eq(payables.supplierId, supplierId),
-          isNull(payables.deletedAt)
-        ));
-
-      for (const p of allPayables) {
+  const mutate = useCallback(
+    async (id: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const now = new Date();
         await db
           .update(payables)
           .set({
@@ -534,18 +462,167 @@ export function useBulkDeletePayableBySupplier() {
             updatedAt: now,
             _dirty: true,
           })
-          .where(eq(payables.id, p.id));
+          .where(eq(payables.id, id));
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setIsLoading(false);
       }
-      options?.onSuccess?.();
-    } catch (err) {
-      const error = err as Error;
-      setError(error);
-      options?.onError?.(error);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
-  return { mutate, mutateAsync: mutate, isLoading, loading: isLoading, isPending: isLoading, error };
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    loading: isLoading,
+    isPending: isLoading,
+    error,
+  };
+}
+
+export function useBulkDeletePayable() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const mutate = useCallback(
+    async (
+      ids: string[],
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const now = new Date();
+        await Promise.all(
+          ids.map(async (id) => {
+            await db
+              .update(payables)
+              .set({
+                deletedAt: now,
+                updatedAt: now,
+                _dirty: true,
+              })
+              .where(eq(payables.id, id));
+          }),
+        );
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    loading: isLoading,
+    isPending: isLoading,
+    error,
+  };
+}
+
+export function useCreatePayableRealization() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const mutate = useCallback(
+    async (
+      data: {
+        payableId: string;
+        nominal: number;
+        realizationDate: Date;
+        paymentMethodId: string;
+        note?: string;
+      },
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        await createPayableRealization(data);
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    loading: isLoading,
+    isPending: isLoading,
+    error,
+  };
+}
+
+export function useBulkDeletePayableBySupplier() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const mutate = useCallback(
+    async (
+      supplierId: string,
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const now = new Date();
+        const allPayables = await db
+          .select()
+          .from(payables)
+          .where(and(eq(payables.supplierId, supplierId), isNull(payables.deletedAt)));
+
+        for (const p of allPayables) {
+          await db
+            .update(payables)
+            .set({
+              deletedAt: now,
+              updatedAt: now,
+              _dirty: true,
+            })
+            .where(eq(payables.id, p.id));
+        }
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    loading: isLoading,
+    isPending: isLoading,
+    error,
+  };
 }

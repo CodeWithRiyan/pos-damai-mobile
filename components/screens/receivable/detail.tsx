@@ -20,22 +20,32 @@ import {
   SolarIconLinear,
 } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
-import { Receivable, useReceivableByUser } from '@/lib/api/receivable';
+import { Receivable, useReceivableByUser } from '@/hooks/use-receivable';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ScrollView } from 'react-native';
 
-import { formatRp } from '@/lib/utils/format';
+import { formatRp } from '@/utils/format';
 export default function ReceivableDetail() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const params = useLocalSearchParams();
   const userId = params.userId as string;
 
-  const { data: receivableList = [], isLoading } = useReceivableByUser(userId);
+  const {
+    data: receivableList = [],
+    isLoading,
+    refetch: refetchReceivable,
+  } = useReceivableByUser(userId);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchReceivable();
+    }, []),
+  );
 
   const [selectedItems, setSelectedItems] = useState<Receivable[] | null>(null);
   const [showTransactionDatePicker, setShowTransactionDatePicker] = useState<boolean>(false);

@@ -20,17 +20,17 @@ import {
   SolarIconLinear,
 } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
-import { Payable, usePayableBySupplier } from '@/lib/api/payable';
+import { Payable, usePayableBySupplier } from '@/hooks/use-payable';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ScrollView } from 'react-native';
 
-import { useSupplier } from '@/lib/api/suppliers';
-import { formatRp } from '@/lib/utils/format';
+import { useSupplier } from '@/hooks/use-supplier';
+import { formatRp } from '@/utils/format';
 export default function PayableDetail({ isReport }: { isReport?: boolean }) {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
@@ -38,7 +38,17 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
   const supplierId = params.supplierId as string;
 
   const { data: supplier, isLoading: isSupplierLoading } = useSupplier(supplierId);
-  const { data: payableList = [], isLoading: isPayableLoading } = usePayableBySupplier(supplierId);
+  const {
+    data: payableList = [],
+    isLoading: isPayableLoading,
+    refetch: refetchPayable,
+  } = usePayableBySupplier(supplierId);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchPayable();
+    }, []),
+  );
 
   const isLoading = isSupplierLoading || isPayableLoading;
 

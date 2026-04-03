@@ -7,22 +7,21 @@ import {
   Pressable,
   Spinner,
   Text,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
 } from '@/components/ui';
-import { useContinueDraft, useDeleteTransaction, useTransactions } from '@/lib/api/transactions';
-import { Status } from '@/lib/constants';
+import { useContinueDraft, useDeleteTransaction, useTransactions } from '@/hooks/use-transaction';
+import { Status } from '@/constants';
 import { useTransactionStore } from '@/stores/transaction';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { Trash2 } from 'lucide-react-native';
 import { ScrollView } from 'react-native';
 
-import { useCustomers } from '@/lib/api/customers';
-import { useUsers } from '@/lib/api/users';
-import { formatNumber } from '@/lib/utils/format';
+import { useCustomers } from '@/hooks/use-customer';
+import { useUsers } from '@/hooks/use-user';
+import { formatNumber } from '@/utils/format';
 export default function TransactionDraft() {
   const router = useRouter();
   const { data: transactions, isLoading: isTransactionsLoading } = useTransactions();
@@ -32,24 +31,10 @@ export default function TransactionDraft() {
   const toast = useToast();
   const deleteMutation = useDeleteTransaction({
     onSuccess: () => {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-            <ToastTitle>Berhasil hapus draft</ToastTitle>
-          </Toast>
-        ),
-      });
+      showSuccessToast(toast, 'Berhasil hapus draft');
     },
     onError: (error) => {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{`Gagal hapus draft: ${error.message}`}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showErrorToast(toast, `Gagal hapus draft: ${error.message}`);
     },
   });
   const continueDraftMutation = useContinueDraft();

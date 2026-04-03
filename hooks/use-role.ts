@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { apiClient } from '@/lib/api/client';
+import { apiClient } from '@/db/client';
 
 export interface Permission {
   id: string;

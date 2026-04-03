@@ -1,4 +1,4 @@
-import { PaymentType } from '@/lib/api/payment-types';
+import { PaymentType } from '@/hooks/use-payment-type';
 import { create } from 'zustand';
 
 interface PaymentTypeState {

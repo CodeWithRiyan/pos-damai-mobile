@@ -2,7 +2,7 @@ import CurrentShift from '@/components/screens/shift/current';
 import CurrentFormShift from '@/components/screens/shift/current-form';
 import HistoryShift from '@/components/screens/shift/history';
 import { Spinner, Text, VStack } from '@/components/ui';
-import { useCurrentShift } from '@/lib/api/shifts';
+import { useCurrentShift } from '@/hooks/use-shift';
 import { useLocalSearchParams } from 'expo-router';
 
 export default function TabContentShift() {

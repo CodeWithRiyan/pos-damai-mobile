@@ -1,4 +1,4 @@
-import { Product } from '@/lib/api/products';
+import { Product } from '@/hooks/use-product';
 
 export interface BaseCartItem {
   product: Product;

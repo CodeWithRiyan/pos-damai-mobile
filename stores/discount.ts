@@ -1,4 +1,4 @@
-import { Discount } from '@/lib/api/discounts';
+import { Discount } from '@/hooks/use-discount';
 import { create } from 'zustand';
 
 interface DiscountState {

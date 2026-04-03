@@ -3,8 +3,8 @@ import Header from '@/components/header';
 import { Box, Heading, HStack, Icon, Pressable, Text, VStack } from '@/components/ui';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
-import { usePurchase } from '@/lib/api/purchasing';
-import { formatDisplayRefId } from '@/lib/utils/reference';
+import { usePurchase } from '@/hooks/use-purchasing';
+import { formatDisplayRefId } from '@/utils/reference';
 import { useAuthStore } from '@/stores/auth';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
@@ -12,9 +12,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Check, Printer } from 'lucide-react-native';
 import { ScrollView } from 'react-native';
 
-import { PaymentMethod, Status } from '@/lib/constants';
-import { formatNumber, formatRp } from '@/lib/utils/format';
-import { getReceiptActions } from '@/lib/utils/receipt-actions';
+import { PaymentMethod, Status } from '@/constants';
+import { formatNumber, formatRp } from '@/utils/format';
+import { getReceiptActions } from '@/utils/receipt-actions';
 export default function PurchasingReceipt() {
   const router = useRouter();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();

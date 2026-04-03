@@ -11,7 +11,7 @@ import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
-import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import {
   Brand,
@@ -20,11 +20,11 @@ import {
   useCapitalValueByBrand,
   useCreateBrand,
   useProductCountsByBrand,
-} from '@/lib/api/brands';
-import { getErrorMessage } from '@/lib/api/client';
-import { bulkDeleteConfirm } from '@/lib/utils/delete-confirm';
-import { showErrorToast } from '@/lib/utils/toast';
-import { exportBrands, importBrands } from '@/lib/utils/excel';
+} from '@/hooks/use-brand';
+import { getErrorMessage } from '@/db/client';
+import { bulkDeleteConfirm } from '@/utils/delete-confirm';
+import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
+import { exportBrands, importBrands } from '@/utils/excel';
 import { useBrandStore } from '@/stores/brand';
 import { useItemSelection } from '@/hooks/use-item-selection';
 import { useRouter } from 'expo-router';
@@ -59,14 +59,7 @@ export default function BrandList() {
     try {
       await exportBrands(brands);
     } catch (e) {
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 
@@ -84,14 +77,7 @@ export default function BrandList() {
       }
       refetch();
       refetchCounts();
-      toast.show({
-        placement: 'top',
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-            <ToastTitle>{`${successCount} brand berhasil diimpor`}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showSuccessToast(toast, `${successCount} brand berhasil diimpor`);
     } catch (e) {
       showErrorToast(toast, e);
     }
