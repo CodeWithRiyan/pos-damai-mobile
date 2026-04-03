@@ -45,13 +45,13 @@ export default function CategoryDetail() {
     hasSelection: hasProductSelection,
   } = useItemSelection<Product>();
 
-  const { refetch: refetchCategorys } = useCategories();
+  const { refetch: refetchCategories } = useCategories();
   const { data: products = [] } = useProductsByCategory(categoryId || '');
   const deleteMutation = useDeleteCategory();
   const unassignProductMutation = useUnassignProductsFromCategory();
   const toast = useToast();
 
-  const totalModal = useMemo(() => {
+  const totalCapital = useMemo(() => {
     return products.reduce((acc, curr) => {
       return acc + (curr.purchasePrice || 0) * (curr.stock || 0);
     }, 0);
@@ -62,8 +62,8 @@ export default function CategoryDetail() {
       const freshCategory = await refetchCategoryById(categoryId);
       setCategory(freshCategory);
     }
-    refetchCategorys();
-  }, [categoryId, refetchCategorys]);
+    refetchCategories();
+  }, [categoryId, refetchCategories]);
 
   useStoreVersionSync(useCategoryStore, onRefetch);
 
@@ -189,7 +189,7 @@ export default function CategoryDetail() {
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Nilai Modal</Text>
-              <Text className="font-bold">Rp {formatNumber(totalModal)}</Text>
+              <Text className="font-bold">Rp {formatNumber(totalCapital)}</Text>
             </HStack>
           </Box>
           <Box className="pr-4">

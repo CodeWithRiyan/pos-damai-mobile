@@ -28,34 +28,36 @@ export default function PurchasingCustomerList() {
     refetch: refetchCustomers,
   } = useCustomers();
   const {
-    data: customerIdsWithTx,
-    isLoading: loadingTx,
-    refetch: refetchTx,
+    data: customerIdsWithTransactions,
+    isLoading: loadingTransactions,
+    refetch: refetchTransactions,
   } = useCustomerIdsWithTransactions();
   const [search, setSearch] = useState('');
   const router = useRouter();
 
-  const isLoading = loadingCustomers || loadingTx;
+  const isLoading = loadingCustomers || loadingTransactions;
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await refetchCustomers();
-    await refetchTx();
+    await refetchTransactions();
     setRefreshing(false);
-  }, [refetchCustomers, refetchTx]);
+  }, [refetchCustomers, refetchTransactions]);
 
   const filteredCustomers =
-    isLoading || !Array.isArray(customerIdsWithTx)
+    isLoading || !Array.isArray(customerIdsWithTransactions)
       ? []
       : (customers ?? []).filter(
           (s) =>
-            customerIdsWithTx.includes(s.id) &&
+            customerIdsWithTransactions.includes(s.id) &&
             (!search || s.name.toLowerCase().includes(search.toLowerCase())),
         );
 
-  const hasNoCustomersWithTx =
-    !isLoading && Array.isArray(customerIdsWithTx) && customerIdsWithTx.length === 0;
+  const hasNoCustomersWithTransactions =
+    !isLoading &&
+    Array.isArray(customerIdsWithTransactions) &&
+    customerIdsWithTransactions.length === 0;
 
   return (
     <Box className="flex-1 bg-white">
@@ -112,11 +114,11 @@ export default function PurchasingCustomerList() {
             </Pressable>
           )}
           ListEmptyComponent={
-            isLoading || !customerIdsWithTx ? (
+            isLoading || !customerIdsWithTransactions ? (
               <VStack className="items-center py-10">
                 <Spinner />
               </VStack>
-            ) : hasNoCustomersWithTx ? (
+            ) : hasNoCustomersWithTransactions ? (
               <VStack className="items-center py-10">
                 <Text className="text-gray-400">Belum ada pelanggan dengan transaksi selesai</Text>
               </VStack>

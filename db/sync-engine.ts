@@ -339,7 +339,7 @@ export class SyncEngine {
       .select()
       .from(schema.purchaseReturnItems)
       .where(eq(schema.purchaseReturnItems._dirty, true));
-    const dirtyTxReturnItems = await db
+    const dirtyTransactionReturnItems = await db
       .select()
       .from(schema.transactionReturnItems)
       .where(eq(schema.transactionReturnItems._dirty, true));
@@ -347,7 +347,7 @@ export class SyncEngine {
       .select()
       .from(schema.stockOpnameItems)
       .where(eq(schema.stockOpnameItems._dirty, true));
-    const dirtySalesTxItems = await db
+    const dirtySalesTransactionItems = await db
       .select()
       .from(schema.transactionItems)
       .where(eq(schema.transactionItems._dirty, true));
@@ -358,9 +358,13 @@ export class SyncEngine {
 
     // Get unique parent IDs for dirty items
     const extraReturnIds = [...new Set(dirtyReturnItems.map((i) => i.purchaseReturnId))];
-    const extraTxReturnIds = [...new Set(dirtyTxReturnItems.map((i) => i.transactionReturnId))];
+    const extraTransactionReturnIds = [
+      ...new Set(dirtyTransactionReturnItems.map((i) => i.transactionReturnId)),
+    ];
     const extraOpnameIds = [...new Set(dirtyOpnameItems.map((i) => i.stockOpnameId))];
-    const extraSalesTxIds = [...new Set(dirtySalesTxItems.map((i) => i.transactionId))];
+    const extraSalesTransactionIds = [
+      ...new Set(dirtySalesTransactionItems.map((i) => i.transactionId)),
+    ];
     const extraStoreSupplyIds = [...new Set(dirtyStoreSupplyItems.map((i) => i.storeSupplyId))];
 
     // Fetch parent records if missing
@@ -375,15 +379,17 @@ export class SyncEngine {
       allReturns = [...allReturns, ...extraReturns];
     }
 
-    let allTxReturns = [...dirtyTransactionReturns];
-    const existingTxReturnIds = new Set(dirtyTransactionReturns.map((r) => r.id));
-    const missingTxReturnIds = extraTxReturnIds.filter((id) => !existingTxReturnIds.has(id));
-    if (missingTxReturnIds.length > 0) {
-      const extraTxReturns = await db
+    let allTransactionReturns = [...dirtyTransactionReturns];
+    const existingTransactionReturnIds = new Set(dirtyTransactionReturns.map((r) => r.id));
+    const missingTransactionReturnIds = extraTransactionReturnIds.filter(
+      (id) => !existingTransactionReturnIds.has(id),
+    );
+    if (missingTransactionReturnIds.length > 0) {
+      const extraTransactionReturns = await db
         .select()
         .from(schema.transactionReturns)
-        .where(inArray(schema.transactionReturns.id, missingTxReturnIds));
-      allTxReturns = [...allTxReturns, ...extraTxReturns];
+        .where(inArray(schema.transactionReturns.id, missingTransactionReturnIds));
+      allTransactionReturns = [...allTransactionReturns, ...extraTransactionReturns];
     }
 
     let allOpnames = [...dirtyStockOpnames];
@@ -398,14 +404,16 @@ export class SyncEngine {
     }
 
     let allSalesTransactions = [...dirtySalesTransactions];
-    const existingSalesTxIds = new Set(dirtySalesTransactions.map((t) => t.id));
-    const missingSalesTxIds = extraSalesTxIds.filter((id) => !existingSalesTxIds.has(id));
-    if (missingSalesTxIds.length > 0) {
-      const extraSalesTx = await db
+    const existingSalesTransactionIds = new Set(dirtySalesTransactions.map((t) => t.id));
+    const missingSalesTransactionIds = extraSalesTransactionIds.filter(
+      (id) => !existingSalesTransactionIds.has(id),
+    );
+    if (missingSalesTransactionIds.length > 0) {
+      const extraSalesTransactions = await db
         .select()
         .from(schema.transactions)
-        .where(inArray(schema.transactions.id, missingSalesTxIds));
-      allSalesTransactions = [...allSalesTransactions, ...extraSalesTx];
+        .where(inArray(schema.transactions.id, missingSalesTransactionIds));
+      allSalesTransactions = [...allSalesTransactions, ...extraSalesTransactions];
     }
 
     let allStoreSupplies = [...dirtyStoreSupplies];
@@ -432,7 +440,7 @@ export class SyncEngine {
       dirtyPurchases.length +
       dirtyTransactions.length +
       allReturns.length +
-      allTxReturns.length +
+      allTransactionReturns.length +
       allOpnames.length +
       dirtyPayables.length +
       dirtyPayableRealizations.length +
@@ -463,7 +471,7 @@ export class SyncEngine {
             .where(inArray(schema.purchaseReturnItems.purchaseReturnId, returnIds))
         : [];
 
-    const transactionReturnIds = allTxReturns.map((r) => r.id);
+    const transactionReturnIds = allTransactionReturns.map((r) => r.id);
     const transactionReturnItems =
       transactionReturnIds.length > 0
         ? await db
@@ -483,13 +491,13 @@ export class SyncEngine {
         : [];
 
     // Fetch ALL items for sales transactions we are pushing
-    const salesTxIds = allSalesTransactions.map((t) => t.id);
-    const salesTxItems =
-      salesTxIds.length > 0
+    const salesTransactionIds = allSalesTransactions.map((t) => t.id);
+    const salesTransactionItems =
+      salesTransactionIds.length > 0
         ? await db
             .select()
             .from(schema.transactionItems)
-            .where(inArray(schema.transactionItems.transactionId, salesTxIds))
+            .where(inArray(schema.transactionItems.transactionId, salesTransactionIds))
         : [];
 
     // Fetch ALL items for store supplies we are pushing
@@ -643,7 +651,7 @@ export class SyncEngine {
             })),
         }),
       ),
-      transactionReturns: allTxReturns.map(
+      transactionReturns: allTransactionReturns.map(
         ({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...rest }) => ({
           ...rest,
           totalAmount:
@@ -791,7 +799,7 @@ export class SyncEngine {
           createdAt: createdAt ? createdAt.toISOString() : undefined,
           updatedAt: updatedAt ? updatedAt.toISOString() : undefined,
           deletedAt: deletedAt ? deletedAt.toISOString() : undefined,
-          items: salesTxItems
+          items: salesTransactionItems
             .filter((i) => i.transactionId === rest.id)
             .map(({ _dirty, _syncedAt, createdAt, updatedAt, deletedAt, ...iRest }) => ({
               ...iRest,

@@ -45,7 +45,7 @@ export default function BrandDetail() {
 
   const dataProducts = useMemo(() => products || [], [products]);
 
-  const totalModal = useMemo(() => {
+  const totalCapital = useMemo(() => {
     return dataProducts.reduce((acc, curr) => {
       return acc + (curr.purchasePrice || 0) * (curr.stock || 0);
     }, 0);
@@ -172,7 +172,7 @@ export default function BrandDetail() {
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Nilai Modal</Text>
-              <Text className="font-bold">Rp {formatNumber(totalModal)}</Text>
+              <Text className="font-bold">Rp {formatNumber(totalCapital)}</Text>
             </HStack>
           </Box>
           <Box className="pr-4">
