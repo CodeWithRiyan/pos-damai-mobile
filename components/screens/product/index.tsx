@@ -26,6 +26,8 @@ import { exportProducts, importProducts } from '@/utils/excel';
 import { showSuccessToast, showToast } from '@/utils/toast';
 import { useItemSelection } from '@/hooks/use-item-selection';
 import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useProductStore } from '@/stores/product';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { debounce } from 'lodash';
 import { SearchIcon } from 'lucide-react-native';
@@ -75,6 +77,12 @@ export default function ProductList() {
     setSearch(value);
     debouncedSetSearch(value);
   };
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useProductStore, handleVersionChange);
 
   useFocusEffect(
     useCallback(() => {

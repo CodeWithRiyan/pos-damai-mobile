@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { Box, Spinner, Text, useToast, VStack } from '@/components/ui';
@@ -6,18 +6,20 @@ import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import {
   useDeletePaymentType,
-  usePaymentType,
   usePaymentTypes,
   useSetDefaultPaymentType,
+  refetchPaymentTypeById,
+  PaymentType,
 } from '@/hooks/use-payment-type';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import classNames from 'classnames';
-import { useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { ScrollView } from 'react-native';
 
 import { formatNumber } from '@/utils/format';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
 export default function PaymentTypeDetail() {
   const { setOpen, setData } = usePaymentTypeStore();
@@ -25,24 +27,24 @@ export default function PaymentTypeDetail() {
   const { id } = useLocalSearchParams();
   const paymentTypeId = id as string;
 
+  const [paymentType, setPaymentType] = useState<PaymentType | null>(null);
+
   const { refetch: refetchPaymentTypes } = usePaymentTypes();
-  const { data: paymentType, refetch: refetchPaymentType } = usePaymentType(paymentTypeId || '');
   const deleteMutation = useDeletePaymentType();
   const setDefaultMutation = useSetDefaultPaymentType();
 
   const isLoading = deleteMutation.isPending || setDefaultMutation.isPending;
   const toast = useToast();
 
-  const onRefetch = () => {
+  const onRefetch = useCallback(async () => {
+    if (paymentTypeId) {
+      const freshPaymentType = await refetchPaymentTypeById(paymentTypeId);
+      setPaymentType(freshPaymentType);
+    }
     refetchPaymentTypes();
-    refetchPaymentType();
-  };
+  }, [paymentTypeId, refetchPaymentTypes]);
 
-  useFocusEffect(
-    useCallback(() => {
-      onRefetch();
-    }, []),
-  );
+  useStoreVersionSync(usePaymentTypeStore, onRefetch);
 
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Jenis pembayaran berhasil dihapus',

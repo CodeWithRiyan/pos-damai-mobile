@@ -4,12 +4,14 @@ import { HStack, Text, VStack } from '@/components/ui';
 import { Grid, GridItem } from '@/components/ui/grid';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
-import { useDeleteProduct, useProduct, useProducts } from '@/hooks/use-product';
+import { useDeleteProduct, useProducts, refetchProductById, Product } from '@/hooks/use-product';
 import { PriceType, ProductType } from '@/constants';
 import { findSellPrice } from '@/utils/price';
 import { unitSuffixHelper } from '@/utils/unit';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useProductStore } from '@/stores/product';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { RefreshControl, ScrollView } from 'react-native';
@@ -21,28 +23,32 @@ export default function ProductDetail() {
   const { id } = useLocalSearchParams();
   const productId = decodeURIComponent(id as string);
   const { refetch: refetchProducts } = useProducts();
-  const { data: product, refetch: refetchProduct } = useProduct(productId || '');
+  const [product, setProduct] = useState<Product | null>(null);
   const deleteMutation = useDeleteProduct();
 
-  const onRefetch = () => {
+  const onRefetch = useCallback(async () => {
+    if (productId) {
+      const freshProduct = await refetchProductById(productId);
+      setProduct(freshProduct);
+    }
     refetchProducts();
-    refetchProduct();
-  };
+  }, [productId, refetchProducts]);
+
+  useStoreVersionSync(useProductStore, onRefetch);
 
   const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       onRefetch();
-    }, []),
+    }, [onRefetch]),
   );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refetchProducts();
-    await refetchProduct();
+    await onRefetch();
     setRefreshing(false);
-  }, [refetchProducts, refetchProduct]);
+  }, [onRefetch]);
 
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Produk berhasil dihapus',

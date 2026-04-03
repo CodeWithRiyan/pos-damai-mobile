@@ -21,6 +21,8 @@ import {
 } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { Payable, usePayableBySupplier } from '@/hooks/use-payable';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { usePayableStore } from '@/stores/payable';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
@@ -43,6 +45,12 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
     isLoading: isPayableLoading,
     refetch: refetchPayable,
   } = usePayableBySupplier(supplierId);
+
+  const onRefetch = useCallback(() => {
+    refetchPayable();
+  }, [refetchPayable]);
+
+  useStoreVersionSync(usePayableStore, onRefetch);
 
   useFocusEffect(
     useCallback(() => {

@@ -1,6 +1,7 @@
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useItemSelection } from '@/hooks/use-item-selection';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui';
 import { Badge, BadgeText } from '@/components/ui/badge';
@@ -27,7 +28,7 @@ import { showSuccessToast, showToast } from '@/utils/toast';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import { useRouter } from 'expo-router';
 import { SearchIcon } from 'lucide-react-native';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { FlashList } from '@shopify/flash-list';
 
 import { formatRp, formatNumber } from '@/utils/format';
@@ -48,6 +49,12 @@ export default function PaymentTypeList() {
 
   const isLoading = isLoadingPaymentTypes;
   const paymentTypes = data || [];
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(usePaymentTypeStore, handleVersionChange);
 
   const createMutation = useCreatePaymentType();
   const toast = useToast();

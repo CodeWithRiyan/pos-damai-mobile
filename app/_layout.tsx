@@ -88,7 +88,6 @@ export default function RootLayout() {
             <Stack>
               <Stack.Screen name="login" options={{ headerShown: false }} />
               <Stack.Screen name="(main)" options={{ headerShown: false }} />
-              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
             </Stack>
             <StatusBar style="dark" hidden />
             <SyncConfirmationModal isOpen={showSyncModal} onClose={handleCloseSyncModal} />

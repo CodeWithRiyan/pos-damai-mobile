@@ -3,18 +3,27 @@ import { usePopUpConfirm } from '@/components/pop-up-confirm';
 import { Box, Heading, HStack, Icon, Pressable, Spinner, Text, VStack } from '@/components/ui';
 import { FinanceType, Status } from '@/constants';
 import { useDeleteFinance, useFinances } from '@/hooks/use-finance';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useFinanceStore } from '@/stores/finance';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { Trash2 } from 'lucide-react-native';
+import { useCallback } from 'react';
 import { ScrollView } from 'react-native';
 
 import { formatNumber } from '@/utils/format';
 export default function FinanceDraft() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
-  const { data: finances, isLoading: isLoadingFinances } = useFinances();
+  const { data: finances, isLoading: isLoadingFinances, refetch } = useFinances();
   const { mutate: deleteFinance, isPending: isPendingDelete } = useDeleteFinance();
   const isLoading = isLoadingFinances || isPendingDelete;
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useFinanceStore, handleVersionChange);
 
   // Filter only DRAFT status
   const drafts = finances?.filter((f) => f.status === Status.DRAFT) || [];
@@ -47,6 +56,7 @@ export default function FinanceDraft() {
       onOk: () => {
         deleteFinance(financeId, {
           onSuccess: () => {
+            useFinanceStore.getState().incrementVersion();
             hidePopUpConfirm();
           },
         });

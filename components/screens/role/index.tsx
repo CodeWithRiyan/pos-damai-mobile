@@ -2,6 +2,7 @@ import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
 import { useItemSelection } from '@/hooks/use-item-selection';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { Box } from '@/components/ui/box';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
@@ -16,9 +17,10 @@ import { getErrorMessage } from '@/db/client';
 import { Role, useBulkDeleteRole, useRoles } from '@/hooks/use-role';
 import { bulkDeleteConfirm } from '@/utils/delete-confirm';
 import { exportRoles } from '@/utils/excel';
+import { useRoleStore } from '@/stores/role';
 import { showToast } from '@/utils/toast';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { FlashList } from '@shopify/flash-list';
 
 export default function RoleList() {
@@ -29,6 +31,12 @@ export default function RoleList() {
     useItemSelection<Role>();
 
   const roles = data || [];
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useRoleStore, handleVersionChange);
 
   const deleteMutation = useBulkDeleteRole();
   const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({

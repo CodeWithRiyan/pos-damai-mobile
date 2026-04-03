@@ -23,6 +23,7 @@ import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import { useCreateFinance, useFinance } from '@/hooks/use-finance';
+import { useFinanceStore } from '@/stores/finance';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
@@ -144,6 +145,7 @@ export default function FinanceTransaction() {
       },
       {
         onSuccess: (responseData) => {
+          useFinanceStore.getState().incrementVersion();
           showToast(toast, {
             action: 'success',
             message:

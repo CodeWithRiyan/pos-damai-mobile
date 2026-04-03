@@ -28,6 +28,7 @@ import { useCreatePayableRealization, usePayableBySupplier } from '@/hooks/use-p
 import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { usePaymentTypes } from '@/hooks/use-payment-type';
 import { usePaymentTypeStore } from '@/stores/payment-type';
+import { usePayableStore } from '@/stores/payable';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
@@ -115,6 +116,7 @@ export default function PayableRealizationForm() {
         },
         {
           onSuccess: () => {
+            usePayableStore.getState().incrementVersion();
             showSuccessToast(toast, 'Pembayaran berhasil disimpan');
             router.back();
           },

@@ -31,6 +31,7 @@ import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 import z from 'zod';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useRoleStore } from '@/stores/role';
 
 const roleSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi.'),
@@ -102,6 +103,7 @@ export default function RoleForm() {
         {
           onSuccess: () => {
             onRefetch();
+            useRoleStore.getState().incrementVersion();
             handleCancel();
 
             showSuccessToast(toast, 'Role berhasil diubah');
@@ -115,6 +117,7 @@ export default function RoleForm() {
       createMutation.mutate(data, {
         onSuccess: () => {
           onRefetch();
+          useRoleStore.getState().incrementVersion();
           handleCancel();
 
           showSuccessToast(toast, 'Role berhasil dibuat');

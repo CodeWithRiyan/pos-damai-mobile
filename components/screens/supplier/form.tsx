@@ -15,17 +15,19 @@ import {
   VStack,
 } from '@/components/ui';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useSupplierStore } from '@/stores/supplier';
 import {
   CreateSupplierDTO,
   UpdateSupplierDTO,
   useCreateSupplier,
-  useSupplier,
   useSuppliers,
   useUpdateSupplier,
+  refetchSupplierById,
+  Supplier,
 } from '@/hooks/use-supplier';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 import { z } from 'zod';
@@ -35,6 +37,8 @@ export default function SupplierForm() {
   const { id } = useLocalSearchParams();
   const isAdd = !id;
   const supplierId = id as string;
+
+  const [supplier, setSupplier] = useState<Supplier | null>(null);
 
   const supplierSchema = z.object({
     name: z.string().min(1, 'Nama wajib diisi.'),
@@ -56,7 +60,6 @@ export default function SupplierForm() {
   });
 
   const { refetch: refetchSuppliers } = useSuppliers();
-  const { data: supplier, refetch: refetchSupplier } = useSupplier(supplierId || '');
 
   const createMutation = useCreateSupplier();
   const updateMutation = useUpdateSupplier();
@@ -66,22 +69,27 @@ export default function SupplierForm() {
   const toast = useToast();
 
   useEffect(() => {
-    if (supplierId && supplier) {
+    if (supplierId) {
+      refetchSupplierById(supplierId).then((data) => {
+        setSupplier(data);
+      });
+    }
+  }, [supplierId]);
+
+  useEffect(() => {
+    if (supplier) {
       form.reset({
         name: supplier.name,
         phone: supplier.phone || '',
         address: supplier.address || '',
       });
-    } else {
+    } else if (!supplierId) {
       form.reset(initialValues);
     }
   }, [form, supplier, supplierId]);
 
   const onRefetch = () => {
     refetchSuppliers();
-    if (supplierId) {
-      refetchSupplier();
-    }
   };
 
   const handleCancel = () => {
@@ -97,6 +105,7 @@ export default function SupplierForm() {
       updateMutation.mutate(updateData, {
         onSuccess: () => {
           onRefetch();
+          useSupplierStore.getState().incrementVersion();
           handleCancel();
           showSuccessToast(toast, 'Supplier berhasil diubah');
         },
@@ -109,6 +118,7 @@ export default function SupplierForm() {
       createMutation.mutate(createData, {
         onSuccess: () => {
           onRefetch();
+          useSupplierStore.getState().incrementVersion();
           form.reset(initialValues);
           handleCancel();
           showSuccessToast(toast, 'Supplier berhasil ditambahkan');

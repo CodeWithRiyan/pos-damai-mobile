@@ -21,11 +21,17 @@ import { Input, InputField } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { useBrand, useBrands, useCreateBrand, useUpdateBrand } from '@/hooks/use-brand';
+import {
+  useBrands,
+  useCreateBrand,
+  useUpdateBrand,
+  refetchBrandById,
+  fetchBrands,
+} from '@/hooks/use-brand';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useBrandStore } from '@/stores/brand';
 import { zodResolver } from '@hookform/resolvers/zod';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import z from 'zod';
 
@@ -49,19 +55,28 @@ export default function BrandForm() {
   });
 
   const { refetch: refetchBrands } = useBrands();
-  const { refetch: refetchBrand } = useBrand(dataBrand?.id || '');
 
   const createMutation = useCreateBrand();
   const updateMutation = useUpdateBrand();
 
-  const onRefetch = () => {
+  const onRefetch = useCallback(async () => {
+    await fetchBrands();
     refetchBrands();
-    if (dataBrand) refetchBrand();
-  };
+    if (dataBrand?.id) {
+      const freshData = await refetchBrandById(dataBrand.id);
+      if (freshData) {
+        form.setValue('name', freshData.name);
+      }
+    }
+  }, [refetchBrands, dataBrand, form]);
 
   useEffect(() => {
     if (dataBrand) {
-      form.setValue('name', dataBrand.name);
+      refetchBrandById(dataBrand.id).then((freshData) => {
+        if (freshData) {
+          form.setValue('name', freshData.name);
+        }
+      });
     } else {
       form.reset(initialValues);
     }
@@ -75,6 +90,7 @@ export default function BrandForm() {
           onSuccess: () => {
             showSuccessToast(toast, 'Brand berhasil diperbarui');
             onRefetch();
+            useBrandStore.getState().incrementVersion();
             form.reset(initialValues);
             setOpen(false);
           },
@@ -86,6 +102,7 @@ export default function BrandForm() {
         onSuccess: (newBrand) => {
           showSuccessToast(toast, 'Brand berhasil ditambahkan');
           onRefetch();
+          useBrandStore.getState().incrementVersion();
           if (useBrandStore.getState().onSuccess) {
             useBrandStore.getState().onSuccess?.(newBrand);
           }

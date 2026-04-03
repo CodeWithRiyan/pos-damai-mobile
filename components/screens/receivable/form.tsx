@@ -26,6 +26,7 @@ import {
   useUpdateReceivable,
 } from '@/hooks/use-receivable';
 import { useUsers } from '@/hooks/use-user';
+import { useReceivableStore } from '@/stores/receivable';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
@@ -97,6 +98,7 @@ export default function ReceivableForm() {
         },
         {
           onSuccess: () => {
+            useReceivableStore.getState().incrementVersion();
             showSuccessToast(toast, 'Piutang berhasil disimpan');
             router.back();
           },
@@ -114,6 +116,7 @@ export default function ReceivableForm() {
         },
         {
           onSuccess: () => {
+            useReceivableStore.getState().incrementVersion();
             showSuccessToast(toast, 'Piutang berhasil diupdate');
             router.back();
           },

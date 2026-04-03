@@ -5,15 +5,16 @@ import { Box, Heading, HStack, Spinner, Text, useToast, VStack } from '@/compone
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
-import { useBrand, useBrands, useDeleteBrand } from '@/hooks/use-brand';
+import { useBrands, useDeleteBrand, refetchBrandById, Brand } from '@/hooks/use-brand';
 import { Product, useProductsByBrand, useUnassignProductsFromBrand } from '@/hooks/use-product';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useBrandStore } from '@/stores/brand';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import { useItemSelection } from '@/hooks/use-item-selection';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView } from 'react-native';
 
 import { PriceType } from '@/constants';
@@ -26,6 +27,8 @@ export default function BrandDetail() {
   const { id } = useLocalSearchParams();
   const brandId = id as string;
 
+  const [brand, setBrand] = useState<Brand | null>(null);
+
   const {
     selectedItems: selectedProducts,
     handleItemPress,
@@ -35,7 +38,6 @@ export default function BrandDetail() {
   } = useItemSelection<Product>();
 
   const { refetch: refetchBrands } = useBrands();
-  const { data: brand, refetch: refetchBrand } = useBrand(brandId || '');
   const { data: products } = useProductsByBrand(brandId || '');
   const deleteMutation = useDeleteBrand();
   const unassignProductMutation = useUnassignProductsFromBrand();
@@ -49,16 +51,15 @@ export default function BrandDetail() {
     }, 0);
   }, [dataProducts]);
 
-  const onRefetch = () => {
+  const onRefetch = useCallback(async () => {
+    if (brandId) {
+      const freshBrand = await refetchBrandById(brandId);
+      setBrand(freshBrand);
+    }
     refetchBrands();
-    refetchBrand();
-  };
+  }, [brandId, refetchBrands]);
 
-  useFocusEffect(
-    useCallback(() => {
-      onRefetch();
-    }, []),
-  );
+  useStoreVersionSync(useBrandStore, onRefetch);
 
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Brand berhasil dihapus',

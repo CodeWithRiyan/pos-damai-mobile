@@ -1,6 +1,7 @@
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui';
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Box } from '@/components/ui/box';
@@ -29,7 +30,7 @@ import { useBrandStore } from '@/stores/brand';
 import { useItemSelection } from '@/hooks/use-item-selection';
 import { useRouter } from 'expo-router';
 import { SearchIcon } from 'lucide-react-native';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { FlashList } from '@shopify/flash-list';
 
 export default function BrandList() {
@@ -43,6 +44,13 @@ export default function BrandList() {
     useItemSelection<Brand>();
 
   const brands = data || [];
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+    refetchCounts();
+  }, [refetch, refetchCounts]);
+
+  useStoreVersionSync(useBrandStore, handleVersionChange);
 
   const deleteMutation = useBulkDeleteBrand();
   const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({

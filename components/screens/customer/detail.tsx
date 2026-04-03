@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { usePopUpConfirm } from '@/components/pop-up-confirm';
@@ -6,15 +6,18 @@ import { Box, HStack, Text, useToast, VStack } from '@/components/ui';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import {
-  useCustomer,
   useCustomers,
   useDeleteCustomer,
   useResetCustomerPoints,
+  refetchCustomerById,
+  CustomerWithStats,
 } from '@/hooks/use-customer';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { helperCustomerCategory } from '@/utils/customer-category';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useCustomerStore } from '@/stores/customer';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { ScrollView } from 'react-native';
 
@@ -26,21 +29,27 @@ export default function CustomerDetail() {
   const { id } = useLocalSearchParams();
   const customerId = id as string;
 
+  const [customer, setCustomer] = useState<CustomerWithStats | null>(null);
+
   const { refetch: refetchCustomers } = useCustomers();
-  const { data: customer, refetch: refetchCustomer } = useCustomer(customerId || '');
   const deleteMutation = useDeleteCustomer();
   const resetPointMutation = useResetCustomerPoints();
   const toast = useToast();
 
-  const onRefetch = () => {
+  const onRefetch = useCallback(async () => {
+    if (customerId) {
+      const freshCustomer = await refetchCustomerById(customerId);
+      setCustomer(freshCustomer);
+    }
     refetchCustomers();
-    refetchCustomer();
-  };
+  }, [customerId, refetchCustomers]);
+
+  useStoreVersionSync(useCustomerStore, onRefetch);
 
   useFocusEffect(
     useCallback(() => {
       onRefetch();
-    }, []),
+    }, [onRefetch]),
   );
 
   const { triggerDelete } = useDeleteEntity({

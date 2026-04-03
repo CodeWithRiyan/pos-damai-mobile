@@ -71,6 +71,7 @@ export default function StoreSuppliesConfirmForm({ date }: StoreSuppliesConfirmF
 
     createMutation.mutate(submissionData, {
       onSuccess: () => {
+        useStoreSuppliesStore.getState().incrementVersion();
         showSuccessToast(toast, 'Kebutuhan Toko berhasil disimpan');
         setOpenConfirm(false);
         resetCart();

@@ -35,6 +35,7 @@ interface PurchasingState {
   checkoutData: PurchasingCheckoutResponse | null;
   status: 'DRAFT' | 'COMPLETED';
   purchaseId: string | null;
+  version: number;
   setPurchaseId: (id: string | null) => void;
   setStatus: (status: 'DRAFT' | 'COMPLETED') => void;
   setAddProduct: (state: Product | null) => void;
@@ -42,6 +43,7 @@ interface PurchasingState {
   addCartItem: (item: CartItem) => void;
   removeCartItem: (productId: string) => void;
   resetCart: () => void;
+  incrementVersion: () => void;
 }
 
 export const usePurchasingStore = create<PurchasingState>((set) => ({
@@ -89,4 +91,6 @@ export const usePurchasingStore = create<PurchasingState>((set) => ({
       return { cart: updatedCart, cartTotal: total };
     }),
   resetCart: () => set({ cart: [], cartTotal: 0, purchaseId: null }),
+  version: 0,
+  incrementVersion: () => set((state) => ({ version: state.version + 1 })),
 }));

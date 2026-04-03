@@ -22,6 +22,8 @@ import { bulkDeleteConfirm } from '@/utils/delete-confirm';
 import { exportSuppliers, importSuppliers } from '@/utils/excel';
 import { showSuccessToast, showToast } from '@/utils/toast';
 import { useItemSelection } from '@/hooks/use-item-selection';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useSupplierStore } from '@/stores/supplier';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import { FlashList } from '@shopify/flash-list';
@@ -40,6 +42,18 @@ export default function SupplierList() {
   );
 
   const suppliers = data || [];
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useSupplierStore, handleVersionChange);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
 
   const deleteMutation = useBulkDeleteSupplier();
   const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({

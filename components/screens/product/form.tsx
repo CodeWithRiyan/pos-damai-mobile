@@ -31,14 +31,16 @@ import {
   CreateProductDTO,
   UpdateProductDTO,
   useCreateProduct,
-  useProduct,
   useProducts,
   useUpdateProduct,
+  refetchProductById,
+  Product,
 } from '@/hooks/use-product';
 import { unitSuffixHelper } from '@/utils/unit';
 import { useBrandStore } from '@/stores/brand';
 import { useCategoryStore } from '@/stores/category';
 import { useDiscountStore } from '@/stores/discount';
+import { useProductStore } from '@/stores/product';
 import { zodResolver } from '@hookform/resolvers/zod';
 import classNames from 'classnames';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -310,7 +312,7 @@ export default function ProductForm() {
   });
 
   const { refetch: refetchProducts } = useProducts();
-  const { data: product, refetch: refetchProduct } = useProduct(productId || '');
+  const [product, setProduct] = useState<Product | null>(null);
   const { data: categories = [], refetch: refetchCategories } = useCategories();
   const { data: brands = [], refetch: refetchBrands } = useBrands();
   const { data: discounts = [], refetch: refetchDiscounts } = useDiscounts();
@@ -341,7 +343,15 @@ export default function ProductForm() {
   }, [unitVariantFields.length]);
 
   useEffect(() => {
-    if (productId && product) {
+    if (productId) {
+      refetchProductById(productId).then((data) => {
+        setProduct(data);
+      });
+    }
+  }, [productId]);
+
+  useEffect(() => {
+    if (product) {
       form.reset({
         name: product.name,
         code: product.code || '',
@@ -355,8 +365,8 @@ export default function ProductForm() {
         variants: product.type === ProductType.VARIANTS ? product.variants : null,
         unitVariants:
           product.type === ProductType.MULTIUNIT
-            ? product.variants?.map((v) => {
-                const matchingPrice = product.sellPrices.find((p) => p.label === v.name);
+            ? product.variants?.map((v: any) => {
+                const matchingPrice = product.sellPrices.find((p: any) => p.label === v.name);
 
                 return {
                   code: v.code,
@@ -367,13 +377,13 @@ export default function ProductForm() {
                 };
               })
             : null,
-        retailPrice: product.sellPrices.filter((r) => r.type === PriceType.RETAIL),
-        wholesalePrice: product.sellPrices.filter((r) => r.type === PriceType.WHOLESALE),
+        retailPrice: product.sellPrices.filter((r: any) => r.type === PriceType.RETAIL),
+        wholesalePrice: product.sellPrices.filter((r: any) => r.type === PriceType.WHOLESALE),
         discountId: product.discountId || '',
         isActive: product.isActive,
         description: product.description || '',
       });
-    } else {
+    } else if (!productId) {
       form.reset(initialValues);
     }
   }, [form, product, productId, categories.length, brands.length]);
@@ -383,9 +393,6 @@ export default function ProductForm() {
     refetchCategories();
     refetchBrands();
     refetchDiscounts();
-    if (productId) {
-      refetchProduct();
-    }
   };
 
   const handleCancel = () => {
@@ -493,6 +500,7 @@ export default function ProductForm() {
       updateMutation.mutate(updateData, {
         onSuccess: () => {
           onRefetch();
+          useProductStore.getState().incrementVersion();
           handleCancel();
           showToast(toast, { action: 'success', message: 'Produk berhasil diubah' });
         },
@@ -510,6 +518,7 @@ export default function ProductForm() {
       createMutation.mutate(createData, {
         onSuccess: () => {
           onRefetch();
+          useProductStore.getState().incrementVersion();
           form.reset(initialValues);
           handleCancel();
           showToast(toast, { action: 'success', message: 'Produk berhasil ditambahkan' });

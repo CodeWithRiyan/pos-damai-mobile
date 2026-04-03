@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { usePopUpConfirm } from '@/components/pop-up-confirm';
@@ -21,10 +21,17 @@ import {
   useUnassignProductsFromSupplier,
 } from '@/hooks/use-product';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
-import { useDeleteSupplier, useSupplier, useSuppliers } from '@/hooks/use-supplier';
+import {
+  useDeleteSupplier,
+  useSuppliers,
+  refetchSupplierById,
+  Supplier,
+} from '@/hooks/use-supplier';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import { useItemSelection } from '@/hooks/use-item-selection';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useSupplierStore } from '@/stores/supplier';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { ScrollView } from 'react-native';
 
@@ -36,6 +43,8 @@ export default function SupplierDetail() {
   const { id } = useLocalSearchParams();
   const supplierId = id as string;
 
+  const [supplier, setSupplier] = useState<Supplier | null>(null);
+
   const {
     selectedItems: selectedProducts,
     handleItemPress,
@@ -45,21 +54,25 @@ export default function SupplierDetail() {
   } = useItemSelection<Product>();
 
   const { refetch: refetchSuppliers } = useSuppliers();
-  const { data: supplier, refetch: refetchSupplier } = useSupplier(supplierId || '');
   const { data: products = [] } = useProductsBySupplier(supplierId || '');
   const deleteMutation = useDeleteSupplier();
   const unassignProductMutation = useUnassignProductsFromSupplier();
   const toast = useToast();
 
-  const onRefetch = () => {
+  const onRefetch = useCallback(async () => {
+    if (supplierId) {
+      const freshSupplier = await refetchSupplierById(supplierId);
+      setSupplier(freshSupplier);
+    }
     refetchSuppliers();
-    refetchSupplier();
-  };
+  }, [supplierId, refetchSuppliers]);
+
+  useStoreVersionSync(useSupplierStore, onRefetch);
 
   useFocusEffect(
     useCallback(() => {
       onRefetch();
-    }, []),
+    }, [onRefetch]),
   );
 
   const { triggerDelete } = useDeleteEntity({

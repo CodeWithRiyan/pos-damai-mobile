@@ -22,6 +22,8 @@ import {
 } from '@/hooks/use-customer';
 import { bulkDeleteConfirm } from '@/utils/delete-confirm';
 import { exportCustomers, importCustomers } from '@/utils/excel';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useCustomerStore } from '@/stores/customer';
 import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { useItemSelection } from '@/hooks/use-item-selection';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -44,6 +46,12 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
   );
 
   const customers = data || [];
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useCustomerStore, handleVersionChange);
 
   const deleteMutation = useBulkDeleteCustomer();
   const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({

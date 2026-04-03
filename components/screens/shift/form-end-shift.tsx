@@ -27,6 +27,7 @@ import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useCurrentShift, useEndShift } from '@/hooks/use-shift';
+import { useShiftStore } from '@/stores/shift';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -71,6 +72,7 @@ export default function EndShiftForm({
       },
       {
         onSuccess: () => {
+          useShiftStore.getState().incrementVersion();
           showSuccessToast(toast, 'Shift Telah Berakhir');
           form.reset(initialValues);
           setOpen(false);

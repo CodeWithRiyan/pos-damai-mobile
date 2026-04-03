@@ -17,6 +17,7 @@ import {
 } from '@/components/ui';
 import SelectModal from '@/components/ui/select/select-modal';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useUserStore } from '@/stores/user';
 import { useRoles } from '@/hooks/use-role';
 import {
   CreateUserDTO,
@@ -109,6 +110,7 @@ export default function UserForm() {
       updateMutation.mutate(updateData, {
         onSuccess: () => {
           onRefetch();
+          useUserStore.getState().incrementVersion();
           handleCancel();
 
           showSuccessToast(toast, 'Karyawan berhasil diubah');
@@ -125,6 +127,7 @@ export default function UserForm() {
       createMutation.mutate(createData, {
         onSuccess: () => {
           onRefetch();
+          useUserStore.getState().incrementVersion();
           handleCancel();
 
           showSuccessToast(toast, 'Karyawan berhasil diubah');

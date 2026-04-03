@@ -21,6 +21,8 @@ import {
 } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { Receivable, useReceivableByUser } from '@/hooks/use-receivable';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useReceivableStore } from '@/stores/receivable';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
@@ -40,6 +42,12 @@ export default function ReceivableDetail() {
     isLoading,
     refetch: refetchReceivable,
   } = useReceivableByUser(userId);
+
+  const onRefetch = useCallback(() => {
+    refetchReceivable();
+  }, [refetchReceivable]);
+
+  useStoreVersionSync(useReceivableStore, onRefetch);
 
   useFocusEffect(
     useCallback(() => {

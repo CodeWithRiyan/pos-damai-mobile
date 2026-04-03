@@ -51,6 +51,10 @@ export async function fetchDiscount(id: string): Promise<Discount | null> {
   return (result[0] as Discount) || null;
 }
 
+export async function refetchDiscountById(id: string): Promise<Discount | null> {
+  return fetchDiscount(id);
+}
+
 export async function createDiscount(data: CreateDiscountDTO): Promise<Discount> {
   const orgId = useAuthStore.getState().getOrganizationId();
   const id = `disc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

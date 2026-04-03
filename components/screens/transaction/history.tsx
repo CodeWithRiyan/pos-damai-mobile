@@ -19,10 +19,12 @@ import { Spinner } from '@/components/ui/spinner';
 import { useTransactions } from '@/hooks/use-transaction';
 import { DateFilterType, Status } from '@/constants';
 import { formatDisplayRefId } from '@/utils/reference';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useTransactionStore } from '@/stores/transaction';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import { ScrollView } from 'react-native';
 import TransactionFilter, {
@@ -54,7 +56,11 @@ export default function TransactionHistory({ isReport }: { isReport?: boolean })
   );
   const [chartCategory, setChartCategory] = useState('totalTransaction');
   const [chartType, setChartType] = useState('area-chart');
-  const { data: allTransactions, isLoading } = useTransactions({
+  const {
+    data: allTransactions,
+    isLoading,
+    refetch,
+  } = useTransactions({
     customerId,
     userId: transactionFilter.userId || undefined,
     paymentTypeIds: transactionFilter.paymentTypeIds || [],
@@ -63,6 +69,12 @@ export default function TransactionHistory({ isReport }: { isReport?: boolean })
     endDate: transactionFilter.endDate,
     search: transactionFilter.search || undefined,
   });
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useTransactionStore, handleVersionChange);
 
   const completedTransactions = useMemo(
     () => allTransactions?.filter((t) => t.status === Status.COMPLETED) ?? [],

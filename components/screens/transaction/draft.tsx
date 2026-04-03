@@ -13,10 +13,12 @@ import {
 import { useContinueDraft, useDeleteTransaction, useTransactions } from '@/hooks/use-transaction';
 import { Status } from '@/constants';
 import { useTransactionStore } from '@/stores/transaction';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { Trash2 } from 'lucide-react-native';
+import { useCallback } from 'react';
 import { ScrollView } from 'react-native';
 
 import { useCustomers } from '@/hooks/use-customer';
@@ -24,13 +26,21 @@ import { useUsers } from '@/hooks/use-user';
 import { formatNumber } from '@/utils/format';
 export default function TransactionDraft() {
   const router = useRouter();
-  const { data: transactions, isLoading: isTransactionsLoading } = useTransactions();
+  const { data: transactions, isLoading: isTransactionsLoading, refetch } = useTransactions();
   const { data: customers, isLoading: isCustomersLoading } = useCustomers();
   const { data: users, isLoading: isUsersLoading } = useUsers();
   const isLoading = isTransactionsLoading || isCustomersLoading || isUsersLoading;
   const toast = useToast();
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useTransactionStore, handleVersionChange);
+
   const deleteMutation = useDeleteTransaction({
     onSuccess: () => {
+      useTransactionStore.getState().incrementVersion();
       showSuccessToast(toast, 'Berhasil hapus draft');
     },
     onError: (error) => {
@@ -49,6 +59,7 @@ export default function TransactionDraft() {
 
     if (!result) return;
 
+    useTransactionStore.getState().incrementVersion();
     resetCart();
     for (const item of result.items) {
       if (item.product) {

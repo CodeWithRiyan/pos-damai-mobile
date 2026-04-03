@@ -14,6 +14,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { usePurchases } from '@/hooks/use-purchasing';
 import { DateFilterType, PaymentMethod, Status } from '@/constants';
 import { formatDisplayRefId } from '@/utils/reference';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { usePurchasingStore } from '@/stores/purchasing';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
@@ -26,7 +28,7 @@ import { Grid, GridItem } from '@/components/ui/grid';
 import { SolarIconBold, SolarIconBoldProps } from '@/components/ui/solar-icon-wrapper';
 import { formatNumber, formatRp } from '@/utils/format';
 import classNames from 'classnames';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import PurchasingFilterHistory, {
   PurchasingFilterFormValues,
   purchasingFilterInitialValues,
@@ -52,7 +54,11 @@ export default function PurchasingHistory({ isReport }: { isReport?: boolean }) 
   );
   const [chartCategory, setChartCategory] = useState('totalTransaction');
   const [chartType, setChartType] = useState('area-chart');
-  const { data: allPurchases, isLoading } = usePurchases({
+  const {
+    data: allPurchases,
+    isLoading,
+    refetch,
+  } = usePurchases({
     supplierId: purchasingFilter.supplierId || undefined,
     userId: purchasingFilter.userId || undefined,
     paymentTypeIds: purchasingFilter.paymentTypeIds || [],
@@ -61,6 +67,12 @@ export default function PurchasingHistory({ isReport }: { isReport?: boolean }) 
     endDate: purchasingFilter.endDate?.toISOString(),
     search: purchasingFilter.search || undefined,
   });
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(usePurchasingStore, handleVersionChange);
 
   const completedPurchasing = useMemo(
     () => allPurchases?.filter((p) => p.status === Status.COMPLETED) ?? [],

@@ -5,17 +5,25 @@ import { Status } from '@/constants';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
 import { usePurchasingStore } from '@/stores/purchasing';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import dayjs from 'dayjs';
 import { eq } from 'drizzle-orm';
 import { useRouter } from 'expo-router';
 import { Trash2 } from 'lucide-react-native';
+import { useCallback } from 'react';
 import { ScrollView } from 'react-native';
 
 import { formatNumber } from '@/utils/format';
 export default function PurchasingDraft() {
   const router = useRouter();
-  const { data: purchases, isLoading } = usePurchases();
+  const { data: purchases, isLoading, refetch } = usePurchases();
   const { addCartItem, resetCart, setStatus, setPurchaseId } = usePurchasingStore();
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(usePurchasingStore, handleVersionChange);
 
   // Filter only DRAFT status
   const drafts = purchases?.filter((p) => p.status === Status.DRAFT) || [];
@@ -44,6 +52,7 @@ export default function PurchasingDraft() {
       }
       setStatus(Status.DRAFT);
       setPurchaseId(detail.id);
+      usePurchasingStore.getState().incrementVersion();
       router.replace('/(main)/purchasing');
     }
   };
@@ -78,6 +87,7 @@ export default function PurchasingDraft() {
       // 3. Delete purchase
       await tx.delete(schema.purchases).where(eq(schema.purchases.id, purchaseId));
     });
+    usePurchasingStore.getState().incrementVersion();
   };
 
   if (isLoading) {

@@ -2,6 +2,7 @@ import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
 import { useItemSelection } from '@/hooks/use-item-selection';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { Box } from '@/components/ui/box';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
@@ -17,10 +18,11 @@ import { useRoles } from '@/hooks/use-role';
 import { useBulkDeleteUser, useCreateUser, User, useUsers } from '@/hooks/use-user';
 import { bulkDeleteConfirm } from '@/utils/delete-confirm';
 import { exportUsers, importUsers } from '@/utils/excel';
+import { useUserStore } from '@/stores/user';
 import { showSuccessToast, showToast } from '@/utils/toast';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { FlashList } from '@shopify/flash-list';
 
 export default function UserList() {
@@ -33,6 +35,12 @@ export default function UserList() {
 
   const users = data || [];
   const roles = rolesData || [];
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useUserStore, handleVersionChange);
 
   const deleteMutation = useBulkDeleteUser();
   const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({

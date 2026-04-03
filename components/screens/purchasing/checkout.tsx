@@ -211,6 +211,7 @@ export default function PurchasingCheckoutForm() {
 
     createMutation.mutate(submissionData, {
       onSuccess: (responseData) => {
+        usePurchasingStore.getState().incrementVersion();
         setCheckoutData({
           ...data,
           id: responseData.id,

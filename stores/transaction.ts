@@ -46,6 +46,7 @@ interface TransactionState {
   transactionId: string | null;
   addProduct: Product | null;
   addProductVariantId: string | null;
+  version: number;
   setCustomer: (customer: Customer | null) => void;
   setEmployee: (employee: Employee | null) => void;
   setTransactionId: (id: string | null) => void;
@@ -55,6 +56,7 @@ interface TransactionState {
   setStatus: (status: 'DRAFT' | 'COMPLETED') => void;
   setCheckoutData: (data: CheckoutData | null) => void;
   setAddProduct: (product: Product | null, variantId?: string) => void;
+  incrementVersion: () => void;
 }
 
 export const useTransactionStore = create<TransactionState>((set) => ({
@@ -244,4 +246,6 @@ export const useTransactionStore = create<TransactionState>((set) => ({
       return { cart: updatedCart, cartTotal: total };
     }),
   resetCart: () => set({ cart: [], cartTotal: 0, transactionId: null }),
+  version: 0,
+  incrementVersion: () => set((state) => ({ version: state.version + 1 })),
 }));

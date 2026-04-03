@@ -23,14 +23,15 @@ import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import {
   useCategories,
-  useCategory,
   useCreateCategory,
   useUpdateCategory,
+  refetchCategoryById,
+  fetchCategories,
 } from '@/hooks/use-category';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useCategoryStore } from '@/stores/category';
 import { zodResolver } from '@hookform/resolvers/zod';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import z from 'zod';
 
@@ -39,7 +40,7 @@ export default function CategoryForm() {
   const toast = useToast();
 
   const categorySchema = z.object({
-    name: z.string().min(1, 'Nama Category wajib diisi.'),
+    name: z.string().min(1, 'Nama Kategoriwajib diisi.'),
     retailPoint: z.number().min(0, 'Poin harus >= 0'),
     wholesalePoint: z.number().min(0, 'Poin harus >= 0'),
   });
@@ -57,28 +58,61 @@ export default function CategoryForm() {
     defaultValues: initialValues,
   });
 
-  const { refetch: refetchCategorys } = useCategories();
-  const { refetch: refetchCategory } = useCategory(dataCategory?.id || '');
+  const { refetch: refetchCategories } = useCategories();
 
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
 
-  const onRefetch = () => {
-    refetchCategorys();
-    if (dataCategory) refetchCategory();
-  };
+  const onRefetch = useCallback(async () => {
+    await fetchCategories();
+    refetchCategories();
+    if (dataCategory?.id) {
+      const freshData = await refetchCategoryById(dataCategory.id);
+      if (freshData) {
+        form.reset({
+          name: freshData.name,
+          retailPoint: freshData.retailPoint || 0,
+          wholesalePoint: freshData.wholesalePoint || 0,
+        });
+      }
+    }
+  }, [refetchCategories, dataCategory, form]);
 
   useEffect(() => {
     if (dataCategory) {
-      form.reset({
-        name: dataCategory.name,
-        retailPoint: dataCategory.retailPoint || 0,
-        wholesalePoint: dataCategory.wholesalePoint || 0,
+      refetchCategoryById(dataCategory.id).then((freshData) => {
+        if (freshData) {
+          form.reset({
+            name: freshData.name,
+            retailPoint: freshData.retailPoint || 0,
+            wholesalePoint: freshData.wholesalePoint || 0,
+          });
+        }
       });
     } else {
       form.reset(initialValues);
     }
   }, [dataCategory, form]);
+
+  useEffect(() => {
+    const store = useCategoryStore.getState();
+    const currentVersion = store.version;
+
+    const unsubscribe = useCategoryStore.subscribe((state) => {
+      if (state.version !== currentVersion && open && state.data) {
+        refetchCategoryById(state.data.id).then((freshData) => {
+          if (freshData) {
+            form.reset({
+              name: freshData.name,
+              retailPoint: freshData.retailPoint || 0,
+              wholesalePoint: freshData.wholesalePoint || 0,
+            });
+          }
+        });
+      }
+    });
+    return unsubscribe;
+  }, [open]);
 
   const onSubmit: SubmitHandler<CategoryFormValues> = (data: CategoryFormValues) => {
     if (dataCategory) {
@@ -88,6 +122,7 @@ export default function CategoryForm() {
           onSuccess: () => {
             showSuccessToast(toast, 'Kategori berhasil diperbarui');
             onRefetch();
+            useCategoryStore.getState().incrementVersion();
             form.reset(initialValues);
             setOpen(false);
           },
@@ -99,6 +134,7 @@ export default function CategoryForm() {
         onSuccess: (newCat) => {
           showSuccessToast(toast, 'Kategori berhasil ditambahkan');
           onRefetch();
+          useCategoryStore.getState().incrementVersion();
           if (useCategoryStore.getState().onSuccess) {
             useCategoryStore.getState().onSuccess?.(newCat);
           }

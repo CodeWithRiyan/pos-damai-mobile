@@ -39,6 +39,10 @@ export async function fetchCashDrawer(id: string): Promise<CashDrawer | null> {
   return result[0] as unknown as CashDrawer;
 }
 
+export async function refetchCashDrawerById(id: string): Promise<CashDrawer | null> {
+  return fetchCashDrawer(id);
+}
+
 export async function createCashDrawer(data: {
   name: string;
   isActive?: boolean;

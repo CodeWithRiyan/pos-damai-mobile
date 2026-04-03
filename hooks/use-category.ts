@@ -63,6 +63,10 @@ export async function fetchCategory(id: string): Promise<Category | null> {
   return result[0] as unknown as Category;
 }
 
+export async function refetchCategoryById(id: string): Promise<Category | null> {
+  return fetchCategory(id);
+}
+
 export async function createCategory(data: CreateCategoryDTO): Promise<Category> {
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) throw new Error('Organization not found');

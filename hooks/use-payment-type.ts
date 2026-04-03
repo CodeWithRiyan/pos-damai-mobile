@@ -52,6 +52,10 @@ export async function fetchPaymentType(id: string): Promise<PaymentType | null> 
   return (result[0] as PaymentType) || null;
 }
 
+export async function refetchPaymentTypeById(id: string): Promise<PaymentType | null> {
+  return fetchPaymentType(id);
+}
+
 export async function createPaymentType(data: CreatePaymentTypeDTO): Promise<PaymentType> {
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) {

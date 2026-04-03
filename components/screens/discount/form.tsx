@@ -103,6 +103,7 @@ export default function DiscountForm() {
         {
           onSuccess: () => {
             showSuccessToast(toast, 'Diskon berhasil diperbarui');
+            useDiscountStore.getState().incrementVersion();
             form.reset(initialValues);
             setOpen(false);
             onRefetch();
@@ -116,6 +117,7 @@ export default function DiscountForm() {
       createMutation.mutate(data, {
         onSuccess: (newDiscount) => {
           showSuccessToast(toast, 'Diskon berhasil ditambahkan');
+          useDiscountStore.getState().incrementVersion();
           onRefetch();
           if (useDiscountStore.getState().onSuccess) {
             useDiscountStore.getState().onSuccess?.(newDiscount);

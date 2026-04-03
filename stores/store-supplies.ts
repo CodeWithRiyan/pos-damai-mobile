@@ -12,11 +12,13 @@ interface StoreSuppliesState {
   addProductVariantId: string | null;
   openConfirm: boolean;
   cart: CartItem[];
+  version: number;
   setAddProduct: (state: Product | null, variantId?: string) => void;
   setOpenConfirm: (state: boolean) => void;
   addCartItem: (item: CartItem) => void;
   removeCartItem: (productId: string, variantId?: string) => void;
   resetCart: () => void;
+  incrementVersion: () => void;
 }
 
 export const useStoreSuppliesStore = create<StoreSuppliesState>((set) => ({
@@ -54,4 +56,6 @@ export const useStoreSuppliesStore = create<StoreSuppliesState>((set) => ({
       return { cart: updatedCart };
     }),
   resetCart: () => set({ cart: [] }),
+  version: 0,
+  incrementVersion: () => set((state) => ({ version: state.version + 1 })),
 }));

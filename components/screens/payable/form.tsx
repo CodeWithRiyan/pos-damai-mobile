@@ -22,6 +22,7 @@ import SelectModal from '@/components/ui/select/select-modal';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useCreatePayable, usePayableDetail, useUpdatePayable } from '@/hooks/use-payable';
 import { useSuppliers } from '@/hooks/use-supplier';
+import { usePayableStore } from '@/stores/payable';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
@@ -93,6 +94,7 @@ export default function PayableForm() {
         },
         {
           onSuccess: () => {
+            usePayableStore.getState().incrementVersion();
             showSuccessToast(toast, 'Hutang berhasil disimpan');
             router.back();
           },
@@ -110,6 +112,7 @@ export default function PayableForm() {
         },
         {
           onSuccess: () => {
+            usePayableStore.getState().incrementVersion();
             showSuccessToast(toast, 'Hutang berhasil diupdate');
             router.back();
           },

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { Box, HStack, Text, VStack } from '@/components/ui';
@@ -6,7 +6,9 @@ import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
-import { useDeleteUser, useUser, useUsers } from '@/hooks/use-user';
+import { useDeleteUser, useUsers, refetchUserById, User } from '@/hooks/use-user';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useUserStore } from '@/stores/user';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { ScrollView } from 'react-native';
@@ -17,19 +19,25 @@ export default function UserDetail() {
   const { id } = useLocalSearchParams();
   const userId = id as string;
 
+  const [user, setUser] = useState<User | null>(null);
+
   const { refetch: refetchUsers } = useUsers();
-  const { data: user, refetch: refetchUser } = useUser(userId || '');
   const deleteMutation = useDeleteUser();
 
-  const onRefetch = () => {
+  const onRefetch = useCallback(async () => {
+    if (userId) {
+      const freshUser = await refetchUserById(userId);
+      setUser(freshUser);
+    }
     refetchUsers();
-    refetchUser();
-  };
+  }, [userId, refetchUsers]);
+
+  useStoreVersionSync(useUserStore, onRefetch);
 
   useFocusEffect(
     useCallback(() => {
       onRefetch();
-    }, []),
+    }, [onRefetch]),
   );
 
   const { triggerDelete } = useDeleteEntity({

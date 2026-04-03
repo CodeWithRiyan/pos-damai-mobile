@@ -8,6 +8,8 @@ import useBreakpoint from '@/hooks/use-breakpoint';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import { useDeleteRole, useRole, useRoles } from '@/hooks/use-role';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useRoleStore } from '@/stores/role';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { ScrollView } from 'react-native';
 
@@ -27,6 +29,8 @@ export default function RoleDetail() {
     refetchRoles();
     refetchRole();
   };
+
+  useStoreVersionSync(useRoleStore, onRefetch);
 
   useFocusEffect(
     useCallback(() => {

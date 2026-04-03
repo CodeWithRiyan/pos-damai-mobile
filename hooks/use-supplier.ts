@@ -61,6 +61,10 @@ export async function fetchSupplier(id: string): Promise<Supplier | null> {
   return result[0] as unknown as Supplier;
 }
 
+export async function refetchSupplierById(id: string): Promise<Supplier | null> {
+  return fetchSupplier(id);
+}
+
 export async function createSupplier(data: CreateSupplierDTO): Promise<Supplier> {
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) throw new Error('Organization not found');

@@ -9,6 +9,7 @@ import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
 import { useStoreSupplies } from '@/hooks/use-store-supplies';
 import { useStoreSuppliesStore } from '@/stores/store-supplies';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import dayjs from 'dayjs';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
@@ -24,6 +25,12 @@ export default function StoreSuppliesList({ isReport }: { isReport?: boolean }) 
       refetch();
     }, [refetch]),
   );
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useStoreSuppliesStore, handleVersionChange);
 
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {

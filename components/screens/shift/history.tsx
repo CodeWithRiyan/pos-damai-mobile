@@ -1,13 +1,22 @@
 import { Box, HStack, Pressable, Text, VStack } from '@/components/ui';
 import { useShifts } from '@/hooks/use-shift';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useShiftStore } from '@/stores/shift';
 import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Spinner } from '@/components/ui/spinner';
 import dayjs from 'dayjs';
+import { useCallback } from 'react';
 
 export default function HistoryShift() {
   const router = useRouter();
-  const { data: shifts, isLoading } = useShifts();
+  const { data: shifts, isLoading, refetch } = useShifts();
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useShiftStore, handleVersionChange);
 
   if (isLoading) {
     return (

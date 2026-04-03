@@ -293,6 +293,7 @@ export default function TransactionCheckoutForm() {
       const result = await createTransactionMutation.mutateAsync(submissionData);
 
       if (result.id) {
+        useTransactionStore.getState().incrementVersion();
         // Create receivable if hutang is checked
         if (isHutang && employee) {
           await createReceivableMutation.mutateAsync({

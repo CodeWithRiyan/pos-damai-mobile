@@ -77,6 +77,10 @@ export async function fetchCustomer(id: string): Promise<CustomerWithStats | nul
   return result[0] as CustomerWithStats;
 }
 
+export async function refetchCustomerById(id: string): Promise<CustomerWithStats | null> {
+  return fetchCustomer(id);
+}
+
 export async function createCustomer(data: CreateCustomerDTO): Promise<Customer> {
   const orgId = useAuthStore.getState().getOrganizationId();
   const id = `cust_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

@@ -1,6 +1,8 @@
 import Header from '@/components/header';
 import { HStack, Icon, Pressable, Text, VStack } from '@/components/ui';
 import { useShiftDetail } from '@/hooks/use-shift';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useShiftStore } from '@/stores/shift';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { PlusCircle } from 'lucide-react-native';
@@ -13,6 +15,12 @@ export default function ShiftDetail() {
   const params = useLocalSearchParams();
   const id = params.id as string;
   const { data: detailShift, refetch: refetchShift } = useShiftDetail(id || '');
+
+  const onRefetch = useCallback(() => {
+    refetchShift();
+  }, [refetchShift]);
+
+  useStoreVersionSync(useShiftStore, onRefetch);
 
   useFocusEffect(
     useCallback(() => {

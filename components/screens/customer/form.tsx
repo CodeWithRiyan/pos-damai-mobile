@@ -15,10 +15,16 @@ import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
-import { useCreateCustomer, useCustomer, useUpdateCustomer } from '@/hooks/use-customer';
+import { useCustomerStore } from '@/stores/customer';
+import {
+  useCreateCustomer,
+  useUpdateCustomer,
+  refetchCustomerById,
+  CustomerWithStats,
+} from '@/hooks/use-customer';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 import { PriceType } from '@/constants';
@@ -30,6 +36,9 @@ export default function CustomerForm() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const customerId = id;
   const isAdd = !id;
+
+  const [customer, setCustomer] = useState<CustomerWithStats | null>(null);
+  const [loadingCustomer, setLoadingCustomer] = useState(false);
 
   const customerSchema = z.object({
     name: z.string().min(1, 'Nama wajib diisi.'),
@@ -55,7 +64,6 @@ export default function CustomerForm() {
   });
   const isRetail = form.watch('category') === PriceType.RETAIL;
 
-  const { data: customer, loading: loadingCustomer } = useCustomer(id || '');
   const createMutation = useCreateCustomer();
   const updateMutation = useUpdateCustomer();
 
@@ -65,7 +73,17 @@ export default function CustomerForm() {
   ];
 
   useEffect(() => {
-    if (customerId && customer) {
+    if (customerId) {
+      setLoadingCustomer(true);
+      refetchCustomerById(customerId).then((data) => {
+        setCustomer(data);
+        setLoadingCustomer(false);
+      });
+    }
+  }, [customerId]);
+
+  useEffect(() => {
+    if (customer) {
       form.reset({
         name: customer.name,
         code: customer.code || '',
@@ -73,7 +91,7 @@ export default function CustomerForm() {
         phone: customer.phone || '',
         address: customer.address || '',
       });
-    } else {
+    } else if (!customerId) {
       form.reset(initialValues);
     }
   }, [customer, customerId, form]);
@@ -88,6 +106,7 @@ export default function CustomerForm() {
         },
         {
           onSuccess: () => {
+            useCustomerStore.getState().incrementVersion();
             showSuccessToast(toast, 'Pelanggan berhasil diperbarui');
             router.back();
           },
@@ -102,6 +121,7 @@ export default function CustomerForm() {
         },
         {
           onSuccess: () => {
+            useCustomerStore.getState().incrementVersion();
             showSuccessToast(toast, 'Pelanggan berhasil ditambahkan');
             form.reset(initialValues);
             router.back();

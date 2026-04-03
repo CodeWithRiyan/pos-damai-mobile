@@ -5,7 +5,12 @@ import { Box, Heading, HStack, Spinner, Text, useToast, VStack } from '@/compone
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
-import { useCategories, useCategory, useDeleteCategory } from '@/hooks/use-category';
+import {
+  useCategories,
+  useDeleteCategory,
+  refetchCategoryById,
+  Category,
+} from '@/hooks/use-category';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import {
   Product,
@@ -14,10 +19,11 @@ import {
 } from '@/hooks/use-product';
 import { useCategoryStore } from '@/stores/category';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import { useItemSelection } from '@/hooks/use-item-selection';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView } from 'react-native';
 
 import { formatRp, formatNumber } from '@/utils/format';
@@ -29,6 +35,8 @@ export default function CategoryDetail() {
   const { id } = useLocalSearchParams();
   const categoryId = id as string;
 
+  const [category, setCategory] = useState<Category | null>(null);
+
   const {
     selectedItems: selectedProducts,
     handleItemPress,
@@ -38,7 +46,6 @@ export default function CategoryDetail() {
   } = useItemSelection<Product>();
 
   const { refetch: refetchCategorys } = useCategories();
-  const { data: category, refetch: refetchCategory } = useCategory(categoryId || '');
   const { data: products = [] } = useProductsByCategory(categoryId || '');
   const deleteMutation = useDeleteCategory();
   const unassignProductMutation = useUnassignProductsFromCategory();
@@ -50,16 +57,15 @@ export default function CategoryDetail() {
     }, 0);
   }, [products]);
 
-  const onRefetch = () => {
+  const onRefetch = useCallback(async () => {
+    if (categoryId) {
+      const freshCategory = await refetchCategoryById(categoryId);
+      setCategory(freshCategory);
+    }
     refetchCategorys();
-    refetchCategory();
-  };
+  }, [categoryId, refetchCategorys]);
 
-  useFocusEffect(
-    useCallback(() => {
-      onRefetch();
-    }, []),
-  );
+  useStoreVersionSync(useCategoryStore, onRefetch);
 
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Kategori berhasil dihapus',
@@ -103,15 +109,18 @@ export default function CategoryDetail() {
   };
 
   const handleAction = () => {
+    console.log('[CategoryDetail] handleAction - category:', category);
     showActionDrawer({
       actions: [
         {
           label: 'Edit',
           icon: 'Pen',
-          onPress: () => {
-            setOpen(true);
-            setData(category ?? null);
+          onPress: async () => {
             hideActionDrawer();
+            const freshCategory = await refetchCategoryById(categoryId);
+            console.log('[CategoryDetail] After refetch, freshCategory:', freshCategory);
+            setOpen(true);
+            setData(freshCategory ?? null);
           },
         },
         {
@@ -163,7 +172,7 @@ export default function CategoryDetail() {
         <VStack>
           <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
             <HStack className="w-full flex-row justify-between">
-              <Text className="font-bold text-gray-500">Nama Category</Text>
+              <Text className="font-bold text-gray-500">Nama Kategori</Text>
               <Text className="font-bold">{category?.name || '-'}</Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">

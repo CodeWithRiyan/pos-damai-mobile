@@ -27,6 +27,7 @@ import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { usePaymentTypes } from '@/hooks/use-payment-type';
 import { useCreateReceivableRealization, useReceivableDetail } from '@/hooks/use-receivable';
 import { usePaymentTypeStore } from '@/stores/payment-type';
+import { useReceivableStore } from '@/stores/receivable';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
@@ -108,6 +109,7 @@ export default function ReceivableRealizationForm() {
         },
         {
           onSuccess: () => {
+            useReceivableStore.getState().incrementVersion();
             showSuccessToast(toast, 'Penerimaan berhasil disimpan');
             router.back();
           },

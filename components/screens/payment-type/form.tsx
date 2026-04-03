@@ -28,14 +28,14 @@ import { VStack } from '@/components/ui/vstack';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import {
   useCreatePaymentType,
-  usePaymentType,
   usePaymentTypes,
   useUpdatePaymentType,
+  refetchPaymentTypeById,
 } from '@/hooks/use-payment-type';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Percent } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { CalcType } from '@/constants';
 import z from 'zod';
@@ -77,27 +77,28 @@ export default function PaymentTypeForm() {
 
   const [commisionInput, setCommisionInput] = useState<string>('');
   const { refetch: refetchPaymentTypes } = usePaymentTypes();
-  const { refetch: refetchPaymentType } = usePaymentType(dataPaymentType?.id || '');
 
   const createMutation = useCreatePaymentType();
   const updateMutation = useUpdatePaymentType();
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  const onRefetch = () => {
+  const onRefetch = useCallback(() => {
     refetchPaymentTypes();
-    if (dataPaymentType) refetchPaymentType();
-  };
+  }, [refetchPaymentTypes]);
 
   useEffect(() => {
     if (dataPaymentType) {
-      setCommisionInput(dataPaymentType.commission.toString());
-
-      form.reset({
-        name: dataPaymentType.name,
-        commission: dataPaymentType.commission,
-        commissionType: dataPaymentType.commissionType || CalcType.PERCENTAGE,
-        minimalAmount: dataPaymentType.minimalAmount,
+      refetchPaymentTypeById(dataPaymentType.id).then((freshData) => {
+        if (freshData) {
+          setCommisionInput(freshData.commission.toString());
+          form.reset({
+            name: freshData.name,
+            commission: freshData.commission,
+            commissionType: freshData.commissionType || CalcType.PERCENTAGE,
+            minimalAmount: freshData.minimalAmount,
+          });
+        }
       });
     } else {
       setCommisionInput('');
@@ -115,6 +116,7 @@ export default function PaymentTypeForm() {
         {
           onSuccess: (updatedData) => {
             showSuccessToast(toast, 'Jenis pembayaran berhasil diperbarui');
+            usePaymentTypeStore.getState().incrementVersion();
             if (usePaymentTypeStore.getState().onSuccess) {
               usePaymentTypeStore.getState().onSuccess!(updatedData as any);
             }
@@ -129,6 +131,7 @@ export default function PaymentTypeForm() {
       createMutation.mutate(data, {
         onSuccess: (newData) => {
           showSuccessToast(toast, 'Jenis pembayaran berhasil ditambahkan');
+          usePaymentTypeStore.getState().incrementVersion();
           if (usePaymentTypeStore.getState().onSuccess) {
             usePaymentTypeStore.getState().onSuccess!(newData);
           }

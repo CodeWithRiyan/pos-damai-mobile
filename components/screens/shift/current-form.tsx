@@ -21,6 +21,7 @@ import SelectModal from '@/components/ui/select/select-modal';
 import { useCashDrawers } from '@/hooks/use-cashdrawer';
 import { useCurrentShift, useLastShift, useStartShift } from '@/hooks/use-shift';
 import { useCashDrawerStore } from '@/stores/cashdrawer';
+import { useShiftStore } from '@/stores/shift';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import { CheckIcon, PlusIcon } from 'lucide-react-native';
@@ -83,6 +84,7 @@ export default function CurrentFormShift() {
         note: data.note,
       });
 
+      useShiftStore.getState().incrementVersion();
       router.push('/(main)/transaction');
     } catch (error) {
       console.error('Error starting shift:', error);

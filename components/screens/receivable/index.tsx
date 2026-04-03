@@ -30,18 +30,20 @@ import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { Receivable, useBulkDeleteReceivable, useReceivableList } from '@/hooks/use-receivable';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useReceivableStore } from '@/stores/receivable';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { FlashList } from '@shopify/flash-list';
 
 import { formatRp } from '@/utils/format';
 export default function ReceivableList({ isReport }: { isReport?: boolean }) {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
-  const { data: receivableByUser = [], isLoading: isLoadingFetch } = useReceivableList();
+  const { data: receivableByUser = [], isLoading: isLoadingFetch, refetch } = useReceivableList();
   const deleteMutation = useBulkDeleteReceivable();
 
   const isLoading = isLoadingFetch || deleteMutation.isPending;
@@ -50,6 +52,12 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [statuses, setStatuses] = useState<string[]>(['Lunas', 'Belum Lunas']);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useReceivableStore, handleVersionChange);
 
   const toast = useToast();
 

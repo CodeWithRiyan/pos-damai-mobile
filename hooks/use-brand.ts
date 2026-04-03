@@ -42,6 +42,10 @@ export async function fetchBrand(id: string): Promise<Brand | null> {
   return (result[0] as Brand) || null;
 }
 
+export async function refetchBrandById(id: string): Promise<Brand | null> {
+  return fetchBrand(id);
+}
+
 export async function createBrand(data: CreateBrandDTO): Promise<Brand> {
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) {

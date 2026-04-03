@@ -18,20 +18,27 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
-import { useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
 import { useFinances } from '@/hooks/use-finance';
 import { formatDisplayRefId } from '@/utils/reference';
-
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useFinanceStore } from '@/stores/finance';
 import { FinanceType, Status } from '@/constants';
 import { formatNumber } from '@/utils/format';
+import { useCallback, useState } from 'react';
+import { FlashList } from '@shopify/flash-list';
 export default function FinanceHistory() {
   const router = useRouter();
   const [showTransactionDatePicker, setShowTransactionDatePicker] = useState<boolean>(false);
   const [transactionDate, setTransactionDate] = useState<Date | null>(null);
 
-  const { data, isLoading } = useFinances();
+  const { data, isLoading, refetch } = useFinances();
   const finance = data?.filter((f) => f.status === Status.COMPLETED) || [];
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useFinanceStore, handleVersionChange);
 
   if (isLoading) {
     return (

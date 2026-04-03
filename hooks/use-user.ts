@@ -78,6 +78,10 @@ export async function fetchUser(id: string): Promise<User | null> {
   return response.data.data ?? null;
 }
 
+export async function refetchUserById(id: string): Promise<User | null> {
+  return fetchUser(id);
+}
+
 export async function fetchUserLog(userId: string): Promise<IUserLog[]> {
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) return [];

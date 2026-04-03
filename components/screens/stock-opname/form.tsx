@@ -110,6 +110,7 @@ export default function StockOpnameConfirmForm({ date }: StockOpnameConfirmFormP
 
     createMutation.mutate(submissionData, {
       onSuccess: () => {
+        useStockOpnameStore.getState().incrementVersion();
         showSuccessToast(toast, 'Stock Opname berhasil disimpan');
         setOpenConfirm(false);
         resetCart();

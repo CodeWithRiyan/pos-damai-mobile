@@ -380,6 +380,10 @@ export async function fetchProduct(id: string): Promise<Product | null> {
   } as Product;
 }
 
+export async function refetchProductById(id: string): Promise<Product | null> {
+  return fetchProduct(id);
+}
+
 export async function createProduct(data: CreateProductDTO): Promise<Product> {
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) throw new Error('Organization not found');

@@ -79,6 +79,7 @@ export default function CashDrawerForm() {
         {
           onSuccess: () => {
             showSuccessToast(toast, 'Cashdrawer berhasil diperbarui');
+            useCashDrawerStore.getState().incrementVersion();
             onRefetch();
             form.reset(initialValues);
             setOpen(false);
@@ -92,6 +93,7 @@ export default function CashDrawerForm() {
         {
           onSuccess: (newCashDrawer) => {
             showSuccessToast(toast, 'Cashdrawer berhasil ditambahkan');
+            useCashDrawerStore.getState().incrementVersion();
             onRefetch();
             if (useCashDrawerStore.getState().onSuccess) {
               useCashDrawerStore.getState().onSuccess?.(newCashDrawer);
