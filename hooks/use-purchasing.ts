@@ -2,6 +2,7 @@ import { Purchase, PurchaseItem } from '@/db/schema';
 import * as schema from '@/db/schema';
 import { db } from '@/db';
 import { useAuthStore } from '@/stores/auth';
+import { InventoryTxType, Status } from '@/constants';
 import { and, eq, isNull, like, desc, or, isNotNull, gte, lte } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -126,16 +127,29 @@ export async function createPurchase(data: CreatePurchasingDTO): Promise<Purchas
 
   const totalAmount = data.items.reduce((sum, item) => sum + item.totalPrice, 0);
 
+  const supplierResult = data.supplierId
+    ? await db.select().from(schema.suppliers).where(eq(schema.suppliers.id, data.supplierId))
+    : [];
+  const supplierName = supplierResult[0]?.name || '';
+
+  const paymentTypeResult = data.paymentTypeId
+    ? await db
+        .select()
+        .from(schema.paymentTypes)
+        .where(eq(schema.paymentTypes.id, data.paymentTypeId))
+    : [];
+  const paymentTypeName = paymentTypeResult[0]?.name || '';
+
   const newPurchase = {
     id,
     local_ref_id: `PO-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
     organizationId: orgId,
     supplierId: data.supplierId,
-    supplierName: '',
+    supplierName,
     paymentTypeId: data.paymentTypeId,
-    paymentTypeName: '',
+    paymentTypeName,
     totalAmount,
-    totalPaid: 0,
+    totalPaid: data.totalPaid || 0,
     dueDate: data.dueDate || null,
     status: data.status,
     note: data.note || null,
@@ -166,6 +180,24 @@ export async function createPurchase(data: CreatePurchasingDTO): Promise<Purchas
       _dirty: true,
       _syncedAt: null,
     } as any);
+
+    if (data.status === Status.COMPLETED) {
+      await db.insert(schema.inventoryTransactions).values({
+        id: `invtx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        local_ref_id: `${id}_${item.productId}`,
+        productId: item.productId,
+        type: InventoryTxType.PURCHASE,
+        quantity: item.quantity,
+        organizationId: orgId,
+        createdBy: userId,
+        updatedBy: userId,
+        createdAt: now,
+        updatedAt: now,
+        status: Status.COMPLETED,
+        _dirty: true,
+        _syncedAt: null,
+      } as any);
+    }
   }
 
   return newPurchase as unknown as Purchase;

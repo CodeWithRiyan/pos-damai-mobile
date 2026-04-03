@@ -16,6 +16,8 @@ import { SolarIconBold, SolarIconLinear } from '@/components/ui/solar-icon-wrapp
 import { VStack } from '@/components/ui/vstack';
 // import { useBulkDeletePurchasing, Purchasing, usePurchasing } from "@/hooks/use-purchasing";
 import { ShowByStock, useProducts } from '@/hooks/use-product';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useProductStore } from '@/stores/product';
 import { usePurchasingStore } from '@/stores/purchasing';
 import { useRouter } from 'expo-router';
 import { Plus } from 'lucide-react-native';
@@ -36,12 +38,18 @@ export default function PurchasingList() {
   const activeFilterCount = [supplierId].filter(Boolean).length;
 
   const { cart, setAddProduct, setStatus } = usePurchasingStore();
-  const { data: products } = useProducts({
+  const { data: products, refetch } = useProducts({
     supplierId,
     showByStock: stockFilter,
     forceParent: true,
   });
   const router = useRouter();
+
+  const handleVersionChange = React.useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useProductStore, handleVersionChange);
 
   return (
     <Box className="flex-1 bg-white">

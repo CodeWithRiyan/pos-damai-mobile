@@ -40,6 +40,7 @@ import { useCreateReceivable } from '@/hooks/use-receivable';
 import { CalcType, FinanceType, Status } from '@/constants';
 import { findSellPrice, getDiscountedPrice, isDiscountActive } from '@/utils/price';
 import { usePaymentTypeStore } from '@/stores/payment-type';
+import { useProductStore } from '@/stores/product';
 import { useTransactionStore } from '@/stores/transaction';
 import classNames from 'classnames';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -294,6 +295,9 @@ export default function TransactionCheckoutForm() {
 
       if (result.id) {
         useTransactionStore.getState().incrementVersion();
+        if (result.status === Status.COMPLETED) {
+          useProductStore.getState().incrementVersion();
+        }
         // Create receivable if hutang is checked
         if (isHutang && employee) {
           await createReceivableMutation.mutateAsync({

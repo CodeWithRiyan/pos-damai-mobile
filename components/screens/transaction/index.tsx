@@ -24,9 +24,11 @@ import SelectModal from '@/components/ui/select/select-modal';
 import { Spinner } from '@/components/ui/spinner';
 import { useCustomer, useCustomers } from '@/hooks/use-customer';
 import { useProducts } from '@/hooks/use-product';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useCurrentShift } from '@/hooks/use-shift';
 import { useLocalUsers } from '@/hooks/use-user';
 import { calculateLineItemTotal, findSellPrice } from '@/utils/price';
+import { useProductStore } from '@/stores/product';
 import { useTransactionStore } from '@/stores/transaction';
 import { PriceType, ProductType, Status } from '@/constants';
 import classNames from 'classnames';
@@ -59,13 +61,19 @@ export default function TransactionList() {
   const { data: customers } = useCustomers();
   const { data: localUsers } = useLocalUsers();
   const { data: returnCustomer } = useCustomer(searchParams.returnCustomerId);
-  const { data: products } = useProducts({ forceParent: true });
+  const { data: products, refetch } = useProducts({ forceParent: true });
   const { data: currentShift, isLoading: isLoadingShift } = useCurrentShift();
   const router = useRouter();
   const toast = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [layout, setLayout] = useState<'list' | 'grid'>('list');
   const [buyerType, setBuyerType] = useState<'customer' | 'employee'>('customer');
+
+  const handleVersionChange = React.useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useProductStore, handleVersionChange);
 
   const isDirty = !!cart.length || customer || employee;
 

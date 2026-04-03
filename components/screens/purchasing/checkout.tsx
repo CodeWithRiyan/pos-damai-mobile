@@ -36,6 +36,7 @@ import SelectModal from '@/components/ui/select/select-modal';
 import { useCurrentUser } from '@/hooks/use-auth';
 import { usePaymentTypes } from '@/hooks/use-payment-type';
 import { usePaymentTypeStore } from '@/stores/payment-type';
+import { useProductStore } from '@/stores/product';
 import { usePurchasingStore } from '@/stores/purchasing';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
@@ -212,6 +213,9 @@ export default function PurchasingCheckoutForm() {
     createMutation.mutate(submissionData, {
       onSuccess: (responseData) => {
         usePurchasingStore.getState().incrementVersion();
+        if (data.status === Status.COMPLETED) {
+          useProductStore.getState().incrementVersion();
+        }
         setCheckoutData({
           ...data,
           id: responseData.id,
