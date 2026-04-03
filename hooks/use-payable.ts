@@ -96,6 +96,7 @@ export async function fetchPayableBySupplier(): Promise<PayableBySupplier[]> {
   if (!orgId) return [];
 
   const allPayables = await fetchPayables();
+  console.log('All payables fetched for grouping:', allPayables);
 
   const grouped = new Map<string, Payable[]>();
   for (const payable of allPayables) {

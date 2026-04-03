@@ -202,6 +202,7 @@ export default function PurchasingCheckoutForm() {
       commission: 0,
       totalPurchase: grandTotal,
       paymentTypeId: data.paymentMethodId,
+      isPayable: data.isPayable,
       items: cart.map((item) => ({
         productId: item.product.id,
         quantity: item.quantity,
@@ -338,11 +339,12 @@ export default function PurchasingCheckoutForm() {
                       {showTransactionDatePicker && (
                         <DateTimePicker
                           mode="date"
-                          value={value instanceof Date ? value : new Date()}
+                          display="spinner"
+                          value={value ? new Date(value) : new Date()}
                           maximumDate={new Date()}
-                          onChange={(event, selectedDate) => {
+                          onChange={(_event, selectedDate) => {
                             setShowTransactionDatePicker(false);
-                            if (event.type === 'set' && selectedDate) {
+                            if (selectedDate) {
                               onChange(selectedDate);
                             }
                           }}
@@ -442,11 +444,12 @@ export default function PurchasingCheckoutForm() {
                         {showDueDatePicker && (
                           <DateTimePicker
                             mode="date"
-                            value={value instanceof Date ? value : new Date()}
-                            minimumDate={transactionDate || new Date()}
-                            onChange={(event, selectedDate) => {
+                            display="spinner"
+                            value={value ? new Date(value) : new Date()}
+                            minimumDate={transactionDate ? new Date(transactionDate) : undefined}
+                            onChange={(_event, selectedDate) => {
                               setShowDueDatePicker(false);
-                              if (event.type === 'set' && selectedDate) {
+                              if (selectedDate) {
                                 onChange(selectedDate);
                               }
                             }}

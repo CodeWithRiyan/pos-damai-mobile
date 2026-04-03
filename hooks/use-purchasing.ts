@@ -1,7 +1,8 @@
-import { Purchase, PurchaseItem } from '@/db/schema';
+import { Purchase, PurchaseItem, payables } from '@/db/schema';
 import * as schema from '@/db/schema';
 import { db } from '@/db';
 import { useAuthStore } from '@/stores/auth';
+import { usePayableStore } from '@/stores/payable';
 import { InventoryTxType, Status } from '@/constants';
 import { and, eq, isNull, like, desc, or, isNotNull, gte, lte } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
@@ -22,6 +23,7 @@ export interface CreatePurchasingDTO {
   totalPaid?: number;
   commission?: number;
   totalPurchase?: number;
+  isPayable?: boolean;
 }
 
 export async function fetchPurchases(params?: {
@@ -197,6 +199,31 @@ export async function createPurchase(data: CreatePurchasingDTO): Promise<Purchas
         _dirty: true,
         _syncedAt: null,
       } as any);
+    }
+  }
+  console.log('Purchase created with data:', newPurchase);
+
+  if (data.isPayable && data.dueDate && data.status === Status.COMPLETED) {
+    const nominal = totalAmount - (data.totalPaid || 0);
+    if (nominal > 0) {
+      await db.insert(payables).values({
+        id: `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        local_ref_id: `PAY-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+        organizationId: orgId,
+        supplierId: data.supplierId,
+        supplierName,
+        nominal,
+        dueDate: data.dueDate,
+        note: data.note || null,
+        status: 'PENDING',
+        createdAt: now,
+        updatedAt: now,
+        deletedAt: null,
+        _dirty: true,
+        _syncedAt: null,
+      } as any);
+      usePayableStore.getState().incrementVersion();
+      console.log('Payable created for purchase with nominal:', nominal);
     }
   }
 
