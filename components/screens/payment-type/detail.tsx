@@ -49,7 +49,10 @@ export default function PaymentTypeDetail() {
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Jenis pembayaran berhasil dihapus',
     deleteMutation,
-    onSuccess: onRefetch,
+    onSuccess: () => {
+      usePaymentTypeStore.getState().incrementVersion();
+      onRefetch();
+    },
   });
 
   const handleAction = () => {

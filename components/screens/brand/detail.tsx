@@ -64,7 +64,10 @@ export default function BrandDetail() {
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Brand berhasil dihapus',
     deleteMutation,
-    onSuccess: onRefetch,
+    onSuccess: () => {
+      useBrandStore.getState().incrementVersion();
+      onRefetch();
+    },
   });
 
   const handleDeleteProductPress = () => {

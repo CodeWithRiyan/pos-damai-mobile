@@ -25,23 +25,26 @@ export default function RoleDetail() {
   const { data: role, refetch: refetchRole } = useRole(roleId || '');
   const deleteMutation = useDeleteRole();
 
-  const onRefetch = () => {
+  const onRefetch = useCallback(() => {
     refetchRoles();
     refetchRole();
-  };
+  }, [refetchRoles, refetchRole]);
 
   useStoreVersionSync(useRoleStore, onRefetch);
 
   useFocusEffect(
     useCallback(() => {
       onRefetch();
-    }, []),
+    }, [onRefetch]),
   );
 
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Role berhasil dihapus',
     deleteMutation,
-    onSuccess: onRefetch,
+    onSuccess: () => {
+      useRoleStore.getState().incrementVersion();
+      onRefetch();
+    },
   });
 
   const handleAction = () => {

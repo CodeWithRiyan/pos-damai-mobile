@@ -32,7 +32,7 @@ import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import { useItemSelection } from '@/hooks/use-item-selection';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useSupplierStore } from '@/stores/supplier';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView } from 'react-native';
 
 import { formatRp } from '@/utils/format';
@@ -69,16 +69,13 @@ export default function SupplierDetail() {
 
   useStoreVersionSync(useSupplierStore, onRefetch);
 
-  useFocusEffect(
-    useCallback(() => {
-      onRefetch();
-    }, [onRefetch]),
-  );
-
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Supplier berhasil dihapus',
     deleteMutation,
-    onSuccess: onRefetch,
+    onSuccess: () => {
+      useSupplierStore.getState().incrementVersion();
+      onRefetch();
+    },
   });
 
   const handleDeleteProductPress = () => {

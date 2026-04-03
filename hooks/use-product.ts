@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
 import { useAuthStore } from '@/stores/auth';
-import { and, eq, isNull, like, or, desc } from 'drizzle-orm';
+import { and, eq, isNull, like, or, desc, inArray } from 'drizzle-orm';
 import { InventoryTxType, ProductType, Status } from '@/constants';
 
 export interface Product {
@@ -567,30 +567,40 @@ export async function bulkDeleteProducts(ids: string[]): Promise<void> {
   const now = new Date();
   const userId = useAuthStore.getState().profile?.id;
 
+  const productIds: string[] = [];
+  const variantIds: string[] = [];
+
   for (const id of ids) {
     const varSeparatorIndex = id.indexOf('-var_');
     if (varSeparatorIndex !== -1) {
-      const variantIdStr = id.substring(varSeparatorIndex + 1);
-      await db
-        .update(schema.productVariants)
-        .set({
-          deletedAt: now,
-          updatedBy: userId,
-          updatedAt: now,
-          _dirty: true,
-        })
-        .where(eq(schema.productVariants.id, variantIdStr));
+      variantIds.push(id.substring(varSeparatorIndex + 1));
     } else {
-      await db
-        .update(schema.products)
-        .set({
-          deletedAt: now,
-          updatedBy: userId,
-          updatedAt: now,
-          _dirty: true,
-        })
-        .where(eq(schema.products.id, id));
+      productIds.push(id);
     }
+  }
+
+  if (variantIds.length > 0) {
+    await db
+      .update(schema.productVariants)
+      .set({
+        deletedAt: now,
+        updatedBy: userId,
+        updatedAt: now,
+        _dirty: true,
+      })
+      .where(inArray(schema.productVariants.id, variantIds));
+  }
+
+  if (productIds.length > 0) {
+    await db
+      .update(schema.products)
+      .set({
+        deletedAt: now,
+        updatedBy: userId,
+        updatedAt: now,
+        _dirty: true,
+      })
+      .where(inArray(schema.products.id, productIds));
   }
 }
 

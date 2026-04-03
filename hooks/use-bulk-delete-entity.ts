@@ -41,21 +41,18 @@ export function useBulkDeleteEntity({
         closeText: 'BATAL',
         okVariant: 'destructive' as const,
         onOk: () => {
-          deleteMutation.mutate(
-            { ids },
-            {
-              onSuccess: () => {
-                clearSelection?.();
-                hidePopUpConfirm();
-                onSuccess?.();
-                showSuccessToast(toast, successMessage);
-              },
-              onError: (error: unknown) => {
-                showErrorToast(toast, error);
-                hidePopUpConfirm();
-              },
+          deleteMutation.mutate(ids, {
+            onSuccess: () => {
+              clearSelection?.();
+              hidePopUpConfirm();
+              onSuccess?.();
+              showSuccessToast(toast, successMessage);
             },
-          );
+            onError: (error: unknown) => {
+              showErrorToast(toast, error);
+              hidePopUpConfirm();
+            },
+          });
         },
         loading: deleteMutation.isPending,
       });

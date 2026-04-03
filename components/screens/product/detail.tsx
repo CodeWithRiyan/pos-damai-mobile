@@ -12,7 +12,7 @@ import { useDeleteEntity } from '@/hooks/use-delete-entity';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useProductStore } from '@/stores/product';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { RefreshControl, ScrollView } from 'react-native';
 
@@ -24,6 +24,7 @@ export default function ProductDetail() {
   const productId = decodeURIComponent(id as string);
   const { refetch: refetchProducts } = useProducts();
   const [product, setProduct] = useState<Product | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const deleteMutation = useDeleteProduct();
 
   const onRefetch = useCallback(async () => {
@@ -34,26 +35,21 @@ export default function ProductDetail() {
     refetchProducts();
   }, [productId, refetchProducts]);
 
-  useStoreVersionSync(useProductStore, onRefetch);
-
-  const [refreshing, setRefreshing] = useState(false);
-
-  useFocusEffect(
-    useCallback(() => {
-      onRefetch();
-    }, [onRefetch]),
-  );
-
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await onRefetch();
     setRefreshing(false);
   }, [onRefetch]);
 
+  useStoreVersionSync(useProductStore, onRefetch);
+
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Produk berhasil dihapus',
     deleteMutation,
-    onSuccess: onRefetch,
+    onSuccess: () => {
+      useProductStore.getState().incrementVersion();
+      onRefetch();
+    },
   });
 
   const handleAction = () => {

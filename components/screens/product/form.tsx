@@ -386,7 +386,7 @@ export default function ProductForm() {
     } else if (!productId) {
       form.reset(initialValues);
     }
-  }, [form, product, productId, categories.length, brands.length]);
+  }, [form, product, productId]);
 
   const onRefetch = () => {
     refetchProducts();

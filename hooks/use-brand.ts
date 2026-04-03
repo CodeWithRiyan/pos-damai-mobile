@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
 import { useAuthStore } from '@/stores/auth';
-import { and, eq, isNull, ne } from 'drizzle-orm';
+import { and, eq, isNull, ne, inArray } from 'drizzle-orm';
 
 export interface Brand {
   id: string;
@@ -149,17 +149,15 @@ export async function bulkDeleteBrands(ids: string[]): Promise<void> {
   const now = new Date();
   const userId = useAuthStore.getState().profile?.id;
 
-  for (const id of ids) {
-    await db
-      .update(schema.brands)
-      .set({
-        deletedAt: now,
-        updatedBy: userId ?? null,
-        updatedAt: now,
-        _dirty: true,
-      })
-      .where(eq(schema.brands.id, id));
-  }
+  await db
+    .update(schema.brands)
+    .set({
+      deletedAt: now,
+      updatedBy: userId ?? null,
+      updatedAt: now,
+      _dirty: true,
+    })
+    .where(inArray(schema.brands.id, ids));
 }
 
 export function useBrands() {

@@ -70,7 +70,10 @@ export default function CategoryDetail() {
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Kategori berhasil dihapus',
     deleteMutation,
-    onSuccess: onRefetch,
+    onSuccess: () => {
+      useCategoryStore.getState().incrementVersion();
+      onRefetch();
+    },
   });
 
   const handleDeleteProductPress = () => {

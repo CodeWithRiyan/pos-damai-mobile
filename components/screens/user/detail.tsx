@@ -10,7 +10,7 @@ import { useDeleteUser, useUsers, refetchUserById, User } from '@/hooks/use-user
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useUserStore } from '@/stores/user';
 import dayjs from 'dayjs';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView } from 'react-native';
 
 export default function UserDetail() {
@@ -34,16 +34,13 @@ export default function UserDetail() {
 
   useStoreVersionSync(useUserStore, onRefetch);
 
-  useFocusEffect(
-    useCallback(() => {
-      onRefetch();
-    }, [onRefetch]),
-  );
-
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Karyawan berhasil dihapus',
     deleteMutation,
-    onSuccess: onRefetch,
+    onSuccess: () => {
+      useUserStore.getState().incrementVersion();
+      onRefetch();
+    },
   });
 
   const handleAction = () => {

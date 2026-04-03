@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
 import { useAuthStore } from '@/stores/auth';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, inArray } from 'drizzle-orm';
 
 export type CustomerCategory = 'RETAIL' | 'WHOLESALE';
 
@@ -184,17 +184,15 @@ export async function bulkDeleteCustomers(ids: string[]): Promise<void> {
   const now = new Date();
   const userId = useAuthStore.getState().profile?.id;
 
-  for (const id of ids) {
-    await db
-      .update(schema.customers)
-      .set({
-        deletedAt: now,
-        updatedBy: userId ?? null,
-        updatedAt: now,
-        _dirty: true,
-      })
-      .where(eq(schema.customers.id, id));
-  }
+  await db
+    .update(schema.customers)
+    .set({
+      deletedAt: now,
+      updatedBy: userId ?? null,
+      updatedAt: now,
+      _dirty: true,
+    })
+    .where(inArray(schema.customers.id, ids));
 }
 
 export function useCustomers(params?: { category?: CustomerCategory }) {

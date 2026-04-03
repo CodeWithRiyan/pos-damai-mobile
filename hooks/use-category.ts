@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
 import { useAuthStore } from '@/stores/auth';
-import { and, eq, isNull, like, desc } from 'drizzle-orm';
+import { and, eq, isNull, like, desc, inArray } from 'drizzle-orm';
 
 export interface Category {
   id: string;
@@ -132,17 +132,15 @@ export async function bulkDeleteCategory(ids: string[]): Promise<void> {
   const now = new Date();
   const userId = useAuthStore.getState().profile?.id;
 
-  for (const id of ids) {
-    await db
-      .update(schema.categories)
-      .set({
-        deletedAt: now,
-        updatedBy: userId,
-        updatedAt: now,
-        _dirty: true,
-      })
-      .where(eq(schema.categories.id, id));
-  }
+  await db
+    .update(schema.categories)
+    .set({
+      deletedAt: now,
+      updatedBy: userId,
+      updatedAt: now,
+      _dirty: true,
+    })
+    .where(inArray(schema.categories.id, ids));
 }
 
 export interface UseCategoriesResult {

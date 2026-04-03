@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
 import { useAuthStore } from '@/stores/auth';
-import { and, eq, isNull, like, desc } from 'drizzle-orm';
+import { and, eq, isNull, like, desc, inArray } from 'drizzle-orm';
 
 export interface Supplier {
   id: string;
@@ -122,6 +122,21 @@ export async function deleteSupplier(id: string): Promise<void> {
       _dirty: true,
     })
     .where(eq(schema.suppliers.id, id));
+}
+
+export async function bulkDeleteSupplier(ids: string[]): Promise<void> {
+  const now = new Date();
+  const userId = useAuthStore.getState().profile?.id;
+
+  await db
+    .update(schema.suppliers)
+    .set({
+      deletedAt: now,
+      updatedBy: userId,
+      updatedAt: now,
+      _dirty: true,
+    })
+    .where(inArray(schema.suppliers.id, ids));
 }
 
 export function useSuppliers(params?: { search?: string }) {
@@ -298,7 +313,7 @@ export function useBulkDeleteSupplier() {
       setLoading(true);
       setError(null);
       try {
-        await Promise.all(ids.map((id) => deleteSupplier(id)));
+        await bulkDeleteSupplier(ids);
         options?.onSuccess?.();
       } catch (err) {
         const error = err as Error;

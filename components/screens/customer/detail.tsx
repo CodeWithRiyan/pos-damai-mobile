@@ -18,7 +18,7 @@ import { useDeleteEntity } from '@/hooks/use-delete-entity';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useCustomerStore } from '@/stores/customer';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView } from 'react-native';
 
 import { formatNumber } from '@/utils/format';
@@ -46,16 +46,13 @@ export default function CustomerDetail() {
 
   useStoreVersionSync(useCustomerStore, onRefetch);
 
-  useFocusEffect(
-    useCallback(() => {
-      onRefetch();
-    }, [onRefetch]),
-  );
-
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Pelanggan berhasil dihapus',
     deleteMutation,
-    onSuccess: onRefetch,
+    onSuccess: () => {
+      useCustomerStore.getState().incrementVersion();
+      onRefetch();
+    },
   });
 
   const handleResetPointPress = () => {

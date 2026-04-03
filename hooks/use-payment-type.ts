@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
 import { useAuthStore } from '@/stores/auth';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, inArray } from 'drizzle-orm';
 
 export interface PaymentType {
   id: string;
@@ -127,17 +127,15 @@ export async function bulkDeletePaymentTypes(ids: string[]): Promise<void> {
   const now = new Date();
   const userId = useAuthStore.getState().profile?.id;
 
-  for (const id of ids) {
-    await db
-      .update(schema.paymentTypes)
-      .set({
-        deletedAt: now,
-        updatedBy: userId ?? null,
-        updatedAt: now,
-        _dirty: true,
-      })
-      .where(eq(schema.paymentTypes.id, id));
-  }
+  await db
+    .update(schema.paymentTypes)
+    .set({
+      deletedAt: now,
+      updatedBy: userId ?? null,
+      updatedAt: now,
+      _dirty: true,
+    })
+    .where(inArray(schema.paymentTypes.id, ids));
 }
 
 export async function setDefaultPaymentType(id: string): Promise<void> {
