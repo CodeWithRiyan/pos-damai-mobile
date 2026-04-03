@@ -112,7 +112,6 @@ export default function CategoryDetail() {
   };
 
   const handleAction = () => {
-    console.log('[CategoryDetail] handleAction - category:', category);
     showActionDrawer({
       actions: [
         {
@@ -121,7 +120,6 @@ export default function CategoryDetail() {
           onPress: async () => {
             hideActionDrawer();
             const freshCategory = await refetchCategoryById(categoryId);
-            console.log('[CategoryDetail] After refetch, freshCategory:', freshCategory);
             setOpen(true);
             setData(freshCategory ?? null);
           },

@@ -266,7 +266,7 @@ export default function TransactionHistory({ isReport }: { isReport?: boolean })
         </VStack>
       </ScrollView>
       <Grid _extra={{ className: 'grid-cols-2' }} className="flex-1">
-        {isReport && (
+        {isReport ? (
           <GridItem _extra={{ className: 'col-span-1' }}>
             <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
               <VStack space="md" className="p-4">
@@ -333,77 +333,78 @@ export default function TransactionHistory({ isReport }: { isReport?: boolean })
               </VStack>
             </ScrollView>
           </GridItem>
-        )}
-        <GridItem _extra={{ className: isReport ? 'col-span-1' : 'col-span-2' }}>
-          <FlashList
-            data={transactions}
-            className="flex-1"
-            showsVerticalScrollIndicator={false}
-            keyExtractor={(transaction) => transaction.id}
-            renderItem={({ item: transaction }) => {
-              const date = transaction.createdAt ? dayjs(transaction.createdAt) : dayjs();
-              return (
-                <Pressable
-                  className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
-                  onPress={() =>
-                    router.navigate({
-                      pathname: '/(main)/transaction/receipt/[id]',
-                      params: { id: transaction.id },
-                    })
-                  }
-                >
-                  <HStack space="xl" className="items-center">
-                    <VStack>
-                      <Text className="text-typography-500 font-bold">
-                        {date.format('HH:mm:ss')}
-                      </Text>
-                      <HStack space="sm" className="items-center">
-                        <Heading size="4xl">{date.format('DD')}</Heading>
-                        <VStack>
-                          <Text className="text-typography-500 font-bold">
-                            {date.format('MMM')}
-                          </Text>
-                          <Text className="text-typography-500 font-bold">
-                            {date.format('YYYY')}
-                          </Text>
-                        </VStack>
-                      </HStack>
-                    </VStack>
-                    <VStack space="sm" className="flex-1">
-                      <HStack className="justify-between">
-                        <VStack>
-                          <Text className="text-typography-400 text-xs">Total</Text>
-                          <Text className="font-bold">
-                            Rp {formatNumber(transaction.totalAmount ?? 0)}
-                          </Text>
-                        </VStack>
-                        <VStack>
-                          <Text className="text-typography-400 text-xs">Pelanggan</Text>
-                          <Text className="font-bold">{transaction.customerName}</Text>
-                        </VStack>
-                        <VStack>
-                          <Text className="text-typography-400 text-xs">Pembayaran</Text>
-                          <Text className="font-bold">{transaction.paymentTypeName}</Text>
-                        </VStack>
-                      </HStack>
-                      <HStack className="justify-between">
-                        <Text className="text-typography-400 font-bold">
-                          No: {formatDisplayRefId(transaction.local_ref_id) || transaction.id}
+        ) : (
+          <GridItem _extra={{ className: isReport ? 'col-span-1' : 'col-span-2' }}>
+            <FlashList
+              data={transactions}
+              className="flex-1"
+              showsVerticalScrollIndicator={false}
+              keyExtractor={(transaction) => transaction.id}
+              renderItem={({ item: transaction }) => {
+                const date = transaction.createdAt ? dayjs(transaction.createdAt) : dayjs();
+                return (
+                  <Pressable
+                    className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
+                    onPress={() =>
+                      router.navigate({
+                        pathname: '/(main)/transaction/receipt/[id]',
+                        params: { id: transaction.id },
+                      })
+                    }
+                  >
+                    <HStack space="xl" className="items-center">
+                      <VStack>
+                        <Text className="text-typography-500 font-bold">
+                          {date.format('HH:mm:ss')}
                         </Text>
-                      </HStack>
-                    </VStack>
-                    <Text className="text-typography-400 text-lg">›</Text>
-                  </HStack>
-                </Pressable>
-              );
-            }}
-            ListEmptyComponent={
-              <Box className="flex-1 justify-center items-center py-10">
-                <Text className="text-gray-500">Belum ada histori transaksi</Text>
-              </Box>
-            }
-          />
-        </GridItem>
+                        <HStack space="sm" className="items-center">
+                          <Heading size="4xl">{date.format('DD')}</Heading>
+                          <VStack>
+                            <Text className="text-typography-500 font-bold">
+                              {date.format('MMM')}
+                            </Text>
+                            <Text className="text-typography-500 font-bold">
+                              {date.format('YYYY')}
+                            </Text>
+                          </VStack>
+                        </HStack>
+                      </VStack>
+                      <VStack space="sm" className="flex-1">
+                        <HStack className="justify-between">
+                          <VStack>
+                            <Text className="text-typography-400 text-xs">Total</Text>
+                            <Text className="font-bold">
+                              Rp {formatNumber(transaction.totalAmount ?? 0)}
+                            </Text>
+                          </VStack>
+                          <VStack>
+                            <Text className="text-typography-400 text-xs">Pelanggan</Text>
+                            <Text className="font-bold">{transaction.customerName}</Text>
+                          </VStack>
+                          <VStack>
+                            <Text className="text-typography-400 text-xs">Pembayaran</Text>
+                            <Text className="font-bold">{transaction.paymentTypeName}</Text>
+                          </VStack>
+                        </HStack>
+                        <HStack className="justify-between">
+                          <Text className="text-typography-400 font-bold">
+                            No: {formatDisplayRefId(transaction.local_ref_id) || transaction.id}
+                          </Text>
+                        </HStack>
+                      </VStack>
+                      <Text className="text-typography-400 text-lg">›</Text>
+                    </HStack>
+                  </Pressable>
+                );
+              }}
+              ListEmptyComponent={
+                <Box className="flex-1 justify-center items-center py-10">
+                  <Text className="text-gray-500">Belum ada histori transaksi</Text>
+                </Box>
+              }
+            />
+          </GridItem>
+        )}
       </Grid>
     </VStack>
   );

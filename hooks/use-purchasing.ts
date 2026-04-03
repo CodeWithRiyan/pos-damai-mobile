@@ -2,7 +2,7 @@ import { Purchase, PurchaseItem } from '@/db/schema';
 import * as schema from '@/db/schema';
 import { db } from '@/db';
 import { useAuthStore } from '@/stores/auth';
-import { and, eq, isNull, like, desc, or, isNotNull } from 'drizzle-orm';
+import { and, eq, isNull, like, desc, or, isNotNull, gte, lte } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
 
 export interface CreatePurchasingDTO {
@@ -28,6 +28,7 @@ export async function fetchPurchases(params?: {
   status?: string;
   startDate?: string;
   endDate?: string;
+  dateType?: string;
 }): Promise<Purchase[]> {
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) return [];
@@ -42,7 +43,41 @@ export async function fetchPurchases(params?: {
     conditions.push(like(schema.purchases.local_ref_id, `%${params.search}%`));
   }
 
-  if (params?.startDate) {
+  if (params?.dateType && params?.dateType !== 'CUSTOM') {
+    const now = new Date();
+    let startDate: Date;
+    const endDate = new Date();
+    endDate.setHours(23, 59, 59, 999);
+
+    switch (params.dateType) {
+      case 'TODAY':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        break;
+      case 'THIS_WEEK': {
+        const day = now.getDay();
+        const diff = day === 0 ? -6 : 1 - day;
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff);
+        break;
+      }
+      case 'THIS_MONTH':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'THIS_YEAR':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      default:
+        startDate = new Date(0);
+    }
+
+    conditions.push(gte(schema.purchases.createdAt, startDate));
+    conditions.push(lte(schema.purchases.createdAt, endDate));
+  } else if (params?.startDate) {
+    conditions.push(gte(schema.purchases.createdAt, new Date(params.startDate)));
+    if (params?.endDate) {
+      const endOfDay = new Date(params.endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      conditions.push(lte(schema.purchases.createdAt, endOfDay));
+    }
   }
 
   const result = await db
@@ -121,6 +156,7 @@ export async function createPurchase(data: CreatePurchasingDTO): Promise<Purchas
     await db.insert(schema.purchaseItems).values({
       id: itemId,
       purchaseId: id,
+      organizationId: orgId,
       productId: item.productId,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
@@ -160,7 +196,16 @@ export function usePurchases(params?: {
     } finally {
       setIsLoading(false);
     }
-  }, [params?.search, params?.status, params?.startDate, params?.endDate]);
+  }, [
+    params?.search,
+    params?.status,
+    params?.startDate,
+    params?.endDate,
+    params?.supplierId,
+    params?.userId,
+    params?.paymentTypeIds,
+    params?.dateType,
+  ]);
 
   useEffect(() => {
     fetch();

@@ -81,9 +81,11 @@ function Divider() {
 export default function PurchasingFilter({
   onFilter,
   filterValues,
+  lockedSupplierId,
 }: {
   onFilter: (data: PurchasingFilterFormValues) => void;
   filterValues: PurchasingFilterFormValues;
+  lockedSupplierId?: string;
 }) {
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
@@ -190,36 +192,38 @@ export default function PurchasingFilter({
       <Divider />
 
       {/* ── Supplier ── */}
-      <VStack space="xs">
-        <SectionLabel>Supplier</SectionLabel>
-        <Controller
-          control={form.control}
-          name="supplierId"
-          render={({ field: { onChange, value }, fieldState: { error } }) => (
-            <FormControl isInvalid={!!error}>
-              <SelectModal
-                value={value}
-                placeholder="Semua supplier"
-                showSearch={false}
-                options={[
-                  { label: 'Semua supplier', value: '' },
-                  ...(suppliers?.map((sup) => ({
-                    label: sup.name,
-                    value: sup.id,
-                  })) ?? []),
-                ]}
-                className="w-full"
-                onChange={onChange}
-              />
-              {error && (
-                <FormControlError>
-                  <FormControlErrorText>{error.message}</FormControlErrorText>
-                </FormControlError>
-              )}
-            </FormControl>
-          )}
-        />
-      </VStack>
+      {!lockedSupplierId && (
+        <VStack space="xs">
+          <SectionLabel>Supplier</SectionLabel>
+          <Controller
+            control={form.control}
+            name="supplierId"
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
+              <FormControl isInvalid={!!error}>
+                <SelectModal
+                  value={value}
+                  placeholder="Semua supplier"
+                  showSearch={false}
+                  options={[
+                    { label: 'Semua supplier', value: '' },
+                    ...(suppliers?.map((sup) => ({
+                      label: sup.name,
+                      value: sup.id,
+                    })) ?? []),
+                  ]}
+                  className="w-full"
+                  onChange={onChange}
+                />
+                {error && (
+                  <FormControlError>
+                    <FormControlErrorText>{error.message}</FormControlErrorText>
+                  </FormControlError>
+                )}
+              </FormControl>
+            )}
+          />
+        </VStack>
+      )}
 
       <Divider />
 
