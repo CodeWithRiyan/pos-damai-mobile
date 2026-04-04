@@ -189,6 +189,15 @@ export default function PurchasingCheckoutForm() {
           goSubmit(data);
         },
       });
+    } else if (
+      data.status === Status.COMPLETED &&
+      Number(data.totalPaid) > data.totalPurchase &&
+      isPayable
+    ) {
+      showToast(toast, {
+        action: 'error',
+        message: 'Pembayaran tidak boleh lebih dari total pembelian untuk Hutang',
+      });
     } else {
       goSubmit(data);
     }
