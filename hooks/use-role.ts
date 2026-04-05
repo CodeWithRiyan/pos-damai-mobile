@@ -55,7 +55,9 @@ async function createRoleApi(data: CreateRoleDTO): Promise<Role> {
 }
 
 async function updateRoleApi(id: string, data: UpdateRoleDTO): Promise<Role> {
-  const response = await apiClient.put(`/roles/${id}`, data);
+  // exclude id from data when
+  const { id: _, ...rest } = data;
+  const response = await apiClient.put(`/roles/${id}`, rest);
   return response.data.data;
 }
 
