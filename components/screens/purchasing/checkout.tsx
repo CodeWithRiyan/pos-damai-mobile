@@ -42,7 +42,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { ArrowRight, CalendarIcon, Check, PlusIcon } from 'lucide-react-native';
 
-import { Status } from '@/constants';
+import { Status, DEFAULT_PAYMENT_TYPE } from '@/constants';
 import { formatNumber, formatRp } from '@/utils/format';
 const purchasingSchema = z
   .object({
@@ -131,10 +131,8 @@ export default function PurchasingCheckoutForm() {
       form.setValue('status', status);
       if (!purchase && paymentTypesData && paymentTypesData.length > 0) {
         const defaultPaymentType =
-          paymentTypesData?.find(
-            (pt) =>
-              pt.isDefault || pt.name.toLowerCase() === 'cash' || pt.name.toLowerCase() === 'tunai',
-          )?.id || '';
+          paymentTypesData?.find((pt) => pt.isDefault || pt.name === DEFAULT_PAYMENT_TYPE)?.id ||
+          '';
         form.setValue('paymentMethodId', defaultPaymentType);
       }
       if (purchase) {
@@ -142,7 +140,6 @@ export default function PurchasingCheckoutForm() {
         form.setValue('transactionDate', purchase.createdAt ? new Date(purchase.createdAt) : null);
         form.setValue('isPayable', !!purchase.dueDate);
         form.setValue('dueDate', purchase.dueDate ? new Date(purchase.dueDate) : null);
-        form.setValue('paymentMethodId', purchase.paymentTypeId || '');
         form.setValue('note', purchase.note || '');
       }
     } else {
@@ -204,19 +201,25 @@ export default function PurchasingCheckoutForm() {
   };
 
   const goSubmit = (data: PurchasingFormValues) => {
+    const selectedPaymentType = paymentTypesData?.find((p) => p.id === data.paymentMethodId);
     const submissionData: CreatePurchasingDTO = {
       ...data,
       id: purchaseId || undefined,
       totalPaid: Number(data.totalPaid),
       commission: 0,
       totalPurchase: grandTotal,
-      paymentTypeId: data.paymentMethodId,
+      paymentTypeName: selectedPaymentType?.name || DEFAULT_PAYMENT_TYPE,
+      paymentTypeCommission: selectedPaymentType?.commission || 0,
+      paymentTypeCommissionType: selectedPaymentType?.commissionType || 'PERCENTAGE',
+      paymentTypeMinimalAmount: selectedPaymentType?.minimalAmount || 0,
       isPayable: data.isPayable,
       items: cart.map((item) => ({
         productId: item.product.id,
+        productName: item.product.name,
         quantity: item.quantity,
         unitPrice: item.newPurchasePrice,
         totalPrice: item.newPurchasePrice * item.quantity,
+        note: item.note,
       })),
     };
 

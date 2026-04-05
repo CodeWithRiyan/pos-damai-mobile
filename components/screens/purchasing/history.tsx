@@ -12,7 +12,7 @@ import {
 import { Box } from '@/components/ui/box';
 import { Spinner } from '@/components/ui/spinner';
 import { usePurchases } from '@/hooks/use-purchasing';
-import { DateFilterType, PaymentMethod, Status } from '@/constants';
+import { DateFilterType, Status, DEFAULT_PAYMENT_TYPE } from '@/constants';
 import { formatDisplayRefId } from '@/utils/reference';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { usePurchasingStore } from '@/stores/purchasing';
@@ -369,7 +369,9 @@ export default function PurchasingHistory({
                           <VStack>
                             <Text className="text-typography-400 text-xs">Tipe</Text>
                             <Text className="font-bold">
-                              {purchase.paymentType === PaymentMethod.CASH ? 'Tunai' : 'Hutang'}
+                              {purchase.dueDate
+                                ? 'Hutang'
+                                : purchase.paymentTypeName || DEFAULT_PAYMENT_TYPE}
                             </Text>
                           </VStack>
                         </HStack>

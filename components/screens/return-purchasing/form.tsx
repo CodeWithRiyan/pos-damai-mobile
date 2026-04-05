@@ -85,6 +85,7 @@ export default function ReturnPurchasingConfirmForm() {
         productName: item.product.name || '',
         quantity: item.quantity,
         purchasePrice: item.product.purchasePrice || 0,
+        note: item.note,
       })),
     };
 

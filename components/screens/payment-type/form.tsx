@@ -25,7 +25,7 @@ import { Input, InputField } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import {
   useCreatePaymentType,
   usePaymentTypes,
@@ -37,7 +37,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Percent } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { CalcType } from '@/constants';
+import { CalcType, DEFAULT_PAYMENT_TYPE } from '@/constants';
 import z from 'zod';
 
 export default function PaymentTypeForm() {
@@ -107,6 +107,13 @@ export default function PaymentTypeForm() {
   }, [dataPaymentType, form]);
 
   const onSubmit: SubmitHandler<PaymentTypeFormValues> = (data: PaymentTypeFormValues) => {
+    if (dataPaymentType && dataPaymentType.name === DEFAULT_PAYMENT_TYPE) {
+      showToast(toast, {
+        action: 'error',
+        message: 'Pembayaran default tidak dapat diubah',
+      });
+      return;
+    }
     if (dataPaymentType) {
       updateMutation.mutate(
         {

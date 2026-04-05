@@ -1,4 +1,4 @@
-import { receivables, receivableRealizations, customers, users } from '@/db/schema';
+import { receivables, receivableRealizations, customers, users, paymentTypes } from '@/db/schema';
 import { db } from '@/db';
 import { useAuthStore } from '@/stores/auth';
 import { eq, and, isNull, like, desc } from 'drizzle-orm';
@@ -172,6 +172,8 @@ export async function createReceivable(data: {
   const userId = useAuthStore.getState().profile?.id;
 
   let customerName = '';
+  let customerPhone: string | null = null;
+  let customerAddress: string | null = null;
   if (data.customerId) {
     const customer = await db
       .select()
@@ -179,7 +181,16 @@ export async function createReceivable(data: {
       .where(eq(customers.id, data.customerId))
       .limit(1);
     customerName = customer[0]?.name || '';
+    customerPhone = customer[0]?.phone || null;
+    customerAddress = customer[0]?.address || null;
   }
+
+  const userResult = await db
+    .select({ name: users.name })
+    .from(users)
+    .where(eq(users.id, data.userId))
+    .limit(1);
+  const userName = userResult[0]?.name || null;
 
   const newReceivable = {
     id,
@@ -192,8 +203,11 @@ export async function createReceivable(data: {
       : null,
     note: data.note || null,
     userId: data.userId,
+    userName,
     customerId: data.customerId || null,
     customerName,
+    customerPhone,
+    customerAddress,
     status: 'PENDING',
     organizationId: orgId,
     createdAt: now,
@@ -217,6 +231,7 @@ export async function createReceivableRealization(data: {
   nominal: number;
   realizationDate: Date;
   paymentMethodId: string;
+  paymentMethodName?: string;
   note?: string;
 }): Promise<void> {
   const orgId = useAuthStore.getState().getOrganizationId();
@@ -226,6 +241,16 @@ export async function createReceivableRealization(data: {
   const now = new Date();
   const userId = useAuthStore.getState().profile?.id;
 
+  let paymentMethodName = data.paymentMethodName;
+  if (!paymentMethodName) {
+    const pmResult = await db
+      .select({ name: paymentTypes.name })
+      .from(paymentTypes)
+      .where(eq(paymentTypes.id, data.paymentMethodId))
+      .limit(1);
+    paymentMethodName = pmResult[0]?.name;
+  }
+
   await db.insert(receivableRealizations).values({
     id,
     local_ref_id: `RR-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
@@ -233,8 +258,11 @@ export async function createReceivableRealization(data: {
     nominal: data.nominal,
     realizationDate: data.realizationDate,
     paymentMethodId: data.paymentMethodId,
+    paymentMethodName,
     note: data.note || null,
     organizationId: orgId,
+    createdBy: userId,
+    updatedBy: userId,
     createdAt: now,
     updatedAt: now,
     deletedAt: null,

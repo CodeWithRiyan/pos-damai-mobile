@@ -56,15 +56,20 @@ export function Sidebar() {
         href: '/management',
         requiredPermission: [
           'products:read',
-          'categories:read',
-          'brands:read',
+          'products:categories-read',
+          'products:brands-read',
           'customers:read',
           'suppliers:read',
           'roles:read',
           'users:read',
           'payables:read',
           'receivables:read',
-          'inventory:read',
+          'stock:inventory-read',
+          'stock:opname-read',
+          'returns:read-customer',
+          'returns:read-supplier',
+          'payment-types:read',
+          'discounts:read',
         ],
       },
       {
@@ -97,7 +102,7 @@ export function Sidebar() {
         href: '/report',
         requiredPermission: 'reports:read',
       },
-      { label: 'Pengaturan', icon: 'Settings', href: '/setting' },
+      { label: 'Pengaturan', icon: 'Settings', href: '/setting', requiredPermission: 'settings:read' },
     ];
 
     return items.filter((item) => {

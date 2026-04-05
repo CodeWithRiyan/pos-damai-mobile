@@ -1,8 +1,18 @@
-import { transactionReturns, transactionReturnItems, customers } from '@/db/schema';
+import {
+  transactionReturns,
+  transactionReturnItems,
+  customers,
+  transactions,
+  products,
+  productVariants,
+  categories,
+  brands,
+} from '@/db/schema';
 import { db } from '@/db';
 import { useAuthStore } from '@/stores/auth';
 import { eq, and, isNull, like, desc } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
+import { deductCustomerStats } from '@/utils/points';
 
 export interface TransactionReturn {
   id: string;
@@ -116,15 +126,27 @@ export async function fetchTransactionReturn(id: string): Promise<TransactionRet
 
 export async function createTransactionReturn(data: {
   customerId?: string;
+  originalTransactionLocalRefId?: string;
   items: Array<{
     productId: string;
     variantId?: string;
     quantity: number;
     sellPrice: number;
     profit: number;
+    purchasePrice?: number;
+    productName?: string;
+    productBarcode?: string;
+    productCategory?: string;
+    productBrand?: string;
+    productUnit?: string;
+    variantName?: string;
+    variantCode?: string;
+    variantNetto?: number;
   }>;
   returnType: string;
   note: string;
+  employeeId?: string;
+  employeeName?: string;
 }): Promise<TransactionReturn> {
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) throw new Error('Organization not found');
@@ -134,6 +156,8 @@ export async function createTransactionReturn(data: {
   const userId = useAuthStore.getState().profile?.id;
 
   let customerName = '';
+  let customerPhone: string | null = null;
+  let customerAddress: string | null = null;
   if (data.customerId) {
     const customer = await db
       .select()
@@ -141,15 +165,23 @@ export async function createTransactionReturn(data: {
       .where(eq(customers.id, data.customerId))
       .limit(1);
     customerName = customer[0]?.name || '';
+    customerPhone = customer[0]?.phone || null;
+    customerAddress = customer[0]?.address || null;
   }
 
   const totalAmount = data.items.reduce((sum, item) => sum + item.quantity * item.sellPrice, 0);
+  const totalProfit = data.items.reduce((sum, item) => sum + item.profit, 0);
 
   const newReturn = {
     id,
     local_ref_id: `TR-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
     customerId: data.customerId || null,
     customerName,
+    customerPhone,
+    customerAddress,
+    employeeId: data.employeeId || null,
+    employeeName: data.employeeName || null,
+    originalTransactionLocalRefId: data.originalTransactionLocalRefId || null,
     totalAmount,
     returnType: data.returnType,
     note: data.note,
@@ -168,21 +200,94 @@ export async function createTransactionReturn(data: {
 
   for (const item of data.items) {
     const itemId = `tri_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    let productName: string | undefined = item.productName;
+    let productBarcode: string | undefined = item.productBarcode;
+    let productCategory: string | undefined = item.productCategory;
+    let productBrand: string | undefined = item.productBrand;
+    let productUnit: string | undefined = item.productUnit;
+    let variantName: string | undefined = item.variantName;
+    let variantCode: string | undefined = item.variantCode;
+    let variantNetto: number | undefined = item.variantNetto;
+    let purchasePrice: number = item.purchasePrice ?? 0;
+
+    if (!productName) {
+      const productResult = await db
+        .select()
+        .from(products)
+        .where(eq(products.id, item.productId))
+        .limit(1);
+      const product = productResult[0];
+      if (product) {
+        productName = product.name;
+        productBarcode = product.barcode ?? undefined;
+        productUnit = product.unit ?? undefined;
+        purchasePrice = product.purchasePrice ?? 0;
+
+        if (product.categoryId) {
+          const catResult = await db
+            .select({ name: categories.name })
+            .from(categories)
+            .where(eq(categories.id, product.categoryId))
+            .limit(1);
+          productCategory = catResult[0]?.name;
+        }
+
+        if (product.brandId) {
+          const brandResult = await db
+            .select({ name: brands.name })
+            .from(brands)
+            .where(eq(brands.id, product.brandId))
+            .limit(1);
+          productBrand = brandResult[0]?.name;
+        }
+      }
+    }
+
+    if (item.variantId && !variantName) {
+      const variantResult = await db
+        .select()
+        .from(productVariants)
+        .where(eq(productVariants.id, item.variantId))
+        .limit(1);
+      const variant = variantResult[0];
+      if (variant) {
+        variantName = variant.name;
+        variantCode = variant.code;
+        variantNetto = variant.netto ?? undefined;
+      }
+    }
+
     await db.insert(transactionReturnItems).values({
       id: itemId,
       transactionReturnId: id,
       productId: item.productId,
+      productName: productName || null,
+      productBarcode: productBarcode || null,
+      productCategory: productCategory || null,
+      productBrand: productBrand || null,
+      productUnit: productUnit || null,
       variantId: item.variantId || null,
+      variantName: variantName || null,
+      variantCode: variantCode || null,
+      variantNetto: variantNetto || null,
       quantity: item.quantity,
       sellPrice: item.sellPrice,
+      purchasePrice: purchasePrice ?? 0,
       profit: item.profit,
       organizationId: orgId,
+      createdBy: userId,
+      updatedBy: userId,
       createdAt: now,
       updatedAt: now,
       deletedAt: null,
       _dirty: true,
       _syncedAt: null,
     } as any);
+  }
+
+  if (data.customerId) {
+    await deductCustomerStats(data.customerId, totalAmount, totalProfit, 0);
   }
 
   return newReturn as unknown as TransactionReturn;

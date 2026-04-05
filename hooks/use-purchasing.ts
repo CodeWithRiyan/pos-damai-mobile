@@ -3,20 +3,38 @@ import * as schema from '@/db/schema';
 import { db } from '@/db';
 import { useAuthStore } from '@/stores/auth';
 import { usePayableStore } from '@/stores/payable';
-import { InventoryTxType, Status } from '@/constants';
+import { InventoryTxType, Status, DEFAULT_PAYMENT_TYPE } from '@/constants';
 import { and, eq, isNull, like, desc, or, isNotNull, gte, lte } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
 
 export interface CreatePurchasingDTO {
   id?: string;
   supplierId: string;
+  supplierName?: string;
+  supplierPhone?: string;
+  supplierAddress?: string;
+  employeeId?: string;
+  employeeName?: string;
   items: Array<{
     productId: string;
     quantity: number;
     unitPrice: number;
     totalPrice: number;
+    productName?: string;
+    productBarcode?: string;
+    productCategory?: string;
+    productBrand?: string;
+    productUnit?: string;
+    variantId?: string;
+    variantName?: string;
+    variantCode?: string;
+    variantNetto?: number;
+    note?: string;
   }>;
-  paymentTypeId: string;
+  paymentTypeName?: string;
+  paymentTypeCommission?: number;
+  paymentTypeCommissionType?: string;
+  paymentTypeMinimalAmount?: number;
   dueDate?: Date | null;
   note?: string;
   status: string;
@@ -108,7 +126,9 @@ export async function fetchPurchase(
     .from(schema.purchaseItems)
     .where(eq(schema.purchaseItems.purchaseId, id));
 
-  return { ...result[0], items } as unknown as Purchase & { items?: PurchaseItem[] };
+  return { ...result[0], items } as unknown as Purchase & {
+    items?: PurchaseItem[];
+  };
 }
 
 export async function fetchPurchaseItems(purchaseId: string): Promise<PurchaseItem[]> {
@@ -132,15 +152,9 @@ export async function createPurchase(data: CreatePurchasingDTO): Promise<Purchas
   const supplierResult = data.supplierId
     ? await db.select().from(schema.suppliers).where(eq(schema.suppliers.id, data.supplierId))
     : [];
-  const supplierName = supplierResult[0]?.name || '';
-
-  const paymentTypeResult = data.paymentTypeId
-    ? await db
-        .select()
-        .from(schema.paymentTypes)
-        .where(eq(schema.paymentTypes.id, data.paymentTypeId))
-    : [];
-  const paymentTypeName = paymentTypeResult[0]?.name || '';
+  const supplierName = supplierResult[0]?.name || data.supplierName || '';
+  const supplierPhone = supplierResult[0]?.phone || data.supplierPhone || null;
+  const supplierAddress = supplierResult[0]?.address || data.supplierAddress || null;
 
   const newPurchase = {
     id,
@@ -148,8 +162,14 @@ export async function createPurchase(data: CreatePurchasingDTO): Promise<Purchas
     organizationId: orgId,
     supplierId: data.supplierId,
     supplierName,
-    paymentTypeId: data.paymentTypeId,
-    paymentTypeName,
+    supplierPhone,
+    supplierAddress,
+    employeeId: data.employeeId || null,
+    employeeName: data.employeeName || null,
+    paymentTypeName: data.paymentTypeName || DEFAULT_PAYMENT_TYPE,
+    paymentTypeCommission: data.paymentTypeCommission || 0,
+    paymentTypeCommissionType: data.paymentTypeCommissionType || 'PERCENTAGE',
+    paymentTypeMinimalAmount: data.paymentTypeMinimalAmount || 0,
     totalAmount,
     totalPaid: data.totalPaid || 0,
     dueDate: data.dueDate || null,
@@ -174,9 +194,21 @@ export async function createPurchase(data: CreatePurchasingDTO): Promise<Purchas
       purchaseId: id,
       organizationId: orgId,
       productId: item.productId,
+      productName: item.productName || null,
+      productBarcode: item.productBarcode || null,
+      productCategory: item.productCategory || null,
+      productBrand: item.productBrand || null,
+      productUnit: item.productUnit || null,
+      variantId: item.variantId || null,
+      variantName: item.variantName || null,
+      variantCode: item.variantCode || null,
+      variantNetto: item.variantNetto || null,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       totalPrice: item.totalPrice,
+      note: item.note || null,
+      createdBy: userId,
+      updatedBy: userId,
       createdAt: now,
       updatedAt: now,
       _dirty: true,
@@ -188,8 +220,18 @@ export async function createPurchase(data: CreatePurchasingDTO): Promise<Purchas
         id: `invtx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         local_ref_id: `${id}_${item.productId}`,
         productId: item.productId,
+        productName: item.productName || null,
+        productBarcode: item.productBarcode || null,
+        productCategory: item.productCategory || null,
+        productBrand: item.productBrand || null,
+        productUnit: item.productUnit || null,
+        variantId: item.variantId || null,
+        variantName: item.variantName || null,
+        variantCode: item.variantCode || null,
+        variantNetto: item.variantNetto || null,
         type: InventoryTxType.PURCHASE,
         quantity: item.quantity,
+        contextName: supplierName || null,
         organizationId: orgId,
         createdBy: userId,
         updatedBy: userId,
@@ -211,6 +253,8 @@ export async function createPurchase(data: CreatePurchasingDTO): Promise<Purchas
       organizationId: orgId,
       supplierId: data.supplierId,
       supplierName,
+      supplierPhone,
+      supplierAddress,
       nominal,
       dueDate: data.dueDate,
       note: data.note || null,

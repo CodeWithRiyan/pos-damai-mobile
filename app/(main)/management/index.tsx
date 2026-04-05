@@ -21,7 +21,11 @@ export default function ManagementScreen() {
         label: 'Produk, Kategori dan Brand',
         href: '/management/product-category-brand',
         icon: 'Box',
-        requiredPermission: ['products:read', 'categories:read', 'brands:read'],
+        requiredPermission: [
+          'products:read',
+          'products:categories-read',
+          'products:brands-read',
+        ],
       },
       {
         label: 'Pelanggan dan Supplier',
@@ -39,13 +43,13 @@ export default function ManagementScreen() {
         label: 'Perubahan Stock',
         href: '/management/stock-changes',
         icon: 'ArchiveCheck',
-        requiredPermission: 'inventory:read',
+        requiredPermission: ['stock:inventory-read', 'stock:opname-read'],
       },
       {
         label: 'Retur',
         href: '/management/return',
         icon: 'History',
-        requiredPermission: 'returns:read',
+        requiredPermission: ['returns:read-customer', 'returns:read-supplier'],
       },
       {
         label: 'Jenis Pembayaran',

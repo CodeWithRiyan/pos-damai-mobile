@@ -1,5 +1,6 @@
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
+import { PermissionGuard } from '@/components/permission-guard';
 import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui';
@@ -124,12 +125,14 @@ export default function CategoryList() {
                   <Spinner size="small" color="#FFFFFF" />
                 </Box>
               ) : (
-                <Pressable
-                  className="p-6"
-                  onPress={() => triggerBulkDelete(bulkDeleteConfirm('kategori', selectedItems))}
-                >
-                  <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
-                </Pressable>
+                <PermissionGuard permissions="products:categories-delete">
+                  <Pressable
+                    className="p-6"
+                    onPress={() => triggerBulkDelete(bulkDeleteConfirm('kategori', selectedItems))}
+                  >
+                    <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                  </Pressable>
+                </PermissionGuard>
               )
             ) : (
               <Pressable
@@ -223,13 +226,15 @@ export default function CategoryList() {
             }
           />
           <HStack className="w-full p-4">
-            <Button
-              size="sm"
-              className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
-              onPress={handleAdd}
-            >
-              <ButtonText className="text-white">TAMBAH KATEGORI</ButtonText>
-            </Button>
+            <PermissionGuard permissions="products:categories-create">
+              <Button
+                size="sm"
+                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                onPress={handleAdd}
+              >
+                <ButtonText className="text-white">TAMBAH KATEGORI</ButtonText>
+              </Button>
+            </PermissionGuard>
           </HStack>
         </VStack>
       </Box>

@@ -1,4 +1,4 @@
-import { payables, payableRealizations, suppliers, users } from '@/db/schema';
+import { payables, payableRealizations, suppliers, users, paymentTypes } from '@/db/schema';
 import { db } from '@/db';
 import { useAuthStore } from '@/stores/auth';
 import { eq, and, isNull, like, desc, sql, sum } from 'drizzle-orm';
@@ -195,6 +195,8 @@ export async function createPayable(data: {
     note: data.note || null,
     supplierId: data.supplierId,
     supplierName: supplier[0]?.name || '',
+    supplierPhone: supplier[0]?.phone || null,
+    supplierAddress: supplier[0]?.address || null,
     status: 'PENDING',
     createdBy: userId,
     organizationId: orgId,
@@ -219,6 +221,7 @@ export async function createPayableRealization(data: {
   nominal: number;
   realizationDate: Date;
   paymentMethodId: string;
+  paymentMethodName?: string;
   note?: string;
 }): Promise<void> {
   const orgId = useAuthStore.getState().getOrganizationId();
@@ -227,6 +230,16 @@ export async function createPayableRealization(data: {
   const id = `pr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const now = new Date();
 
+  let paymentMethodName = data.paymentMethodName;
+  if (!paymentMethodName) {
+    const pmResult = await db
+      .select({ name: paymentTypes.name })
+      .from(paymentTypes)
+      .where(eq(paymentTypes.id, data.paymentMethodId))
+      .limit(1);
+    paymentMethodName = pmResult[0]?.name;
+  }
+
   await db.insert(payableRealizations).values({
     id,
     local_ref_id: `PR-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
@@ -234,6 +247,7 @@ export async function createPayableRealization(data: {
     nominal: data.nominal,
     realizationDate: data.realizationDate,
     paymentMethodId: data.paymentMethodId,
+    paymentMethodName,
     note: data.note || null,
     organizationId: orgId,
     createdAt: now,

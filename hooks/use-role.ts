@@ -45,8 +45,8 @@ async function fetchRoleApi(id: string): Promise<Role | null> {
 }
 
 async function fetchPermissionsApi(): Promise<Permission[]> {
-  const response = await apiClient.get('/permissions');
-  return response.data.data;
+  const response = await apiClient.get('/roles/permissions');
+  return response.data.data.data;
 }
 
 async function createRoleApi(data: CreateRoleDTO): Promise<Role> {

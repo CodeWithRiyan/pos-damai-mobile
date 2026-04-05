@@ -37,7 +37,7 @@ import { usePaymentTypes } from '@/hooks/use-payment-type';
 import { useTransactionReturn } from '@/hooks/use-return-transaction';
 import { useCreateTransaction, useTransaction } from '@/hooks/use-transaction';
 import { useCreateReceivable } from '@/hooks/use-receivable';
-import { CalcType, FinanceType, Status } from '@/constants';
+import { CalcType, FinanceType, Status, DEFAULT_PAYMENT_TYPE } from '@/constants';
 import { findSellPrice, getDiscountedPrice, isDiscountActive } from '@/utils/price';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import { useProductStore } from '@/stores/product';
@@ -183,14 +183,11 @@ export default function TransactionCheckoutForm() {
       form.setValue('status', status);
       if (!transaction && paymentTypesData && paymentTypesData.length > 0) {
         const defaultPaymentType =
-          paymentTypesData?.find(
-            (pt, _i) =>
-              pt.isDefault || pt.name.toLowerCase() === 'cash' || pt.name.toLowerCase() === 'tunai',
-          )?.id || '';
+          paymentTypesData?.find((pt, _i) => pt.isDefault || pt.name === DEFAULT_PAYMENT_TYPE)
+            ?.id || '';
         form.setValue('paymentTypeId', defaultPaymentType);
       }
       if (transaction) {
-        form.setValue('paymentTypeId', transaction.paymentTypeId);
         form.setValue('note', transaction.note || '');
       }
     }
@@ -255,9 +252,23 @@ export default function TransactionCheckoutForm() {
         totalAmount: grandTotal,
         totalPaid: finalTotalPaid,
         commission: commission,
-        paymentTypeId: data.paymentTypeId,
+        paymentTypeName:
+          paymentTypesData?.find((p) => p.id === data.paymentTypeId)?.name || DEFAULT_PAYMENT_TYPE,
+        paymentTypeCommission:
+          paymentTypesData?.find((p) => p.id === data.paymentTypeId)?.commission || 0,
+        paymentTypeCommissionType:
+          paymentTypesData?.find((p) => p.id === data.paymentTypeId)?.commissionType ||
+          'PERCENTAGE',
+        paymentTypeMinimalAmount:
+          paymentTypesData?.find((p) => p.id === data.paymentTypeId)?.minimalAmount || 0,
         customerId: employee ? undefined : customer?.id || '',
+        customerName: employee ? undefined : customer?.name || undefined,
+        customerCode: employee ? undefined : (customer?.code ?? undefined),
+        customerPhone: employee ? undefined : (customer?.phone ?? undefined),
+        customerAddress: employee ? undefined : (customer?.address ?? undefined),
+        customerCategory: customer?.category || 'RETAIL',
         employeeId: employee?.id,
+        employeeName: employee?.name || undefined,
         returnId: returnId || undefined,
         transactionDate: new Date(),
         status: status,
@@ -268,12 +279,19 @@ export default function TransactionCheckoutForm() {
             product: {
               id: item.product.originalId || item.product.id,
               discount: item.product.discount,
+              categoryId: item.product.categoryId,
+              categoryName: item.product.category?.name,
+              barcode: item.product.barcode ?? undefined,
+              brandId: item.product.brandId ?? undefined,
+              brandName: item.product.brand?.name,
+              unit: item.product.unit ?? undefined,
             },
             variant: variantData
               ? {
                   id: variantData.id,
                   name: variantData.name,
-                  netto: variantData.netto,
+                  code: variantData.code,
+                  netto: variantData.netto ?? undefined,
                 }
               : undefined,
             quantity: item.quantity,
@@ -287,6 +305,8 @@ export default function TransactionCheckoutForm() {
               }),
             isManualPrice: !!item.tempSellPrice,
             note: item.note,
+            productName: item.product.name,
+            itemNote: item.note,
           };
         }),
       };

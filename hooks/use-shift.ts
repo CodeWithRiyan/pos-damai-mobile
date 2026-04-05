@@ -150,11 +150,19 @@ export async function createShift(data: StartShiftDTO): Promise<Shift> {
   const now = new Date();
   const userId = useAuthStore.getState().profile?.id;
 
+  const cashDrawer = await db
+    .select({ name: schema.cashDrawers.name })
+    .from(schema.cashDrawers)
+    .where(eq(schema.cashDrawers.id, data.cashDrawerId))
+    .limit(1);
+
   const newShift = {
     id,
     local_ref_id: null,
     cashDrawerId: data.cashDrawerId,
+    cashDrawerName: cashDrawer[0]?.name || null,
     userId: userId || '',
+    userName: useAuthStore.getState().profile?.name || null,
     startTime: now,
     endTime: null,
     initialBalance: data.initialBalance,

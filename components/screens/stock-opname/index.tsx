@@ -19,7 +19,7 @@ export default function StockOpnameList({ isReport }: { isReport?: boolean }) {
   const { cart } = useStockOpnameStore();
   const router = useRouter();
   const { data: stockOpname, isLoading, refetch } = useStockOpnames();
-
+  console.log('Stock Opname data:', stockOpname);
   useFocusEffect(
     useCallback(() => {
       refetch();
@@ -76,7 +76,7 @@ export default function StockOpnameList({ isReport }: { isReport?: boolean }) {
                     </VStack>
                     <HStack className="absolute right-0 top-0 h-full">
                       <HStack className="h-full items-center justify-center">
-                        {so.status === 'DONE' ? (
+                        {so.totalLoss === 0 ? (
                           <Heading size="sm" className="text-success-600">
                             Sesuai
                           </Heading>

@@ -12,7 +12,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Check, Printer } from 'lucide-react-native';
 import { ScrollView } from 'react-native';
 
-import { PaymentMethod, Status } from '@/constants';
+import { Status, DEFAULT_PAYMENT_TYPE } from '@/constants';
 import { formatNumber, formatRp } from '@/utils/format';
 import { getReceiptActions } from '@/utils/receipt-actions';
 export default function PurchasingReceipt() {
@@ -130,11 +130,10 @@ export default function PurchasingReceipt() {
               <HStack className="justify-between items-center">
                 <Text className="text-typography-500">Metode Pembayaran</Text>
                 <Text className="text-typography-500">
-                  {purchase.paymentTypeName ||
-                    (purchase.paymentType === PaymentMethod.CASH ? 'Tunai' : 'Hutang')}
+                  {purchase.dueDate ? 'Hutang' : purchase.paymentTypeName || DEFAULT_PAYMENT_TYPE}
                 </Text>
               </HStack>
-              {purchase.paymentType === PaymentMethod.DEBT && purchase.dueDate && (
+              {purchase.dueDate && (
                 <HStack className="justify-between items-center">
                   <Text className="text-typography-500">Jatuh Tempo</Text>
                   <Text className="text-typography-500">

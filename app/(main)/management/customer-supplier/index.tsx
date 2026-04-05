@@ -2,26 +2,43 @@ import Header from '@/components/header';
 import { Box, Text, VStack } from '@/components/ui';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconLinear, SolarIconLinearProps } from '@/components/ui/solar-icon-wrapper';
+import { usePermission } from '@/hooks/use-permission';
 import { Link } from 'expo-router';
+import { useMemo } from 'react';
 import { ScrollView } from 'react-native';
 
 export default function ConsumerSupplierScreen() {
-  const menuItems: {
-    label: string;
-    href: string;
-    icon: SolarIconLinearProps['name'];
-  }[] = [
-    {
-      label: 'Pelanggan',
-      href: '/management/customer-supplier/customer',
-      icon: 'Card2',
-    },
-    {
-      label: 'Supplier',
-      href: '/management/customer-supplier/supplier',
-      icon: 'Card2',
-    },
-  ];
+  const { hasPermission, hasAnyPermission } = usePermission();
+
+  const menuItems = useMemo(() => {
+    const items: {
+      label: string;
+      href: string;
+      icon: SolarIconLinearProps['name'];
+      requiredPermission?: string | string[];
+    }[] = [
+      {
+        label: 'Pelanggan',
+        href: '/management/customer-supplier/customer',
+        icon: 'Card2',
+        requiredPermission: 'customers:read',
+      },
+      {
+        label: 'Supplier',
+        href: '/management/customer-supplier/supplier',
+        icon: 'Card2',
+        requiredPermission: 'suppliers:read',
+      },
+    ];
+
+    return items.filter((item) => {
+      if (!item.requiredPermission) return true;
+      if (Array.isArray(item.requiredPermission)) {
+        return hasAnyPermission(item.requiredPermission);
+      }
+      return hasPermission(item.requiredPermission);
+    });
+  }, [hasPermission, hasAnyPermission]);
 
   return (
     <Box className="flex-1 bg-white">

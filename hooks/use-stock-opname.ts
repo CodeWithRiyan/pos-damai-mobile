@@ -1,4 +1,11 @@
-import { stockOpnames, stockOpnameItems } from '@/db/schema';
+import {
+  stockOpnames,
+  stockOpnameItems,
+  products,
+  categories,
+  brands,
+  productVariants,
+} from '@/db/schema';
 import { db } from '@/db';
 import { useAuthStore } from '@/stores/auth';
 import { eq, and, isNull, desc } from 'drizzle-orm';
@@ -73,6 +80,17 @@ export async function createStockOpname(data: {
     systemQuantity: number;
     physicalQuantity: number;
     note?: string;
+    productName?: string;
+    productBarcode?: string;
+    productCategory?: string;
+    productBrand?: string;
+    productUnit?: string;
+    variantId?: string;
+    variantName?: string;
+    variantCode?: string;
+    variantNetto?: number;
+    purchasePrice?: number;
+    financialImpact?: number;
   }>;
 }): Promise<StockOpname> {
   const orgId = useAuthStore.getState().getOrganizationId();
@@ -81,6 +99,16 @@ export async function createStockOpname(data: {
   const id = `so_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const now = new Date();
   const userId = useAuthStore.getState().profile?.id;
+  const userName = useAuthStore.getState().profile?.name || null;
+
+  let totalGain = 0;
+  let totalLoss = 0;
+
+  for (const item of data.items) {
+    const diff = item.physicalQuantity - item.systemQuantity;
+    if (diff > 0) totalGain += diff;
+    if (diff < 0) totalLoss += Math.abs(diff);
+  }
 
   const newOpname = {
     id,
@@ -88,6 +116,9 @@ export async function createStockOpname(data: {
     date: data.date,
     note: data.note || null,
     status: 'PENDING',
+    totalGain,
+    totalLoss,
+    createdByName: userName,
     createdBy: userId,
     updatedBy: userId,
     organizationId: orgId,
@@ -102,15 +133,78 @@ export async function createStockOpname(data: {
 
   for (const item of data.items) {
     const itemId = `soi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const difference = item.physicalQuantity - item.systemQuantity;
+
+    let productName = item.productName;
+    let productBarcode = item.productBarcode;
+    let productCategory = item.productCategory;
+    let productBrand = item.productBrand;
+    let productUnit = item.productUnit;
+    let variantId = item.variantId;
+    let variantName = item.variantName;
+    let variantCode = item.variantCode;
+    let variantNetto = item.variantNetto;
+    let purchasePrice = item.purchasePrice;
+    let financialImpact = item.financialImpact;
+
+    if (!productName) {
+      const productResult = await db
+        .select()
+        .from(products)
+        .where(eq(products.id, item.productId))
+        .limit(1);
+      const product = productResult[0];
+      if (product) {
+        productName = product.name;
+        productBarcode = product.barcode ?? undefined;
+        productUnit = product.unit ?? undefined;
+        purchasePrice = product.purchasePrice ?? 0;
+
+        if (product.categoryId) {
+          const catResult = await db
+            .select({ name: categories.name })
+            .from(categories)
+            .where(eq(categories.id, product.categoryId))
+            .limit(1);
+          productCategory = catResult[0]?.name;
+        }
+
+        if (product.brandId) {
+          const brandResult = await db
+            .select({ name: brands.name })
+            .from(brands)
+            .where(eq(brands.id, product.brandId))
+            .limit(1);
+          productBrand = brandResult[0]?.name;
+        }
+      }
+    }
+
+    if (!financialImpact && purchasePrice) {
+      financialImpact = Math.abs(difference) * purchasePrice;
+    }
+
     await db.insert(stockOpnameItems).values({
       id: itemId,
       stockOpnameId: id,
       productId: item.productId,
-      systemQuantity: item.systemQuantity,
-      physicalQuantity: item.physicalQuantity,
-      difference: item.physicalQuantity - item.systemQuantity,
-      note: item.note || null,
+      productName: productName || null,
+      productBarcode: productBarcode || null,
+      productCategory: productCategory || null,
+      productBrand: productBrand || null,
+      productUnit: productUnit || null,
+      variantId: variantId || null,
+      variantName: variantName || null,
+      variantCode: variantCode || null,
+      variantNetto: variantNetto || null,
+      quantitySystem: item.systemQuantity,
+      quantityPhysical: item.physicalQuantity,
+      difference,
+      purchasePrice: purchasePrice ?? 0,
+      financialImpact: financialImpact ?? 0,
       organizationId: orgId,
+      createdBy: userId,
+      updatedBy: userId,
       createdAt: now,
       updatedAt: now,
       deletedAt: null,

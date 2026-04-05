@@ -49,3 +49,5 @@ export const DateFilterType = {
   THIS_YEAR: 'THIS_YEAR',
   CUSTOM: 'CUSTOM',
 } as const;
+
+export const DEFAULT_PAYMENT_TYPE = 'Tunai';

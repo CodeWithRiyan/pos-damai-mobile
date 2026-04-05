@@ -78,6 +78,7 @@ export async function createFinance(data: CreateFinanceDTO): Promise<Finance> {
     note: data.note || null,
     inputToCashdrawer: data.inputToCashdrawer || false,
     userId,
+    userName: useAuthStore.getState().profile?.name || null,
     organizationId: orgId,
     createdBy: userId,
     updatedBy: userId,

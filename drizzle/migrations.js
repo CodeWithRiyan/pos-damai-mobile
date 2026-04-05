@@ -27,6 +27,7 @@ import m0022 from './0022_add_discount_profit_fields.sql';
 import m0023 from './0023_outgoing_fixer.sql';
 import m0024 from './0024_same_domino.sql';
 import m0025 from './0025_dapper_randall.sql';
+import m0026 from './0026_stale_maestro.sql';
 
   export default {
     journal,
@@ -56,7 +57,8 @@ m0021,
 m0022,
 m0023,
 m0024,
-m0025
+m0025,
+m0026
     }
   }
   

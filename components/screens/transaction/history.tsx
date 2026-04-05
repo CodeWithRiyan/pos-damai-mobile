@@ -63,7 +63,7 @@ export default function TransactionHistory({ isReport }: { isReport?: boolean })
   } = useTransactions({
     customerId,
     userId: transactionFilter.userId || undefined,
-    paymentTypeIds: transactionFilter.paymentTypeIds || [],
+    paymentTypeNames: transactionFilter.paymentTypeNames || [],
     dateType: transactionFilter.dateType,
     startDate: transactionFilter.startDate,
     endDate: transactionFilter.endDate,

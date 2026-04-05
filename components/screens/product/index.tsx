@@ -21,6 +21,7 @@ import {
   useCreateProduct,
   useProducts,
 } from '@/hooks/use-product';
+import { usePermission } from '@/hooks/use-permission';
 import { bulkDeleteConfirm } from '@/utils/delete-confirm';
 import { exportProducts, importProducts } from '@/utils/excel';
 import { showSuccessToast, showToast } from '@/utils/toast';
@@ -36,11 +37,13 @@ import { FlashList } from '@shopify/flash-list';
 import { RefreshControl } from 'react-native';
 import ProductFilter from './filter';
 import ProductNotification from './notification';
+import { PermissionGuard } from '@/components/permission-guard';
 
 import { formatRp, formatNumber } from '@/utils/format';
 export default function ProductList() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
+  const { hasPermission } = usePermission();
 
   const [openNotification, setOpenNotification] = useState<boolean>(false);
   const [stockFilter, setStockFilter] = useState<ShowByStock>('ALL_STOCK');
@@ -184,14 +187,16 @@ export default function ProductList() {
                 <Spinner size="small" color="#FFFFFF" />
               </Box>
             ) : (
-              <Pressable
-                className="p-6"
-                onPress={() => triggerBulkDelete(bulkDeleteConfirm('produk', selectedItems))}
-              >
-                <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
-              </Pressable>
+              <PermissionGuard permissions="products:delete">
+                <Pressable
+                  className="p-6"
+                  onPress={() => triggerBulkDelete(bulkDeleteConfirm('produk', selectedItems))}
+                >
+                  <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                </Pressable>
+              </PermissionGuard>
             )
-          ) : (
+          ) : hasPermission('products:export-import') ? (
             <Pressable
               className="p-6"
               onPress={() => {
@@ -218,7 +223,7 @@ export default function ProductList() {
                 style={{ transform: [{ rotate: '90deg' }] }}
               />
             </Pressable>
-          )
+          ) : null
         }
       />
       <Box className="flex-1 bg-white">
@@ -331,13 +336,15 @@ export default function ProductList() {
             }
           />
           <HStack className="w-full p-4">
-            <Button
-              size="sm"
-              className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
-              onPress={handleAdd}
-            >
-              <ButtonText className="text-white">{`TAMBAH PRODUK `}</ButtonText>
-            </Button>
+            <PermissionGuard permissions="products:create">
+              <Button
+                size="sm"
+                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                onPress={handleAdd}
+              >
+                <ButtonText className="text-white">{`TAMBAH PRODUK `}</ButtonText>
+              </Button>
+            </PermissionGuard>
           </HStack>
         </VStack>
       </Box>

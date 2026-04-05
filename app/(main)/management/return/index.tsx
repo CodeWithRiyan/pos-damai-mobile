@@ -2,26 +2,43 @@ import Header from '@/components/header';
 import { Box, Text, VStack } from '@/components/ui';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconLinear, SolarIconLinearProps } from '@/components/ui/solar-icon-wrapper';
+import { usePermission } from '@/hooks/use-permission';
 import { Link } from 'expo-router';
+import { useMemo } from 'react';
 import { ScrollView } from 'react-native';
 
 export default function ReturnScreen() {
-  const returnItems: {
-    label: string;
-    href: string;
-    icon: SolarIconLinearProps['name'];
-  }[] = [
-    {
-      label: 'Pembelian Barang',
-      href: '/management/return/purchasing',
-      icon: 'Cart3',
-    },
-    {
-      label: 'Transaksi Penjualan',
-      href: '/management/return/transaction',
-      icon: 'Plain',
-    },
-  ];
+  const { hasPermission, hasAnyPermission } = usePermission();
+
+  const returnItems = useMemo(() => {
+    const items: {
+      label: string;
+      href: string;
+      icon: SolarIconLinearProps['name'];
+      requiredPermission?: string | string[];
+    }[] = [
+      {
+        label: 'Pembelian Barang',
+        href: '/management/return/purchasing',
+        icon: 'Cart3',
+        requiredPermission: 'returns:read-supplier',
+      },
+      {
+        label: 'Transaksi Penjualan',
+        href: '/management/return/transaction',
+        icon: 'Plain',
+        requiredPermission: 'returns:read-customer',
+      },
+    ];
+
+    return items.filter((item) => {
+      if (!item.requiredPermission) return true;
+      if (Array.isArray(item.requiredPermission)) {
+        return hasAnyPermission(item.requiredPermission);
+      }
+      return hasPermission(item.requiredPermission);
+    });
+  }, [hasPermission, hasAnyPermission]);
 
   return (
     <Box className="flex-1 bg-white">

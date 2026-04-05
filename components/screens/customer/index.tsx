@@ -1,5 +1,6 @@
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
+import { PermissionGuard } from '@/components/permission-guard';
 import { usePopUpConfirm } from '@/components/pop-up-confirm';
 import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
 import { Box } from '@/components/ui/box';
@@ -162,35 +163,37 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
                     <Spinner size="small" color="#FFFFFF" />
                   </Box>
                 ) : (
-                  <Pressable
-                    className="p-6"
-                    onPress={() =>
-                      showActionDrawer({
-                        actions: [
-                          {
-                            label: 'Reset Poin',
-                            icon: 'RestartCircle',
-                            theme: 'red',
-                            onPress: () => {
-                              handleResetPointPress();
-                              hideActionDrawer();
+                  <PermissionGuard permissions={['customers:delete', 'customers:delete-poin']}>
+                    <Pressable
+                      className="p-6"
+                      onPress={() =>
+                        showActionDrawer({
+                          actions: [
+                            {
+                              label: 'Reset Poin',
+                              icon: 'RestartCircle',
+                              theme: 'red',
+                              onPress: () => {
+                                handleResetPointPress();
+                                hideActionDrawer();
+                              },
                             },
-                          },
-                          {
-                            label: 'Hapus Pelanggan',
-                            icon: 'TrashBin2',
-                            theme: 'red',
-                            onPress: () => {
-                              triggerBulkDelete(bulkDeleteConfirm('pelanggan', selectedItems));
-                              hideActionDrawer();
+                            {
+                              label: 'Hapus Pelanggan',
+                              icon: 'TrashBin2',
+                              theme: 'red',
+                              onPress: () => {
+                                triggerBulkDelete(bulkDeleteConfirm('pelanggan', selectedItems));
+                                hideActionDrawer();
+                              },
                             },
-                          },
-                        ],
-                      })
-                    }
-                  >
-                    <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
-                  </Pressable>
+                          ],
+                        })
+                      }
+                    >
+                      <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                    </Pressable>
+                  </PermissionGuard>
                 )
               ) : (
                 <Pressable
@@ -284,13 +287,15 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
           />
           {!isReport && (
             <HStack className="w-full p-4">
-              <Button
-                size="sm"
-                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
-                onPress={handleAdd}
-              >
-                <ButtonText className="text-white">TAMBAH PELANGGAN</ButtonText>
-              </Button>
+              <PermissionGuard permissions="customers:create">
+                <Button
+                  size="sm"
+                  className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                  onPress={handleAdd}
+                >
+                  <ButtonText className="text-white">TAMBAH PELANGGAN</ButtonText>
+                </Button>
+              </PermissionGuard>
             </HStack>
           )}
         </VStack>

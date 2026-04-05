@@ -3,7 +3,14 @@ import { db } from '@/db';
 import * as schema from '@/db/schema';
 import { useAuthStore } from '@/stores/auth';
 import { and, desc, eq, isNull, like, sql } from 'drizzle-orm';
-import { DateFilterType, InventoryTxType, ProductType, Status } from '@/constants';
+import {
+  DateFilterType,
+  InventoryTxType,
+  ProductType,
+  Status,
+  DEFAULT_PAYMENT_TYPE,
+} from '@/constants';
+import { calculateEarnedPoints, updateCustomerStats } from '@/utils/points';
 
 export type ProductTypeEnum = 'DEFAULT' | 'MULTIUNIT' | 'VARIANTS';
 
@@ -19,8 +26,10 @@ export interface SalesTransaction {
   commission?: number;
   totalDiscount?: number;
   totalProfit?: number;
-  paymentTypeId: string;
   paymentTypeName?: string;
+  paymentTypeCommission?: number;
+  paymentTypeCommissionType?: string;
+  paymentTypeMinimalAmount?: number;
   transactionDate: Date;
   status: string;
   note: string | null;
@@ -54,11 +63,20 @@ export interface TransactionItem {
 export interface CreateTransactionDTO {
   id?: string;
   customerId?: string;
+  customerName?: string;
+  customerCode?: string;
+  customerPhone?: string;
+  customerAddress?: string;
+  customerCategory?: string;
   employeeId?: string;
+  employeeName?: string;
   totalAmount: number;
   totalPaid: number;
   commission?: number;
-  paymentTypeId: string;
+  paymentTypeName?: string;
+  paymentTypeCommission?: number;
+  paymentTypeCommissionType?: string;
+  paymentTypeMinimalAmount?: number;
   transactionDate: Date;
   status: string;
   note: string;
@@ -72,19 +90,27 @@ export interface CreateTransactionDTO {
         startDate: Date;
         endDate: Date;
       };
+      categoryId?: string;
+      categoryName?: string;
+      barcode?: string;
+      brandId?: string;
+      brandName?: string;
+      unit?: string;
     };
-    variant?: { id: string; name: string; netto?: number | null };
+    variant?: { id: string; name: string; code?: string; netto?: number | null };
     quantity: number;
     tempSellPrice: number;
     isManualPrice?: boolean;
     note?: string;
+    productName?: string;
+    itemNote?: string;
   }[];
 }
 
 export interface TransactionFilterParams {
   customerId?: string;
   userId?: string;
-  paymentTypeIds?: string[];
+  paymentTypeNames?: string[];
   dateType?: 'TODAY' | 'THIS_WEEK' | 'THIS_MONTH' | 'THIS_YEAR' | 'CUSTOM';
   startDate?: Date;
   endDate?: Date;
@@ -201,16 +227,28 @@ export async function fetchTransactions(params?: TransactionFilterParams): Promi
     }
   }
 
-  if (params?.paymentTypeIds && params.paymentTypeIds.length > 0) {
+  if (params?.paymentTypeNames && params.paymentTypeNames.length > 0) {
     transactionResult = transactionResult.filter((t) =>
-      params.paymentTypeIds!.includes(t.paymentTypeId),
+      params.paymentTypeNames!.includes(t.paymentTypeName || ''),
     );
   }
 
   const transactionsWithDetails = await Promise.all(
     transactionResult.map(async (transaction) => {
-      let customerName = 'Walk-in Customer';
-      if (transaction.customerId) {
+      let customerName = transaction.customerName || 'Walk-in Customer';
+      let employeeName: string | undefined = transaction.employeeName || undefined;
+
+      if (transaction.employeeId && !transaction.employeeName) {
+        const employee = await db
+          .select({ name: schema.users.name })
+          .from(schema.users)
+          .where(eq(schema.users.id, transaction.employeeId))
+          .limit(1);
+        employeeName = employee[0]?.name;
+        customerName = employeeName ? `Karyawan: ${employeeName}` : 'Karyawan';
+      } else if (transaction.employeeName) {
+        customerName = `Karyawan: ${transaction.employeeName}`;
+      } else if (transaction.customerId && !transaction.customerName) {
         const customer = await db
           .select({ name: schema.customers.name })
           .from(schema.customers)
@@ -219,26 +257,7 @@ export async function fetchTransactions(params?: TransactionFilterParams): Promi
         customerName = customer[0]?.name || 'Unknown';
       }
 
-      let employeeName: string | undefined;
-      if (transaction.employeeId) {
-        const employee = await db
-          .select({ name: schema.users.name })
-          .from(schema.users)
-          .where(eq(schema.users.id, transaction.employeeId))
-          .limit(1);
-        employeeName = employee[0]?.name;
-        customerName = employeeName ? `Karyawan: ${employeeName}` : 'Karyawan';
-      }
-
-      let paymentTypeName: string | undefined;
-      const paymentType = await db
-        .select({ name: schema.paymentTypes.name })
-        .from(schema.paymentTypes)
-        .where(eq(schema.paymentTypes.id, transaction.paymentTypeId))
-        .limit(1);
-      paymentTypeName = paymentType[0]?.name;
-
-      const items = await db
+      const transactionItems = await db
         .select()
         .from(schema.transactionItems)
         .where(eq(schema.transactionItems.transactionId, transaction.id));
@@ -247,8 +266,7 @@ export async function fetchTransactions(params?: TransactionFilterParams): Promi
         ...transaction,
         customerName,
         employeeName,
-        paymentTypeName,
-        items: items as TransactionItem[],
+        items: transactionItems as TransactionItem[],
       };
     }),
   );
@@ -267,18 +285,10 @@ export async function fetchTransaction(id: string): Promise<Transaction | null> 
 
   const transaction = result[0];
 
-  let customerName = 'Walk-in Customer';
-  if (transaction.customerId) {
-    const customer = await db
-      .select({ name: schema.customers.name })
-      .from(schema.customers)
-      .where(eq(schema.customers.id, transaction.customerId))
-      .limit(1);
-    customerName = customer[0]?.name || 'Unknown';
-  }
+  let customerName = transaction.customerName || 'Walk-in Customer';
+  let employeeName: string | undefined = transaction.employeeName || undefined;
 
-  let employeeName: string | undefined;
-  if (transaction.employeeId) {
+  if (transaction.employeeId && !transaction.employeeName) {
     const employee = await db
       .select({ name: schema.users.name })
       .from(schema.users)
@@ -287,13 +297,16 @@ export async function fetchTransaction(id: string): Promise<Transaction | null> 
     employeeName = employee[0]?.name;
   }
 
-  let paymentTypeName: string | undefined;
-  const paymentType = await db
-    .select({ name: schema.paymentTypes.name })
-    .from(schema.paymentTypes)
-    .where(eq(schema.paymentTypes.id, transaction.paymentTypeId))
-    .limit(1);
-  paymentTypeName = paymentType[0]?.name;
+  if (transaction.employeeName && !transaction.customerName) {
+    customerName = `Karyawan: ${transaction.employeeName}`;
+  } else if (transaction.customerId && !transaction.customerName) {
+    const customer = await db
+      .select({ name: schema.customers.name })
+      .from(schema.customers)
+      .where(eq(schema.customers.id, transaction.customerId))
+      .limit(1);
+    customerName = customer[0]?.name || 'Unknown';
+  }
 
   const items = await db
     .select()
@@ -304,7 +317,6 @@ export async function fetchTransaction(id: string): Promise<Transaction | null> 
     ...transaction,
     customerName,
     employeeName,
-    paymentTypeName,
     items: items as TransactionItem[],
   } as Transaction;
 }
@@ -324,13 +336,21 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
       id: transactionId,
       local_ref_id: localRefId,
       customerId: data.customerId || null,
+      customerCode: data.customerCode || null,
+      customerName: data.customerName || null,
+      customerPhone: data.customerPhone || null,
+      customerAddress: data.customerAddress || null,
       employeeId: data.employeeId || null,
+      employeeName: data.employeeName || null,
       totalAmount: data.totalAmount,
       totalPaid: Number(data.totalPaid) || 0,
       commission: data.commission || 0,
       totalDiscount: 0,
       totalProfit: 0,
-      paymentTypeId: data.paymentTypeId,
+      paymentTypeName: data.paymentTypeName || DEFAULT_PAYMENT_TYPE,
+      paymentTypeCommission: data.paymentTypeCommission || 0,
+      paymentTypeCommissionType: data.paymentTypeCommissionType || 'PERCENTAGE',
+      paymentTypeMinimalAmount: data.paymentTypeMinimalAmount || 0,
       transactionDate: data.transactionDate,
       status: data.status,
       note: data.note || null,
@@ -425,12 +445,21 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
         id: `ti_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         transactionId: data.id || transactionId,
         productId: item.product.id,
+        productName: item.productName || null,
+        productBarcode: item.product.barcode || null,
+        productCategory: item.product.categoryName || null,
+        productBrand: item.product.brandName || null,
+        productUnit: item.product.unit || null,
         variantId: item.variant?.id || null,
+        variantName: item.variant?.name || null,
+        variantCode: item.variant?.code || null,
+        variantNetto: item.variant?.netto || null,
         quantity: item.quantity,
         sellPrice,
         discountAmount: itemDiscount,
         purchasePrice,
         profit: itemProfit,
+        itemNote: item.itemNote || null,
         note: item.note || null,
         organizationId: orgId,
         createdBy: userId,
@@ -448,8 +477,18 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
           id: `invtx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           local_ref_id: `${finalLocalRefId}_${productId}`,
           productId,
+          productName: item.productName || null,
+          productBarcode: item.product.barcode || null,
+          productCategory: item.product.categoryName || null,
+          productBrand: item.product.brandName || null,
+          productUnit: item.product.unit || null,
+          variantId: item.variant?.id || null,
+          variantName: item.variant?.name || null,
+          variantCode: item.variant?.code || null,
+          variantNetto: item.variant?.netto || null,
           type: item.quantity > 0 ? InventoryTxType.SALE : InventoryTxType.RETURN_SALE,
           quantity: item.quantity > 0 ? -absQuantity : absQuantity,
+          contextName: data.customerName || null,
           organizationId: orgId,
           createdBy: userId,
           updatedBy: userId,
@@ -466,6 +505,36 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
       .update(schema.transactions)
       .set({ totalDiscount, totalProfit })
       .where(eq(schema.transactions.id, data.id || transactionId));
+
+    if (data.status === Status.COMPLETED && data.customerId) {
+      const pointsResult = await calculateEarnedPoints(
+        data.items.map((item) => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+          categoryId: item.product.categoryId,
+        })),
+        data.customerCategory || 'RETAIL',
+      );
+
+      if (pointsResult.totalPoints > 0) {
+        await updateCustomerStats(
+          data.customerId,
+          data.totalAmount,
+          totalProfit,
+          pointsResult.totalPoints,
+        );
+      } else {
+        await tx
+          .update(schema.customers)
+          .set({
+            totalTransactions: sql`${schema.customers.totalTransactions} + 1`,
+            totalRevenue: sql`${schema.customers.totalRevenue} + ${data.totalAmount}`,
+            totalProfit: sql`${schema.customers.totalProfit} + ${totalProfit}`,
+            _dirty: true,
+          })
+          .where(eq(schema.customers.id, data.customerId));
+      }
+    }
   });
 
   const result = await fetchTransaction(transactionId);
@@ -579,7 +648,7 @@ export function useTransactions(params?: TransactionFilterParams) {
     params?.startDate,
     params?.endDate,
     params?.showReturnData,
-    params?.paymentTypeIds?.join(','),
+    params?.paymentTypeNames?.join(','),
   ]);
 
   useEffect(() => {

@@ -20,7 +20,7 @@ const transactionFilterSchema = z
   .object({
     search: z.string(),
     userId: z.string(),
-    paymentTypeIds: z.array(z.string()),
+    paymentTypeNames: z.array(z.string()),
     dateType: z.enum(['TODAY', 'THIS_WEEK', 'THIS_MONTH', 'THIS_YEAR', 'CUSTOM']),
     startDate: z.date(),
     endDate: z.date(),
@@ -41,7 +41,7 @@ export type TransactionFilterFormValues = z.infer<typeof transactionFilterSchema
 export const transactionFilterInitialValues: TransactionFilterFormValues = {
   search: '',
   userId: '',
-  paymentTypeIds: [],
+  paymentTypeNames: [],
   dateType: 'TODAY',
   startDate: new Date(),
   endDate: new Date(),
@@ -98,13 +98,13 @@ export default function TransactionFilter({
 
   // Seed payment types on first load
   useEffect(() => {
-    if (filterValues.paymentTypeIds.length === 0 && paymentTypes) {
+    if (filterValues.paymentTypeNames.length === 0 && paymentTypes) {
       form.setValue(
-        'paymentTypeIds',
-        paymentTypes.map((pt) => pt.id),
+        'paymentTypeNames',
+        paymentTypes.map((pt) => pt.name),
       );
     }
-  }, [filterValues.paymentTypeIds.length, form, paymentTypes]);
+  }, [filterValues.paymentTypeNames.length, form, paymentTypes]);
 
   // Sync external filterValues into form
   useEffect(() => {
@@ -131,25 +131,25 @@ export default function TransactionFilter({
     form.reset(transactionFilterInitialValues);
     if (paymentTypes) {
       form.setValue(
-        'paymentTypeIds',
-        paymentTypes.map((pt) => pt.id),
+        'paymentTypeNames',
+        paymentTypes.map((pt) => pt.name),
       );
     }
     onFilter({
       ...transactionFilterInitialValues,
-      paymentTypeIds: paymentTypes?.map((pt) => pt.id) ?? [],
+      paymentTypeNames: paymentTypes?.map((pt) => pt.name) ?? [],
     });
   };
 
-  const selectedPaymentTypeIds = form.watch('paymentTypeIds');
+  const selectedPaymentTypeNames = form.watch('paymentTypeNames');
 
-  const allPaymentSelected = paymentTypes?.length === selectedPaymentTypeIds.length;
+  const allPaymentSelected = paymentTypes?.length === selectedPaymentTypeNames.length;
 
   const toggleSelectAllPaymentTypes = () => {
     if (allPaymentSelected) {
-      form.setValue('paymentTypeIds', []);
+      form.setValue('paymentTypeNames', []);
     } else {
-      form.setValue('paymentTypeIds', paymentTypes?.map((pt) => pt.id) ?? []);
+      form.setValue('paymentTypeNames', paymentTypes?.map((pt) => pt.name) ?? []);
     }
   };
 
@@ -231,20 +231,20 @@ export default function TransactionFilter({
         </HStack>
         <Controller
           control={form.control}
-          name="paymentTypeIds"
+          name="paymentTypeNames"
           render={({ field: { onChange, value }, fieldState: { error } }) => (
             <FormControl isInvalid={!!error}>
               <CheckboxGroup value={value} onChange={onChange}>
                 <Grid _extra={{ className: 'grid-cols-4' }}>
                   {paymentTypes?.map((pt) => {
-                    const isChecked = value.includes(pt.id);
+                    const isChecked = (value as string[]).includes(pt.name);
                     return (
                       <GridItem key={pt.id} _extra={{ className: 'col-span-2' }}>
                         <Pressable
                           onPress={() => {
                             const next = isChecked
-                              ? value.filter((id) => id !== pt.id)
-                              : [...value, pt.id];
+                              ? (value as string[]).filter((name) => name !== pt.name)
+                              : [...(value as string[]), pt.name];
                             onChange(next);
                           }}
                           className={[

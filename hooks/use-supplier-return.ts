@@ -1,4 +1,12 @@
-import { purchaseReturns, purchaseReturnItems, suppliers } from '@/db/schema';
+import {
+  purchaseReturns,
+  purchaseReturnItems,
+  suppliers,
+  products,
+  categories,
+  brands,
+  productVariants,
+} from '@/db/schema';
 import { db } from '@/db';
 import { useAuthStore } from '@/stores/auth';
 import { eq, and, isNull, like, desc } from 'drizzle-orm';
@@ -23,6 +31,7 @@ export interface SupplierReturn {
     purchasePrice: number;
     totalPrice: number;
     productName?: string;
+    note?: string;
   }>;
 }
 
@@ -112,6 +121,8 @@ export async function createSupplierReturn(data: {
     productId: string;
     quantity: number;
     purchasePrice: number;
+    productName?: string;
+    note?: string;
   }>;
   returnType: string;
   note: string;
@@ -136,6 +147,8 @@ export async function createSupplierReturn(data: {
     local_ref_id: `SR-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
     supplierId: data.supplierId,
     supplierName: supplier[0]?.name || '',
+    supplierPhone: supplier[0]?.phone || null,
+    supplierAddress: supplier[0]?.address || null,
     totalAmount,
     returnType: data.returnType,
     note: data.note,
@@ -154,13 +167,68 @@ export async function createSupplierReturn(data: {
 
   for (const item of data.items) {
     const itemId = `sri_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    let productName = item.productName;
+    let productBarcode: string | undefined;
+    let productCategory: string | undefined;
+    let productBrand: string | undefined;
+    let productUnit: string | undefined;
+    let variantId: string | undefined;
+    let variantName: string | undefined;
+    let variantCode: string | undefined;
+    let variantNetto: number | undefined;
+
+    if (!productName) {
+      const productResult = await db
+        .select()
+        .from(products)
+        .where(eq(products.id, item.productId))
+        .limit(1);
+      const product = productResult[0];
+      if (product) {
+        productName = product.name;
+        productBarcode = product.barcode ?? undefined;
+        productUnit = product.unit ?? undefined;
+
+        if (product.categoryId) {
+          const catResult = await db
+            .select({ name: categories.name })
+            .from(categories)
+            .where(eq(categories.id, product.categoryId))
+            .limit(1);
+          productCategory = catResult[0]?.name;
+        }
+
+        if (product.brandId) {
+          const brandResult = await db
+            .select({ name: brands.name })
+            .from(brands)
+            .where(eq(brands.id, product.brandId))
+            .limit(1);
+          productBrand = brandResult[0]?.name;
+        }
+      }
+    }
+
     await db.insert(purchaseReturnItems).values({
       id: itemId,
       purchaseReturnId: id,
       productId: item.productId,
+      productName: productName || null,
+      productBarcode: productBarcode || null,
+      productCategory: productCategory || null,
+      productBrand: productBrand || null,
+      productUnit: productUnit || null,
+      variantId: variantId || null,
+      variantName: variantName || null,
+      variantCode: variantCode || null,
+      variantNetto: variantNetto || null,
       quantity: item.quantity,
       purchasePrice: item.purchasePrice,
+      note: item.note || null,
       organizationId: orgId,
+      createdBy: userId,
+      updatedBy: userId,
       createdAt: now,
       updatedAt: now,
       deletedAt: null,
@@ -240,7 +308,13 @@ export function useCreateSupplierReturn() {
     async (
       data: {
         supplierId: string;
-        items: Array<{ productId: string; quantity: number; purchasePrice: number }>;
+        items: Array<{
+          productId: string;
+          quantity: number;
+          purchasePrice: number;
+          productName?: string;
+          note?: string;
+        }>;
         returnType: string;
         note: string;
       },

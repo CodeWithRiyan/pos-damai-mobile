@@ -1,5 +1,6 @@
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
+import { PermissionGuard } from '@/components/permission-guard';
 import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
 import { useItemSelection } from '@/hooks/use-item-selection';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
@@ -109,12 +110,14 @@ export default function UserList() {
                   <Spinner size="small" color="#FFFFFF" />
                 </Box>
               ) : (
-                <Pressable
-                  className="p-6"
-                  onPress={() => triggerBulkDelete(bulkDeleteConfirm('karyawan', selectedItems))}
-                >
-                  <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
-                </Pressable>
+                <PermissionGuard permissions="users:delete">
+                  <Pressable
+                    className="p-6"
+                    onPress={() => triggerBulkDelete(bulkDeleteConfirm('karyawan', selectedItems))}
+                  >
+                    <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                  </Pressable>
+                </PermissionGuard>
               )
             ) : (
               <Pressable
@@ -200,13 +203,15 @@ export default function UserList() {
             }
           />
           <HStack className="w-full p-4">
-            <Button
-              size="sm"
-              className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
-              onPress={handleAddUser}
-            >
-              <ButtonText className="text-white">TAMBAH KARYAWAN</ButtonText>
-            </Button>
+            <PermissionGuard permissions="users:create">
+              <Button
+                size="sm"
+                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                onPress={handleAddUser}
+              >
+                <ButtonText className="text-white">TAMBAH KARYAWAN</ButtonText>
+              </Button>
+            </PermissionGuard>
           </HStack>
         </VStack>
       </Box>

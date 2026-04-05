@@ -1,5 +1,6 @@
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
+import { PermissionGuard } from '@/components/permission-guard';
 import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useItemSelection } from '@/hooks/use-item-selection';
@@ -28,6 +29,7 @@ import { showSuccessToast, showToast } from '@/utils/toast';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import { useRouter } from 'expo-router';
 import { SearchIcon } from 'lucide-react-native';
+import { DEFAULT_PAYMENT_TYPE } from '@/constants';
 import React, { useCallback } from 'react';
 import { FlashList } from '@shopify/flash-list';
 
@@ -119,14 +121,27 @@ export default function PaymentTypeList() {
                   <Spinner size="small" color="#FFFFFF" />
                 </Box>
               ) : (
-                <Pressable
-                  className="p-6"
-                  onPress={() =>
-                    triggerBulkDelete(bulkDeleteConfirm('jenis pembayaran', selectedItems))
-                  }
-                >
-                  <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
-                </Pressable>
+                <PermissionGuard permissions="payment-types:delete">
+                  <Pressable
+                    className="p-6"
+                    onPress={() => {
+                      if (!selectedItems || selectedItems.length === 0) return;
+                      const hasDefaultPayment = selectedItems.some(
+                        (item) => item.name === DEFAULT_PAYMENT_TYPE,
+                      );
+                      if (hasDefaultPayment) {
+                        showToast(toast, {
+                          action: 'error',
+                          message: 'Pembayaran default tidak dapat dihapus',
+                        });
+                        return;
+                      }
+                      triggerBulkDelete(bulkDeleteConfirm('jenis pembayaran', selectedItems));
+                    }}
+                  >
+                    <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                  </Pressable>
+                </PermissionGuard>
               )
             ) : (
               <Pressable
@@ -176,48 +191,70 @@ export default function PaymentTypeList() {
             data={paymentTypes}
             className="flex-1"
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <Pressable
-                className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                  isSelected(item) ? 'bg-gray-100' : ''
-                }`}
-                onPress={() => {
-                  if (hasSelection) {
+            renderItem={({ item }) => {
+              const isDefaultPayment = item.name === DEFAULT_PAYMENT_TYPE;
+              return (
+                <Pressable
+                  className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                    isSelected(item) ? 'bg-gray-100' : ''
+                  }`}
+                  onPress={() => {
+                    if (isDefaultPayment) {
+                      showToast(toast, {
+                        action: 'error',
+                        message: 'Pembayaran default tidak dapat diubah',
+                      });
+                      return;
+                    }
+                    if (hasSelection) {
+                      handleItemPress(item);
+                    } else {
+                      router.navigate(`/(main)/management/payment-type/detail/${item.id}` as any);
+                      clearSelection();
+                    }
+                  }}
+                  onLongPress={() => {
+                    if (isDefaultPayment) {
+                      showToast(toast, {
+                        action: 'error',
+                        message: 'Pembayaran default tidak dapat dihapus',
+                      });
+                      return;
+                    }
                     handleItemPress(item);
-                  } else {
-                    router.navigate(`/(main)/management/payment-type/detail/${item.id}` as any);
-                    clearSelection();
-                  }
-                }}
-                onLongPress={() => handleItemPress(item)}
-              >
-                <HStack className="justify-between items-center">
-                  <HStack space="sm">
-                    <Heading size="sm">{item.name}</Heading>
-                    {item.isDefault && (
-                      <Badge size="sm" variant="solid" action="success">
-                        <BadgeText className="text-xs">Default</BadgeText>
-                      </Badge>
-                    )}
-                  </HStack>
-                  <VStack className="items-end">
-                    <Text className="text-brand-primary text-sm font-bold">Komisi</Text>
+                  }}
+                >
+                  <HStack className="justify-between items-center">
+                    <HStack space="sm">
+                      <Heading size="sm">{item.name}</Heading>
+                      {isDefaultPayment && (
+                        <SolarIconLinear name="Lock" size={14} color="#3d2117" />
+                      )}
+                      {item.isDefault && !isDefaultPayment && (
+                        <Badge size="sm" variant="solid" action="success">
+                          <BadgeText className="text-xs">Default</BadgeText>
+                        </Badge>
+                      )}
+                    </HStack>
                     <VStack className="items-end">
-                      <Text size="xs">
-                        {item.commissionType === 'FLAT'
-                          ? formatRp(item.commission ?? 0)
-                          : `${item.commission ?? 0}%`}
-                      </Text>
-                      <Badge size="sm" variant="solid" action="muted">
-                        <BadgeText className="text-xs">
-                          Minimal: Rp {formatNumber(item.minimalAmount ?? 0)}
-                        </BadgeText>
-                      </Badge>
+                      <Text className="text-brand-primary text-sm font-bold">Komisi</Text>
+                      <VStack className="items-end">
+                        <Text size="xs">
+                          {item.commissionType === 'FLAT'
+                            ? formatRp(item.commission ?? 0)
+                            : `${item.commission ?? 0}%`}
+                        </Text>
+                        <Badge size="sm" variant="solid" action="muted">
+                          <BadgeText className="text-xs">
+                            Minimal: Rp {formatNumber(item.minimalAmount ?? 0)}
+                          </BadgeText>
+                        </Badge>
+                      </VStack>
                     </VStack>
-                  </VStack>
-                </HStack>
-              </Pressable>
-            )}
+                  </HStack>
+                </Pressable>
+              );
+            }}
             ListEmptyComponent={
               <Box className="p-8 items-center">
                 <Text className="text-slate-400 italic">Tidak ada paymentType</Text>
@@ -225,13 +262,15 @@ export default function PaymentTypeList() {
             }
           />
           <HStack className="w-full p-4">
-            <Button
-              size="sm"
-              className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
-              onPress={handleAdd}
-            >
-              <ButtonText className="text-white">TAMBAH JENIS PEMBAYARAN</ButtonText>
-            </Button>
+            <PermissionGuard permissions="payment-types:create">
+              <Button
+                size="sm"
+                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                onPress={handleAdd}
+              >
+                <ButtonText className="text-white">TAMBAH JENIS PEMBAYARAN</ButtonText>
+              </Button>
+            </PermissionGuard>
           </HStack>
         </VStack>
       </Box>
