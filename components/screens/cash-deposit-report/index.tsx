@@ -1,7 +1,7 @@
 import Header from "@/components/header";
 import { Box, HStack, Pressable, Text, VStack } from "@/components/ui";
 import { Spinner } from "@/components/ui/spinner";
-import { useShifts } from "@/lib/api/shifts";
+import { useShifts } from "@/hooks/use-shift";
 import dayjs from "dayjs";
 import { useRouter } from "expo-router";
 import { FlatList } from "react-native";

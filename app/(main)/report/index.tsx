@@ -27,15 +27,9 @@ export default function ReportScreen() {
       icon: 'Chart',
     },
     {
-<<<<<<< HEAD
-      label: 'Laporan Setor',
-      href: '/report/submit-report',
-      icon: 'Chart',
-=======
       label: "Laporan Setor Tunai",
       href: "/report/cash-deposit",
       icon: "Chart",
->>>>>>> origin/dev
     },
     {
       label: 'Laporan Keuangan Kasir',
@@ -51,11 +45,6 @@ export default function ReportScreen() {
       label: 'Laporan Pembelian',
       href: '/report/purchasing',
       icon: 'Chart',
-    },
-    {
-      label: "Laporan Setor Tunai",
-      href: "/report/cash-deposit",
-      icon: "Chart",
     },
     {
       label: 'Laporan Stok Opname',

@@ -8,7 +8,7 @@ import React, { useMemo, useState } from "react";
 
 import { Grid, GridItem } from "@/components/ui/grid";
 import SelectModal from "@/components/ui/select/select-modal";
-import { formatNumber } from "@/lib/utils/format";
+import { formatNumber } from "@/utils/format";
 import { ScrollView } from "react-native";
 
 interface ProfitLossReport {

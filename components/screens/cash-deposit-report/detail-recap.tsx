@@ -2,19 +2,19 @@ import Header from "@/components/header";
 import { Heading, HStack, Pressable, Text, VStack } from "@/components/ui";
 import { Box } from "@/components/ui/box";
 import { Spinner } from "@/components/ui/spinner";
-import { useShiftDetail } from "@/lib/api/shifts";
+import { useShiftDetail } from "@/hooks/use-shift";
 import dayjs from "dayjs";
 import { useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
 
-import { formatNumber } from "@/lib/utils/format";
+import { formatNumber } from "@/utils/format";
 
 export default function CashDepositDetailRecap() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const { data: detailShift, isLoading } = useShiftDetail(id || "");
 
-  const transactionHistory = detailShift?.transactionHistory.filter(
+  const transactionHistory = detailShift?.transactionHistory?.filter(
     (f) => f.type === "CASH_DEPOSIT",
   );
 
