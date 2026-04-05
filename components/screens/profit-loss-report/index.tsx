@@ -84,17 +84,6 @@ export default function ProfitLossReport() {
   const reports = _dummyReports;
   const isLoading = false;
 
-  if (isLoading) {
-    return (
-      <VStack className="flex-1 bg-white">
-        <Header header={header} isGoBack />
-        <Box className="flex-1 justify-center items-center">
-          <Spinner size="large" />
-        </Box>
-      </VStack>
-    );
-  }
-
   const {
     totalSaleAmount,
     totalPurchaseAmount,
@@ -128,6 +117,17 @@ export default function ProfitLossReport() {
       totalNetProfit,
     };
   }, [reports]);
+
+  if (isLoading) {
+    return (
+      <VStack className="flex-1 bg-white">
+        <Header header={header} isGoBack />
+        <Box className="flex-1 justify-center items-center">
+          <Spinner size="large" />
+        </Box>
+      </VStack>
+    );
+  }
 
   const optionsDates = [
     {

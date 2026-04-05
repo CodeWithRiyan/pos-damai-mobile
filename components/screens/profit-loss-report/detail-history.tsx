@@ -3,7 +3,7 @@ import { Heading, HStack, Pressable, Text, VStack } from "@/components/ui";
 import { Box } from "@/components/ui/box";
 import { Spinner } from "@/components/ui/spinner";
 import dayjs from "dayjs";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { ScrollView } from "react-native";
 
 import { formatNumber } from "@/utils/format";
@@ -11,7 +11,6 @@ import { _dummyReports } from ".";
 
 export default function ProfitLostDetailHistory() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
 
   const report = _dummyReports.find((f) => f.id === id);
   const isLoading = false;

@@ -19,7 +19,6 @@ import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useUserStore } from '@/stores/user';
 import { useRoles } from '@/hooks/use-role';
 import {
-  CreateUserDTO,
   UpdateUserDTO,
   useCreateUser,
   useUpdateUser,
