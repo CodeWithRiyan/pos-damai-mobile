@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   Heading,
   HStack,
@@ -11,28 +11,34 @@ import {
   SearchIcon,
   Text,
   VStack,
-} from "@/components/ui";
-import { Box } from "@/components/ui/box";
-import { Spinner } from "@/components/ui/spinner";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import dayjs from "dayjs";
-import { useRouter } from "expo-router";
-import { CalendarIcon } from "lucide-react-native";
-import { useState } from "react";
-import { FlatList } from "react-native";
-import { useFinances } from "@/lib/api/finances";
-import { formatDisplayRefId } from "@/lib/utils/reference";
-
-import { FinanceType, Status } from "@/lib/constants";
-import { formatNumber } from "@/lib/utils/format";
+} from '@/components/ui';
+import { Box } from '@/components/ui/box';
+import { Spinner } from '@/components/ui/spinner';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
+import { useRouter } from 'expo-router';
+import { CalendarIcon } from 'lucide-react-native';
+import { useFinances } from '@/hooks/use-finance';
+import { formatDisplayRefId } from '@/utils/reference';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useFinanceStore } from '@/stores/finance';
+import { FinanceType, Status } from '@/constants';
+import { formatNumber } from '@/utils/format';
+import { useCallback, useState } from 'react';
+import { FlashList } from '@shopify/flash-list';
 export default function FinanceHistory() {
   const router = useRouter();
-  const [showTransactionDatePicker, setShowTransactionDatePicker] =
-    useState<boolean>(false);
+  const [showTransactionDatePicker, setShowTransactionDatePicker] = useState<boolean>(false);
   const [transactionDate, setTransactionDate] = useState<Date | null>(null);
 
-  const { data, isLoading } = useFinances();
+  const { data, isLoading, refetch } = useFinances();
   const finance = data?.filter((f) => f.status === Status.COMPLETED) || [];
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useFinanceStore, handleVersionChange);
 
   if (isLoading) {
     return (
@@ -63,8 +69,8 @@ export default function FinanceHistory() {
             <HStack className="items-center justify-between">
               <Text>
                 {transactionDate instanceof Date
-                  ? dayjs(transactionDate).format("DD/MM/YYYY")
-                  : "Pilih tanggal transaksi"}
+                  ? dayjs(transactionDate).format('DD/MM/YYYY')
+                  : 'Pilih tanggal transaksi'}
               </Text>
               <Icon as={CalendarIcon} size="md" className="mr-2" />
             </HStack>
@@ -72,13 +78,11 @@ export default function FinanceHistory() {
           {showTransactionDatePicker && (
             <DateTimePicker
               mode="date"
-              value={
-                transactionDate instanceof Date ? transactionDate : new Date()
-              }
+              value={transactionDate instanceof Date ? transactionDate : new Date()}
               maximumDate={new Date()}
               onChange={(event, selectedDate) => {
                 setShowTransactionDatePicker(false);
-                if (event.type === "set" && selectedDate) {
+                if (event.type === 'set' && selectedDate) {
                   setTransactionDate(selectedDate);
                 }
               }}
@@ -86,7 +90,7 @@ export default function FinanceHistory() {
           )}
         </>
       </HStack>
-      <FlatList
+      <FlashList
         data={finance}
         className="flex-1"
         keyExtractor={(item) => item.id}
@@ -97,68 +101,49 @@ export default function FinanceHistory() {
               className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
               onPress={() =>
                 router.navigate({
-                  pathname: "/(main)/finance/receipt/[id]",
+                  pathname: '/(main)/finance/receipt/[id]',
                   params: { id: purchase.id },
                 })
               }
             >
               <HStack space="xl" className="items-center">
                 <VStack>
-                  <Text className="text-typography-500 font-bold">
-                    {date.format("HH:mm:ss")}
-                  </Text>
+                  <Text className="text-typography-500 font-bold">{date.format('HH:mm:ss')}</Text>
                   <HStack space="sm" className="items-center">
-                    <Heading size="4xl">{date.format("DD")}</Heading>
+                    <Heading size="4xl">{date.format('DD')}</Heading>
                     <VStack>
-                      <Text className="text-typography-500 font-bold">
-                        {date.format("MMM")}
-                      </Text>
-                      <Text className="text-typography-500 font-bold">
-                        {date.format("YYYY")}
-                      </Text>
+                      <Text className="text-typography-500 font-bold">{date.format('MMM')}</Text>
+                      <Text className="text-typography-500 font-bold">{date.format('YYYY')}</Text>
                     </VStack>
                   </HStack>
                 </VStack>
                 <VStack space="sm" className="flex-1">
                   <HStack className="w-1/2 justify-between">
                     <VStack>
-                      <Text className="text-typography-400 text-xs">
-                        Jenis Transaksi
-                      </Text>
+                      <Text className="text-typography-400 text-xs">Jenis Transaksi</Text>
                       <Text
-                        className={`font-bold ${purchase.type === FinanceType.INCOME ? "text-success-500" : "text-error-500"}`}
+                        className={`font-bold ${purchase.type === FinanceType.INCOME ? 'text-success-500' : 'text-error-500'}`}
                       >
-                        {purchase.type === FinanceType.INCOME
-                          ? "Pemasukkan"
-                          : "Pengeluaran"}
+                        {purchase.type === FinanceType.INCOME ? 'Pemasukkan' : 'Pengeluaran'}
                       </Text>
                     </VStack>
                     {purchase.expensesType ? (
                       <VStack>
-                        <Text className="text-typography-400 text-xs">
-                          Jenis Pengeluaran
-                        </Text>
-                        <Text className="font-bold">
-                          {purchase.expensesType}
-                        </Text>
+                        <Text className="text-typography-400 text-xs">Jenis Pengeluaran</Text>
+                        <Text className="font-bold">{purchase.expensesType}</Text>
                       </VStack>
                     ) : null}
                   </HStack>
                   <HStack className="justify-between">
                     <Text className="text-typography-400 font-bold">
-                      No:{" "}
-                      {formatDisplayRefId(purchase.local_ref_id) || purchase.id}
+                      No: {formatDisplayRefId(purchase.local_ref_id) || purchase.id}
                     </Text>
                   </HStack>
                 </VStack>
                 <HStack space="xl" className="items-center">
                   <VStack>
-                    <Text className="text-typography-400 text-xs">
-                      Total Transaksi
-                    </Text>
-                    <Text className="font-bold">
-                      Rp {formatNumber(purchase.nominal)}
-                    </Text>
+                    <Text className="text-typography-400 text-xs">Total Transaksi</Text>
+                    <Text className="font-bold">Rp {formatNumber(purchase.nominal)}</Text>
                   </VStack>
                   <Text className="text-typography-400 text-lg">›</Text>
                 </HStack>
@@ -168,9 +153,7 @@ export default function FinanceHistory() {
         }}
         ListEmptyComponent={
           <Box className="flex-1 justify-center items-center py-10">
-            <Text className="text-gray-500">
-              Belum ada histori transaksi keuangan
-            </Text>
+            <Text className="text-gray-500">Belum ada histori transaksi keuangan</Text>
           </Box>
         }
       />

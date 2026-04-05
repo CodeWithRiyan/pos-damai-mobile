@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   Heading,
   Icon,
@@ -8,40 +8,39 @@ import {
   InputSlot,
   SearchIcon,
   Text,
-  Toast,
-  ToastTitle,
   useToast,
-} from "@/components/ui";
-import { Box } from "@/components/ui/box";
-import { HStack } from "@/components/ui/hstack";
-import { Pressable } from "@/components/ui/pressable";
-import {
-  SolarIconBold,
-  SolarIconOutline,
-} from "@/components/ui/solar-icon-wrapper";
-import { VStack } from "@/components/ui/vstack";
-// import { useBulkDeleteTransaction, Transaction, useTransaction } from "@/lib/api/transaction";
-import BarcodeScanner from "@/components/barcode-scanner";
-import { Button, ButtonText } from "@/components/ui/button";
-import GridProductLayout from "@/components/ui/layout/grid-product-layout";
-import ListProductLayout from "@/components/ui/layout/list-product-layout";
-import SelectModal from "@/components/ui/select/select-modal";
-import { Spinner } from "@/components/ui/spinner";
-import { useCustomer, useCustomers } from "@/lib/api/customers";
-import { useProducts } from "@/lib/api/products";
-import { useCurrentShift } from "@/lib/api/shifts";
-import { useLocalUsers } from "@/lib/api/users";
-import { calculateLineItemTotal, findSellPrice } from "@/lib/price";
-import { useTransactionStore } from "@/stores/transaction";
-import { PriceType, ProductType, Status } from "@/lib/constants";
-import classNames from "classnames";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { AlertCircle, PlusIcon } from "lucide-react-native";
-import React, { useEffect, useMemo, useState } from "react";
-import { FlatList, LayoutChangeEvent } from "react-native";
-import PopupAddProduct from "./popup-add";
+} from '@/components/ui';
+import { Box } from '@/components/ui/box';
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold, SolarIconOutline } from '@/components/ui/solar-icon-wrapper';
+import { VStack } from '@/components/ui/vstack';
+// import { useBulkDeleteTransaction, Transaction, useTransaction } from "@/hooks/transaction";
+import BarcodeScanner from '@/components/barcode-scanner';
+import { Button, ButtonText } from '@/components/ui/button';
+import GridProductLayout from '@/components/ui/layout/grid-product-layout';
+import ListProductLayout from '@/components/ui/layout/list-product-layout';
+import SelectModal from '@/components/ui/select/select-modal';
+import { Spinner } from '@/components/ui/spinner';
+import { useCustomer, useCustomers } from '@/hooks/use-customer';
+import { useProducts } from '@/hooks/use-product';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useCurrentShift } from '@/hooks/use-shift';
+import { useLocalUsers } from '@/hooks/use-user';
+import { calculateLineItemTotal, findSellPrice } from '@/utils/price';
+import { useProductStore } from '@/stores/product';
+import { useTransactionStore } from '@/stores/transaction';
+import { PriceType, ProductType, Status } from '@/constants';
+import classNames from 'classnames';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { AlertCircle, PlusIcon } from 'lucide-react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { FlashList } from '@shopify/flash-list';
+import { LayoutChangeEvent } from 'react-native';
+import PopupAddProduct from './popup-add';
 
-import { formatNumber, formatRp } from "@/lib/utils/format";
+import { formatNumber, formatRp } from '@/utils/format';
+import { showToast } from '@/utils/toast';
 export default function TransactionList() {
   const searchParams = useLocalSearchParams<{
     returnCustomerId: string;
@@ -62,15 +61,19 @@ export default function TransactionList() {
   const { data: customers } = useCustomers();
   const { data: localUsers } = useLocalUsers();
   const { data: returnCustomer } = useCustomer(searchParams.returnCustomerId);
-  const { data: products } = useProducts({ forceParent: true });
+  const { data: products, refetch } = useProducts({ forceParent: true });
   const { data: currentShift, isLoading: isLoadingShift } = useCurrentShift();
   const router = useRouter();
   const toast = useToast();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [layout, setLayout] = useState<"list" | "grid">("list");
-  const [buyerType, setBuyerType] = useState<"customer" | "employee">(
-    "customer",
-  );
+  const [searchQuery, setSearchQuery] = useState('');
+  const [layout, setLayout] = useState<'list' | 'grid'>('list');
+  const [buyerType, setBuyerType] = useState<'customer' | 'employee'>('customer');
+
+  const handleVersionChange = React.useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useProductStore, handleVersionChange);
 
   const isDirty = !!cart.length || customer || employee;
 
@@ -90,12 +93,11 @@ export default function TransactionList() {
 
   const optionsGroupCustomers =
     [PriceType.WHOLESALE, PriceType.RETAIL].map((category) => ({
-      label: category === PriceType.WHOLESALE ? "GROSIR" : "RETAIL",
+      label: category === PriceType.WHOLESALE ? 'GROSIR' : 'RETAIL',
       options:
         customers
           ?.filter((c) => c.category === category)
-          .map((c) => ({ label: c.name, value: c.id, desc: c.code || "" })) ||
-        [],
+          .map((c) => ({ label: c.name, value: c.id, desc: c.code || '' })) || [],
     })) || [];
 
   const filteredProducts = useMemo(
@@ -137,12 +139,11 @@ export default function TransactionList() {
             Shift Belum Dibuka
           </Heading>
           <Text className="text-center text-typography-500">
-            Anda harus membuka shift sebelum dapat melakukan transaksi
-            penjualan.
+            Anda harus membuka shift sebelum dapat melakukan transaksi penjualan.
           </Text>
           <Button
             className="mt-4 bg-primary-500 rounded-lg"
-            onPress={() => router.push("/(main)/shift/(tab)/current")}
+            onPress={() => router.push('/(main)/shift/(tab)/current')}
           >
             <ButtonText>BUKA SHIFT SEKARANG</ButtonText>
           </Button>
@@ -155,19 +156,19 @@ export default function TransactionList() {
     <Box className="flex-1 bg-white" onLayout={handleLayout}>
       <Header
         isGoBack={!!searchParams.returnId}
-        header={!searchParams.returnId ? "TRANSAKSI PENJUALAN" : "TUKAR BARANG"}
+        header={!searchParams.returnId ? 'TRANSAKSI PENJUALAN' : 'TUKAR BARANG'}
         action={
           !searchParams.returnId && !isDirty ? (
             <HStack space="sm" className="pr-4">
               <Pressable
                 className="size-10 items-center justify-center"
-                onPress={() => router.navigate("/(main)/transaction/draft")}
+                onPress={() => router.navigate('/(main)/transaction/draft')}
               >
                 <SolarIconBold name="ClipboardList" size={20} color="#FDFBF9" />
               </Pressable>
               <Pressable
                 className="size-10 items-center justify-center"
-                onPress={() => router.navigate("/(main)/transaction/history")}
+                onPress={() => router.navigate('/(main)/transaction/history')}
               >
                 <SolarIconBold name="History" size={20} color="#FDFBF9" />
               </Pressable>
@@ -195,22 +196,20 @@ export default function TransactionList() {
               <HStack space="sm">
                 <Pressable
                   className={classNames(
-                    "flex-1 h-9 items-center justify-center rounded-lg border",
-                    buyerType === "customer"
-                      ? "bg-primary-500 border-primary-500"
-                      : "bg-background-0 border-background-300",
+                    'flex-1 h-9 items-center justify-center rounded-lg border',
+                    buyerType === 'customer'
+                      ? 'bg-primary-500 border-primary-500'
+                      : 'bg-background-0 border-background-300',
                   )}
                   onPress={() => {
-                    setBuyerType("customer");
+                    setBuyerType('customer');
                     setEmployee(null);
                   }}
                 >
                   <Text
                     className={classNames(
-                      "font-bold text-sm",
-                      buyerType === "customer"
-                        ? "text-white"
-                        : "text-typography-500",
+                      'font-bold text-sm',
+                      buyerType === 'customer' ? 'text-white' : 'text-typography-500',
                     )}
                   >
                     Pelanggan
@@ -218,22 +217,20 @@ export default function TransactionList() {
                 </Pressable>
                 <Pressable
                   className={classNames(
-                    "flex-1 h-9 items-center justify-center rounded-lg border",
-                    buyerType === "employee"
-                      ? "bg-primary-500 border-primary-500"
-                      : "bg-background-0 border-background-300",
+                    'flex-1 h-9 items-center justify-center rounded-lg border',
+                    buyerType === 'employee'
+                      ? 'bg-primary-500 border-primary-500'
+                      : 'bg-background-0 border-background-300',
                   )}
                   onPress={() => {
-                    setBuyerType("employee");
+                    setBuyerType('employee');
                     setCustomer(null);
                   }}
                 >
                   <Text
                     className={classNames(
-                      "font-bold text-sm",
-                      buyerType === "employee"
-                        ? "text-white"
-                        : "text-typography-500",
+                      'font-bold text-sm',
+                      buyerType === 'employee' ? 'text-white' : 'text-typography-500',
                     )}
                   >
                     Karyawan
@@ -241,29 +238,24 @@ export default function TransactionList() {
                 </Pressable>
               </HStack>
               <HStack space="md">
-                {buyerType === "customer" && (
+                {buyerType === 'customer' && (
                   <>
                     <Pressable
                       className="size-10 rounded-full bg-primary-500 items-center justify-center"
                       onPress={() =>
-                        router.push(
-                          "/(main)/management/customer-supplier/customer/add",
-                        )
+                        router.push('/(main)/management/customer-supplier/customer/add')
                       }
                     >
                       <Icon as={PlusIcon} color="white" />
                     </Pressable>
                     <SelectModal
-                      value={customer?.id || ""}
+                      value={customer?.id || ''}
                       placeholder="Pilih Pelanggan"
                       optionsGroup={optionsGroupCustomers}
                       className="flex-1"
                       onChange={(v) => {
                         if (v) {
-                          setCustomer(
-                            customers?.find((customer) => customer.id === v) ||
-                              null,
-                          );
+                          setCustomer(customers?.find((customer) => customer.id === v) || null);
                         } else {
                           setCustomer(null);
                         }
@@ -271,9 +263,9 @@ export default function TransactionList() {
                     />
                   </>
                 )}
-                {buyerType === "employee" && (
+                {buyerType === 'employee' && (
                   <SelectModal
-                    value={employee?.id || ""}
+                    value={employee?.id || ''}
                     placeholder="Pilih Karyawan"
                     options={employeeOptions}
                     className="flex-1"
@@ -298,10 +290,7 @@ export default function TransactionList() {
               </HStack>
             </VStack>
           )}
-          <HStack
-            space="sm"
-            className="p-4 shadow-lg bg-background-0 items-center"
-          >
+          <HStack space="sm" className="p-4 shadow-lg bg-background-0 items-center">
             <Input className="flex-1 border border-background-300 rounded-lg h-10">
               <InputSlot className="pl-3">
                 <InputIcon as={SearchIcon} />
@@ -314,30 +303,27 @@ export default function TransactionList() {
             </Input>
             <Pressable
               className="relative size-10 items-center justify-center text-typography-500"
-              onPress={() => setLayout(layout === "grid" ? "list" : "grid")}
+              onPress={() => setLayout(layout === 'grid' ? 'list' : 'grid')}
             >
               <SolarIconOutline
-                name={layout === "grid" ? "Widget" : "Server"}
+                name={layout === 'grid' ? 'Widget' : 'Server'}
                 size={20}
                 color="#6b7280"
               />
             </Pressable>
           </HStack>
-          {layout === "grid" ? (
-            <FlatList
+          {layout === 'grid' ? (
+            <FlashList
               key={`grid-${numColumns}`}
               data={filteredProducts}
               className="flex-1"
               numColumns={numColumns}
               contentContainerStyle={{ padding: 16, gap: 16 }}
-              columnWrapperStyle={{ gap: 16 }}
               keyExtractor={(item) => item.id}
               renderItem={({ item: product }) => {
-                const productInChart = cart?.find(
-                  (f) => f.product.id === product.id,
-                );
+                const productInChart = cart?.find((f) => f.product.id === product.id);
                 return (
-                  <Box className="flex-1">
+                  <Box className="flex-1 px-1">
                     <GridProductLayout
                       name={product.name}
                       price={findSellPrice({
@@ -362,22 +348,18 @@ export default function TransactionList() {
               }}
               ListEmptyComponent={
                 <Box className="p-8 items-center">
-                  <Text className="text-slate-400 italic">
-                    Belum ada produk
-                  </Text>
+                  <Text className="text-slate-400 italic">Belum ada produk</Text>
                 </Box>
               }
             />
           ) : (
-            <FlatList
+            <FlashList
               key="list"
               data={filteredProducts}
               className="flex-1"
               keyExtractor={(item) => item.id}
               renderItem={({ item: product }) => {
-                const productInChart = cart?.find(
-                  (f) => f.product.id === product.id,
-                );
+                const productInChart = cart?.find((f) => f.product.id === product.id);
                 return (
                   <ListProductLayout
                     name={product.name}
@@ -401,21 +383,17 @@ export default function TransactionList() {
               }}
               ListEmptyComponent={
                 <Box className="p-8 items-center">
-                  <Text className="text-slate-400 italic">
-                    Belum ada produk
-                  </Text>
+                  <Text className="text-slate-400 italic">Belum ada produk</Text>
                 </Box>
               }
             />
           )}
         </VStack>
         <VStack space="lg" className="flex-1">
-          <FlatList
+          <FlashList
             data={cart}
             className="flex-1"
-            keyExtractor={(item, index) =>
-              `${item.product.id}-${item.variant?.id || ""}-${index}`
-            }
+            keyExtractor={(item, index) => `${item.product.id}-${item.variant?.id || ''}-${index}`}
             renderItem={({ item, index }) => (
               <Pressable
                 className="relative px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
@@ -426,7 +404,7 @@ export default function TransactionList() {
                 onLongPress={() => {
                   const newDeleteItem =
                     item.product.type === ProductType.MULTIUNIT
-                      ? item.variant?.id || ""
+                      ? item.variant?.id || ''
                       : item.product.id;
 
                   if (deleteItem === newDeleteItem) {
@@ -443,8 +421,7 @@ export default function TransactionList() {
                     </Box>
                     <VStack className="flex-1">
                       <Heading size="md" className="line-clamp-2">
-                        {item.variant &&
-                        item.product.type === ProductType.MULTIUNIT
+                        {item.variant && item.product.type === ProductType.MULTIUNIT
                           ? `${item.product.name} - ${item.variant.name}`
                           : item.product.name}
                       </Heading>
@@ -489,16 +466,16 @@ export default function TransactionList() {
                 </HStack>
                 <Pressable
                   className={classNames(
-                    "absolute right-0 top-0 bottom-0 w-0 bg-error-500 items-center justify-center overflow-hidden transaction-all duration-300",
+                    'absolute right-0 top-0 bottom-0 w-0 bg-error-500 items-center justify-center overflow-hidden transaction-all duration-300',
                     item.product.type !== ProductType.MULTIUNIT &&
                       deleteItem === item.product.id &&
-                      "w-16",
+                      'w-16',
                     item.product.type === ProductType.MULTIUNIT &&
                       deleteItem === item.variant?.id &&
-                      "w-16",
+                      'w-16',
                   )}
                   onPress={() => {
-                    removeCartItem(item.product?.id || "", item.variant?.id);
+                    removeCartItem(item.product?.id || '', item.variant?.id);
                     setDeleteItem(null);
                   }}
                 >
@@ -508,9 +485,7 @@ export default function TransactionList() {
             )}
             ListEmptyComponent={
               <Box className="p-8 items-center">
-                <Text className="text-slate-400 italic">
-                  Belum ada barang di keranjang
-                </Text>
+                <Text className="text-slate-400 italic">Belum ada barang di keranjang</Text>
               </Box>
             }
           />
@@ -520,7 +495,7 @@ export default function TransactionList() {
                 className="flex-1 flex-row items-center justify-between h-16 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
                 onPress={() => {
                   router.replace({
-                    pathname: "/(main)/transaction/checkout",
+                    pathname: '/(main)/transaction/checkout',
                     params: searchParams,
                   });
                   setStatus(Status.COMPLETED);
@@ -528,9 +503,7 @@ export default function TransactionList() {
               >
                 <HStack space="md" className="items-center">
                   <Text size="4xl" className="text-white font-bold">
-                    {formatNumber(
-                      cart.reduce((total, item) => total + item.quantity, 0),
-                    )}
+                    {formatNumber(cart.reduce((total, item) => total + item.quantity, 0))}
                   </Text>
                   <Text size="lg" className="text-white font-bold">
                     ITEM
@@ -545,17 +518,13 @@ export default function TransactionList() {
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                   onPress={() => {
                     router.replace({
-                      pathname: "/(main)/transaction/checkout",
+                      pathname: '/(main)/transaction/checkout',
                       params: searchParams,
                     });
                     setStatus(Status.DRAFT);
                   }}
                 >
-                  <SolarIconBold
-                    name="ClipboardAdd"
-                    size={32}
-                    color="#3d2117"
-                  />
+                  <SolarIconBold name="ClipboardAdd" size={32} color="#3d2117" />
                 </Pressable>
               )}
             </HStack>
@@ -571,22 +540,14 @@ export default function TransactionList() {
 
           // 2. Jika tidak ketemu, cari di dalam list variants milik semua produk
           if (!foundProduct) {
-            foundProduct = products?.find((p) =>
-              p.variants?.some((v) => v.code === scannedData),
-            );
+            foundProduct = products?.find((p) => p.variants?.some((v) => v.code === scannedData));
           }
 
           // 3. Validasi hasil pencarian
           if (!foundProduct) {
-            toast.show({
-              placement: "top",
-              render: ({ id }) => (
-                <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-                  <ToastTitle>
-                    {`Produk dengan barcode ${scannedData} tidak ditemukan`}
-                  </ToastTitle>
-                </Toast>
-              ),
+            showToast(toast, {
+              action: 'error',
+              message: `Produk dengan barcode ${scannedData} tidak ditemukan`,
             });
             return;
           }

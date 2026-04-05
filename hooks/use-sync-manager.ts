@@ -1,6 +1,6 @@
-import { useNetworkStore } from "@/stores/network-store";
-import { useSyncQueueStore } from "@/stores/sync-queue-store";
-import { useEffect, useState } from "react";
+import { useNetworkStore } from '@/stores/network';
+import { useSyncQueueStore } from '@/stores/sync-queue';
+import { useEffect, useState } from 'react';
 
 export function useSyncManager() {
   const [showSyncModal, setShowSyncModal] = useState(false);

@@ -1,22 +1,22 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
-import { Box, HStack, Text, VStack } from "@/components/ui";
-import { Grid, GridItem } from "@/components/ui/grid";
-import { Pressable } from "@/components/ui/pressable";
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
+import { Box, HStack, Text, VStack } from '@/components/ui';
+import { Grid, GridItem } from '@/components/ui/grid';
+import { Pressable } from '@/components/ui/pressable';
 import {
   SolarIconBold,
   SolarIconBoldDuotone,
   SolarIconLinear,
-} from "@/components/ui/solar-icon-wrapper";
-import { Spinner } from "@/components/ui/spinner";
-import { useDeleteEntity } from "@/hooks/use-delete-entity";
-import { singleDeleteConfirm } from "@/lib/utils/delete-confirm";
-import { useDeleteReceivable, useReceivableDetail } from "@/lib/api/receivable";
-import dayjs from "dayjs";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { ScrollView } from "react-native";
+} from '@/components/ui/solar-icon-wrapper';
+import { Spinner } from '@/components/ui/spinner';
+import { useDeleteEntity } from '@/hooks/use-delete-entity';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { useDeleteReceivable, useReceivableDetail } from '@/hooks/use-receivable';
+import dayjs from 'dayjs';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ScrollView } from 'react-native';
 
-import { formatRp } from "@/lib/utils/format";
+import { formatRp } from '@/utils/format';
 export default function ReceivableRealizationDetail() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
@@ -24,17 +24,16 @@ export default function ReceivableRealizationDetail() {
   const receivableIds = params.receivableIds as string;
 
   const userId = params.userId as string;
-  const receivableId = receivableIds?.split("-")[0] || "";
+  const receivableId = receivableIds?.split('-')[0] || '';
 
   const { data: receivable, isLoading } = useReceivableDetail(receivableId);
   const deleteMutation = useDeleteReceivable();
 
   const receivableRealizationList = receivable?.realizations || [];
-  const isPayedOff =
-    (receivable?.totalRealization || 0) === (receivable?.nominal || 0);
+  const isPayedOff = (receivable?.totalRealization || 0) === (receivable?.nominal || 0);
 
   const { triggerDelete } = useDeleteEntity({
-    successMessage: "Piutang berhasil dihapus",
+    successMessage: 'Piutang berhasil dihapus',
     deleteMutation,
   });
 
@@ -42,8 +41,8 @@ export default function ReceivableRealizationDetail() {
     showActionDrawer({
       actions: [
         {
-          label: "Edit",
-          icon: "Pen",
+          label: 'Edit',
+          icon: 'Pen',
           onPress: () => {
             router.navigate(
               `/(main)/management/payable-receivable/receivable/edit/${receivable?.id}` as any,
@@ -52,11 +51,11 @@ export default function ReceivableRealizationDetail() {
           },
         },
         {
-          label: "Hapus",
-          icon: "TrashBin2",
-          theme: "red",
+          label: 'Hapus',
+          icon: 'TrashBin2',
+          theme: 'red',
           onPress: () => {
-            triggerDelete(singleDeleteConfirm("piutang", receivableId));
+            triggerDelete(singleDeleteConfirm('piutang', receivableId));
             hideActionDrawer();
           },
         },
@@ -83,7 +82,7 @@ export default function ReceivableRealizationDetail() {
                 name="MenuDots"
                 size={20}
                 color="#FDFBF9"
-                style={{ transform: [{ rotate: "90deg" }] }}
+                style={{ transform: [{ rotate: '90deg' }] }}
               />
             </Pressable>
           </HStack>
@@ -95,51 +94,42 @@ export default function ReceivableRealizationDetail() {
         <VStack space="md" className="flex-1">
           <VStack space="sm" className="p-4">
             <HStack space="sm" className="items-center">
-              <SolarIconBoldDuotone
-                name="UserCircle"
-                size={24}
-                color="#3b82f6"
-              />
+              <SolarIconBoldDuotone name="UserCircle" size={24} color="#3b82f6" />
               <Text className="text-primary-500 font-bold">
-                {receivable?.user?.firstName || "Unknown User"}
+                {receivable?.user?.firstName || 'Unknown User'}
               </Text>
             </HStack>
             <HStack space="xs" className="items-center">
               <Box
-                className={`w-2 h-2 rounded-full${isPayedOff ? " bg-blue-500" : " bg-red-500"}`}
+                className={`w-2 h-2 rounded-full${isPayedOff ? ' bg-blue-500' : ' bg-red-500'}`}
               />
               <Text size="xs" className="text-primary-500 text-sm font-bold">
-                {isPayedOff ? "Lunas" : "Belum Lunas"}
+                {isPayedOff ? 'Lunas' : 'Belum Lunas'}
               </Text>
             </HStack>
             <HStack space="lg" className="justify-between">
               <VStack className="flex-1">
                 <Text className="text-gray-500 text-sm">Tanggal Transaksi</Text>
                 <Text className="text-sm font-bold">
-                  {dayjs(receivable?.createdAt).format("DD/MM/YYYY HH:mm:ss")}
+                  {dayjs(receivable?.createdAt).format('DD/MM/YYYY HH:mm:ss')}
                 </Text>
               </VStack>
               <VStack className="flex-1 items-end">
                 <Text className="text-gray-500 text-sm">Jatuh Tempo</Text>
                 <Text className="text-sm font-bold">
-                  {dayjs(receivable?.dueDate).format("DD/MM/YYYY HH:mm:ss")}
+                  {dayjs(receivable?.dueDate).format('DD/MM/YYYY HH:mm:ss')}
                 </Text>
               </VStack>
             </HStack>
             <HStack space="lg" className="justify-between">
               <VStack className="flex-1">
                 <Text className="text-gray-500 text-sm">Total</Text>
-                <Text className="text-sm font-bold">
-                  {formatRp(receivable?.nominal ?? 0)}
-                </Text>
+                <Text className="text-sm font-bold">{formatRp(receivable?.nominal ?? 0)}</Text>
               </VStack>
               <VStack className="flex-1 items-end">
                 <Text className="text-gray-500 text-sm">Belum Diterima</Text>
                 <Text className="text-sm font-bold">
-                  {formatRp(
-                    (receivable?.nominal || 0) -
-                      (receivable?.totalRealization || 0),
-                  )}
+                  {formatRp((receivable?.nominal || 0) - (receivable?.totalRealization || 0))}
                 </Text>
               </VStack>
             </HStack>
@@ -151,20 +141,17 @@ export default function ReceivableRealizationDetail() {
             <HStack key={realization.id} className="p-4">
               <HStack space="md" className="items-center w-full">
                 <Grid
-                  _extra={{ className: "grid-cols-2" }}
+                  _extra={{ className: 'grid-cols-2' }}
                   className="relative border border-background-200 rounded-md bg-background-0 p-4 pt-10 gap-2 w-full"
                 >
-                  <GridItem
-                    _extra={{ className: "col-span-3" }}
-                    className="absolute top-0 left-0"
-                  >
+                  <GridItem _extra={{ className: 'col-span-3' }} className="absolute top-0 left-0">
                     <Box className="absolute top-0 left-0 py-1 px-4 rounded-br-md bg-info-50">
-                      <Text className="text-info-400 text-sm font-bold">{`Tgl Pembayaran: ${dayjs(realization.realizationDate).format("DD/MM/YYYY HH:mm")}`}</Text>
+                      <Text className="text-info-400 text-sm font-bold">{`Tgl Pembayaran: ${dayjs(realization.realizationDate).format('DD/MM/YYYY HH:mm')}`}</Text>
                     </Box>
                   </GridItem>
                   <GridItem
                     _extra={{
-                      className: "col-span-1",
+                      className: 'col-span-1',
                     }}
                   >
                     <Text className="text-gray-500 text-sm">No.</Text>
@@ -172,27 +159,23 @@ export default function ReceivableRealizationDetail() {
                   </GridItem>
                   <GridItem
                     _extra={{
-                      className: "col-span-1",
+                      className: 'col-span-1',
                     }}
                   >
                     <Text className="text-gray-500 text-sm">Nominal</Text>
-                    <Text className="text-sm font-bold">
-                      {formatRp(realization.nominal)}
-                    </Text>
+                    <Text className="text-sm font-bold">{formatRp(realization.nominal)}</Text>
                   </GridItem>
                   <GridItem
                     _extra={{
-                      className: "col-span-2",
+                      className: 'col-span-2',
                     }}
                   >
                     <HStack space="sm">
                       <Text className="text-gray-500 text-sm">Catatan:</Text>
-                      <Text className="text-sm font-bold">
-                        {realization.note || "-"}
-                      </Text>
+                      <Text className="text-sm font-bold">{realization.note || '-'}</Text>
                     </HStack>
                   </GridItem>
-                  <GridItem _extra={{ className: "col-span-3" }}>
+                  <GridItem _extra={{ className: 'col-span-3' }}>
                     <Pressable
                       className="h-8 w-8 rounded-md items-center justify-center border border-background-200"
                       onPress={() => {
@@ -210,9 +193,7 @@ export default function ReceivableRealizationDetail() {
           ))}
           {receivableRealizationList?.length === 0 && (
             <Box className="p-8 items-center">
-              <Text className="text-slate-400 italic">
-                Belum ada realisasi pembayaran
-              </Text>
+              <Text className="text-slate-400 italic">Belum ada realisasi pembayaran</Text>
             </Box>
           )}
         </VStack>

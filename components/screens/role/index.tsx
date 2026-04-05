@@ -1,42 +1,47 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
-import { useBulkDeleteEntity } from "@/hooks/use-bulk-delete-entity";
-import { useItemSelection } from "@/hooks/use-item-selection";
-import { Box } from "@/components/ui/box";
-import { Button, ButtonText } from "@/components/ui/button";
-import { Heading } from "@/components/ui/heading";
-import { HStack } from "@/components/ui/hstack";
-import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { Spinner } from "@/components/ui/spinner";
-import { Text } from "@/components/ui/text";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
-import { getErrorMessage } from "@/lib/api/client";
-import { Role, useBulkDeleteRole, useRoles } from "@/lib/api/roles";
-import { bulkDeleteConfirm } from "@/lib/utils/delete-confirm";
-import { exportRoles } from "@/lib/utils/excel";
-import { useRouter } from "expo-router";
-import React from "react";
-import { FlatList } from "react-native";
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
+import { PermissionGuard } from '@/components/permission-guard';
+import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
+import { useItemSelection } from '@/hooks/use-item-selection';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { Box } from '@/components/ui/box';
+import { Button, ButtonText } from '@/components/ui/button';
+import { Heading } from '@/components/ui/heading';
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { Spinner } from '@/components/ui/spinner';
+import { Text } from '@/components/ui/text';
+import { useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
+import { getErrorMessage } from '@/db/client';
+import { Role, useBulkDeleteRole, useRoles } from '@/hooks/use-role';
+import { bulkDeleteConfirm } from '@/utils/delete-confirm';
+import { exportRoles } from '@/utils/excel';
+import { useRoleStore } from '@/stores/role';
+import { showToast } from '@/utils/toast';
+import { useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
+import { FlashList } from '@shopify/flash-list';
 
 export default function RoleList() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useRoles();
-  const {
-    selectedItems,
-    handleItemPress,
-    clearSelection,
-    isSelected,
-    hasSelection,
-  } = useItemSelection<Role>();
+  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } =
+    useItemSelection<Role>();
 
   const roles = data || [];
 
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useRoleStore, handleVersionChange);
+
   const deleteMutation = useBulkDeleteRole();
   const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({
-    successMessage: "Role berhasil dihapus",
+    successMessage: 'Role berhasil dihapus',
     deleteMutation,
     onSuccess: () => refetch(),
     clearSelection,
@@ -48,20 +53,13 @@ export default function RoleList() {
     try {
       await exportRoles(roles);
     } catch (e) {
-      toast.show({
-        placement: "top",
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 
   const handleAdd = () => {
     clearSelection();
-    router.push("/(main)/management/role-user/role/add");
+    router.push('/(main)/management/role-user/role/add');
   };
 
   if (isLoading) {
@@ -88,14 +86,14 @@ export default function RoleList() {
                   <Spinner size="small" color="#FFFFFF" />
                 </Box>
               ) : (
-                <Pressable
-                  className="p-6"
-                  onPress={() =>
-                    triggerBulkDelete(bulkDeleteConfirm("role", selectedItems))
-                  }
-                >
-                  <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
-                </Pressable>
+                <PermissionGuard permissions="roles:delete">
+                  <Pressable
+                    className="p-6"
+                    onPress={() => triggerBulkDelete(bulkDeleteConfirm('role', selectedItems))}
+                  >
+                    <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                  </Pressable>
+                </PermissionGuard>
               )
             ) : (
               <Pressable
@@ -104,13 +102,13 @@ export default function RoleList() {
                   showActionDrawer({
                     actions: [
                       {
-                        label: "Export Data",
-                        icon: "Export",
+                        label: 'Export Data',
+                        icon: 'Export',
                         onPress: handleExport,
                       },
                       {
-                        label: "Import Data",
-                        icon: "Import",
+                        label: 'Import Data',
+                        icon: 'Import',
                         onPress: () => {
                           hideActionDrawer();
                         },
@@ -123,7 +121,7 @@ export default function RoleList() {
                   name="MenuDots"
                   size={20}
                   color="#FDFBF9"
-                  style={{ transform: [{ rotate: "90deg" }] }}
+                  style={{ transform: [{ rotate: '90deg' }] }}
                 />
               </Pressable>
             )}
@@ -132,22 +130,20 @@ export default function RoleList() {
       />
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
-          <FlatList
+          <FlashList
             data={roles}
             className="flex-1"
             keyExtractor={(role) => role.id}
             renderItem={({ item: role }) => (
               <Pressable
                 className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                  isSelected(role) ? "bg-gray-100" : ""
+                  isSelected(role) ? 'bg-gray-100' : ''
                 }`}
                 onPress={() => {
                   if (hasSelection) {
                     handleItemPress(role);
                   } else {
-                    router.navigate(
-                      `/(main)/management/role-user/role/detail/${role.id}`,
-                    );
+                    router.navigate(`/(main)/management/role-user/role/detail/${role.id}`);
                     clearSelection();
                   }
                 }}
@@ -163,10 +159,7 @@ export default function RoleList() {
                     )}
                   </VStack>
                   <VStack className="items-end">
-                    <Text
-                      size="xs"
-                      className="text-brand-primary text-sm font-bold"
-                    >
+                    <Text size="xs" className="text-brand-primary text-sm font-bold">
                       User Aktif
                     </Text>
                     <Text size="xs">-</Text>
@@ -181,13 +174,15 @@ export default function RoleList() {
             }
           />
           <HStack className="w-full p-4">
-            <Button
-              size="sm"
-              className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
-              onPress={handleAdd}
-            >
-              <ButtonText className="text-white">TAMBAH ROLE</ButtonText>
-            </Button>
+            <PermissionGuard permissions="roles:create">
+              <Button
+                size="sm"
+                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                onPress={handleAdd}
+              >
+                <ButtonText className="text-white">TAMBAH ROLE</ButtonText>
+              </Button>
+            </PermissionGuard>
           </HStack>
         </VStack>
       </Box>

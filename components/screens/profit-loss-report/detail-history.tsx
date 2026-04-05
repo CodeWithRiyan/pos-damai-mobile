@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
 
-import { formatNumber } from "@/lib/utils/format";
+import { formatNumber } from "@/utils/format";
 import { _dummyReports } from ".";
 
 export default function ProfitLostDetailHistory() {

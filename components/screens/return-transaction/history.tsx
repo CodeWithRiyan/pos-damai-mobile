@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   Heading,
   HStack,
@@ -10,20 +10,16 @@ import {
   SearchIcon,
   Text,
   VStack,
-} from "@/components/ui";
-import { Spinner } from "@/components/ui/spinner";
-import { useTransactionReturns } from "@/lib/api/return-transaction";
-import { formatDisplayRefId } from "@/lib/utils/reference";
-import dayjs from "dayjs";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { FlatList } from "react-native";
+} from '@/components/ui';
+import { Spinner } from '@/components/ui/spinner';
+import { useTransactionReturns } from '@/hooks/use-return-transaction';
+import { formatDisplayRefId } from '@/utils/reference';
+import dayjs from 'dayjs';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { FlashList } from '@shopify/flash-list';
 
-import { formatNumber } from "@/lib/utils/format";
-export default function ReturnTransactionHistory({
-  isReport,
-}: {
-  isReport?: boolean;
-}) {
+import { formatNumber } from '@/utils/format';
+export default function ReturnTransactionHistory({ isReport }: { isReport?: boolean }) {
   const { customerId } = useLocalSearchParams<{ customerId: string }>();
   const router = useRouter();
   const { data: returns, isLoading } = useTransactionReturns({ customerId });
@@ -32,9 +28,7 @@ export default function ReturnTransactionHistory({
     <VStack className="flex-1 bg-white">
       <Header
         header={
-          isReport
-            ? "LAPORAN RETUR TRANSAKSI PENJUALAN"
-            : "RIWAYAT RETUR TRANSAKSI PENJUALAN"
+          isReport ? 'LAPORAN RETUR TRANSAKSI PENJUALAN' : 'RIWAYAT RETUR TRANSAKSI PENJUALAN'
         }
         isGoBack
       />
@@ -44,7 +38,7 @@ export default function ReturnTransactionHistory({
             <InputIcon as={SearchIcon} />
           </InputSlot>
           <InputField
-            placeholder={`Cari no transaksi${!customerId ? " atau nama customer" : ""}`}
+            placeholder={`Cari no transaksi${!customerId ? ' atau nama customer' : ''}`}
           />
         </Input>
       </VStack>
@@ -53,7 +47,7 @@ export default function ReturnTransactionHistory({
           <Spinner />
         </VStack>
       ) : (
-        <FlatList
+        <FlashList
           data={returns}
           className="flex-1"
           keyExtractor={(item) => item.id}
@@ -63,42 +57,28 @@ export default function ReturnTransactionHistory({
               <Pressable
                 className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
                 onPress={() =>
-                  router.push(
-                    `/(main)/management/return/transaction/receipt/${ret.id}`,
-                  )
+                  router.push(`/(main)/management/return/transaction/receipt/${ret.id}`)
                 }
               >
                 <HStack space="xl" className="items-center">
                   <VStack>
-                    <Text className="text-typography-500 font-bold">
-                      {date.format("HH:mm:ss")}
-                    </Text>
+                    <Text className="text-typography-500 font-bold">{date.format('HH:mm:ss')}</Text>
                     <HStack space="sm" className="items-center">
                       <Heading size="4xl">{date.date()}</Heading>
                       <VStack>
-                        <Text className="text-typography-500 font-bold">
-                          {date.format("MMM")}
-                        </Text>
-                        <Text className="text-typography-500 font-bold">
-                          {date.year()}
-                        </Text>
+                        <Text className="text-typography-500 font-bold">{date.format('MMM')}</Text>
+                        <Text className="text-typography-500 font-bold">{date.year()}</Text>
                       </VStack>
                     </HStack>
                   </VStack>
                   <VStack space="sm" className="flex-1">
                     <HStack className="justify-between">
                       <VStack>
-                        <Text className="text-typography-400 text-xs">
-                          Jumlah Retur
-                        </Text>
-                        <Text className="font-bold">
-                          Rp {formatNumber(ret.totalAmount ?? 0)}
-                        </Text>
+                        <Text className="text-typography-400 text-xs">Jumlah Retur</Text>
+                        <Text className="font-bold">Rp {formatNumber(ret.totalAmount ?? 0)}</Text>
                       </VStack>
                       <VStack>
-                        <Text className="text-typography-400 text-xs">
-                          Customer
-                        </Text>
+                        <Text className="text-typography-400 text-xs">Customer</Text>
                         <Text className="font-bold">{ret.customerName}</Text>
                       </VStack>
                       <VStack />
@@ -116,9 +96,7 @@ export default function ReturnTransactionHistory({
           }}
           ListEmptyComponent={
             <VStack className="items-center py-10">
-              <Text className="text-typography-400">
-                Belum ada riwayat retur
-              </Text>
+              <Text className="text-typography-400">Belum ada riwayat retur</Text>
             </VStack>
           }
         />

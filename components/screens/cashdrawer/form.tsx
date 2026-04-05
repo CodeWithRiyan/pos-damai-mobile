@@ -9,43 +9,43 @@ import {
   ModalHeader,
   Pressable,
   Text,
-} from "@/components/ui";
+} from '@/components/ui';
 import {
   FormControl,
   FormControlError,
   FormControlErrorText,
   FormControlLabel,
   FormControlLabelText,
-} from "@/components/ui/form-control";
-import { Input, InputField } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
+} from '@/components/ui/form-control';
+import { Input, InputField } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
 import {
   useCashDrawer,
   useCashDrawers,
   useCreateCashDrawer,
   useUpdateCashDrawer,
-} from "@/lib/api/cashdrawers";
-import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
-import { useCashDrawerStore } from "@/stores/cashdrawer";
-import { zodResolver } from "@hookform/resolvers/zod";
-import React, { useEffect } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import z from "zod";
+} from '@/hooks/use-cashdrawer';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useCashDrawerStore } from '@/stores/cashdrawer';
+import { zodResolver } from '@hookform/resolvers/zod';
+import React, { useEffect } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import z from 'zod';
 
 export default function CashDrawerForm() {
   const { open, setOpen, data: dataCashDrawer } = useCashDrawerStore();
   const toast = useToast();
 
   const cashDrawerSchema = z.object({
-    name: z.string().min(1, "Nama Cashdrawer wajib diisi."),
+    name: z.string().min(1, 'Nama Cashdrawer wajib diisi.'),
   });
 
   type CashDrawerFormValues = z.infer<typeof cashDrawerSchema>;
 
   const initialValues: CashDrawerFormValues = {
-    name: "",
+    name: '',
   };
 
   const form = useForm<CashDrawerFormValues>({
@@ -54,9 +54,7 @@ export default function CashDrawerForm() {
   });
 
   const { refetch: refetchCashDrawers } = useCashDrawers();
-  const { refetch: refetchCashDrawer } = useCashDrawer(
-    dataCashDrawer?.id || "",
-  );
+  const { refetch: refetchCashDrawer } = useCashDrawer(dataCashDrawer?.id || '');
 
   const createMutation = useCreateCashDrawer();
   const updateMutation = useUpdateCashDrawer();
@@ -68,22 +66,20 @@ export default function CashDrawerForm() {
 
   useEffect(() => {
     if (dataCashDrawer) {
-      form.setValue("name", dataCashDrawer.name);
+      form.setValue('name', dataCashDrawer.name);
     } else {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataCashDrawer, form]);
 
-  const onSubmit: SubmitHandler<CashDrawerFormValues> = (
-    data: CashDrawerFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<CashDrawerFormValues> = (data: CashDrawerFormValues) => {
     if (dataCashDrawer) {
       updateMutation.mutate(
         { id: dataCashDrawer.id, ...data },
         {
           onSuccess: () => {
-            showSuccessToast(toast, "Cashdrawer berhasil diperbarui");
+            showSuccessToast(toast, 'Cashdrawer berhasil diperbarui');
+            useCashDrawerStore.getState().incrementVersion();
             onRefetch();
             form.reset(initialValues);
             setOpen(false);
@@ -96,7 +92,8 @@ export default function CashDrawerForm() {
         { ...data, isActive: true },
         {
           onSuccess: (newCashDrawer) => {
-            showSuccessToast(toast, "Cashdrawer berhasil ditambahkan");
+            showSuccessToast(toast, 'Cashdrawer berhasil ditambahkan');
+            useCashDrawerStore.getState().incrementVersion();
             onRefetch();
             if (useCashDrawerStore.getState().onSuccess) {
               useCashDrawerStore.getState().onSuccess?.(newCashDrawer);
@@ -125,7 +122,7 @@ export default function CashDrawerForm() {
       <ModalContent className="p-0 max-h-[90%]">
         <ModalHeader className="p-4 border-b border-background-300">
           <Heading size="md" className="text-center flex-1">
-            {dataCashDrawer ? "EDIT CASHDRAWER" : "TAMBAH CASHDRAWER"}
+            {dataCashDrawer ? 'EDIT CASHDRAWER' : 'TAMBAH CASHDRAWER'}
           </Heading>
         </ModalHeader>
         <ModalBody className="m-0" showsVerticalScrollIndicator={false}>
@@ -133,10 +130,7 @@ export default function CashDrawerForm() {
             <Controller
               name="name"
               control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl isRequired isInvalid={!!error}>
                   <FormControlLabel>
                     <FormControlLabelText>Nama Cashdrawer</FormControlLabelText>
@@ -152,9 +146,7 @@ export default function CashDrawerForm() {
                   </Input>
                   {error && (
                     <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
+                      <FormControlErrorText>{error.message}</FormControlErrorText>
                     </FormControlError>
                   )}
                 </FormControl>
@@ -173,7 +165,7 @@ export default function CashDrawerForm() {
                 <Spinner size="small" color="#FFFFFF" />
               ) : (
                 <Text size="sm" className="text-typography-0 font-bold">
-                  {!dataCashDrawer ? "SIMPAN" : "PERBARUI"}
+                  {!dataCashDrawer ? 'SIMPAN' : 'PERBARUI'}
                 </Text>
               )}
             </Pressable>

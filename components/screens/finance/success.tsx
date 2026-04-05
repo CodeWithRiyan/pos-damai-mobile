@@ -1,13 +1,13 @@
-import { Box, Heading, HStack, Icon, Text, VStack } from "@/components/ui";
-import { Image } from "@/components/ui/image";
-import { Pressable } from "@/components/ui/pressable";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Printer } from "lucide-react-native";
-import { ScrollView } from "react-native";
-import { useFinance } from "@/lib/api/finances";
-import { useAuthStore } from "@/stores/auth";
+import { Box, Heading, HStack, Icon, Text, VStack } from '@/components/ui';
+import { Image } from '@/components/ui/image';
+import { Pressable } from '@/components/ui/pressable';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ArrowLeft, Printer } from 'lucide-react-native';
+import { ScrollView } from 'react-native';
+import { useFinance } from '@/hooks/use-finance';
+import { useAuthStore } from '@/stores/auth';
 
-import { formatRp } from "@/lib/utils/format";
+import { formatRp } from '@/utils/format';
 export default function FinanceTransactionSuccess() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -31,37 +31,31 @@ export default function FinanceTransactionSuccess() {
           </Heading>
           <Image
             className="my-6 w-40 h-40"
-            source={require("../../../assets/images/thumb-up.gif")}
+            source={require('../../../assets/images/thumb-up.gif')}
             alt="success image"
           />
           <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-500 text-lg">Transaksi</Text>
               <Text
-                className={`font-bold text-lg ${finance?.type === "INCOME" ? "text-success-500" : "text-error-500"}`}
+                className={`font-bold text-lg ${finance?.type === 'INCOME' ? 'text-success-500' : 'text-error-500'}`}
               >
-                {finance?.type === "INCOME" ? "Masuk" : "Keluar"}
+                {finance?.type === 'INCOME' ? 'Masuk' : 'Keluar'}
               </Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
-              <Text className="text-typography-500 text-lg">
-                Total Transaksi
-              </Text>
+              <Text className="text-typography-500 text-lg">Total Transaksi</Text>
               <Text className="font-bold text-lg">
-                {finance?.nominal ? formatRp(finance.nominal) : "Rp 0"}
+                {finance?.nominal ? formatRp(finance.nominal) : 'Rp 0'}
               </Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-500 text-lg">Kasir / Admin</Text>
-              <Text className="font-bold text-lg">
-                {profile?.name || "Admin"}
-              </Text>
+              <Text className="font-bold text-lg">{profile?.name || 'Admin'}</Text>
             </HStack>
             <VStack className="w-full flex-row justify-between">
               <Text className="text-typography-500 text-lg">Catatan</Text>
-              <Text className="font-bold text-lg text-right">
-                {finance?.note || "-"}
-              </Text>
+              <Text className="font-bold text-lg text-right">{finance?.note || '-'}</Text>
             </VStack>
           </Box>
           <VStack space="md" className="w-full p-4">
@@ -70,7 +64,7 @@ export default function FinanceTransactionSuccess() {
               onPress={() => {
                 if (id) {
                   router.replace({
-                    pathname: "/(main)/finance/receipt/[id]",
+                    pathname: '/(main)/finance/receipt/[id]',
                     params: { id },
                   });
                 }

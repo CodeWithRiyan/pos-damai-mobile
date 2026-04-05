@@ -22,7 +22,7 @@ export default function Header({
   onGoBack,
   selectedItemsLength,
   selectedItemsSuffixLabel,
-  selectedItemsPosition = "left",
+  selectedItemsPosition = 'left',
   onCancelSelectedItems,
 }: {
   header?: React.ReactNode;
@@ -32,7 +32,7 @@ export default function Header({
   onGoBack?: () => void;
   selectedItemsLength?: number;
   selectedItemsSuffixLabel?: string;
-  selectedItemsPosition?: "left" | "right";
+  selectedItemsPosition?: 'left' | 'right';
   onCancelSelectedItems?: () => void;
 }) {
   const { setShowDrawer } = useSidebarStore((state) => state);
@@ -49,18 +49,13 @@ export default function Header({
   const CancelSelectedItems = () => {
     return (
       <HStack
-        className={`items-center p-3${selectedItemsPosition === "right" ? " flex-row-reverse" : ""}`}
+        className={`items-center p-3${selectedItemsPosition === 'right' ? ' flex-row-reverse' : ''}`}
       >
         <Pressable onPress={() => onCancelSelectedItems?.()} className="p-3">
           <Icon as={CloseIcon} size="xl" className="text-typography-0" />
         </Pressable>
-        <Heading
-          size="sm"
-          className="text-typography-0"
-        >{`${selectedItemsLength}${
-          selectedItemsSuffixLabel
-            ? ` ${selectedItemsSuffixLabel}`
-            : " Item terpilih"
+        <Heading size="sm" className="text-typography-0">{`${selectedItemsLength}${
+          selectedItemsSuffixLabel ? ` ${selectedItemsSuffixLabel}` : ' Item terpilih'
         }`}</Heading>
       </HStack>
     );
@@ -68,7 +63,7 @@ export default function Header({
 
   return (
     <View className="relative bg-primary-500 w-full flex flex-row justify-between items-center">
-      {selectedItemsPosition === "left" && selectedItemsLength ? (
+      {selectedItemsPosition === 'left' && selectedItemsLength ? (
         <CancelSelectedItems />
       ) : (
         <Pressable
@@ -101,11 +96,7 @@ export default function Header({
           )}
         </VStack>
       </HStack>
-      {selectedItemsPosition === "right" && selectedItemsLength ? (
-        <CancelSelectedItems />
-      ) : (
-        action
-      )}
+      {selectedItemsPosition === 'right' && selectedItemsLength ? <CancelSelectedItems /> : action}
     </View>
   );
 }

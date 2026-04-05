@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   Heading,
   Input,
@@ -8,41 +8,38 @@ import {
   SearchIcon,
   Text,
   VStack,
-} from "@/components/ui";
-import { Box } from "@/components/ui/box";
-import { HStack } from "@/components/ui/hstack";
-import { Pressable } from "@/components/ui/pressable";
-import { useProducts } from "@/lib/api/products";
-import { useReturnPurchasingStore } from "@/stores/return-purchasing";
-import { useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
-import { FlatList, LayoutChangeEvent, ScrollView } from "react-native";
-import ReturnPurchasingConfirmForm from "./form";
-import PopupAddProduct from "./popup-add";
+} from '@/components/ui';
+import { Box } from '@/components/ui/box';
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { useProducts } from '@/hooks/use-product';
+import { useReturnPurchasingStore } from '@/stores/return-purchasing';
+import { useLocalSearchParams } from 'expo-router';
+import React, { useState } from 'react';
+import { FlashList } from '@shopify/flash-list';
+import { LayoutChangeEvent, ScrollView } from 'react-native';
+import ReturnPurchasingConfirmForm from './form';
+import PopupAddProduct from './popup-add';
 
-import GridProductLayout from "@/components/ui/layout/grid-product-layout";
-import ListProductLayout from "@/components/ui/layout/list-product-layout";
-import {
-  SolarIconBold,
-  SolarIconOutline,
-} from "@/components/ui/solar-icon-wrapper";
-import { formatNumber } from "@/lib/utils/format";
-import classNames from "classnames";
+import GridProductLayout from '@/components/ui/layout/grid-product-layout';
+import ListProductLayout from '@/components/ui/layout/list-product-layout';
+import { SolarIconBold, SolarIconOutline } from '@/components/ui/solar-icon-wrapper';
+import { formatNumber } from '@/utils/format';
+import classNames from 'classnames';
 export default function ReturnPurchasingInput() {
   const { cart, setAddProduct, setOpenConfirm, removeCartItem, resetCart } =
     useReturnPurchasingStore();
-  const [search, setSearch] = useState<string>("");
+  const [search, setSearch] = useState<string>('');
   const { supplierId } = useLocalSearchParams<{ supplierId: string }>();
-  const { data: products = [], isLoading: isLoadingProduct } = useProducts({
+  const { data: products = [] } = useProducts({
     forceParent: true,
     supplierId,
     search,
   });
-  const [layout, setLayout] = useState<"list" | "grid">("list");
+  const [layout, setLayout] = useState<'list' | 'grid'>('list');
   const [deviceWidth, setDeviceWidth] = useState<number>(0);
   const [deleteItem, setDeleteItem] = useState<string | null>(null);
 
-  const isLoading = isLoadingProduct;
   const isDirty = !!cart.length;
   const numColumns = deviceWidth < 600 ? 2 : deviceWidth < 1080 ? 3 : 4;
 
@@ -73,50 +70,40 @@ export default function ReturnPurchasingInput() {
       />
       <HStack className="flex-1 bg-white">
         <VStack className="flex-1 border-r border-gray-300">
-          <HStack
-            space="sm"
-            className="p-4 shadow-lg bg-background-0 items-center"
-          >
+          <HStack space="sm" className="p-4 shadow-lg bg-background-0 items-center">
             <Input className="flex-1 border border-background-300 rounded-lg h-10">
               <InputSlot className="pl-3">
                 <InputIcon as={SearchIcon} />
               </InputSlot>
-              <InputField
-                placeholder="Cari nama atau kode"
-                onChangeText={setSearch}
-              />
+              <InputField placeholder="Cari nama atau kode" onChangeText={setSearch} />
             </Input>
 
             <Pressable
               className="relative size-10 items-center justify-center text-typography-500"
-              onPress={() => setLayout(layout === "grid" ? "list" : "grid")}
+              onPress={() => setLayout(layout === 'grid' ? 'list' : 'grid')}
             >
               <SolarIconOutline
-                name={layout === "grid" ? "Widget" : "Server"}
+                name={layout === 'grid' ? 'Widget' : 'Server'}
                 size={20}
                 color="#6b7280"
               />
             </Pressable>
           </HStack>
-          {layout === "grid" ? (
-            <FlatList
+          {layout === 'grid' ? (
+            <FlashList
               key={`grid-${numColumns}`}
               data={products}
               className="flex-1"
               numColumns={numColumns}
               contentContainerStyle={{ padding: 16, gap: 16 }}
-              columnWrapperStyle={{ gap: 16 }}
               keyExtractor={(item) => item.id}
               renderItem={({ item: product }) => {
                 return (
-                  <Box className="flex-1">
+                  <Box className="flex-1 px-1">
                     <GridProductLayout
                       name={product.name}
                       price={product.purchasePrice ?? 0}
-                      quantityInCart={
-                        cart?.find((f) => f.product.id === product.id)
-                          ?.quantity || 0
-                      }
+                      quantityInCart={cart?.find((f) => f.product.id === product.id)?.quantity || 0}
                       stock={product.stock}
                       onPressProduct={() => setAddProduct(product)}
                     />
@@ -132,7 +119,7 @@ export default function ReturnPurchasingInput() {
               }
             />
           ) : (
-            <FlatList
+            <FlashList
               key="list"
               data={products}
               className="flex-1"
@@ -142,10 +129,7 @@ export default function ReturnPurchasingInput() {
                   <ListProductLayout
                     name={product.name}
                     price={product.purchasePrice ?? 0}
-                    quantityInCart={
-                      cart?.find((f) => f.product.id === product.id)
-                        ?.quantity || 0
-                    }
+                    quantityInCart={cart?.find((f) => f.product.id === product.id)?.quantity || 0}
                     stock={product.stock}
                     onPressProduct={() => setAddProduct(product)}
                   />
@@ -192,11 +176,8 @@ export default function ReturnPurchasingInput() {
                           {item.product.name}
                         </Heading>
                         <Text size="sm" className="text-slate-500">
-                          {item.quantity} x Rp{" "}
-                          {formatNumber(item.product.purchasePrice ?? 0)} = Rp{" "}
-                          {formatNumber(
-                            item.quantity * (item.product.purchasePrice || 0),
-                          )}
+                          {item.quantity} x Rp {formatNumber(item.product.purchasePrice ?? 0)} = Rp{' '}
+                          {formatNumber(item.quantity * (item.product.purchasePrice || 0))}
                         </Text>
                         {item.note ? (
                           <Text size="sm" className="text-slate-500">
@@ -213,11 +194,11 @@ export default function ReturnPurchasingInput() {
                   </HStack>
                   <Pressable
                     className={classNames(
-                      "absolute right-0 top-0 bottom-0 w-0 bg-error-500 items-center justify-center overflow-hidden transaction-all duration-300",
-                      deleteItem === item.product.id && "w-16",
+                      'absolute right-0 top-0 bottom-0 w-0 bg-error-500 items-center justify-center overflow-hidden transaction-all duration-300',
+                      deleteItem === item.product.id && 'w-16',
                     )}
                     onPress={() => {
-                      removeCartItem(item.product?.id || "");
+                      removeCartItem(item.product?.id || '');
                       setDeleteItem(null);
                     }}
                   >
@@ -235,9 +216,7 @@ export default function ReturnPurchasingInput() {
               >
                 <HStack space="md" className="items-center">
                   <Text size="4xl" className="text-white font-bold">
-                    {formatNumber(
-                      cart.reduce((total, item) => total + item.quantity, 0),
-                    )}
+                    {formatNumber(cart.reduce((total, item) => total + item.quantity, 0))}
                   </Text>
                   <Text size="lg" className="text-white font-bold">
                     ITEM

@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode } from 'react';
 import {
   Accordion,
   AccordionContent,
@@ -9,10 +9,10 @@ import {
   AccordionTrigger,
   ChevronDownIcon,
   ChevronUpIcon,
-} from "./ui";
+} from './ui';
 
 export default function FilterAccordion({
-  title = "Filter",
+  title = 'Filter',
   children,
   isExpanded,
   onToggle,
@@ -30,8 +30,8 @@ export default function FilterAccordion({
       isCollapsible={true}
       isDisabled={false}
       className="flex-0 w-full"
-      value={isExpanded ? ["a"] : []}
-      onValueChange={(val) => onToggle?.()}
+      value={isExpanded ? ['a'] : []}
+      onValueChange={() => onToggle?.()}
     >
       <AccordionItem value="a">
         <AccordionHeader>

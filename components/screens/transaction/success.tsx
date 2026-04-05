@@ -1,17 +1,16 @@
-import { Box, Heading, HStack, Icon, Text, VStack } from "@/components/ui";
-import { Image } from "@/components/ui/image";
-import { Pressable } from "@/components/ui/pressable";
-import { useCustomer } from "@/lib/api/customers";
-import { useTransactionStore } from "@/stores/transaction";
-import { useRouter } from "expo-router";
-import { ArrowLeft, Printer } from "lucide-react-native";
-import { ScrollView } from "react-native";
+import { Box, Heading, HStack, Icon, Text, VStack } from '@/components/ui';
+import { Image } from '@/components/ui/image';
+import { Pressable } from '@/components/ui/pressable';
+import { useCustomer } from '@/hooks/use-customer';
+import { useTransactionStore } from '@/stores/transaction';
+import { useRouter } from 'expo-router';
+import { ArrowLeft, Printer } from 'lucide-react-native';
+import { ScrollView } from 'react-native';
 
 export default function TransactionSuccess() {
   const router = useRouter();
-  const { checkoutData, setCheckoutData, setCustomer, resetCart } =
-    useTransactionStore();
-  const { data: customer } = useCustomer(checkoutData?.customerId || "");
+  const { checkoutData, setCheckoutData, setCustomer, resetCart } = useTransactionStore();
+  const { data: customer } = useCustomer(checkoutData?.customerId || '');
 
   return (
     <VStack className="flex-1 bg-white">
@@ -23,47 +22,35 @@ export default function TransactionSuccess() {
           <Image
             className="my-6 w-40 h-40"
             source={{
-              uri: require("../../../assets/images/thumb-up.gif"),
+              uri: require('../../../assets/images/thumb-up.gif'),
             }}
             alt="image"
           />
           <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
             <HStack className="w-full flex-row justify-between">
-              <Text className="text-typography-500 text-lg">
-                Total Transaksi
-              </Text>
+              <Text className="text-typography-500 text-lg">Total Transaksi</Text>
               <Text className="font-bold text-lg">
                 Rp {checkoutData?.totalItems?.toLocaleString()}
               </Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
-              <Text className="text-typography-500 text-lg">
-                Uang Dibayarkan
-              </Text>
+              <Text className="text-typography-500 text-lg">Uang Dibayarkan</Text>
               <Text className="font-bold text-lg">
-                Rp{" "}
-                {parseFloat(checkoutData?.totalPaid || "0").toLocaleString(
-                  "id-ID",
-                )}
+                Rp {parseFloat(checkoutData?.totalPaid || '0').toLocaleString('id-ID')}
               </Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-500 text-lg">Kembalian</Text>
               <Text className="font-bold text-lg">
-                Rp{" "}
+                Rp{' '}
                 {checkoutData?.totalPaid && checkoutData?.totalItems
-                  ? (
-                      parseFloat(checkoutData.totalPaid) -
-                      checkoutData.totalItems
-                    ).toLocaleString()
-                  : "0"}
+                  ? (parseFloat(checkoutData.totalPaid) - checkoutData.totalItems).toLocaleString()
+                  : '0'}
               </Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-500 text-lg">Kasir / Admin</Text>
-              <Text className="font-bold text-lg">
-                {checkoutData?.createdByName}
-              </Text>
+              <Text className="font-bold text-lg">{checkoutData?.createdByName}</Text>
             </HStack>
             {customer && (
               <HStack className="w-full flex-row justify-between">
@@ -82,11 +69,11 @@ export default function TransactionSuccess() {
                 setCustomer(null);
                 if (id) {
                   router.replace({
-                    pathname: "/(main)/transaction/receipt/[id]",
+                    pathname: '/(main)/transaction/receipt/[id]',
                     params: { id },
                   });
                 } else {
-                  router.replace("/(main)/transaction");
+                  router.replace('/(main)/transaction');
                 }
               }}
             >

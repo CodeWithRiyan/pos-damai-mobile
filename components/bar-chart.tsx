@@ -1,17 +1,8 @@
-import { useState } from "react";
-import {
-  BarChart as GiftedBarChart,
-  barDataItem,
-} from "react-native-gifted-charts";
-import { Box, HStack, Text, VStack } from "./ui";
+import { useState } from 'react';
+import { BarChart as GiftedBarChart, barDataItem } from 'react-native-gifted-charts';
+import { Box, HStack, Text, VStack } from './ui';
 
-export default function BarChart({
-  data,
-  spacing,
-}: {
-  data: barDataItem[];
-  spacing?: number;
-}) {
+export default function BarChart({ data, spacing }: { data: barDataItem[]; spacing?: number }) {
   const [containerWidth, setContainerWidth] = useState(0);
   const customDataPoint = () => {
     return <Box className="w-2 h-2 rounded-full bg-primary-500" />;
@@ -32,9 +23,7 @@ export default function BarChart({
   }
 
   const dynamicSpacing =
-    data.length > 1
-      ? Math.max(0, (containerWidth - 100) / (data.length - 1))
-      : 0;
+    data.length > 1 ? Math.max(0, (containerWidth - 100) / (data.length - 1)) : 0;
 
   const maxValue = Math.max(...data.map((d) => Number(d.value) || 0));
   const useMillions = maxValue >= 1000000;
@@ -51,16 +40,16 @@ export default function BarChart({
           noOfSections={6}
           yAxisLabelWidth={60}
           yAxisTextStyle={{
-            color: "#1f2937",
+            color: '#1f2937',
             fontSize: 10,
           }}
           formatYLabel={(label) => {
             const val = Number(label);
             if (useMillions) {
-              return (val / 1000000).toFixed(1).replace(/\.0$/, "") + "JT";
+              return (val / 1000000).toFixed(1).replace(/\.0$/, '') + 'JT';
             }
             if (useThousands) {
-              return (val / 1000).toFixed(0) + "RB";
+              return (val / 1000).toFixed(0) + 'RB';
             }
             return val.toString();
           }}
@@ -76,7 +65,7 @@ export default function BarChart({
           xAxisColor="lightgray"
           pointerConfig={{
             activatePointersOnLongPress: true,
-            pointerColor: "blue",
+            pointerColor: 'blue',
             pointerLabelComponent: (
               items: {
                 index: number;
@@ -101,9 +90,7 @@ export default function BarChart({
                   className="w-32 rounded-lg bg-white border border-primary-500 overflow-hidden"
                 >
                   <HStack className="justify-center items-center w-full h-6 bg-primary-500">
-                    <Text className="text-xs text-white">
-                      {item.pointerLabel}
-                    </Text>
+                    <Text className="text-xs text-white">{item.pointerLabel}</Text>
                   </HStack>
                   <HStack className="justify-center items-center w-full h-6">
                     <Text className="text-xs text-typography-800 font-bold">

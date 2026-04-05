@@ -1,41 +1,40 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
-import { useBulkDeleteEntity } from "@/hooks/use-bulk-delete-entity";
-import { Box } from "@/components/ui/box";
-import { Button, ButtonText } from "@/components/ui/button";
-import { Heading } from "@/components/ui/heading";
-import { HStack } from "@/components/ui/hstack";
-import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { Spinner } from "@/components/ui/spinner";
-import { Text } from "@/components/ui/text";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
-import { getErrorMessage } from "@/lib/api/client";
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
+import { PermissionGuard } from '@/components/permission-guard';
+import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
+import { Box } from '@/components/ui/box';
+import { Button, ButtonText } from '@/components/ui/button';
+import { Heading } from '@/components/ui/heading';
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { Spinner } from '@/components/ui/spinner';
+import { Text } from '@/components/ui/text';
+import { useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
+import { getErrorMessage } from '@/db/client';
 import {
   Supplier,
   useBulkDeleteSupplier,
   useCreateSupplier,
   useSuppliers,
-} from "@/lib/api/suppliers";
-import { bulkDeleteConfirm } from "@/lib/utils/delete-confirm";
-import { exportSuppliers, importSuppliers } from "@/lib/utils/excel";
-import { useItemSelection } from "@/hooks/use-item-selection";
-import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback } from "react";
-import { FlatList } from "react-native";
+} from '@/hooks/use-supplier';
+import { bulkDeleteConfirm } from '@/utils/delete-confirm';
+import { exportSuppliers, importSuppliers } from '@/utils/excel';
+import { showSuccessToast, showToast } from '@/utils/toast';
+import { useItemSelection } from '@/hooks/use-item-selection';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useSupplierStore } from '@/stores/supplier';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
+import { FlashList } from '@shopify/flash-list';
 
 export default function SupplierList() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useSuppliers();
-  const {
-    selectedItems,
-    handleItemPress,
-    clearSelection,
-    isSelected,
-    hasSelection,
-  } = useItemSelection<Supplier>();
+  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } =
+    useItemSelection<Supplier>();
 
   useFocusEffect(
     useCallback(() => {
@@ -45,9 +44,21 @@ export default function SupplierList() {
 
   const suppliers = data || [];
 
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useSupplierStore, handleVersionChange);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
+
   const deleteMutation = useBulkDeleteSupplier();
   const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({
-    successMessage: "Supplier berhasil dihapus",
+    successMessage: 'Supplier berhasil dihapus',
     deleteMutation,
     onSuccess: () => refetch(),
     clearSelection,
@@ -60,14 +71,7 @@ export default function SupplierList() {
     try {
       await exportSuppliers(suppliers);
     } catch (e) {
-      toast.show({
-        placement: "top",
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 
@@ -88,29 +92,15 @@ export default function SupplierList() {
         } catch {}
       }
       refetch();
-      toast.show({
-        placement: "top",
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-            <ToastTitle>{`${successCount} supplier berhasil diimpor`}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showSuccessToast(toast, `${successCount} supplier berhasil diimpor`);
     } catch (e) {
-      toast.show({
-        placement: "top",
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 
   const handleAdd = () => {
     clearSelection();
-    router.push("/(main)/management/customer-supplier/supplier/add");
+    router.push('/(main)/management/customer-supplier/supplier/add');
   };
 
   if (isLoading) {
@@ -137,16 +127,14 @@ export default function SupplierList() {
                   <Spinner size="small" color="#FFFFFF" />
                 </Box>
               ) : (
-                <Pressable
-                  className="p-6"
-                  onPress={() =>
-                    triggerBulkDelete(
-                      bulkDeleteConfirm("supplier", selectedItems),
-                    )
-                  }
-                >
-                  <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
-                </Pressable>
+                <PermissionGuard permissions="suppliers:delete">
+                  <Pressable
+                    className="p-6"
+                    onPress={() => triggerBulkDelete(bulkDeleteConfirm('supplier', selectedItems))}
+                  >
+                    <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                  </Pressable>
+                </PermissionGuard>
               )
             ) : (
               <Pressable
@@ -155,13 +143,13 @@ export default function SupplierList() {
                   showActionDrawer({
                     actions: [
                       {
-                        label: "Export Data",
-                        icon: "Export",
+                        label: 'Export Data',
+                        icon: 'Export',
                         onPress: handleExport,
                       },
                       {
-                        label: "Import Data",
-                        icon: "Import",
+                        label: 'Import Data',
+                        icon: 'Import',
                         onPress: handleImport,
                       },
                     ],
@@ -172,7 +160,7 @@ export default function SupplierList() {
                   name="MenuDots"
                   size={20}
                   color="#FDFBF9"
-                  style={{ transform: [{ rotate: "90deg" }] }}
+                  style={{ transform: [{ rotate: '90deg' }] }}
                 />
               </Pressable>
             )}
@@ -181,14 +169,14 @@ export default function SupplierList() {
       />
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
-          <FlatList
+          <FlashList
             data={suppliers}
             className="flex-1"
             keyExtractor={(supplier) => supplier.id}
             renderItem={({ item: supplier }) => (
               <Pressable
                 className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                  isSelected(supplier) ? "bg-gray-100" : ""
+                  isSelected(supplier) ? 'bg-gray-100' : ''
                 }`}
                 onPress={() => {
                   if (hasSelection) {
@@ -218,20 +206,20 @@ export default function SupplierList() {
             )}
             ListEmptyComponent={
               <Box className="p-8 items-center">
-                <Text className="text-slate-400 italic">
-                  No suppliers found
-                </Text>
+                <Text className="text-slate-400 italic">No suppliers found</Text>
               </Box>
             }
           />
           <HStack className="w-full p-4">
-            <Button
-              size="sm"
-              className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
-              onPress={handleAdd}
-            >
-              <ButtonText className="text-white">TAMBAH SUPPLIER</ButtonText>
-            </Button>
+            <PermissionGuard permissions="suppliers:create">
+              <Button
+                size="sm"
+                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                onPress={handleAdd}
+              >
+                <ButtonText className="text-white">TAMBAH SUPPLIER</ButtonText>
+              </Button>
+            </PermissionGuard>
           </HStack>
         </VStack>
       </Box>

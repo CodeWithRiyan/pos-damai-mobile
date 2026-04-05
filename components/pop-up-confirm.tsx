@@ -1,10 +1,4 @@
-import {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useState,
-} from "react";
+import { createContext, ReactNode, useCallback, useContext, useState } from 'react';
 import {
   Actionsheet,
   ActionsheetBackdrop,
@@ -17,11 +11,11 @@ import {
   Pressable,
   Text,
   VStack,
-} from "./ui";
-import { SolarIconBold } from "./ui/solar-icon-wrapper";
+} from './ui';
+import { SolarIconBold } from './ui/solar-icon-wrapper';
 
-export type TIcon = "default" | "success" | "info" | "warning" | "error";
-export type TVariant = "outline" | "link" | "solid" | "destructive";
+export type TIcon = 'default' | 'success' | 'info' | 'warning' | 'error';
+export type TVariant = 'outline' | 'link' | 'solid' | 'destructive';
 export interface PopUpConfirmProps {
   open: boolean;
   onOk?: () => void;
@@ -46,8 +40,8 @@ export function PopUpConfirm({
   onClose,
   okText,
   closeText,
-  okVariant = "solid",
-  closeVariant = "outline",
+  okVariant = 'solid',
+  closeVariant = 'outline',
   title,
   icon,
   description,
@@ -56,50 +50,50 @@ export function PopUpConfirm({
   className,
 }: PopUpConfirmProps) {
   function ModalIcon() {
-    if (icon === "success") {
+    if (icon === 'success') {
       return <SolarIconBold name="CheckCircle" color="#22c55e" />;
-    } else if (icon === "info") {
+    } else if (icon === 'info') {
       return <SolarIconBold name="InfoCircle" color="#3b82f6" />;
-    } else if (icon === "warning") {
+    } else if (icon === 'warning') {
       return <SolarIconBold name="InfoCircle" color="#eab308" />;
-    } else if (icon === "error") {
+    } else if (icon === 'error') {
       return <SolarIconBold name="CloseCircle" color="#ef4444" />;
     }
     return null;
   }
 
   const getButtonStyles = (variant: TVariant) => {
-    const baseStyles = "px-4 py-2 rounded-lg transition-colors w-full";
+    const baseStyles = 'px-4 py-2 rounded-lg transition-colors w-full';
 
-    if (variant === "solid") {
+    if (variant === 'solid') {
       return `${baseStyles} bg-blue-600 hover:bg-blue-700 active:bg-blue-800`;
-    } else if (variant === "outline") {
+    } else if (variant === 'outline') {
       return `${baseStyles} border border-gray-300 hover:bg-gray-100 active:bg-gray-200`;
-    } else if (variant === "link") {
+    } else if (variant === 'link') {
       return `${baseStyles} hover:bg-gray-100 active:bg-gray-200`;
-    } else if (variant === "destructive") {
+    } else if (variant === 'destructive') {
       return `${baseStyles} bg-rose-600 hover:bg-rose-700 active:bg-rose-800`;
     }
     return baseStyles;
   };
 
   const getTextStyles = (variant: TVariant): string => {
-    if (variant === "solid") {
-      return "text-white font-bold text-center";
-    } else if (variant === "outline") {
-      return "text-gray-700 font-bold text-center";
-    } else if (variant === "link") {
-      return "text-blue-600 font-bold text-center";
-    } else if (variant === "destructive") {
-      return "text-white font-bold text-center";
+    if (variant === 'solid') {
+      return 'text-white font-bold text-center';
+    } else if (variant === 'outline') {
+      return 'text-gray-700 font-bold text-center';
+    } else if (variant === 'link') {
+      return 'text-blue-600 font-bold text-center';
+    } else if (variant === 'destructive') {
+      return 'text-white font-bold text-center';
     }
-    return "text-gray-700 font-bold text-center";
+    return 'text-gray-700 font-bold text-center';
   };
 
   return (
     <Actionsheet isOpen={open} onClose={() => onClose?.()}>
       <ActionsheetBackdrop />
-      <ActionsheetContent className={`${className || ""}`}>
+      <ActionsheetContent className={`${className || ''}`}>
         <ActionsheetDragIndicatorWrapper className="relative">
           <ActionsheetDragIndicator className="w-full h-4 opacity-0 z-[100]" />
           <Box className="flex-1 flex items-center justify-center absolute top-2">
@@ -117,9 +111,7 @@ export function PopUpConfirm({
           </HStack>
 
           {/* Description */}
-          {description ? (
-            <Text className="text-gray-600">{description}</Text>
-          ) : null}
+          {description ? <Text className="text-gray-600">{description}</Text> : null}
 
           {/* Action Buttons */}
           <VStack space="md" className="w-full mt-4">
@@ -128,7 +120,7 @@ export function PopUpConfirm({
               className={getButtonStyles(okVariant)}
               disabled={loading}
             >
-              <Text className={getTextStyles(okVariant)}>{okText || "OK"}</Text>
+              <Text className={getTextStyles(okVariant)}>{okText || 'OK'}</Text>
             </Pressable>
 
             {showClose && (
@@ -137,9 +129,7 @@ export function PopUpConfirm({
                 className={getButtonStyles(closeVariant)}
                 disabled={loading}
               >
-                <Text className={getTextStyles(closeVariant)}>
-                  {closeText || "CANCEL"}
-                </Text>
+                <Text className={getTextStyles(closeVariant)}>{closeText || 'CANCEL'}</Text>
               </Pressable>
             )}
           </VStack>
@@ -149,7 +139,7 @@ export function PopUpConfirm({
   );
 }
 
-type PopUpConfirmConfig = Omit<PopUpConfirmProps, "open">;
+type PopUpConfirmConfig = Omit<PopUpConfirmProps, 'open'>;
 
 interface PopUpConfirmContextType {
   showPopUpConfirm: (config: PopUpConfirmConfig) => void;
@@ -161,17 +151,13 @@ const PopUpConfirmContext = createContext<PopUpConfirmContextType | null>(null);
 export function usePopUpConfirm() {
   const context = useContext(PopUpConfirmContext);
   if (!context) {
-    throw new Error("PopUpConfirm must be used within a PopUpConfirmProvider.");
+    throw new Error('PopUpConfirm must be used within a PopUpConfirmProvider.');
   }
 
   return context;
 }
 
-export function PopUpConfirmProvider({
-  children,
-}: {
-  children?: React.ReactNode;
-}) {
+export function PopUpConfirmProvider({ children }: { children?: React.ReactNode }) {
   const [open, setOpen] = useState<boolean>(false);
   const [config, setConfig] = useState<PopUpConfirmConfig>({});
 
@@ -208,12 +194,7 @@ export function PopUpConfirmProvider({
       }}
     >
       {children}
-      <PopUpConfirm
-        {...config}
-        open={open}
-        onClose={handleClose}
-        onOk={handleOk}
-      />
+      <PopUpConfirm {...config} open={open} onClose={handleClose} onOk={handleOk} />
     </PopUpConfirmContext.Provider>
   );
 }

@@ -1,7 +1,7 @@
-import { Box, VStack } from "@/components/ui";
-import { tva } from "@gluestack-ui/utils/nativewind-utils";
-import { createContext, useCallback, useContext, useState } from "react";
-import { GestureResponderEvent } from "react-native";
+import { Box, VStack } from '@/components/ui';
+import { tva } from '@gluestack-ui/utils/nativewind-utils';
+import { createContext, useCallback, useContext, useState } from 'react';
+import { GestureResponderEvent } from 'react-native';
 import {
   Actionsheet,
   ActionsheetBackdrop,
@@ -11,39 +11,39 @@ import {
   ActionsheetItem,
   ActionsheetItemText,
   HStack,
-} from "./ui";
-import { SolarIconBold, SolarIconBoldProps } from "./ui/solar-icon-wrapper";
+} from './ui';
+import { SolarIconBold, SolarIconBoldProps } from './ui/solar-icon-wrapper';
 
-type TTheme = "default" | "primary" | "red" | "green" | "yellow" | "blue";
+type TTheme = 'default' | 'primary' | 'red' | 'green' | 'yellow' | 'blue';
 
 const actionContentStyle = tva({
-  base: "px-0",
+  base: 'px-0',
 });
 
 const actionLabelStyle = tva({
-  base: "font-bold",
+  base: 'font-bold',
   variants: {
     theme: {
-      default: "text-gray-800",
-      primary: "text-primary-500",
-      red: "text-rose-500",
-      green: "text-emerald-500",
-      yellow: "text-yellow-500",
-      blue: "text-blue-500",
+      default: 'text-gray-800',
+      primary: 'text-primary-500',
+      red: 'text-rose-500',
+      green: 'text-emerald-500',
+      yellow: 'text-yellow-500',
+      blue: 'text-blue-500',
     },
   },
 });
 
 const actionBgStyle = tva({
-  base: "w-full justify-between items-center px-4 py-2",
+  base: 'w-full justify-between items-center px-4 py-2',
   variants: {
     theme: {
-      default: "bg-background-0 active:bg-background-200",
-      primary: "bg-background-0 active:bg-primary-200",
-      red: "bg-background-0 active:bg-rose-200",
-      green: "bg-background-0 active:bg-emerald-200",
-      yellow: "bg-background-0 active:bg-yellow-200",
-      blue: "bg-background-0 active:bg-blue-200",
+      default: 'bg-background-0 active:bg-background-200',
+      primary: 'bg-background-0 active:bg-primary-200',
+      red: 'bg-background-0 active:bg-rose-200',
+      green: 'bg-background-0 active:bg-emerald-200',
+      yellow: 'bg-background-0 active:bg-yellow-200',
+      blue: 'bg-background-0 active:bg-blue-200',
     },
   },
 });
@@ -54,25 +54,20 @@ export interface ActionDrawerProps {
   actions?: {
     label: string;
     onPress: (e: GestureResponderEvent) => void;
-    icon?: SolarIconBoldProps["name"];
+    icon?: SolarIconBoldProps['name'];
     theme?: TTheme;
   }[];
   className?: string;
 }
 
-export function ActionDrawer({
-  open,
-  onClose,
-  actions,
-  className,
-}: ActionDrawerProps) {
+export function ActionDrawer({ open, onClose, actions, className }: ActionDrawerProps) {
   const iconColor = (theme: TTheme) => {
-    if (theme === "primary") return "#3D2117";
-    if (theme === "red") return "#ef4444";
-    if (theme === "green") return "#22c55e";
-    if (theme === "yellow") return "#f59e0b";
-    if (theme === "blue") return "#4f46e5";
-    return "#1f2937";
+    if (theme === 'primary') return '#3D2117';
+    if (theme === 'red') return '#ef4444';
+    if (theme === 'green') return '#22c55e';
+    if (theme === 'yellow') return '#f59e0b';
+    if (theme === 'blue') return '#4f46e5';
+    return '#1f2937';
   };
   return (
     <Actionsheet isOpen={open} onClose={() => onClose?.()}>
@@ -89,12 +84,12 @@ export function ActionDrawer({
             <ActionsheetItem
               key={index}
               onPress={action.onPress}
-              className={actionBgStyle({ theme: action.theme || "default" })}
+              className={actionBgStyle({ theme: action.theme || 'default' })}
             >
               <HStack className="w-full justify-between items-center px-4 py-2">
                 <ActionsheetItemText
                   className={actionLabelStyle({
-                    theme: action.theme || "default",
+                    theme: action.theme || 'default',
                   })}
                 >
                   {action.label}
@@ -103,7 +98,7 @@ export function ActionDrawer({
                   <SolarIconBold
                     name={action.icon}
                     size={20}
-                    color={iconColor(action.theme || "default")}
+                    color={iconColor(action.theme || 'default')}
                   />
                 )}
               </HStack>
@@ -115,7 +110,7 @@ export function ActionDrawer({
   );
 }
 
-type ActionDrawerConfig = Omit<ActionDrawerProps, "open">;
+type ActionDrawerConfig = Omit<ActionDrawerProps, 'open'>;
 
 interface ActionDrawerContextType {
   showActionDrawer: (config: ActionDrawerConfig) => void;
@@ -127,17 +122,13 @@ const ActionDrawerContext = createContext<ActionDrawerContextType | null>(null);
 export function useActionDrawer() {
   const context = useContext(ActionDrawerContext);
   if (!context) {
-    throw new Error("ActionDrawer must be used within a ActionDrawerProvider.");
+    throw new Error('ActionDrawer must be used within a ActionDrawerProvider.');
   }
 
   return context;
 }
 
-export function ActionDrawerProvider({
-  children,
-}: {
-  children?: React.ReactNode;
-}) {
+export function ActionDrawerProvider({ children }: { children?: React.ReactNode }) {
   const [open, setOpen] = useState<boolean>(false);
   const [config, setConfig] = useState<ActionDrawerConfig>({});
 

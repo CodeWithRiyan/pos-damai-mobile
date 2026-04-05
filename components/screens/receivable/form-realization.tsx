@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   Checkbox,
   CheckboxIcon,
@@ -19,30 +19,26 @@ import {
   Text,
   Textarea,
   TextareaInput,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
-import SelectModal from "@/components/ui/select/select-modal";
-import { showErrorToast } from "@/lib/utils/toast";
-import { usePaymentTypes } from "@/lib/api/payment-types";
-import {
-  useCreateReceivableRealization,
-  useReceivableDetail,
-} from "@/lib/api/receivable";
-import { usePaymentTypeStore } from "@/stores/payment-type";
-import { zodResolver } from "@hookform/resolvers/zod";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import dayjs from "dayjs";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { CalendarIcon, CheckIcon, PlusIcon } from "lucide-react-native";
-import { useState } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { ScrollView } from "react-native";
-import { z } from "zod";
+} from '@/components/ui';
+import SelectModal from '@/components/ui/select/select-modal';
+import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
+import { usePaymentTypes } from '@/hooks/use-payment-type';
+import { useCreateReceivableRealization, useReceivableDetail } from '@/hooks/use-receivable';
+import { usePaymentTypeStore } from '@/stores/payment-type';
+import { useReceivableStore } from '@/stores/receivable';
+import { zodResolver } from '@hookform/resolvers/zod';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { CalendarIcon, CheckIcon, PlusIcon } from 'lucide-react-native';
+import { useState } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { ScrollView } from 'react-native';
+import { z } from 'zod';
 
-import { formatRp } from "@/lib/utils/format";
+import { formatRp } from '@/utils/format';
 export default function ReceivableRealizationForm() {
   const { setOpen: setPaymentTypeOpen } = usePaymentTypeStore();
 
@@ -50,9 +46,9 @@ export default function ReceivableRealizationForm() {
   const params = useLocalSearchParams();
 
   const action = params.actionRealization as string;
-  const isAdd = action === "add";
-  const receivableIds = (params.receivableIds as string)?.split("-") || [];
-  const receivableId = receivableIds[0] || "";
+  const isAdd = action === 'add';
+  const receivableIds = (params.receivableIds as string)?.split('-') || [];
+  const receivableId = receivableIds[0] || '';
 
   // Fetch receivable details to get remaining balance
   const { data: receivableDetail } = useReceivableDetail(receivableId);
@@ -64,27 +60,25 @@ export default function ReceivableRealizationForm() {
   const receivableRealizationSchema = z.object({
     nominal: z
       .number()
-      .min(1, "Nominal wajib diisi.")
+      .min(1, 'Nominal wajib diisi.')
       .max(
         remainingBalance,
         `Nominal tidak boleh melebihi sisa piutang (${formatRp(remainingBalance)})`,
       ),
     payOff: z.boolean(),
     realizationDate: z.date(),
-    paymentTypeId: z.string().min(1, "Metode pembayaran harus dipilih"),
+    paymentTypeId: z.string().min(1, 'Metode pembayaran harus dipilih'),
     note: z.string(),
   });
 
-  type ReceivableRealizationFormValues = z.infer<
-    typeof receivableRealizationSchema
-  >;
+  type ReceivableRealizationFormValues = z.infer<typeof receivableRealizationSchema>;
 
   const initialValues: ReceivableRealizationFormValues = {
     nominal: 0,
     payOff: false,
     realizationDate: new Date(),
-    paymentTypeId: "",
-    note: "",
+    paymentTypeId: '',
+    note: '',
   };
 
   const form = useForm<ReceivableRealizationFormValues>({
@@ -92,8 +86,7 @@ export default function ReceivableRealizationForm() {
     defaultValues: initialValues,
   });
 
-  const [showRealizationDatePicker, setShowRealizationDatePicker] =
-    useState<boolean>(false);
+  const [showRealizationDatePicker, setShowRealizationDatePicker] = useState<boolean>(false);
 
   const { data: paymentMethods = [] } = usePaymentTypes();
   const createMutation = useCreateReceivableRealization();
@@ -111,46 +104,26 @@ export default function ReceivableRealizationForm() {
           receivableId: receivableIds[0],
           nominal: data.nominal,
           paymentMethodId: data.paymentTypeId,
-          realizationDate: data.realizationDate.toISOString(),
+          realizationDate: data.realizationDate,
           note: data.note,
         },
         {
           onSuccess: () => {
-            toast.show({
-              placement: "top",
-              render: ({ id }) => (
-                <Toast
-                  nativeID={`toast-${id}`}
-                  action="success"
-                  variant="solid"
-                >
-                  <ToastTitle>Penerimaan berhasil disimpan</ToastTitle>
-                </Toast>
-              ),
-            });
+            useReceivableStore.getState().incrementVersion();
+            showSuccessToast(toast, 'Penerimaan berhasil disimpan');
             router.back();
           },
           onError: (error) => showErrorToast(toast, error),
         },
       );
     } else {
-      toast.show({
-        placement: "top",
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="info" variant="solid">
-            <ToastTitle>Bulk receipt logic coming soon</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'info', message: 'Bulk receipt logic coming soon' });
     }
   };
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header
-        header={isAdd ? "REALISASI PIUTANG" : "EDIT REALISASI PIUTANG"}
-        isGoBack
-      />
+      <Header header={isAdd ? 'REALISASI PIUTANG' : 'EDIT REALISASI PIUTANG'} isGoBack />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="lg" className="p-4">
@@ -163,10 +136,7 @@ export default function ReceivableRealizationForm() {
             name="nominal"
             control={form.control}
             disabled={!isAdd}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Nominal</FormControlLabelText>
@@ -200,10 +170,7 @@ export default function ReceivableRealizationForm() {
           <Controller
             name="payOff"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <Checkbox
                   value={value.toString()}
@@ -233,19 +200,15 @@ export default function ReceivableRealizationForm() {
             render={({ field: { onChange, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error} className="flex-1">
                 <FormControlLabel>
-                  <FormControlLabelText>
-                    Tanggal Pembayaran
-                  </FormControlLabelText>
+                  <FormControlLabelText>Tanggal Pembayaran</FormControlLabelText>
                 </FormControlLabel>
                 <Pressable
                   onPress={() => setShowRealizationDatePicker(true)}
-                  className={`border border-background-300 rounded px-3 py-2${error ? " border-red-500" : ""}`}
+                  className={`border border-background-300 rounded px-3 py-2${error ? ' border-red-500' : ''}`}
                 >
                   <HStack className="items-center justify-between">
                     <Text>
-                      {value instanceof Date
-                        ? dayjs(value).format("DD/MM/YYYY")
-                        : "Pilih tanggal"}
+                      {value instanceof Date ? dayjs(value).format('DD/MM/YYYY') : 'Pilih tanggal'}
                     </Text>
                     <Icon as={CalendarIcon} size="md" className="mr-2" />
                   </HStack>
@@ -257,7 +220,7 @@ export default function ReceivableRealizationForm() {
                     maximumDate={new Date()}
                     onChange={(event, selectedDate) => {
                       setShowRealizationDatePicker(false);
-                      if (event.type === "set" && selectedDate) {
+                      if (event.type === 'set' && selectedDate) {
                         onChange(selectedDate);
                       }
                     }}
@@ -308,10 +271,7 @@ export default function ReceivableRealizationForm() {
           <Controller
             name="note"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Keterangan</FormControlLabelText>

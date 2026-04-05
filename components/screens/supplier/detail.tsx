@@ -1,6 +1,7 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
+import { useCallback, useState } from 'react';
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
+import { usePopUpConfirm } from '@/components/pop-up-confirm';
 import {
   Badge,
   BadgeText,
@@ -9,37 +10,40 @@ import {
   HStack,
   Spinner,
   Text,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
-import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
+} from '@/components/ui';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import {
   Product,
   useProductsBySupplier,
   useUnassignProductsFromSupplier,
-} from "@/lib/api/products";
-import { showErrorToast } from "@/lib/utils/toast";
+} from '@/hooks/use-product';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import {
   useDeleteSupplier,
-  useSupplier,
   useSuppliers,
-} from "@/lib/api/suppliers";
-import { useDeleteEntity } from "@/hooks/use-delete-entity";
-import { singleDeleteConfirm } from "@/lib/utils/delete-confirm";
-import { useItemSelection } from "@/hooks/use-item-selection";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { ScrollView } from "react-native";
+  refetchSupplierById,
+  Supplier,
+} from '@/hooks/use-supplier';
+import { useDeleteEntity } from '@/hooks/use-delete-entity';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { useItemSelection } from '@/hooks/use-item-selection';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useSupplierStore } from '@/stores/supplier';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ScrollView } from 'react-native';
 
-import { formatRp } from "@/lib/utils/format";
+import { formatRp } from '@/utils/format';
 export default function SupplierDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const supplierId = id as string;
+
+  const [supplier, setSupplier] = useState<Supplier | null>(null);
 
   const {
     selectedItems: selectedProducts,
@@ -50,31 +54,36 @@ export default function SupplierDetail() {
   } = useItemSelection<Product>();
 
   const { refetch: refetchSuppliers } = useSuppliers();
-  const { data: supplier, refetch: refetchSupplier } = useSupplier(
-    supplierId || "",
-  );
-  const { data: products = [] } = useProductsBySupplier(supplierId || "");
+  const { data: products = [] } = useProductsBySupplier(supplierId || '');
   const deleteMutation = useDeleteSupplier();
   const unassignProductMutation = useUnassignProductsFromSupplier();
   const toast = useToast();
 
-  const onRefetch = () => {
+  const onRefetch = useCallback(async () => {
+    if (supplierId) {
+      const freshSupplier = await refetchSupplierById(supplierId);
+      setSupplier(freshSupplier);
+    }
     refetchSuppliers();
-    refetchSupplier();
-  };
+  }, [supplierId, refetchSuppliers]);
+
+  useStoreVersionSync(useSupplierStore, onRefetch);
 
   const { triggerDelete } = useDeleteEntity({
-    successMessage: "Supplier berhasil dihapus",
+    successMessage: 'Supplier berhasil dihapus',
     deleteMutation,
-    onSuccess: onRefetch,
+    onSuccess: () => {
+      useSupplierStore.getState().incrementVersion();
+      onRefetch();
+    },
   });
 
   const handleDeleteProductPress = () => {
     const productIds = selectedProducts?.map((m) => m.id) || [];
 
     showPopUpConfirm({
-      title: `HAPUS PRODUK DARI ${supplier?.name?.toUpperCase() ?? ""}`,
-      icon: "warning",
+      title: `HAPUS PRODUK DARI ${supplier?.name?.toUpperCase() ?? ''}`,
+      icon: 'warning',
       description: (
         <Text className="text-slate-500">
           {`Apakah Anda yakin ingin menghapus `}
@@ -83,38 +92,22 @@ export default function SupplierDetail() {
         </Text>
       ),
       showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
+      okText: 'HAPUS',
+      closeText: 'BATAL',
+      okVariant: 'destructive',
       onOk: () => {
-        unassignProductMutation.mutate(
-          { productIds },
-          {
-            onSuccess: () => {
-              hidePopUpConfirm();
-              clearProductSelection();
-              onRefetch();
-              toast.show({
-                placement: "top",
-                render: ({ id }) => (
-                  <Toast
-                    nativeID={`toast-${id}`}
-                    action="success"
-                    variant="solid"
-                  >
-                    <ToastTitle>
-                      Produk berhasil dihapus dari supplier
-                    </ToastTitle>
-                  </Toast>
-                ),
-              });
-            },
-            onError: (error) => {
-              showErrorToast(toast, error);
-              hidePopUpConfirm();
-            },
+        unassignProductMutation.mutate(productIds, {
+          onSuccess: () => {
+            hidePopUpConfirm();
+            clearProductSelection();
+            onRefetch();
+            showSuccessToast(toast, 'Produk berhasil dihapus dari supplier');
           },
-        );
+          onError: (error) => {
+            showErrorToast(toast, error);
+            hidePopUpConfirm();
+          },
+        });
       },
       loading: unassignProductMutation.isPending,
     });
@@ -124,27 +117,19 @@ export default function SupplierDetail() {
     showActionDrawer({
       actions: [
         {
-          label: "Edit",
-          icon: "Pen",
+          label: 'Edit',
+          icon: 'Pen',
           onPress: () => {
-            router.navigate(
-              `/(main)/management/customer-supplier/supplier/edit/${supplier?.id}`,
-            );
+            router.navigate(`/(main)/management/customer-supplier/supplier/edit/${supplier?.id}`);
             hideActionDrawer();
           },
         },
         {
-          label: "Hapus",
-          icon: "TrashBin2",
-          theme: "red",
+          label: 'Hapus',
+          icon: 'TrashBin2',
+          theme: 'red',
           onPress: () => {
-            triggerDelete(
-              singleDeleteConfirm(
-                "supplier",
-                supplier?.id || "",
-                supplier?.name,
-              ),
-            );
+            triggerDelete(singleDeleteConfirm('supplier', supplier?.id || '', supplier?.name));
             hideActionDrawer();
           },
         },
@@ -163,10 +148,7 @@ export default function SupplierDetail() {
                 <Spinner size="small" color="#FFFFFF" />
               </Box>
             ) : (
-              <Pressable
-                className="p-6"
-                onPress={() => handleDeleteProductPress()}
-              >
+              <Pressable className="p-6" onPress={() => handleDeleteProductPress()}>
                 <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
               </Pressable>
             )
@@ -176,7 +158,7 @@ export default function SupplierDetail() {
                 name="MenuDots"
                 size={20}
                 color="#FDFBF9"
-                style={{ transform: [{ rotate: "90deg" }] }}
+                style={{ transform: [{ rotate: '90deg' }] }}
               />
             </Pressable>
           )
@@ -189,15 +171,15 @@ export default function SupplierDetail() {
           <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Name</Text>
-              <Text className="font-bold">{supplier?.name || "-"}</Text>
+              <Text className="font-bold">{supplier?.name || '-'}</Text>
             </VStack>
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">No. Handphone</Text>
-              <Text className="font-bold">{supplier?.phone || "-"}</Text>
+              <Text className="font-bold">{supplier?.phone || '-'}</Text>
             </VStack>
             <VStack className="w-1/2 pr-4">
               <Text className="text-gray-500">Alamat</Text>
-              <Text className="font-bold">{supplier?.address || "-"}</Text>
+              <Text className="font-bold">{supplier?.address || '-'}</Text>
             </VStack>
           </Box>
           <Box className="pr-4">
@@ -206,7 +188,7 @@ export default function SupplierDetail() {
                 <Pressable
                   key={product.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    isProductSelected(product) ? "bg-gray-100" : ""
+                    isProductSelected(product) ? 'bg-gray-100' : ''
                   }`}
                   onPress={() => {
                     if (hasProductSelection) {
@@ -229,39 +211,31 @@ export default function SupplierDetail() {
                         </Text>
                         <Badge size="sm" variant="solid" action="muted">
                           <BadgeText className="text-xs">{`Harga Beli: Rp ${product.purchasePrice.toLocaleString(
-                            "id-ID",
+                            'id-ID',
                           )}`}</BadgeText>
                         </Badge>
                       </VStack>
                     </HStack>
                     <VStack className="items-end">
-                      <Text className="text-primary-500 text-sm font-bold">
-                        {product.stock}
-                      </Text>
+                      <Text className="text-primary-500 text-sm font-bold">{product.stock}</Text>
                       <Text className="text-xs">
-                        Retail:{" "}
+                        Retail:{' '}
                         {`${
-                          product.sellPrices?.filter(
-                            (r) => r.type === "RETAIL",
-                          )?.[0]?.minimumPurchase
+                          product.sellPrices?.filter((r) => r.type === 'RETAIL')?.[0]
+                            ?.minimumPurchase
                         }@ ${formatRp(
-                          product.sellPrices?.filter(
-                            (r) => r.type === "RETAIL",
-                          )?.[0]?.price ?? 0,
+                          product.sellPrices?.filter((r) => r.type === 'RETAIL')?.[0]?.price ?? 0,
                         )}`}
                       </Text>
-                      {product.sellPrices?.filter((r) => r.type === "WHOLESALE")
-                        .length ? (
+                      {product.sellPrices?.filter((r) => r.type === 'WHOLESALE').length ? (
                         <Text className="text-xs">
-                          Grosir:{" "}
+                          Grosir:{' '}
                           {`${
-                            product.sellPrices?.filter(
-                              (r) => r.type === "WHOLESALE",
-                            )?.[0]?.minimumPurchase
+                            product.sellPrices?.filter((r) => r.type === 'WHOLESALE')?.[0]
+                              ?.minimumPurchase
                           }@ ${formatRp(
-                            product.sellPrices?.filter(
-                              (r) => r.type === "WHOLESALE",
-                            )?.[0]?.price ?? 0,
+                            product.sellPrices?.filter((r) => r.type === 'WHOLESALE')?.[0]?.price ??
+                              0,
                           )}`}
                         </Text>
                       ) : null}
@@ -278,9 +252,7 @@ export default function SupplierDetail() {
           <Pressable
             className="flex-1 rounded-sm h-10 flex justify-center items-center bg-background-0 border border-primary-500"
             onPress={() => {
-              router.push(
-                `/(main)/management/customer-supplier/supplier/purchasing/${supplierId}`,
-              );
+              router.push(`/(main)/management/customer-supplier/supplier/purchasing/${supplierId}`);
             }}
           >
             <Text size="sm" className="text-brand-primary font-bold">
@@ -290,9 +262,7 @@ export default function SupplierDetail() {
           <Pressable
             className="flex-1 rounded-sm h-10 flex justify-center items-center bg-background-0 border border-primary-500"
             onPress={() => {
-              router.push(
-                `/(main)/management/customer-supplier/supplier/payable/${supplierId}`,
-              );
+              router.push(`/(main)/management/customer-supplier/supplier/payable/${supplierId}`);
             }}
           >
             <Text size="sm" className="text-brand-primary font-bold">

@@ -11,7 +11,7 @@ import {
   Text,
   Textarea,
   TextareaInput,
-} from "@/components/ui";
+} from '@/components/ui';
 import {
   FormControl,
   FormControlError,
@@ -20,18 +20,19 @@ import {
   FormControlHelperText,
   FormControlLabel,
   FormControlLabelText,
-} from "@/components/ui/form-control";
-import { Input, InputField, InputSlot } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
-import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
-import { useCurrentShift, useEndShift } from "@/lib/api/shifts";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
-import React from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import z from "zod";
+} from '@/components/ui/form-control';
+import { Input, InputField, InputSlot } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useCurrentShift, useEndShift } from '@/hooks/use-shift';
+import { useShiftStore } from '@/stores/shift';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import z from 'zod';
 
 export default function EndShiftForm({
   open,
@@ -46,15 +47,15 @@ export default function EndShiftForm({
   const endShiftMutation = useEndShift();
 
   const endShiftSchema = z.object({
-    actualBalance: z.number().min(1, "Saldo Akhir wajib diisi"),
-    note: z.string().min(1, "Catatan wajib diisi."),
+    actualBalance: z.number().min(1, 'Saldo Akhir wajib diisi'),
+    note: z.string().min(1, 'Catatan wajib diisi.'),
   });
 
   type EndShiftFormValues = z.infer<typeof endShiftSchema>;
 
   const initialValues: EndShiftFormValues = {
     actualBalance: 0,
-    note: "",
+    note: '',
   };
 
   const form = useForm<EndShiftFormValues>({
@@ -62,21 +63,20 @@ export default function EndShiftForm({
     defaultValues: initialValues,
   });
 
-  const onSubmit: SubmitHandler<EndShiftFormValues> = (
-    data: EndShiftFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<EndShiftFormValues> = (data: EndShiftFormValues) => {
     endShiftMutation.mutate(
       {
-        id: currentShift?.id || "",
+        id: currentShift?.id || '',
         finalBalance: data.actualBalance,
         note: data.note,
       },
       {
-        onSuccess: (newEndShift) => {
-          showSuccessToast(toast, "Shift Telah Berakhir");
+        onSuccess: () => {
+          useShiftStore.getState().incrementVersion();
+          showSuccessToast(toast, 'Shift Telah Berakhir');
           form.reset(initialValues);
           setOpen(false);
-          router.push(`/shift/detail/${newEndShift.id}`);
+          router.push(`/shift/detail/${currentShift?.id}`);
         },
         onError: (error: unknown) => {
           showErrorToast(toast, error);
@@ -108,15 +108,10 @@ export default function EndShiftForm({
             <Controller
               name="actualBalance"
               control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl isRequired isInvalid={!!error}>
                   <FormControlLabel>
-                    <FormControlLabelText>
-                      Masukkan Saldo Akhir Diterima
-                    </FormControlLabelText>
+                    <FormControlLabelText>Masukkan Saldo Akhir Diterima</FormControlLabelText>
                   </FormControlLabel>
                   <FormControlHelper>
                     <FormControlHelperText>
@@ -142,9 +137,7 @@ export default function EndShiftForm({
                   </Input>
                   {error && (
                     <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
+                      <FormControlErrorText>{error.message}</FormControlErrorText>
                     </FormControlError>
                   )}
                 </FormControl>
@@ -153,15 +146,10 @@ export default function EndShiftForm({
             <Controller
               name="note"
               control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl isRequired isInvalid={!!error}>
                   <FormControlLabel>
-                    <FormControlLabelText>
-                      Tambahkan Catatan Singkat
-                    </FormControlLabelText>
+                    <FormControlLabelText>Tambahkan Catatan Singkat</FormControlLabelText>
                   </FormControlLabel>
                   <Textarea className="flex-1">
                     <TextareaInput
@@ -174,9 +162,7 @@ export default function EndShiftForm({
                   </Textarea>
                   {error && (
                     <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
+                      <FormControlErrorText>{error.message}</FormControlErrorText>
                     </FormControlError>
                   )}
                 </FormControl>

@@ -1,18 +1,20 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
-import { useBulkDeleteEntity } from "@/hooks/use-bulk-delete-entity";
-import { Input, InputField, InputIcon, InputSlot } from "@/components/ui";
-import { Badge, BadgeText } from "@/components/ui/badge";
-import { Box } from "@/components/ui/box";
-import { Button, ButtonText } from "@/components/ui/button";
-import { Heading } from "@/components/ui/heading";
-import { HStack } from "@/components/ui/hstack";
-import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { Spinner } from "@/components/ui/spinner";
-import { Text } from "@/components/ui/text";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
+import { PermissionGuard } from '@/components/permission-guard';
+import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { Input, InputField, InputIcon, InputSlot } from '@/components/ui';
+import { Badge, BadgeText } from '@/components/ui/badge';
+import { Box } from '@/components/ui/box';
+import { Button, ButtonText } from '@/components/ui/button';
+import { Heading } from '@/components/ui/heading';
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { Spinner } from '@/components/ui/spinner';
+import { Text } from '@/components/ui/text';
+import { useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
 import {
   Category,
   useBulkDeleteCategory,
@@ -20,39 +22,40 @@ import {
   useCategories,
   useCreateCategory,
   useProductCountsByCategory,
-} from "@/lib/api/categories";
-import { getErrorMessage } from "@/lib/api/client";
-import { bulkDeleteConfirm } from "@/lib/utils/delete-confirm";
-import { exportCategories, importCategories } from "@/lib/utils/excel";
-import { showErrorToast } from "@/lib/utils/toast";
-import { useCategoryStore } from "@/stores/category";
-import { useItemSelection } from "@/hooks/use-item-selection";
-import { useRouter } from "expo-router";
-import { SearchIcon } from "lucide-react-native";
-import React from "react";
-import { FlatList } from "react-native";
+} from '@/hooks/use-category';
+import { getErrorMessage } from '@/db/client';
+import { bulkDeleteConfirm } from '@/utils/delete-confirm';
+import { exportCategories, importCategories } from '@/utils/excel';
+import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
+import { useCategoryStore } from '@/stores/category';
+import { useItemSelection } from '@/hooks/use-item-selection';
+import { useRouter } from 'expo-router';
+import { SearchIcon } from 'lucide-react-native';
+import React, { useCallback } from 'react';
+import { FlashList } from '@shopify/flash-list';
 
 export default function CategoryList() {
   const { setOpen, setData } = useCategoryStore();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useCategories();
-  const { data: productCounts, refetch: refetchCounts } =
-    useProductCountsByCategory();
+  const { data: productCounts, refetch: refetchCounts } = useProductCountsByCategory();
   const { data: capitalValues } = useCapitalValueByCategory();
-  const {
-    selectedItems,
-    handleItemPress,
-    clearSelection,
-    isSelected,
-    hasSelection,
-  } = useItemSelection<Category>();
+  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } =
+    useItemSelection<Category>();
 
   const categories = data || [];
 
+  const handleVersionChange = useCallback(() => {
+    refetch();
+    refetchCounts();
+  }, [refetch, refetchCounts]);
+
+  useStoreVersionSync(useCategoryStore, handleVersionChange);
+
   const deleteMutation = useBulkDeleteCategory();
   const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({
-    successMessage: "Kategori berhasil dihapus",
+    successMessage: 'Kategori berhasil dihapus',
     deleteMutation,
     onSuccess: () => refetch(),
     clearSelection,
@@ -65,14 +68,7 @@ export default function CategoryList() {
     try {
       await exportCategories(categories);
     } catch (e) {
-      toast.show({
-        placement: "top",
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 
@@ -90,14 +86,7 @@ export default function CategoryList() {
       }
       refetch();
       refetchCounts();
-      toast.show({
-        placement: "top",
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-            <ToastTitle>{`${successCount} kategori berhasil diimpor`}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showSuccessToast(toast, `${successCount} kategori berhasil diimpor`);
     } catch (e) {
       showErrorToast(toast, e);
     }
@@ -136,16 +125,14 @@ export default function CategoryList() {
                   <Spinner size="small" color="#FFFFFF" />
                 </Box>
               ) : (
-                <Pressable
-                  className="p-6"
-                  onPress={() =>
-                    triggerBulkDelete(
-                      bulkDeleteConfirm("kategori", selectedItems),
-                    )
-                  }
-                >
-                  <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
-                </Pressable>
+                <PermissionGuard permissions="products:categories-delete">
+                  <Pressable
+                    className="p-6"
+                    onPress={() => triggerBulkDelete(bulkDeleteConfirm('kategori', selectedItems))}
+                  >
+                    <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                  </Pressable>
+                </PermissionGuard>
               )
             ) : (
               <Pressable
@@ -154,13 +141,13 @@ export default function CategoryList() {
                   showActionDrawer({
                     actions: [
                       {
-                        label: "Export Data",
-                        icon: "Export",
+                        label: 'Export Data',
+                        icon: 'Export',
                         onPress: handleExport,
                       },
                       {
-                        label: "Import Data",
-                        icon: "Import",
+                        label: 'Import Data',
+                        icon: 'Import',
                         onPress: handleImport,
                       },
                     ],
@@ -171,7 +158,7 @@ export default function CategoryList() {
                   name="MenuDots"
                   size={20}
                   color="#FDFBF9"
-                  style={{ transform: [{ rotate: "90deg" }] }}
+                  style={{ transform: [{ rotate: '90deg' }] }}
                 />
               </Pressable>
             )}
@@ -180,10 +167,7 @@ export default function CategoryList() {
       />
       <Box className="flex-1 bg-white">
         <VStack className="flex-1">
-          <HStack
-            space="sm"
-            className="p-4 shadow-lg bg-background-0 items-center"
-          >
+          <HStack space="sm" className="p-4 shadow-lg bg-background-0 items-center">
             <Input className="flex-1 border border-background-300 rounded-lg h-10">
               <InputSlot className="pl-3">
                 <InputIcon as={SearchIcon} />
@@ -191,14 +175,14 @@ export default function CategoryList() {
               <InputField placeholder="Cari nama kategori" />
             </Input>
           </HStack>
-          <FlatList
+          <FlashList
             data={categories}
             className="flex-1"
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <Pressable
                 className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                  isSelected(item) ? "bg-gray-100" : ""
+                  isSelected(item) ? 'bg-gray-100' : ''
                 }`}
                 onPress={() => {
                   if (hasSelection) {
@@ -223,17 +207,13 @@ export default function CategoryList() {
                       </Badge>
                     </HStack>
                     <Text size="xs" className="text-slate-500">
-                      Poin Retail: {item.retailPoint ?? 0} | Poin Grosir:{" "}
-                      {item.wholesalePoint ?? 0}
+                      Poin Retail: {item.retailPoint ?? 0} | Poin Grosir: {item.wholesalePoint ?? 0}
                     </Text>
                   </VStack>
                   <VStack className="items-end">
-                    <Text className="text-brand-primary text-sm font-bold">
-                      Nilai Modal
-                    </Text>
+                    <Text className="text-brand-primary text-sm font-bold">Nilai Modal</Text>
                     <Text size="xs">
-                      Rp{" "}
-                      {(capitalValues?.[item.id] ?? 0).toLocaleString("id-ID")}
+                      Rp {(capitalValues?.[item.id] ?? 0).toLocaleString('id-ID')}
                     </Text>
                   </VStack>
                 </HStack>
@@ -241,20 +221,20 @@ export default function CategoryList() {
             )}
             ListEmptyComponent={
               <Box className="p-8 items-center">
-                <Text className="text-slate-400 italic">
-                  Tidak ada category
-                </Text>
+                <Text className="text-slate-400 italic">Tidak ada category</Text>
               </Box>
             }
           />
           <HStack className="w-full p-4">
-            <Button
-              size="sm"
-              className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
-              onPress={handleAdd}
-            >
-              <ButtonText className="text-white">TAMBAH KATEGORI</ButtonText>
-            </Button>
+            <PermissionGuard permissions="products:categories-create">
+              <Button
+                size="sm"
+                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                onPress={handleAdd}
+              >
+                <ButtonText className="text-white">TAMBAH KATEGORI</ButtonText>
+              </Button>
+            </PermissionGuard>
           </HStack>
         </VStack>
       </Box>

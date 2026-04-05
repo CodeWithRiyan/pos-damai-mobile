@@ -1,4 +1,4 @@
-import ReturnTransactionSuccess from "@/components/screens/return-transaction/success";
+import ReturnTransactionSuccess from '@/components/screens/return-transaction/success';
 
 export default function ReturnTransactionSuccessScreen() {
   return <ReturnTransactionSuccess />;

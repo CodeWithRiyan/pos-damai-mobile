@@ -1,6 +1,6 @@
-import BarcodeScanner from "@/components/barcode-scanner";
-import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
+import BarcodeScanner from '@/components/barcode-scanner';
+import Header from '@/components/header';
+import { usePopUpConfirm } from '@/components/pop-up-confirm';
 import {
   Button,
   ButtonText,
@@ -17,77 +17,68 @@ import {
   Spinner,
   Switch,
   Text,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
-import { Grid, GridItem } from "@/components/ui/grid";
-import SelectModal from "@/components/ui/select/select-modal";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { useBrands } from "@/lib/api/brands";
-import { useCategories } from "@/lib/api/categories";
-import { showErrorToast } from "@/lib/utils/toast";
-import { Discount, useDeleteDiscount, useDiscounts } from "@/lib/api/discounts";
+} from '@/components/ui';
+import { Grid, GridItem } from '@/components/ui/grid';
+import SelectModal from '@/components/ui/select/select-modal';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { useBrands } from '@/hooks/use-brand';
+import { useCategories } from '@/hooks/use-category';
+import { useDiscounts, useDeleteDiscount, Discount } from '@/hooks/use-discount';
+import { showErrorToast, showToast } from '@/utils/toast';
 import {
   CreateProductDTO,
   UpdateProductDTO,
   useCreateProduct,
-  useProduct,
   useProducts,
   useUpdateProduct,
-} from "@/lib/api/products";
-import { unitSuffixHelper } from "@/lib/unit";
-import { useBrandStore } from "@/stores/brand";
-import { useCategoryStore } from "@/stores/category";
-import { useDiscountStore } from "@/stores/discount";
-import { zodResolver } from "@hookform/resolvers/zod";
-import classNames from "classnames";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { PlusIcon, ScanBarcode } from "lucide-react-native";
-import { useEffect, useState } from "react";
-import {
-  Controller,
-  SubmitHandler,
-  useFieldArray,
-  useForm,
-} from "react-hook-form";
-import { ScrollView } from "react-native";
-import { z } from "zod";
-import { PriceType, ProductType } from "@/lib/constants";
+  refetchProductById,
+  Product,
+} from '@/hooks/use-product';
+import { unitSuffixHelper } from '@/utils/unit';
+import { useBrandStore } from '@/stores/brand';
+import { useCategoryStore } from '@/stores/category';
+import { useDiscountStore } from '@/stores/discount';
+import { useProductStore } from '@/stores/product';
+import { zodResolver } from '@hookform/resolvers/zod';
+import classNames from 'classnames';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { PlusIcon, ScanBarcode } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import { Controller, SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
+import { ScrollView } from 'react-native';
+import { z } from 'zod';
+import { PriceType, ProductType } from '@/constants';
 
 export default function ProductForm() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
-  const { setOpen: setOpenCategory, setData: setDataCategory } =
-    useCategoryStore();
+  const { setOpen: setOpenCategory, setData: setDataCategory } = useCategoryStore();
   const { setOpen: setOpenBrand, setData: setDataBrand } = useBrandStore();
-  const { setOpen: setOpenDiscount, setData: setDataDiscount } =
-    useDiscountStore();
+  const { setOpen: setOpenDiscount, setData: setDataDiscount } = useDiscountStore();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const isAdd = !id;
   const productId = id as string;
 
-  const [scanBarcodePosition, setScanBarcodePosition] = useState<string | null>(
-    null,
-  );
+  const [scanBarcodePosition, setScanBarcodePosition] = useState<string | null>(null);
 
   const productSchema = z
     .object({
-      name: z.string().min(1, "Nama wajib diisi."),
-      code: z.string().min(1, "Kode wajib diisi."),
-      type: z.string().min(1, "Type wajib diisi."),
+      name: z.string().min(1, 'Nama wajib diisi.'),
+      code: z.string().min(1, 'Kode wajib diisi.'),
+      type: z.string().min(1, 'Type wajib diisi.'),
       unit: z.string().nullable(),
       categoryId: z.string(),
       brandId: z.string(),
-      purchasePrice: z.number().min(1, "Harga Beli wajib diisi."),
+      purchasePrice: z.number().min(1, 'Harga Beli wajib diisi.'),
       stock: z.number(),
       minimumStock: z.number(),
       unitVariants: z
         .array(
           z.object({
             code: z.string(),
-            netto: z.number().min(0.001, "Netto wajib diisi."),
+            netto: z.number().min(0.001, 'Netto wajib diisi.'),
             purchasePrice: z.number(),
             retailPrice: z.number(),
           }),
@@ -96,20 +87,20 @@ export default function ProductForm() {
       variants: z
         .array(
           z.object({
-            code: z.string().min(1, "Kode wajib diisi."),
+            code: z.string().min(1, 'Kode wajib diisi.'),
           }),
         )
         .nullable(),
       retailPrice: z.array(
         z.object({
-          minimumPurchase: z.number().min(0, "Minimal Pembelian wajib diisi."),
-          price: z.number().min(0, "Harga wajib diisi."),
+          minimumPurchase: z.number().min(0, 'Minimal Pembelian wajib diisi.'),
+          price: z.number().min(0, 'Harga wajib diisi.'),
         }),
       ),
       wholesalePrice: z.array(
         z.object({
-          minimumPurchase: z.number().min(0, "Minimal Pembelian wajib diisi."),
-          price: z.number().min(0, "Harga wajib diisi."),
+          minimumPurchase: z.number().min(0, 'Minimal Pembelian wajib diisi.'),
+          price: z.number().min(0, 'Harga wajib diisi.'),
         }),
       ),
       discountId: z.string().optional().nullable(),
@@ -121,49 +112,48 @@ export default function ProductForm() {
       if (data.type === ProductType.MULTIUNIT) {
         if (!data.unit) {
           ctx.addIssue({
-            code: "custom",
-            message: "Satuan wajib diisi.",
-            path: ["unit"],
+            code: 'custom',
+            message: 'Satuan wajib diisi.',
+            path: ['unit'],
           });
         }
         if (!data.unitVariants || data.unitVariants.length === 0) {
           ctx.addIssue({
-            code: "custom",
-            message: "Varian Unit wajib diisi.",
-            path: ["unitVariants"],
+            code: 'custom',
+            message: 'Varian Unit wajib diisi.',
+            path: ['unitVariants'],
           });
         }
         // Validasi harga retail unit variant tidak boleh kurang dari harga beli
         data.unitVariants?.forEach((variant, i) => {
           if (!variant.code) {
             ctx.addIssue({
-              code: "custom",
-              message: "Kode wajib diisi",
+              code: 'custom',
+              message: 'Kode wajib diisi',
               path: [`unitVariants.${i}.code`],
             });
           }
           if (!variant.retailPrice) {
             ctx.addIssue({
-              code: "custom",
-              message: "Harga Retail wajib diisi",
+              code: 'custom',
+              message: 'Harga Retail wajib diisi',
               path: [`unitVariants.${i}.retailPrice`],
             });
           }
           if (variant.retailPrice < variant.purchasePrice) {
             ctx.addIssue({
-              code: "custom",
-              message: "Harga Retail tidak boleh kurang dari harga beli",
+              code: 'custom',
+              message: 'Harga Retail tidak boleh kurang dari harga beli',
               path: [`unitVariants.${i}.retailPrice`],
             });
           }
           // Cek duplikat: apakah nilai netto ini muncul lebih dari sekali
           const nettoValues = data.unitVariants?.map((v) => v.netto) ?? [];
-          const isDuplicate =
-            nettoValues.filter((n) => n === variant.netto).length > 1;
+          const isDuplicate = nettoValues.filter((n) => n === variant.netto).length > 1;
           if (isDuplicate) {
             ctx.addIssue({
-              code: "custom",
-              message: "Netto tidak boleh ada yang sama",
+              code: 'custom',
+              message: 'Netto tidak boleh ada yang sama',
               path: [`unitVariants.${i}.netto`],
             });
           }
@@ -174,9 +164,9 @@ export default function ProductForm() {
       if (data.type === ProductType.VARIANTS) {
         if (!data.variants || data.variants.length === 0) {
           ctx.addIssue({
-            code: "custom",
-            message: "Varian Produk wajib diisi.",
-            path: ["variants"],
+            code: 'custom',
+            message: 'Varian Produk wajib diisi.',
+            path: ['variants'],
           });
         }
       }
@@ -185,9 +175,9 @@ export default function ProductForm() {
         // Validasi retail price wajib diisi jika bukan MULTIUNIT
         if (data.retailPrice.length === 0) {
           ctx.addIssue({
-            code: "custom",
-            message: "Harga Retail wajib diisi.",
-            path: ["retailPrice"],
+            code: 'custom',
+            message: 'Harga Retail wajib diisi.',
+            path: ['retailPrice'],
           });
         }
 
@@ -195,22 +185,22 @@ export default function ProductForm() {
         data.retailPrice.forEach((dataRetail, i) => {
           if (dataRetail.minimumPurchase < 0.001) {
             ctx.addIssue({
-              code: "custom",
-              message: "Minimal Pembelian wajib diisi.",
+              code: 'custom',
+              message: 'Minimal Pembelian wajib diisi.',
               path: [`retailPrice.${i}.minimumPurchase`],
             });
           }
           if (dataRetail.price < 1) {
             ctx.addIssue({
-              code: "custom",
-              message: "Harga wajib diisi.",
+              code: 'custom',
+              message: 'Harga wajib diisi.',
               path: [`retailPrice.${i}.price`],
             });
           }
           if (dataRetail.price < data.purchasePrice) {
             ctx.addIssue({
-              code: "custom",
-              message: "Harga Retail tidak boleh kurang dari harga beli",
+              code: 'custom',
+              message: 'Harga Retail tidak boleh kurang dari harga beli',
               path: [`retailPrice.${i}.price`],
             });
           }
@@ -220,22 +210,22 @@ export default function ProductForm() {
         data.wholesalePrice.forEach((dataWholesale, i) => {
           if (dataWholesale.minimumPurchase < 0.001) {
             ctx.addIssue({
-              code: "custom",
-              message: "Minimal Pembelian wajib diisi.",
+              code: 'custom',
+              message: 'Minimal Pembelian wajib diisi.',
               path: [`wholesalePrice.${i}.minimumPurchase`],
             });
           }
           if (dataWholesale.price < 1) {
             ctx.addIssue({
-              code: "custom",
-              message: "Harga wajib diisi.",
+              code: 'custom',
+              message: 'Harga wajib diisi.',
               path: [`wholesalePrice.${i}.price`],
             });
           }
           if (dataWholesale.price < data.purchasePrice) {
             ctx.addIssue({
-              code: "custom",
-              message: "Harga Grosir tidak boleh kurang dari harga beli",
+              code: 'custom',
+              message: 'Harga Grosir tidak boleh kurang dari harga beli',
               path: [`wholesalePrice.${i}.price`],
             });
           }
@@ -246,18 +236,18 @@ export default function ProductForm() {
   type ProductFormValues = z.infer<typeof productSchema>;
 
   const initialValues: ProductFormValues = {
-    name: "",
-    code: "",
+    name: '',
+    code: '',
     type: ProductType.DEFAULT,
     unit: null,
-    categoryId: "",
-    brandId: "",
+    categoryId: '',
+    brandId: '',
     purchasePrice: 0,
     stock: 0,
     minimumStock: 0,
     unitVariants: [
       {
-        code: "",
+        code: '',
         netto: 1,
         purchasePrice: 0,
         retailPrice: 0,
@@ -271,21 +261,19 @@ export default function ProductForm() {
       },
     ],
     wholesalePrice: [],
-    discountId: "",
-    description: "",
+    discountId: '',
+    description: '',
     isActive: true,
   };
 
-  const [nettoInput, setNettoInput] = useState<
-    { index: number; netto: string }[]
-  >([]);
+  const [nettoInput, setNettoInput] = useState<{ index: number; netto: string }[]>([]);
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: initialValues,
   });
 
-  const purchasePrice = form.watch("purchasePrice");
-  const unit = form.watch("unit");
+  const purchasePrice = form.watch('purchasePrice');
+  const unit = form.watch('unit');
 
   const {
     fields: unitVariantFields,
@@ -293,7 +281,7 @@ export default function ProductForm() {
     remove: unitVariantRemove,
   } = useFieldArray({
     control: form.control,
-    name: "unitVariants",
+    name: 'unitVariants',
   });
 
   const {
@@ -302,7 +290,7 @@ export default function ProductForm() {
     remove: variantRemove,
   } = useFieldArray({
     control: form.control,
-    name: "variants",
+    name: 'variants',
   });
 
   const {
@@ -311,7 +299,7 @@ export default function ProductForm() {
     remove: retailRemove,
   } = useFieldArray({
     control: form.control,
-    name: "retailPrice",
+    name: 'retailPrice',
   });
 
   const {
@@ -320,13 +308,11 @@ export default function ProductForm() {
     remove: wholesaleRemove,
   } = useFieldArray({
     control: form.control,
-    name: "wholesalePrice",
+    name: 'wholesalePrice',
   });
 
   const { refetch: refetchProducts } = useProducts();
-  const { data: product, refetch: refetchProduct } = useProduct(
-    productId || "",
-  );
+  const [product, setProduct] = useState<Product | null>(null);
   const { data: categories = [], refetch: refetchCategories } = useCategories();
   const { data: brands = [], refetch: refetchBrands } = useBrands();
   const { data: discounts = [], refetch: refetchDiscounts } = useDiscounts();
@@ -337,14 +323,14 @@ export default function ProductForm() {
   const toast = useToast();
 
   const productTypeOptions = [
-    { label: "DEFAULT", value: ProductType.DEFAULT },
-    { label: "MULTIUNIT", value: ProductType.MULTIUNIT },
-    { label: "VARIAN", value: ProductType.VARIANTS },
+    { label: 'DEFAULT', value: ProductType.DEFAULT },
+    { label: 'MULTIUNIT', value: ProductType.MULTIUNIT },
+    { label: 'VARIAN', value: ProductType.VARIANTS },
   ];
 
   const productUnitOptions = [
-    { label: "KILOGRAM", value: "KILOGRAM" },
-    { label: "LITER", value: "LITER" },
+    { label: 'KILOGRAM', value: 'KILOGRAM' },
+    { label: 'LITER', value: 'LITER' },
   ];
 
   useEffect(() => {
@@ -354,29 +340,33 @@ export default function ProductForm() {
         netto: (field.netto ?? 0).toString(),
       })),
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unitVariantFields.length]);
 
   useEffect(() => {
-    if (productId && product) {
+    if (productId) {
+      refetchProductById(productId).then((data) => {
+        setProduct(data);
+      });
+    }
+  }, [productId]);
+
+  useEffect(() => {
+    if (product) {
       form.reset({
         name: product.name,
-        code: product.code || "",
+        code: product.code || '',
         type: product.type,
         unit: product.unit,
-        categoryId: product.categoryId || "",
-        brandId: product.brandId || "",
+        categoryId: product.categoryId || '',
+        brandId: product.brandId || '',
         purchasePrice: product.purchasePrice,
         stock: product.stock,
         minimumStock: product.minimumStock,
-        variants:
-          product.type === ProductType.VARIANTS ? product.variants : null,
+        variants: product.type === ProductType.VARIANTS ? product.variants : null,
         unitVariants:
           product.type === ProductType.MULTIUNIT
-            ? product.variants?.map((v) => {
-                const matchingPrice = product.sellPrices.find(
-                  (p) => p.label === v.name,
-                );
+            ? product.variants?.map((v: any) => {
+                const matchingPrice = product.sellPrices.find((p: any) => p.label === v.name);
 
                 return {
                   code: v.code,
@@ -387,20 +377,15 @@ export default function ProductForm() {
                 };
               })
             : null,
-        retailPrice: product.sellPrices.filter(
-          (r) => r.type === PriceType.RETAIL,
-        ),
-        wholesalePrice: product.sellPrices.filter(
-          (r) => r.type === PriceType.WHOLESALE,
-        ),
-        discountId: product.discountId || "",
+        retailPrice: product.sellPrices.filter((r: any) => r.type === PriceType.RETAIL),
+        wholesalePrice: product.sellPrices.filter((r: any) => r.type === PriceType.WHOLESALE),
+        discountId: product.discountId || '',
         isActive: product.isActive,
-        description: product.description || "",
+        description: product.description || '',
       });
-    } else {
+    } else if (!productId) {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, product, productId]);
 
   const onRefetch = () => {
@@ -408,9 +393,6 @@ export default function ProductForm() {
     refetchCategories();
     refetchBrands();
     refetchDiscounts();
-    if (productId) {
-      refetchProduct();
-    }
   };
 
   const handleCancel = () => {
@@ -419,8 +401,8 @@ export default function ProductForm() {
 
   const handleDeletePress = (discount: Discount) => {
     showPopUpConfirm({
-      title: "HAPUS DISKON",
-      icon: "warning",
+      title: 'HAPUS DISKON',
+      icon: 'warning',
       description: (
         <Text className="text-slate-500">
           {`Apakah Anda yakin ingin menghapus diskon `}
@@ -429,9 +411,9 @@ export default function ProductForm() {
         </Text>
       ),
       showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
+      okText: 'HAPUS',
+      closeText: 'BATAL',
+      okVariant: 'destructive',
       onOk: () => confirmDelete(discount),
       loading: deleteDiscountMutation.isPending,
     });
@@ -443,14 +425,7 @@ export default function ProductForm() {
         hidePopUpConfirm();
         onRefetch();
 
-        toast.show({
-          placement: "top",
-          render: ({ id }) => (
-            <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-              <ToastTitle>Diskon berhasil dihapus</ToastTitle>
-            </Toast>
-          ),
-        });
+        showToast(toast, { action: 'success', message: 'Diskon berhasil dihapus' });
       },
       onError: (error) => {
         showErrorToast(toast, error);
@@ -459,9 +434,7 @@ export default function ProductForm() {
     });
   };
 
-  const onSubmit: SubmitHandler<ProductFormValues> = (
-    data: ProductFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<ProductFormValues> = (data: ProductFormValues) => {
     const prices =
       data.type === ProductType.MULTIUNIT
         ? [
@@ -478,7 +451,7 @@ export default function ProductForm() {
               .map((p) => ({
                 ...p,
                 type: PriceType.WHOLESALE,
-                label: "Grosir",
+                label: 'Grosir',
               })),
           ]
         : [
@@ -487,14 +460,14 @@ export default function ProductForm() {
               .map((p) => ({
                 ...p,
                 type: PriceType.RETAIL,
-                label: "Retail",
+                label: 'Retail',
               })),
             ...data.wholesalePrice
               .sort((a, b) => b.price - a.price)
               .map((p) => ({
                 ...p,
                 type: PriceType.WHOLESALE,
-                label: "Grosir",
+                label: 'Grosir',
               })),
           ];
 
@@ -527,15 +500,9 @@ export default function ProductForm() {
       updateMutation.mutate(updateData, {
         onSuccess: () => {
           onRefetch();
+          useProductStore.getState().incrementVersion();
           handleCancel();
-          toast.show({
-            placement: "top",
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Produk berhasil diubah</ToastTitle>
-              </Toast>
-            ),
-          });
+          showToast(toast, { action: 'success', message: 'Produk berhasil diubah' });
         },
         onError: (error) => {
           showErrorToast(toast, error);
@@ -551,16 +518,10 @@ export default function ProductForm() {
       createMutation.mutate(createData, {
         onSuccess: () => {
           onRefetch();
+          useProductStore.getState().incrementVersion();
           form.reset(initialValues);
           handleCancel();
-          toast.show({
-            placement: "top",
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Produk berhasil ditambahkan</ToastTitle>
-              </Toast>
-            ),
-          });
+          showToast(toast, { action: 'success', message: 'Produk berhasil ditambahkan' });
         },
         onError: (error) => {
           showErrorToast(toast, error);
@@ -569,20 +530,17 @@ export default function ProductForm() {
     }
   };
 
-  const selectedType = form.watch("type");
+  const selectedType = form.watch('type');
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header={isAdd ? "TAMBAH PRODUK " : "EDIT PRODUK "} isGoBack />
+      <Header header={isAdd ? 'TAMBAH PRODUK ' : 'EDIT PRODUK '} isGoBack />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="lg" className="p-4">
           <Controller
             name="name"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Nama</FormControlLabelText>
@@ -607,10 +565,7 @@ export default function ProductForm() {
           <Controller
             name="code"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Kode</FormControlLabelText>
@@ -627,22 +582,20 @@ export default function ProductForm() {
                   </Input>
                   <Pressable
                     className={classNames(
-                      "size-10 rounded-md bg-white border border-primary-500 items-center justify-center",
-                      scanBarcodePosition === "code" && "bg-primary-500",
+                      'size-10 rounded-md bg-white border border-primary-500 items-center justify-center',
+                      scanBarcodePosition === 'code' && 'bg-primary-500',
                     )}
                     onPress={() => {
-                      if (scanBarcodePosition === "code") {
+                      if (scanBarcodePosition === 'code') {
                         setScanBarcodePosition(null);
                       } else {
-                        setScanBarcodePosition("code");
+                        setScanBarcodePosition('code');
                       }
                     }}
                   >
                     <Icon
                       as={ScanBarcode}
-                      color={
-                        scanBarcodePosition === "code" ? "#fff" : "#3d2117"
-                      }
+                      color={scanBarcodePosition === 'code' ? '#fff' : '#3d2117'}
                     />
                   </Pressable>
                 </HStack>
@@ -657,18 +610,13 @@ export default function ProductForm() {
           <Controller
             control={form.control}
             name="isActive"
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl
                 isInvalid={!!error}
                 className="flex-row gap-4 items-center border border-background-300 px-4 rounded-md w-full"
               >
                 <FormControlLabel className="mb-0 flex-1">
-                  <FormControlLabelText>
-                    Tampilkan di transaksi
-                  </FormControlLabelText>
+                  <FormControlLabelText>Tampilkan di transaksi</FormControlLabelText>
                 </FormControlLabel>
                 <Switch
                   size="md"
@@ -684,16 +632,8 @@ export default function ProductForm() {
             name="purchasePrice"
             control={form.control}
             disabled={!isAdd}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
-              <FormControl
-                isRequired
-                isInvalid={!!error}
-                isReadOnly={!isAdd}
-                isDisabled={!isAdd}
-              >
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+              <FormControl isRequired isInvalid={!!error} isReadOnly={!isAdd} isDisabled={!isAdd}>
                 <FormControlLabel>
                   <FormControlLabelText>Harga Beli</FormControlLabelText>
                 </FormControlLabel>
@@ -703,8 +643,7 @@ export default function ProductForm() {
                     autoComplete="off"
                     onChangeText={(text) => {
                       onChange(Number(text) || 0);
-                      const currentUnitVariants =
-                        form.getValues("unitVariants") || [];
+                      const currentUnitVariants = form.getValues('unitVariants') || [];
                       currentUnitVariants.forEach((variant, i) => {
                         form.setValue(
                           `unitVariants.${i}.purchasePrice`,
@@ -736,10 +675,7 @@ export default function ProductForm() {
             name="stock"
             control={form.control}
             disabled={!isAdd}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl
                 isRequired={isAdd}
                 isInvalid={!!error}
@@ -748,7 +684,7 @@ export default function ProductForm() {
               >
                 <FormControlLabel>
                   <FormControlLabelText>
-                    {isAdd ? "Stok Awal" : "Stok Terkini"}
+                    {isAdd ? 'Stok Awal' : 'Stok Terkini'}
                   </FormControlLabelText>
                 </FormControlLabel>
                 <Input isReadOnly={!isAdd} isDisabled={!isAdd}>
@@ -757,15 +693,14 @@ export default function ProductForm() {
                     autoComplete="off"
                     onChangeText={(text) => onChange(Number(text) || 0)}
                     onBlur={onBlur}
-                    placeholder={isAdd ? "Masukkan stok awal" : ""}
+                    placeholder={isAdd ? 'Masukkan stok awal' : ''}
                     keyboardType="numeric"
                     editable={isAdd}
                   />
                 </Input>
                 {!isAdd && (
                   <Text size="xs" className="text-gray-500 mt-1">
-                    Stok hanya bisa diubah melalui Pembelian, Penjualan, Retur,
-                    atau Stock Opname
+                    Stok hanya bisa diubah melalui Pembelian, Penjualan, Retur, atau Stock Opname
                   </Text>
                 )}
                 {error && (
@@ -803,7 +738,7 @@ export default function ProductForm() {
                     onPress={() => {
                       setDataCategory(null);
                       setOpenCategory(true, (newCat) => {
-                        form.setValue("categoryId", newCat.id);
+                        form.setValue('categoryId', newCat.id);
                         refetchCategories();
                       });
                     }}
@@ -850,10 +785,7 @@ export default function ProductForm() {
               <Controller
                 control={form.control}
                 name="unit"
-                render={({
-                  field: { onChange, value },
-                  fieldState: { error },
-                }) => (
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
                   <FormControl
                     isRequired={selectedType === ProductType.MULTIUNIT}
                     isInvalid={!!error}
@@ -862,7 +794,7 @@ export default function ProductForm() {
                       <FormControlLabelText>Satuan</FormControlLabelText>
                     </FormControlLabel>
                     <SelectModal
-                      value={value || ""}
+                      value={value || ''}
                       placeholder="Pilih Satuan"
                       options={productUnitOptions}
                       className="w-full"
@@ -871,18 +803,14 @@ export default function ProductForm() {
                     />
                     {error && (
                       <FormControlError>
-                        <FormControlErrorText>
-                          {error.message}
-                        </FormControlErrorText>
+                        <FormControlErrorText>{error.message}</FormControlErrorText>
                       </FormControlError>
                     )}
                   </FormControl>
                 )}
               />
               <VStack space="sm">
-                <Text className="font-bold text-typography-700">
-                  Varian Unit
-                </Text>
+                <Text className="font-bold text-typography-700">Varian Unit</Text>
                 <VStack
                   space="md"
                   className="p-4 border border-primary-300 rounded-md bg-primary-200 shadow-lg"
@@ -891,18 +819,18 @@ export default function ProductForm() {
                     <Grid
                       key={field.id}
                       className="p-4 border border-primary-300 rounded-md gap-4"
-                      _extra={{ className: "grid-cols-2" }}
+                      _extra={{ className: 'grid-cols-2' }}
                     >
                       <GridItem
                         _extra={{
-                          className: "col-span-1",
+                          className: 'col-span-1',
                         }}
                       >
                         <Controller
                           name={`unitVariants.${index}.netto`}
                           control={form.control}
                           render={({
-                            field: { onChange, onBlur, value },
+                            field: { onChange, onBlur, value: _nettoValue },
                             fieldState: { error },
                           }) => (
                             <FormControl
@@ -913,7 +841,7 @@ export default function ProductForm() {
                             >
                               <FormControlLabel>
                                 <FormControlLabelText>
-                                  {`Netto${unit ? ` (${unit.toLowerCase()})` : ""}`}
+                                  {`Netto${unit ? ` (${unit.toLowerCase()})` : ''}`}
                                 </FormControlLabelText>
                               </FormControlLabel>
                               <Input>
@@ -925,9 +853,7 @@ export default function ProductForm() {
                                     if (/^\d*\.?\d*$/.test(text)) {
                                       setNettoInput(
                                         nettoInput.map((f) =>
-                                          f.index === index
-                                            ? { ...f, netto: text }
-                                            : f,
+                                          f.index === index ? { ...f, netto: text } : f,
                                         ),
                                       );
                                       onChange(Number(text) || 0);
@@ -939,8 +865,7 @@ export default function ProductForm() {
                                   }}
                                   onBlur={() => {
                                     const numValue = parseFloat(
-                                      nettoInput.find((f) => f.index === index)
-                                        ?.netto || "0",
+                                      nettoInput.find((f) => f.index === index)?.netto || '0',
                                     );
 
                                     setNettoInput(
@@ -964,9 +889,7 @@ export default function ProductForm() {
                               </Input>
                               {error && (
                                 <FormControlError>
-                                  <FormControlErrorText>
-                                    {error.message}
-                                  </FormControlErrorText>
+                                  <FormControlErrorText>{error.message}</FormControlErrorText>
                                 </FormControlError>
                               )}
                             </FormControl>
@@ -975,7 +898,7 @@ export default function ProductForm() {
                       </GridItem>
                       <GridItem
                         _extra={{
-                          className: "col-span-1",
+                          className: 'col-span-1',
                         }}
                       >
                         <Controller
@@ -984,13 +907,11 @@ export default function ProductForm() {
                           render={({ field: { onChange, onBlur, value } }) => (
                             <FormControl isDisabled className="w-full">
                               <FormControlLabel>
-                                <FormControlLabelText>
-                                  Harga Beli
-                                </FormControlLabelText>
+                                <FormControlLabelText>Harga Beli</FormControlLabelText>
                               </FormControlLabel>
                               <Input>
                                 <InputField
-                                  value={value?.toString() || ""}
+                                  value={value?.toString() || ''}
                                   onChangeText={(text) => {
                                     onChange(Number(text) || 0);
                                   }}
@@ -1005,7 +926,7 @@ export default function ProductForm() {
                       </GridItem>
                       <GridItem
                         _extra={{
-                          className: "col-span-1",
+                          className: 'col-span-1',
                         }}
                       >
                         <Controller
@@ -1015,15 +936,9 @@ export default function ProductForm() {
                             field: { onChange, onBlur, value },
                             fieldState: { error },
                           }) => (
-                            <FormControl
-                              isRequired
-                              isInvalid={!!error}
-                              className="w-full"
-                            >
+                            <FormControl isRequired isInvalid={!!error} className="w-full">
                               <FormControlLabel>
-                                <FormControlLabelText>
-                                  Kode Varian
-                                </FormControlLabelText>
+                                <FormControlLabelText>Kode Varian</FormControlLabelText>
                               </FormControlLabel>
                               <HStack space="md">
                                 <Input className="flex-1">
@@ -1036,40 +951,31 @@ export default function ProductForm() {
                                 </Input>
                                 <Pressable
                                   className={classNames(
-                                    "size-10 rounded-md bg-white border border-primary-500 items-center justify-center",
-                                    scanBarcodePosition ===
-                                      `unitVariants.${index}.code` &&
-                                      "bg-primary-500",
+                                    'size-10 rounded-md bg-white border border-primary-500 items-center justify-center',
+                                    scanBarcodePosition === `unitVariants.${index}.code` &&
+                                      'bg-primary-500',
                                   )}
                                   onPress={() => {
-                                    if (
-                                      scanBarcodePosition ===
-                                      `unitVariants.${index}.code`
-                                    ) {
+                                    if (scanBarcodePosition === `unitVariants.${index}.code`) {
                                       setScanBarcodePosition(null);
                                     } else {
-                                      setScanBarcodePosition(
-                                        `unitVariants.${index}.code`,
-                                      );
+                                      setScanBarcodePosition(`unitVariants.${index}.code`);
                                     }
                                   }}
                                 >
                                   <Icon
                                     as={ScanBarcode}
                                     color={
-                                      scanBarcodePosition ===
-                                      `unitVariants.${index}.code`
-                                        ? "#fff"
-                                        : "#3d2117"
+                                      scanBarcodePosition === `unitVariants.${index}.code`
+                                        ? '#fff'
+                                        : '#3d2117'
                                     }
                                   />
                                 </Pressable>
                               </HStack>
                               {error && (
                                 <FormControlError>
-                                  <FormControlErrorText>
-                                    {error.message}
-                                  </FormControlErrorText>
+                                  <FormControlErrorText>{error.message}</FormControlErrorText>
                                 </FormControlError>
                               )}
                             </FormControl>
@@ -1078,7 +984,7 @@ export default function ProductForm() {
                       </GridItem>
                       <GridItem
                         _extra={{
-                          className: "col-span-1",
+                          className: 'col-span-1',
                         }}
                       >
                         <Controller
@@ -1088,19 +994,13 @@ export default function ProductForm() {
                             field: { onChange, onBlur, value },
                             fieldState: { error },
                           }) => (
-                            <FormControl
-                              isRequired
-                              isInvalid={!!error}
-                              className="w-full"
-                            >
+                            <FormControl isRequired isInvalid={!!error} className="w-full">
                               <FormControlLabel>
-                                <FormControlLabelText>
-                                  Harga Retail
-                                </FormControlLabelText>
+                                <FormControlLabelText>Harga Retail</FormControlLabelText>
                               </FormControlLabel>
                               <Input>
                                 <InputField
-                                  value={value?.toString() || ""}
+                                  value={value?.toString() || ''}
                                   onChangeText={(text) => {
                                     onChange(Number(text) || 0);
                                   }}
@@ -1111,9 +1011,7 @@ export default function ProductForm() {
                               </Input>
                               {error && (
                                 <FormControlError>
-                                  <FormControlErrorText>
-                                    {error.message}
-                                  </FormControlErrorText>
+                                  <FormControlErrorText>{error.message}</FormControlErrorText>
                                 </FormControlError>
                               )}
                             </FormControl>
@@ -1123,7 +1021,7 @@ export default function ProductForm() {
                       {index > 0 && (
                         <GridItem
                           _extra={{
-                            className: "col-span-2",
+                            className: 'col-span-2',
                           }}
                         >
                           <Button
@@ -1131,14 +1029,8 @@ export default function ProductForm() {
                             action="negative"
                             onPress={() => unitVariantRemove(index)}
                           >
-                            <SolarIconBold
-                              name="TrashBin2"
-                              color="#FDFBF9"
-                              size={14}
-                            />
-                            <ButtonText className="text-white">
-                              Hapus
-                            </ButtonText>
+                            <SolarIconBold name="TrashBin2" color="#FDFBF9" size={14} />
+                            <ButtonText className="text-white">Hapus</ButtonText>
                           </Button>
                         </GridItem>
                       )}
@@ -1149,21 +1041,16 @@ export default function ProductForm() {
                     onPress={() => {
                       const newIndex = unitVariantFields.length;
                       unitVariantAppend({
-                        code: "",
+                        code: '',
                         netto: 0,
                         purchasePrice: 0,
                         retailPrice: 0,
                       });
-                      setNettoInput([
-                        ...nettoInput,
-                        { index: newIndex, netto: "0" },
-                      ]);
+                      setNettoInput([...nettoInput, { index: newIndex, netto: '0' }]);
                     }}
                     className="bg-brand-primary"
                   >
-                    <ButtonText className="text-white">
-                      + Tambah Varian Unit
-                    </ButtonText>
+                    <ButtonText className="text-white">+ Tambah Varian Unit</ButtonText>
                   </Button>
                 </VStack>
               </VStack>
@@ -1173,9 +1060,7 @@ export default function ProductForm() {
           {/* VARIANTS SECTION */}
           {selectedType === ProductType.VARIANTS && (
             <VStack space="sm">
-              <Text className="font-bold text-typography-700">
-                Varian Produk
-              </Text>
+              <Text className="font-bold text-typography-700">Varian Produk</Text>
               <VStack
                 space="md"
                 className="p-4 border border-primary-300 rounded-md bg-primary-200 shadow-lg"
@@ -1183,26 +1068,17 @@ export default function ProductForm() {
                 {variantFields.map((field, index) => (
                   <Grid
                     key={field.id}
-                    _extra={{ className: "grid-cols-1" }}
+                    _extra={{ className: 'grid-cols-1' }}
                     className="gap-4 p-4 border border-primary-300 rounded-md"
                   >
-                    <GridItem _extra={{ className: "col-span-1" }}>
+                    <GridItem _extra={{ className: 'col-span-1' }}>
                       <Controller
                         name={`variants.${index}.code`}
                         control={form.control}
-                        render={({
-                          field: { onChange, onBlur, value },
-                          fieldState: { error },
-                        }) => (
-                          <FormControl
-                            isRequired
-                            isInvalid={!!error}
-                            className="w-full"
-                          >
+                        render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                          <FormControl isRequired isInvalid={!!error} className="w-full">
                             <FormControlLabel>
-                              <FormControlLabelText>
-                                Kode Varian
-                              </FormControlLabelText>
+                              <FormControlLabelText>Kode Varian</FormControlLabelText>
                             </FormControlLabel>
                             <HStack space="md">
                               <Input className="flex-1">
@@ -1215,40 +1091,31 @@ export default function ProductForm() {
                               </Input>
                               <Pressable
                                 className={classNames(
-                                  "size-10 rounded-md bg-white border border-primary-500 items-center justify-center",
-                                  scanBarcodePosition ===
-                                    `variants.${index}.code` &&
-                                    "bg-primary-500",
+                                  'size-10 rounded-md bg-white border border-primary-500 items-center justify-center',
+                                  scanBarcodePosition === `variants.${index}.code` &&
+                                    'bg-primary-500',
                                 )}
                                 onPress={() => {
-                                  if (
-                                    scanBarcodePosition ===
-                                    `variants.${index}.code`
-                                  ) {
+                                  if (scanBarcodePosition === `variants.${index}.code`) {
                                     setScanBarcodePosition(null);
                                   } else {
-                                    setScanBarcodePosition(
-                                      `variants.${index}.code`,
-                                    );
+                                    setScanBarcodePosition(`variants.${index}.code`);
                                   }
                                 }}
                               >
                                 <Icon
                                   as={ScanBarcode}
                                   color={
-                                    scanBarcodePosition ===
-                                    `variants.${index}.code`
-                                      ? "#fff"
-                                      : "#3d2117"
+                                    scanBarcodePosition === `variants.${index}.code`
+                                      ? '#fff'
+                                      : '#3d2117'
                                   }
                                 />
                               </Pressable>
                             </HStack>
                             {error && (
                               <FormControlError>
-                                <FormControlErrorText>
-                                  {error.message}
-                                </FormControlErrorText>
+                                <FormControlErrorText>{error.message}</FormControlErrorText>
                               </FormControlError>
                             )}
                           </FormControl>
@@ -1256,18 +1123,14 @@ export default function ProductForm() {
                       />
                     </GridItem>
                     {variantFields.length > 1 && (
-                      <GridItem _extra={{ className: "col-span-1" }}>
+                      <GridItem _extra={{ className: 'col-span-1' }}>
                         <Button
                           size="xs"
                           action="negative"
                           className="w-full"
                           onPress={() => variantRemove(index)}
                         >
-                          <SolarIconBold
-                            name="TrashBin2"
-                            color="#FDFBF9"
-                            size={14}
-                          />
+                          <SolarIconBold name="TrashBin2" color="#FDFBF9" size={14} />
                           <ButtonText className="text-white">Hapus</ButtonText>
                         </Button>
                       </GridItem>
@@ -1276,12 +1139,10 @@ export default function ProductForm() {
                 ))}
                 <Button
                   size="sm"
-                  onPress={() => variantAppend({ code: "" })}
+                  onPress={() => variantAppend({ code: '' })}
                   className="bg-brand-primary"
                 >
-                  <ButtonText className="text-white">
-                    + Tambah Varian
-                  </ButtonText>
+                  <ButtonText className="text-white">+ Tambah Varian</ButtonText>
                 </Button>
               </VStack>
             </VStack>
@@ -1290,9 +1151,7 @@ export default function ProductForm() {
           {/* RETAIL PRICE SECTION */}
           {selectedType !== ProductType.MULTIUNIT && (
             <VStack space="sm">
-              <Text className="font-bold text-typography-700">
-                Harga Retail
-              </Text>
+              <Text className="font-bold text-typography-700">Harga Retail</Text>
               <VStack
                 space="md"
                 className="p-4 border border-primary-300 rounded-md bg-primary-200 shadow-lg"
@@ -1300,33 +1159,22 @@ export default function ProductForm() {
                 {retailFields.map((field, index) => (
                   <Grid
                     key={field.id}
-                    _extra={{ className: "grid-cols-2" }}
+                    _extra={{ className: 'grid-cols-2' }}
                     className="gap-4 p-4 border border-primary-300 rounded-md"
                   >
-                    <GridItem _extra={{ className: "col-span-1" }}>
+                    <GridItem _extra={{ className: 'col-span-1' }}>
                       <Controller
                         name={`retailPrice.${index}.minimumPurchase`}
                         control={form.control}
-                        render={({
-                          field: { onChange, onBlur, value },
-                          fieldState: { error },
-                        }) => (
-                          <FormControl
-                            isRequired
-                            isInvalid={!!error}
-                            className="w-full"
-                          >
+                        render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                          <FormControl isRequired isInvalid={!!error} className="w-full">
                             <FormControlLabel>
-                              <FormControlLabelText>
-                                Minimal Pembelian
-                              </FormControlLabelText>
+                              <FormControlLabelText>Minimal Pembelian</FormControlLabelText>
                             </FormControlLabel>
                             <Input>
                               <InputField
-                                value={value?.toString() || ""}
-                                onChangeText={(text) =>
-                                  onChange(Number(text) || 0)
-                                }
+                                value={value?.toString() || ''}
+                                onChangeText={(text) => onChange(Number(text) || 0)}
                                 onBlur={onBlur}
                                 placeholder="1"
                                 keyboardType="numeric"
@@ -1334,34 +1182,25 @@ export default function ProductForm() {
                             </Input>
                             {error && (
                               <FormControlError>
-                                <FormControlErrorText>
-                                  {error.message}
-                                </FormControlErrorText>
+                                <FormControlErrorText>{error.message}</FormControlErrorText>
                               </FormControlError>
                             )}
                           </FormControl>
                         )}
                       />
                     </GridItem>
-                    <GridItem _extra={{ className: "col-span-1" }}>
+                    <GridItem _extra={{ className: 'col-span-1' }}>
                       <Controller
                         name={`retailPrice.${index}.price`}
                         control={form.control}
-                        render={({
-                          field: { onChange, onBlur, value },
-                          fieldState: { error },
-                        }) => (
-                          <FormControl
-                            isRequired
-                            isInvalid={!!error}
-                            className="w-full"
-                          >
+                        render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                          <FormControl isRequired isInvalid={!!error} className="w-full">
                             <FormControlLabel>
                               <FormControlLabelText>Harga</FormControlLabelText>
                             </FormControlLabel>
                             <Input>
                               <InputField
-                                value={value?.toString() || ""}
+                                value={value?.toString() || ''}
                                 onChangeText={(text) => {
                                   onChange(Number(text) || 0);
                                 }}
@@ -1372,9 +1211,7 @@ export default function ProductForm() {
                             </Input>
                             {error && (
                               <FormControlError>
-                                <FormControlErrorText>
-                                  {error.message}
-                                </FormControlErrorText>
+                                <FormControlErrorText>{error.message}</FormControlErrorText>
                               </FormControlError>
                             )}
                           </FormControl>
@@ -1382,18 +1219,14 @@ export default function ProductForm() {
                       />
                     </GridItem>
                     {retailFields.length > 1 && (
-                      <GridItem _extra={{ className: "col-span-2" }}>
+                      <GridItem _extra={{ className: 'col-span-2' }}>
                         <Button
                           size="xs"
                           action="negative"
                           className="w-full"
                           onPress={() => retailRemove(index)}
                         >
-                          <SolarIconBold
-                            name="TrashBin2"
-                            color="#FDFBF9"
-                            size={14}
-                          />
+                          <SolarIconBold name="TrashBin2" color="#FDFBF9" size={14} />
                           <ButtonText className="text-white">Hapus</ButtonText>
                         </Button>
                       </GridItem>
@@ -1405,9 +1238,7 @@ export default function ProductForm() {
                   onPress={() => retailAppend({ minimumPurchase: 1, price: 0 })}
                   className="bg-brand-primary"
                 >
-                  <ButtonText className="text-white">
-                    + Tambah Harga Retail
-                  </ButtonText>
+                  <ButtonText className="text-white">+ Tambah Harga Retail</ButtonText>
                 </Button>
               </VStack>
             </VStack>
@@ -1422,40 +1253,28 @@ export default function ProductForm() {
             >
               {wholesaleFields.length === 0 && (
                 <Text className="text-typography-500 text-sm italic">
-                  Belum ada harga grosir. Klik tombol di bawah untuk
-                  menambahkan.
+                  Belum ada harga grosir. Klik tombol di bawah untuk menambahkan.
                 </Text>
               )}
               {wholesaleFields.map((field, index) => (
                 <Grid
                   key={field.id}
-                  _extra={{ className: "grid-cols-2" }}
+                  _extra={{ className: 'grid-cols-2' }}
                   className="gap-4 p-4 border border-primary-300 rounded-md"
                 >
-                  <GridItem _extra={{ className: "col-span-1" }}>
+                  <GridItem _extra={{ className: 'col-span-1' }}>
                     <Controller
                       name={`wholesalePrice.${index}.minimumPurchase`}
                       control={form.control}
-                      render={({
-                        field: { onChange, onBlur, value },
-                        fieldState: { error },
-                      }) => (
-                        <FormControl
-                          isRequired
-                          isInvalid={!!error}
-                          className="w-full"
-                        >
+                      render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                        <FormControl isRequired isInvalid={!!error} className="w-full">
                           <FormControlLabel>
-                            <FormControlLabelText>
-                              Minimal Pembelian
-                            </FormControlLabelText>
+                            <FormControlLabelText>Minimal Pembelian</FormControlLabelText>
                           </FormControlLabel>
                           <Input>
                             <InputField
-                              value={value?.toString() || ""}
-                              onChangeText={(text) =>
-                                onChange(Number(text) || 0)
-                              }
+                              value={value?.toString() || ''}
+                              onChangeText={(text) => onChange(Number(text) || 0)}
                               onBlur={onBlur}
                               placeholder="10"
                               keyboardType="numeric"
@@ -1463,37 +1282,26 @@ export default function ProductForm() {
                           </Input>
                           {error && (
                             <FormControlError>
-                              <FormControlErrorText>
-                                {error.message}
-                              </FormControlErrorText>
+                              <FormControlErrorText>{error.message}</FormControlErrorText>
                             </FormControlError>
                           )}
                         </FormControl>
                       )}
                     />
                   </GridItem>
-                  <GridItem _extra={{ className: "col-span-1" }}>
+                  <GridItem _extra={{ className: 'col-span-1' }}>
                     <Controller
                       name={`wholesalePrice.${index}.price`}
                       control={form.control}
-                      render={({
-                        field: { onChange, onBlur, value },
-                        fieldState: { error },
-                      }) => (
-                        <FormControl
-                          isRequired
-                          isInvalid={!!error}
-                          className="w-full"
-                        >
+                      render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                        <FormControl isRequired isInvalid={!!error} className="w-full">
                           <FormControlLabel>
                             <FormControlLabelText>Harga</FormControlLabelText>
                           </FormControlLabel>
                           <Input>
                             <InputField
-                              value={value?.toString() || ""}
-                              onChangeText={(text) =>
-                                onChange(Number(text) || 0)
-                              }
+                              value={value?.toString() || ''}
+                              onChangeText={(text) => onChange(Number(text) || 0)}
                               onBlur={onBlur}
                               placeholder="0"
                               keyboardType="numeric"
@@ -1501,26 +1309,16 @@ export default function ProductForm() {
                           </Input>
                           {error && (
                             <FormControlError>
-                              <FormControlErrorText>
-                                {error.message}
-                              </FormControlErrorText>
+                              <FormControlErrorText>{error.message}</FormControlErrorText>
                             </FormControlError>
                           )}
                         </FormControl>
                       )}
                     />
                   </GridItem>
-                  <GridItem _extra={{ className: "col-span-2" }}>
-                    <Button
-                      size="xs"
-                      action="negative"
-                      onPress={() => wholesaleRemove(index)}
-                    >
-                      <SolarIconBold
-                        name="TrashBin2"
-                        color="#FDFBF9"
-                        size={14}
-                      />
+                  <GridItem _extra={{ className: 'col-span-2' }}>
+                    <Button size="xs" action="negative" onPress={() => wholesaleRemove(index)}>
+                      <SolarIconBold name="TrashBin2" color="#FDFBF9" size={14} />
                       <ButtonText className="text-white">Hapus</ButtonText>
                     </Button>
                   </GridItem>
@@ -1528,14 +1326,10 @@ export default function ProductForm() {
               ))}
               <Button
                 size="sm"
-                onPress={() =>
-                  wholesaleAppend({ minimumPurchase: 1, price: 0 })
-                }
+                onPress={() => wholesaleAppend({ minimumPurchase: 1, price: 0 })}
                 className="bg-brand-primary"
               >
-                <ButtonText className="text-white">
-                  + Tambah Harga Grosir
-                </ButtonText>
+                <ButtonText className="text-white">+ Tambah Harga Grosir</ButtonText>
               </Button>
             </VStack>
           </VStack>
@@ -1543,10 +1337,7 @@ export default function ProductForm() {
           <Controller
             name="minimumStock"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Stok Minimum</FormControlLabelText>
@@ -1596,7 +1387,7 @@ export default function ProductForm() {
                     onPress={() => {
                       setDataBrand(null);
                       setOpenBrand(true, (newBrand) => {
-                        form.setValue("brandId", newBrand.id);
+                        form.setValue('brandId', newBrand.id);
                         refetchBrands();
                       });
                     }}
@@ -1622,7 +1413,7 @@ export default function ProductForm() {
                 </FormControlLabel>
                 <HStack space="md">
                   <SelectModal
-                    value={value || ""}
+                    value={value || ''}
                     placeholder="Pilih Diskon"
                     searchPlaceholder="Cari Diskon"
                     options={discounts.map((disc) => ({
@@ -1630,19 +1421,19 @@ export default function ProductForm() {
                       value: disc.id,
                       actions: [
                         {
-                          label: "Edit",
-                          icon: "Pen",
+                          label: 'Edit',
+                          icon: 'Pen',
                           onPress: () => {
                             setDataDiscount(disc);
                             setOpenDiscount(true, (newDisc) => {
-                              form.setValue("discountId", newDisc.id);
+                              form.setValue('discountId', newDisc.id);
                               refetchDiscounts();
                             });
                           },
                         },
                         {
-                          label: "Delete",
-                          icon: "TrashBin2",
+                          label: 'Delete',
+                          icon: 'TrashBin2',
                           onPress: () => handleDeletePress(disc),
                         },
                       ],
@@ -1655,7 +1446,7 @@ export default function ProductForm() {
                     onPress={() => {
                       setDataDiscount(null);
                       setOpenDiscount(true, (newDisc) => {
-                        form.setValue("discountId", newDisc.id);
+                        form.setValue('discountId', newDisc.id);
                         refetchDiscounts();
                       });
                     }}
@@ -1674,10 +1465,7 @@ export default function ProductForm() {
           <Controller
             name="description"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Keterangan</FormControlLabelText>
@@ -1707,11 +1495,18 @@ export default function ProductForm() {
         <Pressable
           className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
-          onPress={form.handleSubmit(onSubmit, (errors) => {
-            console.error(
-              "[PRODUCT_FORM] Validation Errors: ",
-              JSON.stringify(errors, null, 2),
-            );
+          onPress={form.handleSubmit(onSubmit, () => {
+            // const findFirstMessage = (obj: any): string | undefined => {
+            //   if (!obj || typeof obj !== 'object') return undefined;
+            //   if (obj.message) return obj.message;
+            //   for (const val of Object.values(obj)) {
+            //     const msg = findFirstMessage(val);
+            //     if (msg) return msg;
+            //   }
+            //   return undefined;
+            // };
+            const message = 'Mohon lengkapi semua field yang wajib diisi.';
+            showToast(toast, { action: 'error', message });
           })}
         >
           {isLoading ? (

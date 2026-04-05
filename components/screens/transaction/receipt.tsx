@@ -1,28 +1,20 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
-import {
-  Box,
-  Heading,
-  HStack,
-  Icon,
-  Pressable,
-  Text,
-  VStack,
-} from "@/components/ui";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { Spinner } from "@/components/ui/spinner";
-import { TransactionItem, useTransaction } from "@/lib/api/transactions";
-import { formatDisplayRefId } from "@/lib/utils/reference";
-import { getReceiptActions } from "@/lib/utils/receipt-actions";
-import { ProductType, Status } from "@/lib/constants";
-import { useAuthStore } from "@/stores/auth";
-import dayjs from "dayjs";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Check, Printer } from "lucide-react-native";
-import { useMemo } from "react";
-import { ScrollView } from "react-native";
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
+import { Box, Heading, HStack, Icon, Pressable, Text, VStack } from '@/components/ui';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { Spinner } from '@/components/ui/spinner';
+import { TransactionItem, useTransaction } from '@/hooks/use-transaction';
+import { formatDisplayRefId } from '@/utils/reference';
+import { getReceiptActions } from '@/utils/receipt-actions';
+import { ProductType, Status } from '@/constants';
+import { useAuthStore } from '@/stores/auth';
+import dayjs from 'dayjs';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Check, Printer } from 'lucide-react-native';
+import { useMemo } from 'react';
+import { ScrollView } from 'react-native';
 
-import { formatRp, formatNumber } from "@/lib/utils/format";
+import { formatRp, formatNumber } from '@/utils/format';
 export default function TransactionReceipt() {
   const router = useRouter();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -30,7 +22,7 @@ export default function TransactionReceipt() {
     id: string;
     isSuccess: string;
   }>();
-  const { data: transaction, isLoading } = useTransaction(id || "");
+  const { data: transaction, isLoading } = useTransaction(id || '');
 
   const profile = useAuthStore((state) => state.profile);
 
@@ -46,7 +38,7 @@ export default function TransactionReceipt() {
       }
     > = {};
     transaction.items.forEach((item) => {
-      const key = `${item.productId}-${item.variantId || "no-var"}`;
+      const key = `${item.productId}-${item.variantId || 'no-var'}`;
       if (!groupedItemsMap[key]) {
         groupedItemsMap[key] = {
           ...item,
@@ -95,11 +87,7 @@ export default function TransactionReceipt() {
   return (
     <VStack className="flex-1 bg-primary-200">
       <Header
-        header={
-          transaction?.returnId
-            ? "STRUK PENUKARAN BARANG"
-            : "STRUK PENJUALAN BARANG"
-        }
+        header={transaction?.returnId ? 'STRUK PENUKARAN BARANG' : 'STRUK PENJUALAN BARANG'}
         isGoBack
         action={
           <Pressable
@@ -114,14 +102,14 @@ export default function TransactionReceipt() {
               name="MenuDots"
               size={20}
               color="#FDFBF9"
-              style={{ transform: [{ rotate: "90deg" }] }}
+              style={{ transform: [{ rotate: '90deg' }] }}
             />
           </Pressable>
         }
       />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="md" className="p-4 flex-1">
-          {isSuccess === "true" && (
+          {isSuccess === 'true' && (
             <HStack space="md" className="w-full">
               <Pressable
                 className="flex-1 rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-primary-500 border border-primary-500 active:bg-primary-400"
@@ -145,15 +133,12 @@ export default function TransactionReceipt() {
           )}
           <VStack className="flex-1 bg-background-0 p-6 shadow">
             <VStack className="items-center">
-              <Heading size="xl">
-                {profile?.selectedOrganization?.name || "Toko Damai"}
-              </Heading>
+              <Heading size="xl">{profile?.selectedOrganization?.name || 'Toko Damai'}</Heading>
               <Text className="text-typography-500 text-center">
-                {profile?.selectedOrganization?.address ||
-                  "Pekalongan Timur, Pekalongan"}
+                {profile?.selectedOrganization?.address || 'Pekalongan Timur, Pekalongan'}
               </Text>
               <Text className="text-typography-500">
-                {`## Struk ${transaction?.returnId ? "Penukaran Barang" : "Penjualan"} ##`}
+                {`## Struk ${transaction?.returnId ? 'Penukaran Barang' : 'Penjualan'} ##`}
               </Text>
               {transaction.status === Status.DRAFT && (
                 <Text className="text-red-500 font-bold mt-1">(DRAFT)</Text>
@@ -164,25 +149,20 @@ export default function TransactionReceipt() {
               <HStack className="justify-between items-center">
                 <Text className="text-typography-500">Ref</Text>
                 <Text className="text-typography-500">
-                  {formatDisplayRefId(transaction.local_ref_id) ||
-                    transaction.id}
+                  {formatDisplayRefId(transaction.local_ref_id) || transaction.id}
                 </Text>
               </HStack>
               <HStack className="justify-between items-center">
                 <Text className="text-typography-500">Tanggal</Text>
-                <Text className="text-typography-500">
-                  {date.format("DD/MM/YYYY HH:mm:ss")}
-                </Text>
+                <Text className="text-typography-500">{date.format('DD/MM/YYYY HH:mm:ss')}</Text>
               </HStack>
               <HStack className="justify-between items-center">
                 <Text className="text-typography-500">Admin</Text>
-                <Text className="text-typography-500">
-                  {profile?.name || "Admin"}
-                </Text>
+                <Text className="text-typography-500">{profile?.name || 'Admin'}</Text>
               </HStack>
               <HStack className="justify-between items-center">
                 <Text className="text-typography-500">
-                  {transaction.employeeId ? "Karyawan" : "Pelanggan"}
+                  {transaction.employeeId ? 'Karyawan' : 'Pelanggan'}
                 </Text>
                 <Text className="text-typography-500">
                   {transaction.employeeName || transaction.customerName}
@@ -191,15 +171,13 @@ export default function TransactionReceipt() {
 
               <HStack className="justify-between items-center">
                 <Text className="text-typography-500">Metode Pembayaran</Text>
-                <Text className="text-typography-500">
-                  {transaction.paymentTypeName}
-                </Text>
+                <Text className="text-typography-500">{transaction.paymentTypeName}</Text>
               </HStack>
             </VStack>
             <VStack>
               <HStack className="justify-between items-center mt-1">
                 <Text className="text-typography-500">
-                  {transaction.employeeId ? "Karyawan" : "Pelanggan"}:{" "}
+                  {transaction.employeeId ? 'Karyawan' : 'Pelanggan'}:{' '}
                   {transaction.employeeName || transaction.customerName}
                 </Text>
               </HStack>
@@ -212,10 +190,9 @@ export default function TransactionReceipt() {
                     <VStack className="flex-1 mr-2">
                       <Heading size="sm">
                         {group.productName}
-                        {group.productType === ProductType.MULTIUNIT &&
-                        group.variantName
+                        {group.productType === ProductType.MULTIUNIT && group.variantName
                           ? ` - ${group.variantName}`
-                          : ""}
+                          : ''}
                       </Heading>
                       <Text className="text-typography-500 text-sm">
                         {group.quantity} x Rp {group.regularPrice ?? 0}
@@ -227,9 +204,7 @@ export default function TransactionReceipt() {
                   </HStack>
                   {group.totalDiscount > 0 && (
                     <HStack className="justify-between items-center pl-2">
-                      <Text className="text-error-500 text-sm italic">
-                        Potongan Harga (Diskon)
-                      </Text>
+                      <Text className="text-error-500 text-sm italic">Potongan Harga (Diskon)</Text>
                       <Text className="text-error-500 text-sm italic">
                         - Rp {formatNumber(group.totalDiscount ?? 0)}
                       </Text>
@@ -242,15 +217,11 @@ export default function TransactionReceipt() {
             <VStack space="sm">
               <HStack className="justify-between items-center">
                 <Text className="font-bold">Subtotal</Text>
-                <Text className="font-bold">
-                  Rp {formatNumber(subtotalGross)}
-                </Text>
+                <Text className="font-bold">Rp {formatNumber(subtotalGross)}</Text>
               </HStack>
               {totalDiscount > 0 && (
                 <HStack className="justify-between items-center">
-                  <Text className="text-success-600 font-bold">
-                    Total Diskon
-                  </Text>
+                  <Text className="text-success-600 font-bold">Total Diskon</Text>
                   <Text className="text-success-600 font-bold">
                     - Rp {formatNumber(totalDiscount)}
                   </Text>
@@ -258,9 +229,7 @@ export default function TransactionReceipt() {
               )}
               {transaction.commission ? (
                 <HStack className="justify-between items-center">
-                  <Text className="text-typography-500">
-                    Biaya Layanan/Admin
-                  </Text>
+                  <Text className="text-typography-500">Biaya Layanan/Admin</Text>
                   <Text className="text-typography-500">
                     Rp {formatNumber(transaction.commission ?? 0)}
                   </Text>
@@ -268,31 +237,22 @@ export default function TransactionReceipt() {
               ) : null}
               <HStack className="justify-between items-center">
                 <Text className="font-bold">Total Tagihan</Text>
-                <Text className="font-bold">
-                  Rp {formatNumber(transaction.totalAmount ?? 0)}
-                </Text>
+                <Text className="font-bold">Rp {formatNumber(transaction.totalAmount ?? 0)}</Text>
               </HStack>
               <HStack className="justify-between items-center">
                 <Text className="font-bold">Uang Dibayarkan</Text>
-                <Text className="font-bold">
-                  Rp {formatNumber(transaction.totalPaid ?? 0)}
-                </Text>
+                <Text className="font-bold">Rp {formatNumber(transaction.totalPaid ?? 0)}</Text>
               </HStack>
               <HStack className="justify-between items-center">
                 <Text className="font-bold">Kembalian</Text>
                 <Text className="font-bold">
-                  {formatRp(
-                    (transaction.totalPaid ?? 0) -
-                      (transaction.totalAmount ?? 0),
-                  )}
+                  {formatRp((transaction.totalPaid ?? 0) - (transaction.totalAmount ?? 0))}
                 </Text>
               </HStack>
             </VStack>
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack className="items-center py-2">
-              <Text className="text-typography-500">
-                Terima kasih atas pembelian Anda
-              </Text>
+              <Text className="text-typography-500">Terima kasih atas pembelian Anda</Text>
             </VStack>
           </VStack>
         </VStack>

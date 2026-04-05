@@ -1,13 +1,5 @@
-import {
-  Badge,
-  BadgeText,
-  Box,
-  Heading,
-  Pressable,
-  Text,
-  VStack,
-} from "@/components/ui";
-import { formatRp } from "@/lib/utils/format";
+import { Badge, BadgeText, Box, Heading, Pressable, Text, VStack } from '@/components/ui';
+import { formatRp } from '@/utils/format';
 
 export default function GridProductLayout({
   name,
@@ -38,11 +30,7 @@ export default function GridProductLayout({
           {stock !== undefined && (
             <Badge
               action={
-                stock > minStock
-                  ? "info"
-                  : stock < minStock && stock > 0
-                    ? "warning"
-                    : "error"
+                stock > minStock ? 'info' : stock < minStock && stock > 0 ? 'warning' : 'error'
               }
               className="absolute bottom-1 left-1"
             >

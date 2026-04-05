@@ -1,40 +1,32 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
-import { usePopUpConfirm } from "@/components/pop-up-confirm";
-import {
-  Box,
-  Heading,
-  HStack,
-  Spinner,
-  Text,
-  Toast,
-  ToastTitle,
-  useToast,
-  VStack,
-} from "@/components/ui";
-import { Badge, BadgeText } from "@/components/ui/badge";
-import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
+import { usePopUpConfirm } from '@/components/pop-up-confirm';
+import { Box, Heading, HStack, Spinner, Text, useToast, VStack } from '@/components/ui';
+import { Badge, BadgeText } from '@/components/ui/badge';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import {
   useCategories,
-  useCategory,
   useDeleteCategory,
-} from "@/lib/api/categories";
-import { showErrorToast } from "@/lib/utils/toast";
+  refetchCategoryById,
+  Category,
+} from '@/hooks/use-category';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import {
   Product,
   useProductsByCategory,
   useUnassignProductsFromCategory,
-} from "@/lib/api/products";
-import { useCategoryStore } from "@/stores/category";
-import { useDeleteEntity } from "@/hooks/use-delete-entity";
-import { singleDeleteConfirm } from "@/lib/utils/delete-confirm";
-import { useItemSelection } from "@/hooks/use-item-selection";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo } from "react";
-import { ScrollView } from "react-native";
+} from '@/hooks/use-product';
+import { useCategoryStore } from '@/stores/category';
+import { useDeleteEntity } from '@/hooks/use-delete-entity';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { useItemSelection } from '@/hooks/use-item-selection';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
+import { ScrollView } from 'react-native';
 
-import { formatRp, formatNumber } from "@/lib/utils/format";
+import { formatRp, formatNumber } from '@/utils/format';
 export default function CategoryDetail() {
   const { setOpen, setData } = useCategoryStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -42,6 +34,8 @@ export default function CategoryDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const categoryId = id as string;
+
+  const [category, setCategory] = useState<Category | null>(null);
 
   const {
     selectedItems: selectedProducts,
@@ -51,38 +45,43 @@ export default function CategoryDetail() {
     hasSelection: hasProductSelection,
   } = useItemSelection<Product>();
 
-  const { refetch: refetchCategorys } = useCategories();
-  const { data: category, refetch: refetchCategory } = useCategory(
-    categoryId || "",
-  );
-  const { data: products = [] } = useProductsByCategory(categoryId || "");
+  const { refetch: refetchCategories } = useCategories();
+  const { data: products = [] } = useProductsByCategory(categoryId || '');
   const deleteMutation = useDeleteCategory();
   const unassignProductMutation = useUnassignProductsFromCategory();
   const toast = useToast();
 
-  const totalModal = useMemo(() => {
+  const totalCapital = useMemo(() => {
     return products.reduce((acc, curr) => {
       return acc + (curr.purchasePrice || 0) * (curr.stock || 0);
     }, 0);
   }, [products]);
 
-  const onRefetch = () => {
-    refetchCategorys();
-    refetchCategory();
-  };
+  const onRefetch = useCallback(async () => {
+    if (categoryId) {
+      const freshCategory = await refetchCategoryById(categoryId);
+      setCategory(freshCategory);
+    }
+    refetchCategories();
+  }, [categoryId, refetchCategories]);
+
+  useStoreVersionSync(useCategoryStore, onRefetch);
 
   const { triggerDelete } = useDeleteEntity({
-    successMessage: "Kategori berhasil dihapus",
+    successMessage: 'Kategori berhasil dihapus',
     deleteMutation,
-    onSuccess: onRefetch,
+    onSuccess: () => {
+      useCategoryStore.getState().incrementVersion();
+      onRefetch();
+    },
   });
 
   const handleDeleteProductPress = () => {
     const productIds = selectedProducts?.map((m) => m.id) || [];
 
     showPopUpConfirm({
-      title: `HAPUS PRODUK DARI ${category?.name?.toUpperCase() ?? ""}`,
-      icon: "warning",
+      title: `HAPUS PRODUK DARI ${category?.name?.toUpperCase() ?? ''}`,
+      icon: 'warning',
       description: (
         <Text className="text-slate-500">
           {`Apakah Anda yakin ingin menghapus `}
@@ -91,38 +90,22 @@ export default function CategoryDetail() {
         </Text>
       ),
       showClose: true,
-      okText: "HAPUS",
-      closeText: "BATAL",
-      okVariant: "destructive",
+      okText: 'HAPUS',
+      closeText: 'BATAL',
+      okVariant: 'destructive',
       onOk: () => {
-        unassignProductMutation.mutate(
-          { productIds },
-          {
-            onSuccess: () => {
-              hidePopUpConfirm();
-              clearProductSelection();
-              onRefetch();
-              toast.show({
-                placement: "top",
-                render: ({ id }) => (
-                  <Toast
-                    nativeID={`toast-${id}`}
-                    action="success"
-                    variant="solid"
-                  >
-                    <ToastTitle>
-                      Produk berhasil dihapus dari kategori
-                    </ToastTitle>
-                  </Toast>
-                ),
-              });
-            },
-            onError: (error) => {
-              showErrorToast(toast, error);
-              hidePopUpConfirm();
-            },
+        unassignProductMutation.mutate(productIds, {
+          onSuccess: () => {
+            hidePopUpConfirm();
+            clearProductSelection();
+            onRefetch();
+            showSuccessToast(toast, 'Produk berhasil dihapus dari kategori');
           },
-        );
+          onError: (error) => {
+            showErrorToast(toast, error);
+            hidePopUpConfirm();
+          },
+        });
       },
       loading: unassignProductMutation.isPending,
     });
@@ -132,26 +115,21 @@ export default function CategoryDetail() {
     showActionDrawer({
       actions: [
         {
-          label: "Edit",
-          icon: "Pen",
-          onPress: () => {
-            setOpen(true);
-            setData(category ?? null);
+          label: 'Edit',
+          icon: 'Pen',
+          onPress: async () => {
             hideActionDrawer();
+            const freshCategory = await refetchCategoryById(categoryId);
+            setOpen(true);
+            setData(freshCategory ?? null);
           },
         },
         {
-          label: "Hapus",
-          icon: "TrashBin2",
-          theme: "red",
+          label: 'Hapus',
+          icon: 'TrashBin2',
+          theme: 'red',
           onPress: () => {
-            triggerDelete(
-              singleDeleteConfirm(
-                "kategori",
-                category?.id || "",
-                category?.name,
-              ),
-            );
+            triggerDelete(singleDeleteConfirm('kategori', category?.id || '', category?.name));
             hideActionDrawer();
           },
         },
@@ -173,10 +151,7 @@ export default function CategoryDetail() {
                 <Spinner size="small" color="#FFFFFF" />
               </Box>
             ) : (
-              <Pressable
-                className="p-6"
-                onPress={() => handleDeleteProductPress()}
-              >
+              <Pressable className="p-6" onPress={() => handleDeleteProductPress()}>
                 <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
               </Pressable>
             )
@@ -186,7 +161,7 @@ export default function CategoryDetail() {
                 name="MenuDots"
                 size={20}
                 color="#FDFBF9"
-                style={{ transform: [{ rotate: "90deg" }] }}
+                style={{ transform: [{ rotate: '90deg' }] }}
               />
             </Pressable>
           )
@@ -198,8 +173,8 @@ export default function CategoryDetail() {
         <VStack>
           <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
             <HStack className="w-full flex-row justify-between">
-              <Text className="font-bold text-gray-500">Nama Category</Text>
-              <Text className="font-bold">{category?.name || "-"}</Text>
+              <Text className="font-bold text-gray-500">Nama Kategori</Text>
+              <Text className="font-bold">{category?.name || '-'}</Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Total Produk</Text>
@@ -215,7 +190,7 @@ export default function CategoryDetail() {
             </HStack>
             <HStack className="w-full flex-row justify-between">
               <Text className="font-bold text-gray-500">Nilai Modal</Text>
-              <Text className="font-bold">Rp {formatNumber(totalModal)}</Text>
+              <Text className="font-bold">Rp {formatNumber(totalCapital)}</Text>
             </HStack>
           </Box>
           <Box className="pr-4">
@@ -224,7 +199,7 @@ export default function CategoryDetail() {
                 <Pressable
                   key={product.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    isProductSelected(product) ? "bg-gray-100" : ""
+                    isProductSelected(product) ? 'bg-gray-100' : ''
                   }`}
                   onPress={() => {
                     if (hasProductSelection) {
@@ -247,39 +222,31 @@ export default function CategoryDetail() {
                         </Text>
                         <Badge size="sm" variant="solid" action="muted">
                           <BadgeText className="text-xs">{`Harga Beli: Rp ${product.purchasePrice.toLocaleString(
-                            "id-ID",
+                            'id-ID',
                           )}`}</BadgeText>
                         </Badge>
                       </VStack>
                     </HStack>
                     <VStack className="items-end">
-                      <Text className="text-primary-500 text-sm font-bold">
-                        {product.stock}
-                      </Text>
+                      <Text className="text-primary-500 text-sm font-bold">{product.stock}</Text>
                       <Text className="text-xs">
-                        Retail:{" "}
+                        Retail:{' '}
                         {`${
-                          product.sellPrices?.filter(
-                            (r) => r.type === "RETAIL",
-                          )?.[0]?.minimumPurchase
+                          product.sellPrices?.filter((r) => r.type === 'RETAIL')?.[0]
+                            ?.minimumPurchase
                         }@ ${formatRp(
-                          product.sellPrices?.filter(
-                            (r) => r.type === "RETAIL",
-                          )?.[0]?.price ?? 0,
+                          product.sellPrices?.filter((r) => r.type === 'RETAIL')?.[0]?.price ?? 0,
                         )}`}
                       </Text>
-                      {product.sellPrices?.filter((r) => r.type === "WHOLESALE")
-                        .length ? (
+                      {product.sellPrices?.filter((r) => r.type === 'WHOLESALE').length ? (
                         <Text className="text-xs">
-                          Grosir:{" "}
+                          Grosir:{' '}
                           {`${
-                            product.sellPrices?.filter(
-                              (r) => r.type === "WHOLESALE",
-                            )?.[0]?.minimumPurchase
+                            product.sellPrices?.filter((r) => r.type === 'WHOLESALE')?.[0]
+                              ?.minimumPurchase
                           }@ ${formatRp(
-                            product.sellPrices?.filter(
-                              (r) => r.type === "WHOLESALE",
-                            )?.[0]?.price ?? 0,
+                            product.sellPrices?.filter((r) => r.type === 'WHOLESALE')?.[0]?.price ??
+                              0,
                           )}`}
                         </Text>
                       ) : null}

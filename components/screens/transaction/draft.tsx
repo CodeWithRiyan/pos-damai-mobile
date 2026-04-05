@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   Box,
   Heading,
@@ -7,82 +7,69 @@ import {
   Pressable,
   Spinner,
   Text,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
-import { useContinueDraft, useDeleteTransaction, useTransactions } from "@/lib/api/transactions";
-import { Status } from "@/lib/constants";
-import { useTransactionStore } from "@/stores/transaction";
-import dayjs from "dayjs";
-import { useRouter } from "expo-router";
-import { Trash2 } from "lucide-react-native";
-import { ScrollView } from "react-native";
+} from '@/components/ui';
+import { useContinueDraft, useDeleteTransaction, useTransactions } from '@/hooks/use-transaction';
+import { Status } from '@/constants';
+import { useTransactionStore } from '@/stores/transaction';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import dayjs from 'dayjs';
+import { useRouter } from 'expo-router';
+import { Trash2 } from 'lucide-react-native';
+import { useCallback } from 'react';
+import { ScrollView } from 'react-native';
 
-import { useCustomers } from "@/lib/api/customers";
-import { useUsers } from "@/lib/api/users";
-import { formatNumber } from "@/lib/utils/format";
+import { useCustomers } from '@/hooks/use-customer';
+import { useUsers } from '@/hooks/use-user';
+import { formatNumber } from '@/utils/format';
 export default function TransactionDraft() {
   const router = useRouter();
-  const { data: transactions, isLoading: isTransactionsLoading } =
-    useTransactions();
+  const { data: transactions, isLoading: isTransactionsLoading, refetch } = useTransactions();
   const { data: customers, isLoading: isCustomersLoading } = useCustomers();
   const { data: users, isLoading: isUsersLoading } = useUsers();
-  const isLoading =
-    isTransactionsLoading || isCustomersLoading || isUsersLoading;
+  const isLoading = isTransactionsLoading || isCustomersLoading || isUsersLoading;
   const toast = useToast();
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useTransactionStore, handleVersionChange);
+
   const deleteMutation = useDeleteTransaction({
     onSuccess: () => {
-      toast.show({
-        placement: "top",
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-            <ToastTitle>Berhasil hapus draft</ToastTitle>
-          </Toast>
-        ),
-      });
+      useTransactionStore.getState().incrementVersion();
+      showSuccessToast(toast, 'Berhasil hapus draft');
     },
     onError: (error) => {
-      toast.show({
-        placement: "top",
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{`Gagal hapus draft: ${error.message}`}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showErrorToast(toast, `Gagal hapus draft: ${error.message}`);
     },
   });
   const continueDraftMutation = useContinueDraft();
-  const {
-    addCartItem,
-    resetCart,
-    setStatus,
-    setTransactionId,
-    setCustomer,
-    setEmployee,
-  } = useTransactionStore();
+  const { addCartItem, resetCart, setStatus, setTransactionId, setCustomer, setEmployee } =
+    useTransactionStore();
 
   // Filter only DRAFT status
   const drafts = transactions?.filter((t) => t.status === Status.DRAFT) || [];
 
   const handleContinueDraft = async (transactionId: string) => {
     const result = await continueDraftMutation.mutateAsync(transactionId);
-    
+
     if (!result) return;
 
+    useTransactionStore.getState().incrementVersion();
     resetCart();
     for (const item of result.items) {
       if (item.product) {
         addCartItem({
           product: {
             ...item.product,
-            code: item.product.barcode,
           } as any,
           tempSellPrice: item.sellPrice,
           quantity: item.quantity,
-          note: item.note,
+          note: item.note ?? undefined,
         });
       }
     }
@@ -94,12 +81,12 @@ export default function TransactionDraft() {
     if (result.employeeId) {
       const user = users?.find((u) => u.id === result.employeeId);
       setEmployee({
-        id: user?.id || "",
-        name: user?.firstName || "",
-        username: user?.username || "",
+        id: user?.id || '',
+        name: user?.firstName || '',
+        username: user?.username || '',
       });
     }
-    router.replace("/(main)/transaction");
+    router.replace('/(main)/transaction');
   };
 
   const handleDeleteDraft = (transactionId: string) => {
@@ -140,16 +127,16 @@ export default function TransactionDraft() {
                   <HStack space="xl" className="items-center flex-1">
                     <VStack>
                       <Text className="text-typography-500 font-bold">
-                        {date.format("HH:mm:ss")}
+                        {date.format('HH:mm:ss')}
                       </Text>
                       <HStack space="sm" className="items-center">
-                        <Heading size="4xl">{date.format("DD")}</Heading>
+                        <Heading size="4xl">{date.format('DD')}</Heading>
                         <VStack>
                           <Text className="text-typography-500 font-bold">
-                            {date.format("MMM")}
+                            {date.format('MMM')}
                           </Text>
                           <Text className="text-typography-500 font-bold">
-                            {date.format("YYYY")}
+                            {date.format('YYYY')}
                           </Text>
                         </VStack>
                       </HStack>
@@ -157,20 +144,12 @@ export default function TransactionDraft() {
                     <VStack space="sm" className="flex-1">
                       <HStack className="justify-between">
                         <VStack>
-                          <Text className="text-typography-400 text-xs">
-                            Estimasi Total
-                          </Text>
-                          <Text className="font-bold">
-                            Rp {formatNumber(draft.totalAmount)}
-                          </Text>
+                          <Text className="text-typography-400 text-xs">Estimasi Total</Text>
+                          <Text className="font-bold">Rp {formatNumber(draft.totalAmount)}</Text>
                         </VStack>
                         <VStack>
-                          <Text className="text-typography-400 text-xs">
-                            Pelanggan
-                          </Text>
-                          <Text className="font-bold">
-                            {draft.customerName}
-                          </Text>
+                          <Text className="text-typography-400 text-xs">Pelanggan</Text>
+                          <Text className="font-bold">{draft.customerName}</Text>
                         </VStack>
                       </HStack>
                       <HStack className="justify-between">

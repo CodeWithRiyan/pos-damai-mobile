@@ -9,24 +9,25 @@ import {
   ModalHeader,
   Pressable,
   Text,
-} from "@/components/ui";
+} from '@/components/ui';
 import {
   FormControl,
   FormControlError,
   FormControlErrorText,
   FormControlLabel,
   FormControlLabelText,
-} from "@/components/ui/form-control";
-import { Input, InputField, InputSlot } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
-import { FinanceType, Status } from "@/lib/constants";
-import { useCreateFinance } from "@/lib/api/finances";
-import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import z from "zod";
+} from '@/components/ui/form-control';
+import { Input, InputField, InputSlot } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
+import { FinanceType, Status } from '@/constants';
+import { useCreateFinance } from '@/hooks/use-finance';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { zodResolver } from '@hookform/resolvers/zod';
+import React from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import z from 'zod';
 
 export default function CashDepositForm({
   open,
@@ -39,20 +40,20 @@ export default function CashDepositForm({
   const createFinanceMutation = useCreateFinance();
 
   const cashDepositSchema = z.object({
-    type: z.enum(["INCOME", "EXPENSES"]),
+    type: z.enum(['INCOME', 'EXPENSES']),
     expensesType: z.string(), // "STORE_EXPENSES" || "SUPPLIES" || "EQUIPMENT"
     transactionDate: z.date(),
     note: z.string(),
-    nominal: z.number().min(1, "Nominal wajib diisi."),
+    nominal: z.number().min(1, 'Nominal wajib diisi.'),
   });
 
   type CashDepositFormValues = z.infer<typeof cashDepositSchema>;
 
   const initialValues: CashDepositFormValues = {
     type: FinanceType.EXPENSES,
-    expensesType: "CASH_DEPOSIT",
+    expensesType: 'CASH_DEPOSIT',
     transactionDate: new Date(),
-    note: "Setor Tunai",
+    note: 'Setor Tunai',
     nominal: 0,
   };
 
@@ -61,9 +62,7 @@ export default function CashDepositForm({
     defaultValues: initialValues,
   });
 
-  const onSubmit: SubmitHandler<CashDepositFormValues> = (
-    data: CashDepositFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<CashDepositFormValues> = (data: CashDepositFormValues) => {
     createFinanceMutation.mutate(
       {
         ...data,
@@ -72,27 +71,13 @@ export default function CashDepositForm({
         status: Status.COMPLETED,
       },
       {
-        onSuccess: (responseData) => {
-          toast.show({
-            placement: "top",
-            render: ({ id }) => (
-              <Toast nativeID={id} action="success" variant="solid">
-                <ToastTitle>Berhasil Setor Tunai</ToastTitle>
-              </Toast>
-            ),
-          });
+        onSuccess: (_responseData) => {
+          showSuccessToast(toast, 'Berhasil Setor Tunai');
           setOpen(false);
           form.reset(initialValues);
         },
         onError: (error) => {
-          toast.show({
-            placement: "top",
-            render: ({ id }) => (
-              <Toast nativeID={id} action="error" variant="solid">
-                <ToastTitle>{`Gagal menyimpan: ${error.message}`}</ToastTitle>
-              </Toast>
-            ),
-          });
+          showErrorToast(toast, `Gagal menyimpan: ${error.message}`);
         },
       },
     );
@@ -121,15 +106,10 @@ export default function CashDepositForm({
             <Controller
               name="nominal"
               control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl isRequired isInvalid={!!error}>
                   <FormControlLabel>
-                    <FormControlLabelText>
-                      Masukkan Nominal Setor
-                    </FormControlLabelText>
+                    <FormControlLabelText>Masukkan Nominal Setor</FormControlLabelText>
                   </FormControlLabel>
                   <Input className="h-16">
                     <InputSlot className="h-full aspect-square items-center justify-center bg-gray-100">
@@ -150,9 +130,7 @@ export default function CashDepositForm({
                   </Input>
                   {error && (
                     <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
+                      <FormControlErrorText>{error.message}</FormControlErrorText>
                     </FormControlError>
                   )}
                 </FormControl>

@@ -1,24 +1,23 @@
-import { GluestackUIProvider } from "@/components/ui";
-import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
-import { Stack, useRouter, useSegments } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
-import "react-native-reanimated";
-import "../global.css";
+import { GluestackUIProvider } from '@/components/ui';
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React, { useEffect } from 'react';
+import 'react-native-reanimated';
+import '../global.css';
 
-import { ActionDrawerProvider } from "@/components/action-drawer";
-import { PopUpConfirmProvider } from "@/components/pop-up-confirm";
-import { SyncConfirmationModal } from "@/components/sync-confirmation-modal";
-import { useSyncManager } from "@/hooks/use-sync-manager";
-import { checkAndResetDbOnUpdate, initializeDb } from "@/lib/db";
-import { authStorageAdapter, initializeStorage } from "@/lib/storage";
-import { SyncFloatingButton } from "@/components/sync-floating-button";
-import { QueryProvider } from "@/providers/query-provider";
-import { useNetworkMonitoring } from "@/stores/network-store";
-import * as NavigationBar from "expo-navigation-bar";
+import { ActionDrawerProvider } from '@/components/action-drawer';
+import { PopUpConfirmProvider } from '@/components/pop-up-confirm';
+import { SyncConfirmationModal } from '@/components/sync-confirmation-modal';
+import { useSyncManager } from '@/hooks/use-sync-manager';
+import { checkAndResetDbOnUpdate, initializeDb } from '@/db';
+import { authStorageAdapter, initializeStorage } from '@/utils/storage';
+import { SyncFloatingButton } from '@/components/sync-floating-button';
+import { useNetworkMonitoring } from '@/stores/network';
+import * as NavigationBar from 'expo-navigation-bar';
 
 export const unstable_settings = {
-  anchor: "(main)",
+  anchor: '(main)',
 };
 
 export default function RootLayout() {
@@ -27,8 +26,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     // Hide navigation bar on Android
-    NavigationBar.setVisibilityAsync("hidden");
-    NavigationBar.setBehaviorAsync("overlay-swipe");
+    NavigationBar.setVisibilityAsync('hidden');
+    NavigationBar.setBehaviorAsync('overlay-swipe');
   }, []);
 
   // Initialize network monitoring
@@ -52,7 +51,7 @@ export default function RootLayout() {
       }
 
       // Rehydrate auth store after storage is ready
-      const { useAuthStore } = await import("@/stores/auth");
+      const { useAuthStore } = await import('@/stores/auth');
       useAuthStore.getState().rehydrate();
 
       setIsStorageReady(true);
@@ -66,14 +65,14 @@ export default function RootLayout() {
     if (!isMounted || !isStorageReady) return;
 
     const token = authStorageAdapter.getToken();
-    const inAuthGroup = segments[0] === "login";
+    const inAuthGroup = segments[0] === 'login';
 
     if (!token && !inAuthGroup) {
       // Redirect to login if not authenticated
-      router.replace("/login");
+      router.replace('/login');
     } else if (token && inAuthGroup) {
       // Redirect to home if already authenticated and trying to access login
-      router.replace("/");
+      router.replace('/');
     }
   }, [segments, router, isMounted, isStorageReady]);
 
@@ -82,29 +81,20 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryProvider>
-      <GluestackUIProvider>
-        <ThemeProvider value={DefaultTheme}>
-          <ActionDrawerProvider>
-            <PopUpConfirmProvider>
-              <Stack>
-                <Stack.Screen name="login" options={{ headerShown: false }} />
-                <Stack.Screen name="(main)" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="modal"
-                  options={{ presentation: "modal", title: "Modal" }}
-                />
-              </Stack>
-              <StatusBar style="dark" hidden />
-              <SyncConfirmationModal
-                isOpen={showSyncModal}
-                onClose={handleCloseSyncModal}
-              />
-              <SyncFloatingButton />
-            </PopUpConfirmProvider>
-          </ActionDrawerProvider>
-        </ThemeProvider>
-      </GluestackUIProvider>
-    </QueryProvider>
+    <GluestackUIProvider>
+      <ThemeProvider value={DefaultTheme}>
+        <ActionDrawerProvider>
+          <PopUpConfirmProvider>
+            <Stack>
+              <Stack.Screen name="login" options={{ headerShown: false }} />
+              <Stack.Screen name="(main)" options={{ headerShown: false }} />
+            </Stack>
+            <StatusBar style="dark" hidden />
+            <SyncConfirmationModal isOpen={showSyncModal} onClose={handleCloseSyncModal} />
+            <SyncFloatingButton />
+          </PopUpConfirmProvider>
+        </ActionDrawerProvider>
+      </ThemeProvider>
+    </GluestackUIProvider>
   );
 }

@@ -1,4 +1,4 @@
-import PurchasingDraft from "@/components/screens/purchasing/draft";
+import PurchasingDraft from '@/components/screens/purchasing/draft';
 
 export default function PurchasingDraftScreen() {
   return <PurchasingDraft />;

@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   Box,
   HStack,
@@ -9,39 +9,36 @@ import {
   SearchIcon,
   Text,
   VStack,
-} from "@/components/ui";
-import { Heading } from "@/components/ui/heading";
-import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBoldDuotone } from "@/components/ui/solar-icon-wrapper";
-import { Spinner } from "@/components/ui/spinner";
-import { useProductSuppliers } from "@/lib/api/product-suppliers";
-import { useProduct } from "@/lib/api/products";
-import dayjs from "dayjs";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
-import { ScrollView } from "react-native";
+} from '@/components/ui';
+import { Heading } from '@/components/ui/heading';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
+import { Spinner } from '@/components/ui/spinner';
+import { useProductSuppliers } from '@/hooks/use-product-supplier';
+import { useProduct } from '@/hooks/use-product';
+import dayjs from 'dayjs';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useMemo, useState } from 'react';
+import { ScrollView } from 'react-native';
 
-import { formatNumber } from "@/lib/utils/format";
+import { formatNumber } from '@/utils/format';
 export default function ProductSuppliersList() {
   const router = useRouter();
   const { productId } = useLocalSearchParams<{ productId: string }>();
 
-  const { data: product, isLoading: isLoadingProduct } = useProduct(
-    productId || "",
+  const { data: product, isLoading: isLoadingProduct } = useProduct(productId || '');
+  const { data: suppliers = [], isLoading: isLoadingSuppliers } = useProductSuppliers(
+    productId || '',
   );
-  const { data: suppliers = [], isLoading: isLoadingSuppliers } =
-    useProductSuppliers(productId || "");
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
 
   const isLoading = isLoadingProduct || isLoadingSuppliers;
 
   // Filter suppliers by search
   const filteredSuppliers = useMemo(() => {
     if (!search) return suppliers;
-    return suppliers.filter((s) =>
-      s.supplierName.toLowerCase().includes(search.toLowerCase()),
-    );
+    return suppliers.filter((s) => s.supplierName.toLowerCase().includes(search.toLowerCase()));
   }, [suppliers, search]);
 
   if (isLoading) {
@@ -58,19 +55,12 @@ export default function ProductSuppliersList() {
 
       <VStack className="flex-1">
         {/* Search Bar */}
-        <VStack
-          space="md"
-          className="p-4 shadow-sm bg-background-0 border-b border-background-200"
-        >
+        <VStack space="md" className="p-4 shadow-sm bg-background-0 border-b border-background-200">
           <Input className="border border-background-300 rounded-lg h-10">
             <InputSlot className="pl-3">
               <InputIcon as={SearchIcon} />
             </InputSlot>
-            <InputField
-              placeholder="Cari nama supplier"
-              value={search}
-              onChangeText={setSearch}
-            />
+            <InputField placeholder="Cari nama supplier" value={search} onChangeText={setSearch} />
           </Input>
 
           <HStack className="justify-between items-center">
@@ -106,12 +96,10 @@ export default function ProductSuppliersList() {
                     <VStack className="flex-1">
                       <Heading size="sm">{supplier.supplierName}</Heading>
                       <Text size="xs" className="text-typography-500">
-                        {supplier.totalQuantity} pcs · Rp{" "}
-                        {formatNumber(supplier.totalValue)}
+                        {supplier.totalQuantity} pcs · Rp {formatNumber(supplier.totalValue)}
                       </Text>
                       <Text size="xs" className="text-typography-400">
-                        Terakhir:{" "}
-                        {dayjs(supplier.lastPurchaseDate).format("DD/MM/YYYY")}
+                        Terakhir: {dayjs(supplier.lastPurchaseDate).format('DD/MM/YYYY')}
                       </Text>
                     </VStack>
                   </HStack>
@@ -129,15 +117,9 @@ export default function ProductSuppliersList() {
             {/* Empty State */}
             {filteredSuppliers.length === 0 && (
               <VStack className="p-12 items-center justify-center">
-                <SolarIconBoldDuotone
-                  name="UserCircle"
-                  size={64}
-                  color="#CBD5E1"
-                />
+                <SolarIconBoldDuotone name="UserCircle" size={64} color="#CBD5E1" />
                 <Text className="text-typography-400 text-center mt-4">
-                  {search
-                    ? "Supplier tidak ditemukan"
-                    : "Belum ada supplier untuk produk ini"}
+                  {search ? 'Supplier tidak ditemukan' : 'Belum ada supplier untuk produk ini'}
                 </Text>
               </VStack>
             )}

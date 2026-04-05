@@ -1,7 +1,7 @@
-const upstreamTransformer = require("@expo/metro-config/babel-transformer");
+const upstreamTransformer = require('@expo/metro-config/babel-transformer');
 
 module.exports.transform = function ({ src, filename, options }) {
-  if (filename.endsWith(".sql")) {
+  if (filename.endsWith('.sql')) {
     return upstreamTransformer.transform({
       src: `module.exports = ${JSON.stringify(src)};`,
       filename,
