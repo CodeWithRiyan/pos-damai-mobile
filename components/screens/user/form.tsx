@@ -10,7 +10,6 @@ import {
   InputField,
   Pressable,
   Spinner,
-  Switch,
   Text,
   useToast,
   VStack,
@@ -45,7 +44,6 @@ export default function UserForm() {
     username: z.string().min(1, 'Username wajib diisi.'),
     password: userId ? z.string() : z.string().min(1, 'Password wajib diisi.'),
     roleId: z.string().min(1, 'Role wajib diisi.'),
-    isActive: z.boolean(),
   });
 
   type UserFormValues = z.infer<typeof userSchema>;
@@ -55,7 +53,6 @@ export default function UserForm() {
     username: '',
     password: '',
     roleId: '',
-    isActive: true,
   };
 
   const form = useForm<UserFormValues>({
@@ -76,11 +73,10 @@ export default function UserForm() {
   useEffect(() => {
     if (userId && user) {
       form.reset({
-        name: user.firstName || '',
+        name: user.name || user.firstName || '',
         username: user.username,
         password: '',
         roleId: user.roles?.[0]?.id || '',
-        isActive: user.isActive,
       });
     } else {
       form.reset(initialValues);
@@ -120,11 +116,7 @@ export default function UserForm() {
         },
       });
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { isActive, ...restData } = data;
-      const createData: CreateUserDTO = restData;
-
-      createMutation.mutate(createData, {
+      createMutation.mutate(data, {
         onSuccess: () => {
           onRefetch();
           useUserStore.getState().incrementVersion();
@@ -251,29 +243,7 @@ export default function UserForm() {
             )}
           />
 
-          {!!userId && (
-            <Controller
-              control={form.control}
-              name="isActive"
-              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-                <FormControl
-                  isInvalid={!!error}
-                  className="flex-row gap-4 items-center border border-background-300 px-4 rounded-md flex-1"
-                >
-                  <FormControlLabel className="mb-0 flex-1">
-                    <FormControlLabelText>Akun Aktif</FormControlLabelText>
-                  </FormControlLabel>
-                  <Switch
-                    size="md"
-                    value={value}
-                    onChange={onChange}
-                    onBlur={onBlur}
-                    className="border-none"
-                  />
-                </FormControl>
-              )}
-            />
-          )}
+
         </VStack>
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">

@@ -19,11 +19,17 @@ export interface User {
   roles?: Array<{
     id: string;
     name: string;
-    permissions: string[];
+    permissions?: string[];
     role?: { id: string; name: string };
   }>;
   createdAt: Date | null;
   updatedAt: Date | null;
+  avatar?: string | null;
+  phone?: string | null;
+  provider?: string;
+  emailVerified?: boolean;
+  isLocked?: boolean;
+  lockReason?: string | null;
 }
 
 export interface CreateUserDTO {
@@ -176,6 +182,7 @@ export function useUser(id: string) {
     setError(null);
     try {
       const result = await fetchUser(id);
+      console.log('Fetched user:', result);
       setData(result);
     } catch (err) {
       setError(err as Error);
