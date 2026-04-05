@@ -32,7 +32,7 @@ pnpm build:check
 pnpm generate
 ```
 
-**Path alias**: `@` maps to the project root (e.g., `@/lib/db`, `@/stores/auth`).
+**Path alias**: `@` maps to the project root (e.g., `@/db`, `@/stores/auth`).
 
 ## Architecture
 

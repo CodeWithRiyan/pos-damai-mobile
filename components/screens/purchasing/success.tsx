@@ -1,11 +1,11 @@
-import { Box, Heading, HStack, Icon, Text, VStack } from "@/components/ui";
-import { Image } from "@/components/ui/image";
-import { Pressable } from "@/components/ui/pressable";
-import { useSupplier } from "@/lib/api/suppliers";
-import { usePurchasingStore } from "@/stores/purchasing";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Printer } from "lucide-react-native";
-import { ScrollView } from "react-native";
+import { Box, Heading, HStack, Icon, Text, VStack } from '@/components/ui';
+import { Image } from '@/components/ui/image';
+import { Pressable } from '@/components/ui/pressable';
+import { useSupplier } from '@/hooks/use-supplier';
+import { usePurchasingStore } from '@/stores/purchasing';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ArrowLeft, Printer } from 'lucide-react-native';
+import { ScrollView } from 'react-native';
 
 export default function PurchasingSuccess() {
   const router = useRouter();
@@ -15,7 +15,7 @@ export default function PurchasingSuccess() {
   // Use ID from URL params as primary source, fallback to checkoutData
   const purchaseId = urlId || checkoutData?.id;
 
-  const { data: supplier } = useSupplier(checkoutData?.supplierId || "");
+  const { data: supplier } = useSupplier(checkoutData?.supplierId || '');
 
   return (
     <VStack className="flex-1 bg-white">
@@ -27,7 +27,7 @@ export default function PurchasingSuccess() {
           <Image
             className="my-6 w-40 h-40"
             source={{
-              uri: require("../../../assets/images/thumb-up.gif"),
+              uri: require('../../../assets/images/thumb-up.gif'),
             }}
             alt="image"
           />
@@ -35,62 +35,51 @@ export default function PurchasingSuccess() {
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-500 text-lg">Status</Text>
               <Text
-                className={`font-bold text-lg${checkoutData?.isPayable ? " text-error-500" : " text-success-500"}`}
+                className={`font-bold text-lg${checkoutData?.isPayable ? ' text-error-500' : ' text-success-500'}`}
               >
-                {checkoutData?.isPayable ? "Belum Lunas" : "Lunas"}
+                {checkoutData?.isPayable ? 'Belum Lunas' : 'Lunas'}
               </Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
-              <Text className="text-typography-500 text-lg">
-                Total Transaksi
-              </Text>
+              <Text className="text-typography-500 text-lg">Total Transaksi</Text>
               <Text className="font-bold text-lg">
                 Rp {checkoutData?.totalPurchase?.toLocaleString()}
               </Text>
             </HStack>
             <HStack className="w-full flex-row justify-between">
-              <Text className="text-typography-500 text-lg">
-                Uang Dibayarkan
-              </Text>
+              <Text className="text-typography-500 text-lg">Uang Dibayarkan</Text>
               <Text className="font-bold text-lg">
-                Rp{" "}
-                {parseFloat(checkoutData?.totalPaid || "0").toLocaleString(
-                  "id-ID",
-                )}
+                Rp {parseFloat(checkoutData?.totalPaid || '0').toLocaleString('id-ID')}
               </Text>
             </HStack>
             {checkoutData?.isPayable ? (
               <HStack className="w-full flex-row justify-between">
                 <Text className="text-typography-500 text-lg">Kekurangan</Text>
                 <Text className="font-bold text-lg text-error-500">
-                  Rp{" "}
+                  Rp{' '}
                   {checkoutData?.totalPaid && checkoutData?.totalPurchase
                     ? (
-                        checkoutData?.totalPurchase -
-                        parseFloat(checkoutData.totalPaid)
+                        checkoutData?.totalPurchase - parseFloat(checkoutData.totalPaid)
                       ).toLocaleString()
-                    : "0"}
+                    : '0'}
                 </Text>
               </HStack>
             ) : (
               <HStack className="w-full flex-row justify-between">
                 <Text className="text-typography-500 text-lg">Kembalian</Text>
                 <Text className="font-bold text-lg">
-                  Rp{" "}
+                  Rp{' '}
                   {checkoutData?.totalPaid && checkoutData?.totalPurchase
                     ? (
-                        parseFloat(checkoutData.totalPaid) -
-                        checkoutData?.totalPurchase
+                        parseFloat(checkoutData.totalPaid) - checkoutData?.totalPurchase
                       ).toLocaleString()
-                    : "0"}
+                    : '0'}
                 </Text>
               </HStack>
             )}
             <HStack className="w-full flex-row justify-between">
               <Text className="text-typography-500 text-lg">Kasir / Admin</Text>
-              <Text className="font-bold text-lg">
-                {checkoutData?.createdByName}
-              </Text>
+              <Text className="font-bold text-lg">{checkoutData?.createdByName}</Text>
             </HStack>
             {supplier && (
               <HStack className="w-full flex-row justify-between">
@@ -106,7 +95,7 @@ export default function PurchasingSuccess() {
                 if (purchaseId) {
                   router.replace(`/(main)/purchasing/receipt/${purchaseId}`);
                 } else {
-                  router.replace("/(main)/purchasing");
+                  router.replace('/(main)/purchasing');
                 }
                 resetCart();
                 setCheckoutData(null);

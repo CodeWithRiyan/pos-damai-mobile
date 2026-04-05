@@ -1,52 +1,51 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
-import { useBulkDeleteEntity } from "@/hooks/use-bulk-delete-entity";
-import { useItemSelection } from "@/hooks/use-item-selection";
-import { Box } from "@/components/ui/box";
-import { Button, ButtonText } from "@/components/ui/button";
-import { Heading } from "@/components/ui/heading";
-import { HStack } from "@/components/ui/hstack";
-import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { Spinner } from "@/components/ui/spinner";
-import { Text } from "@/components/ui/text";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
-import { getErrorMessage } from "@/lib/api/client";
-import { useRoles } from "@/lib/api/roles";
-import {
-  useBulkDeleteUser,
-  useCreateUser,
-  User,
-  useUsers,
-} from "@/lib/api/users";
-import { bulkDeleteConfirm } from "@/lib/utils/delete-confirm";
-import { exportUsers, importUsers } from "@/lib/utils/excel";
-import { showSuccessToast } from "@/lib/utils/toast";
-import dayjs from "dayjs";
-import { useRouter } from "expo-router";
-import React from "react";
-import { FlatList } from "react-native";
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
+import { PermissionGuard } from '@/components/permission-guard';
+import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
+import { useItemSelection } from '@/hooks/use-item-selection';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { Box } from '@/components/ui/box';
+import { Button, ButtonText } from '@/components/ui/button';
+import { Heading } from '@/components/ui/heading';
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { Spinner } from '@/components/ui/spinner';
+import { Text } from '@/components/ui/text';
+import { useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
+import { getErrorMessage } from '@/db/client';
+import { useRoles } from '@/hooks/use-role';
+import { useBulkDeleteUser, useCreateUser, User, useUsers } from '@/hooks/use-user';
+import { bulkDeleteConfirm } from '@/utils/delete-confirm';
+import { exportUsers, importUsers } from '@/utils/excel';
+import { useUserStore } from '@/stores/user';
+import { showSuccessToast, showToast } from '@/utils/toast';
+import dayjs from 'dayjs';
+import { useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
+import { FlashList } from '@shopify/flash-list';
 
 export default function UserList() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useUsers();
   const { data: rolesData } = useRoles();
-  const {
-    selectedItems,
-    handleItemPress,
-    clearSelection,
-    isSelected,
-    hasSelection,
-  } = useItemSelection<User>();
+  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } =
+    useItemSelection<User>();
 
   const users = data || [];
   const roles = rolesData || [];
 
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(useUserStore, handleVersionChange);
+
   const deleteMutation = useBulkDeleteUser();
   const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({
-    successMessage: "Karyawan berhasil dihapus",
+    successMessage: 'Karyawan berhasil dihapus',
     deleteMutation,
     onSuccess: () => refetch(),
     clearSelection,
@@ -59,23 +58,14 @@ export default function UserList() {
     try {
       await exportUsers(users);
     } catch (e) {
-      toast.show({
-        placement: "top",
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 
   const handleImport = async () => {
     hideActionDrawer();
     try {
-      const dtos = await importUsers(
-        roles.map((r) => ({ id: r.id, name: r.name })),
-      );
+      const dtos = await importUsers(roles.map((r) => ({ id: r.id, name: r.name })));
       if (!dtos) return;
       let successCount = 0;
       for (const dto of dtos) {
@@ -87,20 +77,13 @@ export default function UserList() {
       refetch();
       showSuccessToast(toast, `${successCount} karyawan berhasil diimpor`);
     } catch (e) {
-      toast.show({
-        placement: "top",
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 
   const handleAddUser = () => {
     clearSelection();
-    router.push("/(main)/management/role-user/user/add");
+    router.push('/(main)/management/role-user/user/add');
   };
 
   if (isLoading) {
@@ -127,16 +110,14 @@ export default function UserList() {
                   <Spinner size="small" color="#FFFFFF" />
                 </Box>
               ) : (
-                <Pressable
-                  className="p-6"
-                  onPress={() =>
-                    triggerBulkDelete(
-                      bulkDeleteConfirm("karyawan", selectedItems),
-                    )
-                  }
-                >
-                  <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
-                </Pressable>
+                <PermissionGuard permissions="users:delete">
+                  <Pressable
+                    className="p-6"
+                    onPress={() => triggerBulkDelete(bulkDeleteConfirm('karyawan', selectedItems))}
+                  >
+                    <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                  </Pressable>
+                </PermissionGuard>
               )
             ) : (
               <Pressable
@@ -145,13 +126,13 @@ export default function UserList() {
                   showActionDrawer({
                     actions: [
                       {
-                        label: "Export Data",
-                        icon: "Export",
+                        label: 'Export Data',
+                        icon: 'Export',
                         onPress: handleExport,
                       },
                       {
-                        label: "Import Data",
-                        icon: "Import",
+                        label: 'Import Data',
+                        icon: 'Import',
                         onPress: handleImport,
                       },
                     ],
@@ -162,7 +143,7 @@ export default function UserList() {
                   name="MenuDots"
                   size={20}
                   color="#FDFBF9"
-                  style={{ transform: [{ rotate: "90deg" }] }}
+                  style={{ transform: [{ rotate: '90deg' }] }}
                 />
               </Pressable>
             )}
@@ -171,22 +152,20 @@ export default function UserList() {
       />
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
-          <FlatList
+          <FlashList
             data={users}
             className="flex-1"
             keyExtractor={(user) => user.id}
             renderItem={({ item: user }) => (
               <Pressable
                 className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                  isSelected(user) ? "bg-gray-100" : ""
+                  isSelected(user) ? 'bg-gray-100' : ''
                 }`}
                 onPress={() => {
                   if (hasSelection) {
                     handleItemPress(user);
                   } else {
-                    router.navigate(
-                      `/(main)/management/role-user/user/detail/${user.id}`,
-                    );
+                    router.navigate(`/(main)/management/role-user/user/detail/${user.id}`);
                     clearSelection();
                   }
                 }}
@@ -196,31 +175,22 @@ export default function UserList() {
                   <HStack space="md" className="items-center">
                     <Box className="w-10 h-10 rounded-md bg-brand-secondary/20 items-center justify-center">
                       <Text className="text-brand-primary font-bold">
-                        {(user.firstName || user.username)
-                          .substring(0, 1)
-                          .toUpperCase()}
+                        {(user.firstName || user.username).substring(0, 1).toUpperCase()}
                       </Text>
                     </Box>
                     <VStack>
-                      <Heading size="sm">
-                        {user.firstName || user.username}
-                      </Heading>
+                      <Heading size="sm">{user.firstName || user.username}</Heading>
                       <Text size="xs" className="text-slate-500">
-                        {user.roles?.[0]?.role?.name || "No role"}
+                        {user.roles?.[0]?.role?.name || 'No role'}
                       </Text>
                     </VStack>
                   </HStack>
                   <VStack className="items-end">
-                    <Text
-                      size="xs"
-                      className="text-brand-primary text-sm font-bold"
-                    >
+                    <Text size="xs" className="text-brand-primary text-sm font-bold">
                       Terakhir Login
                     </Text>
                     <Text size="xs">
-                      {user.lastLoginAt
-                        ? dayjs(user.lastLoginAt).format("DD MMMM YYYY")
-                        : "-"}
+                      {user.lastLoginAt ? dayjs(user.lastLoginAt).format('DD MMMM YYYY') : '-'}
                     </Text>
                   </VStack>
                 </HStack>
@@ -233,13 +203,15 @@ export default function UserList() {
             }
           />
           <HStack className="w-full p-4">
-            <Button
-              size="sm"
-              className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
-              onPress={handleAddUser}
-            >
-              <ButtonText className="text-white">TAMBAH KARYAWAN</ButtonText>
-            </Button>
+            <PermissionGuard permissions="users:create">
+              <Button
+                size="sm"
+                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                onPress={handleAddUser}
+              >
+                <ButtonText className="text-white">TAMBAH KARYAWAN</ButtonText>
+              </Button>
+            </PermissionGuard>
           </HStack>
         </VStack>
       </Box>

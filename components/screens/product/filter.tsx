@@ -10,10 +10,10 @@ import {
   Pressable,
   Text,
   VStack,
-} from "@/components/ui";
-import SelectModal from "@/components/ui/select/select-modal";
-import { useBrands } from "@/lib/api/brands";
-import { useCategories } from "@/lib/api/categories";
+} from '@/components/ui';
+import SelectModal from '@/components/ui/select/select-modal';
+import { useBrands } from '@/hooks/use-brand';
+import { useCategories } from '@/hooks/use-category';
 
 export default function ProductFilter({
   brandId,
@@ -60,7 +60,7 @@ export default function ProductFilter({
                 value: cat.id,
               }))}
               className="flex-1"
-              onChange={(v) => setCategoryId(v || "")}
+              onChange={(v) => setCategoryId(v || '')}
             />
             <SelectModal
               value={brandId}
@@ -71,7 +71,7 @@ export default function ProductFilter({
                 value: brand.id,
               }))}
               className="flex-1"
-              onChange={(v) => setBrandId(v || "")}
+              onChange={(v) => setBrandId(v || '')}
             />
           </VStack>
         </ModalBody>
@@ -91,8 +91,8 @@ export default function ProductFilter({
               <Pressable
                 className="flex-1 flex px-4 h-12 items-center justify-center rounded-lg border border-error-500 bg-error-100 active:bg-error-200"
                 onPress={() => {
-                  setBrandId("");
-                  setCategoryId("");
+                  setBrandId('');
+                  setCategoryId('');
                   setOpen(false);
                 }}
               >

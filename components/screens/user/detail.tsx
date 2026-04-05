@@ -1,14 +1,17 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
-import { Box, HStack, Text, VStack } from "@/components/ui";
-import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { useDeleteEntity } from "@/hooks/use-delete-entity";
-import { singleDeleteConfirm } from "@/lib/utils/delete-confirm";
-import { useDeleteUser, useUser, useUsers } from "@/lib/api/users";
-import dayjs from "dayjs";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { ScrollView } from "react-native";
+import { useCallback, useState } from 'react';
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
+import { Box, HStack, Text, VStack } from '@/components/ui';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { useDeleteEntity } from '@/hooks/use-delete-entity';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { useDeleteUser, useUsers, refetchUserById, User } from '@/hooks/use-user';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useUserStore } from '@/stores/user';
+import dayjs from 'dayjs';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ScrollView } from 'react-native';
 
 export default function UserDetail() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -16,42 +19,47 @@ export default function UserDetail() {
   const { id } = useLocalSearchParams();
   const userId = id as string;
 
+  const [user, setUser] = useState<User | null>(null);
+
   const { refetch: refetchUsers } = useUsers();
-  const { data: user, refetch: refetchUser } = useUser(userId || "");
   const deleteMutation = useDeleteUser();
 
-  const onRefetch = () => {
+  const onRefetch = useCallback(async () => {
+    if (userId) {
+      const freshUser = await refetchUserById(userId);
+      setUser(freshUser);
+    }
     refetchUsers();
-    refetchUser();
-  };
+  }, [userId, refetchUsers]);
+
+  useStoreVersionSync(useUserStore, onRefetch);
 
   const { triggerDelete } = useDeleteEntity({
-    successMessage: "Karyawan berhasil dihapus",
+    successMessage: 'Karyawan berhasil dihapus',
     deleteMutation,
-    onSuccess: onRefetch,
+    onSuccess: () => {
+      useUserStore.getState().incrementVersion();
+      onRefetch();
+    },
   });
 
   const handleAction = () => {
     showActionDrawer({
       actions: [
         {
-          label: "Edit",
-          icon: "Pen",
+          label: 'Edit',
+          icon: 'Pen',
           onPress: () => {
-            router.navigate(
-              `/(main)/management/role-user/user/edit/${user?.id}`,
-            );
+            router.navigate(`/(main)/management/role-user/user/edit/${user?.id}`);
             hideActionDrawer();
           },
         },
         {
-          label: "Hapus",
-          icon: "TrashBin2",
-          theme: "red",
+          label: 'Hapus',
+          icon: 'TrashBin2',
+          theme: 'red',
           onPress: () => {
-            triggerDelete(
-              singleDeleteConfirm("karyawan", user?.id || "", user?.username),
-            );
+            triggerDelete(singleDeleteConfirm('karyawan', user?.id || '', user?.username));
             hideActionDrawer();
           },
         },
@@ -70,7 +78,7 @@ export default function UserDetail() {
                 name="MenuDots"
                 size={20}
                 color="#FDFBF9"
-                style={{ transform: [{ rotate: "90deg" }] }}
+                style={{ transform: [{ rotate: '90deg' }] }}
               />
             </Pressable>
           </HStack>
@@ -86,20 +94,16 @@ export default function UserDetail() {
           </VStack>
           <VStack className="w-1/2 pr-4">
             <Text className="text-gray-500">Role</Text>
-            <Text className="font-bold">
-              {user?.roles?.[0]?.role?.name || "-"}
-            </Text>
+            <Text className="font-bold">{user?.roles?.[0]?.role?.name || '-'}</Text>
           </VStack>
           <VStack className="w-1/2 pr-4">
             <Text className="text-gray-500">Username</Text>
-            <Text className="font-bold">{user?.username || "-"}</Text>
+            <Text className="font-bold">{user?.username || '-'}</Text>
           </VStack>
           <VStack className="w-1/2 pr-4">
             <Text className="text-gray-500">Tanggal Terakhir Login</Text>
             <Text className="font-bold">
-              {user?.lastLoginAt
-                ? dayjs(user?.lastLoginAt).format("DD MMMM YYYY")
-                : "-"}
+              {user?.lastLoginAt ? dayjs(user?.lastLoginAt).format('DD MMMM YYYY') : '-'}
             </Text>
           </VStack>
         </Box>

@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   Heading,
   HStack,
@@ -10,19 +10,15 @@ import {
   SearchIcon,
   Text,
   VStack,
-} from "@/components/ui";
-import { Spinner } from "@/components/ui/spinner";
-import { usePurchaseReturns } from "@/lib/api/return-purchasing";
-import dayjs from "dayjs";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { FlatList } from "react-native";
+} from '@/components/ui';
+import { Spinner } from '@/components/ui/spinner';
+import { usePurchaseReturns } from '@/hooks/use-supplier-return';
+import dayjs from 'dayjs';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { FlashList } from '@shopify/flash-list';
 
-import { formatNumber } from "@/lib/utils/format";
-export default function ReturnPurchasingHistory({
-  isReport,
-}: {
-  isReport?: boolean;
-}) {
+import { formatNumber } from '@/utils/format';
+export default function ReturnPurchasingHistory({ isReport }: { isReport?: boolean }) {
   const { supplierId } = useLocalSearchParams<{ supplierId: string }>();
   const router = useRouter();
   const { data: returns, isLoading } = usePurchaseReturns({ supplierId });
@@ -30,11 +26,7 @@ export default function ReturnPurchasingHistory({
   return (
     <VStack className="flex-1 bg-white">
       <Header
-        header={
-          isReport
-            ? "LAPORAN RETUR PEMBELIAN BARANG"
-            : "RIWAYAT RETUR PEMBELIAN BARANG"
-        }
+        header={isReport ? 'LAPORAN RETUR PEMBELIAN BARANG' : 'RIWAYAT RETUR PEMBELIAN BARANG'}
         isGoBack
       />
       <VStack space="sm" className="p-4 shadow-lg bg-background-0">
@@ -43,7 +35,7 @@ export default function ReturnPurchasingHistory({
             <InputIcon as={SearchIcon} />
           </InputSlot>
           <InputField
-            placeholder={`Cari no transaksi${!supplierId ? " atau nama supplier" : ""}`}
+            placeholder={`Cari no transaksi${!supplierId ? ' atau nama supplier' : ''}`}
           />
         </Input>
       </VStack>
@@ -52,7 +44,7 @@ export default function ReturnPurchasingHistory({
           <Spinner />
         </VStack>
       ) : (
-        <FlatList
+        <FlashList
           data={returns}
           className="flex-1"
           keyExtractor={(item) => item.id}
@@ -62,50 +54,34 @@ export default function ReturnPurchasingHistory({
               <Pressable
                 className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
                 onPress={() =>
-                  router.navigate(
-                    `/(main)/management/return/purchasing/receipt/${ret.id}`,
-                  )
+                  router.navigate(`/(main)/management/return/purchasing/receipt/${ret.id}`)
                 }
               >
                 <HStack space="xl" className="items-center">
                   <VStack>
-                    <Text className="text-typography-500 font-bold">
-                      {date.format("HH:mm:ss")}
-                    </Text>
+                    <Text className="text-typography-500 font-bold">{date.format('HH:mm:ss')}</Text>
                     <HStack space="sm" className="items-center">
                       <Heading size="4xl">{date.date()}</Heading>
                       <VStack>
-                        <Text className="text-typography-500 font-bold">
-                          {date.format("MMM")}
-                        </Text>
-                        <Text className="text-typography-500 font-bold">
-                          {date.year()}
-                        </Text>
+                        <Text className="text-typography-500 font-bold">{date.format('MMM')}</Text>
+                        <Text className="text-typography-500 font-bold">{date.year()}</Text>
                       </VStack>
                     </HStack>
                   </VStack>
                   <VStack space="sm" className="flex-1">
                     <HStack className="justify-between">
                       <VStack>
-                        <Text className="text-typography-400 text-xs">
-                          Jumlah Retur
-                        </Text>
-                        <Text className="font-bold">
-                          Rp {formatNumber(ret.totalAmount ?? 0)}
-                        </Text>
+                        <Text className="text-typography-400 text-xs">Jumlah Retur</Text>
+                        <Text className="font-bold">Rp {formatNumber(ret.totalAmount ?? 0)}</Text>
                       </VStack>
                       <VStack>
-                        <Text className="text-typography-400 text-xs">
-                          Supplier
-                        </Text>
+                        <Text className="text-typography-400 text-xs">Supplier</Text>
                         <Text className="font-bold">{ret.supplierName}</Text>
                       </VStack>
                       <VStack />
                     </HStack>
                     <HStack className="justify-between">
-                      <Text className="text-typography-400 font-bold">
-                        No: {ret.local_ref_id}
-                      </Text>
+                      <Text className="text-typography-400 font-bold">No: {ret.local_ref_id}</Text>
                     </HStack>
                   </VStack>
                   <Text className="text-typography-400 text-lg">›</Text>
@@ -115,9 +91,7 @@ export default function ReturnPurchasingHistory({
           }}
           ListEmptyComponent={
             <VStack className="items-center py-10">
-              <Text className="text-typography-400">
-                Belum ada riwayat retur
-              </Text>
+              <Text className="text-typography-400">Belum ada riwayat retur</Text>
             </VStack>
           }
         />

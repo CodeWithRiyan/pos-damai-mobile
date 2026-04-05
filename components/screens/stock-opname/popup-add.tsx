@@ -21,29 +21,21 @@ import {
   RadioLabel,
   Text,
   VStack,
-} from "@/components/ui";
-import { ProductType } from "@/lib/constants";
-import { useStockOpnameStore } from "@/stores/stock-opname";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import z from "zod";
+} from '@/components/ui';
+import { ProductType } from '@/constants';
+import { useStockOpnameStore } from '@/stores/stock-opname';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import z from 'zod';
 
 export default function PopupAddStockOpname() {
-  const {
-    addProduct,
-    addProductVariantId,
-    cart,
-    setAddProduct,
-    addCartItem,
-    removeCartItem,
-  } = useStockOpnameStore();
+  const { addProduct, addProductVariantId, cart, setAddProduct, addCartItem, removeCartItem } =
+    useStockOpnameStore();
 
   const currentProductInCart = addProductVariantId
     ? cart.find(
-        (item) =>
-          item.product.id === addProduct?.id &&
-          item.variant?.id === addProductVariantId,
+        (item) => item.product.id === addProduct?.id && item.variant?.id === addProductVariantId,
       )
     : !addProductVariantId && addProduct?.type !== ProductType.MULTIUNIT
       ? cart.find((item) => item.product.id === addProduct?.id)
@@ -57,9 +49,7 @@ export default function PopupAddStockOpname() {
 
   const addStockOpnameSchema = z.object({
     variantUnitId: z.string().nullable(),
-    physicalStock: z
-      .number()
-      .min(0, { message: "Stok fisik tidak boleh kurang dari 0" }),
+    physicalStock: z.number().min(0, { message: 'Stok fisik tidak boleh kurang dari 0' }),
   });
 
   type AddStockOpnameFormValues = z.infer<typeof addStockOpnameSchema>;
@@ -74,7 +64,7 @@ export default function PopupAddStockOpname() {
     defaultValues: initialValues,
   });
 
-  const physicalStock = form.watch("physicalStock");
+  const physicalStock = form.watch('physicalStock');
 
   useEffect(() => {
     if (addProduct && currentProductInCart) {
@@ -88,16 +78,11 @@ export default function PopupAddStockOpname() {
         variantUnitId: addProductVariantId || null,
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, addProduct]);
 
-  const onSubmit: SubmitHandler<AddStockOpnameFormValues> = (
-    data: AddStockOpnameFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<AddStockOpnameFormValues> = (data: AddStockOpnameFormValues) => {
     if (addProduct?.type === ProductType.MULTIUNIT) {
-      const selectedVariant = addProduct.variants.find(
-        (item) => item.id === data.variantUnitId,
-      );
+      const selectedVariant = addProduct.variants.find((item) => item.id === data.variantUnitId);
 
       if (!selectedVariant) return;
 
@@ -145,9 +130,7 @@ export default function PopupAddStockOpname() {
         return result;
       };
 
-      const totalNetto = parseFloat(
-        (selectedNetto * data.physicalStock).toFixed(10),
-      );
+      const totalNetto = parseFloat((selectedNetto * data.physicalStock).toFixed(10));
       const decomposed = decompose(totalNetto, sortedVariants);
 
       // Remove the variant being edited from cart first
@@ -155,16 +138,12 @@ export default function PopupAddStockOpname() {
 
       for (const { variant, quantity } of decomposed) {
         const existingItem = cart.find(
-          (item) =>
-            item.product.id === addProduct.id &&
-            item.variant?.id === variant.id,
+          (item) => item.product.id === addProduct.id && item.variant?.id === variant.id,
         );
 
         // Prevent double-counting for the variant being edited
         const existingQty =
-          existingItem && variant.id !== selectedVariant.id
-            ? existingItem.physicalStock
-            : 0;
+          existingItem && variant.id !== selectedVariant.id ? existingItem.physicalStock : 0;
 
         const finalQty = existingQty + quantity;
         addCartItem({
@@ -233,25 +212,16 @@ export default function PopupAddStockOpname() {
                         <FormControlLabelText>Pilih Unit</FormControlLabelText>
                       </FormControlLabel>
                       <RadioGroup
-                        value={value || ""}
+                        value={value || ''}
                         onChange={(v) => {
-                          const variant = cart?.find(
-                            (f) => f.variant?.id === v,
-                          );
+                          const variant = cart?.find((f) => f.variant?.id === v);
                           onChange(v);
-                          form.setValue(
-                            "physicalStock",
-                            variant?.physicalStock || 1,
-                          );
+                          form.setValue('physicalStock', variant?.physicalStock || 1);
                         }}
                       >
                         <VStack space="sm">
                           {variantUnitOptions.map((variant) => (
-                            <Radio
-                              key={variant.value}
-                              value={variant.value}
-                              size="md"
-                            >
+                            <Radio key={variant.value} value={variant.value} size="md">
                               <RadioIndicator>
                                 <RadioIcon as={CircleIcon} />
                               </RadioIndicator>
@@ -264,10 +234,7 @@ export default function PopupAddStockOpname() {
                   )}
                 />
               )}
-              <HStack
-                space="md"
-                className="w-full justify-between items-center"
-              >
+              <HStack space="md" className="w-full justify-between items-center">
                 <Pressable
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                   disabled={physicalStock <= 0}
@@ -275,7 +242,7 @@ export default function PopupAddStockOpname() {
                     const currentPhysicalStock = physicalStock;
 
                     if (currentPhysicalStock && currentPhysicalStock > 0) {
-                      form.setValue("physicalStock", currentPhysicalStock - 1);
+                      form.setValue('physicalStock', currentPhysicalStock - 1);
                     }
                   }}
                 >
@@ -286,21 +253,14 @@ export default function PopupAddStockOpname() {
                 <Controller
                   name="physicalStock"
                   control={form.control}
-                  render={({
-                    field: { onChange, onBlur, value },
-                    fieldState: { error },
-                  }) => (
-                    <FormControl
-                      isRequired
-                      isInvalid={!!error}
-                      className="w-44 h-full"
-                    >
+                  render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                    <FormControl isRequired isInvalid={!!error} className="w-44 h-full">
                       <Input className="flex-1 border-transparent data-[focus=true]:border-transparent bg-transparent">
                         <InputField
                           value={value.toString()}
                           autoComplete="off"
                           onChangeText={(text: string) => {
-                            const val = text.replace(",", ".");
+                            const val = text.replace(',', '.');
                             onChange(val);
                           }}
                           onBlur={() => {
@@ -319,7 +279,7 @@ export default function PopupAddStockOpname() {
                   onPress={() => {
                     const currentPhysicalStock = physicalStock;
 
-                    form.setValue("physicalStock", currentPhysicalStock + 1);
+                    form.setValue('physicalStock', currentPhysicalStock + 1);
                   }}
                 >
                   <Heading size="2xl" className="text-primary-500">

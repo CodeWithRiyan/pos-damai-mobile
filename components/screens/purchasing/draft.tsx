@@ -1,33 +1,29 @@
-import Header from "@/components/header";
-import {
-  Box,
-  Heading,
-  HStack,
-  Icon,
-  Pressable,
-  Spinner,
-  Text,
-  VStack,
-} from "@/components/ui";
-import { fetchPurchase, usePurchases } from "@/lib/api/purchasing";
-import { Status } from "@/lib/constants";
-import { db } from "@/lib/db";
-import * as schema from "@/lib/db/schema";
-import { usePurchasingStore } from "@/stores/purchasing";
-import { useQueryClient } from "@tanstack/react-query";
-import dayjs from "dayjs";
-import { eq } from "drizzle-orm";
-import { useRouter } from "expo-router";
-import { Trash2 } from "lucide-react-native";
-import { ScrollView } from "react-native";
+import Header from '@/components/header';
+import { Box, Heading, HStack, Icon, Pressable, Spinner, Text, VStack } from '@/components/ui';
+import { fetchPurchase, usePurchases } from '@/hooks/use-purchasing';
+import { Status } from '@/constants';
+import { db } from '@/db';
+import * as schema from '@/db/schema';
+import { usePurchasingStore } from '@/stores/purchasing';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import dayjs from 'dayjs';
+import { eq } from 'drizzle-orm';
+import { useRouter } from 'expo-router';
+import { Trash2 } from 'lucide-react-native';
+import { useCallback } from 'react';
+import { ScrollView } from 'react-native';
 
-import { formatNumber } from "@/lib/utils/format";
+import { formatNumber } from '@/utils/format';
 export default function PurchasingDraft() {
   const router = useRouter();
-  const { data: purchases, isLoading } = usePurchases();
-  const { addCartItem, resetCart, setStatus, setPurchaseId } =
-    usePurchasingStore();
-  const queryClient = useQueryClient();
+  const { data: purchases, isLoading, refetch } = usePurchases();
+  const { addCartItem, resetCart, setStatus, setPurchaseId } = usePurchasingStore();
+
+  const handleVersionChange = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useStoreVersionSync(usePurchasingStore, handleVersionChange);
 
   // Filter only DRAFT status
   const drafts = purchases?.filter((p) => p.status === Status.DRAFT) || [];
@@ -49,15 +45,15 @@ export default function PurchasingDraft() {
         if (productResult.length > 0) {
           addCartItem({
             product: productResult[0] as any,
-            newPurchasePrice:
-              item.purchasePrice || productResult[0].purchasePrice || 0,
+            newPurchasePrice: item.unitPrice || productResult[0].purchasePrice || 0,
             quantity: item.quantity,
           });
         }
       }
       setStatus(Status.DRAFT);
       setPurchaseId(detail.id);
-      router.replace("/(main)/purchasing");
+      usePurchasingStore.getState().incrementVersion();
+      router.replace('/(main)/purchasing');
     }
   };
 
@@ -77,16 +73,9 @@ export default function PurchasingDraft() {
           const transactions = await tx
             .select()
             .from(schema.inventoryTransactions)
-            .where(
-              eq(
-                schema.inventoryTransactions.organizationId,
-                existing[0].organizationId,
-              ),
-            );
+            .where(eq(schema.inventoryTransactions.organizationId, existing[0].organizationId));
 
-          const filtered = transactions.filter((t) =>
-            t.local_ref_id?.startsWith(refId),
-          );
+          const filtered = transactions.filter((t) => t.local_ref_id?.startsWith(refId));
           for (const t of filtered) {
             await tx
               .delete(schema.inventoryTransactions)
@@ -96,12 +85,9 @@ export default function PurchasingDraft() {
       }
 
       // 3. Delete purchase
-      await tx
-        .delete(schema.purchases)
-        .where(eq(schema.purchases.id, purchaseId));
+      await tx.delete(schema.purchases).where(eq(schema.purchases.id, purchaseId));
     });
-
-    queryClient.invalidateQueries({ queryKey: ["purchases"] });
+    usePurchasingStore.getState().incrementVersion();
   };
 
   if (isLoading) {
@@ -138,16 +124,16 @@ export default function PurchasingDraft() {
                   <HStack space="xl" className="items-center flex-1">
                     <VStack>
                       <Text className="text-typography-500 font-bold">
-                        {date.format("HH:mm:ss")}
+                        {date.format('HH:mm:ss')}
                       </Text>
                       <HStack space="sm" className="items-center">
-                        <Heading size="4xl">{date.format("DD")}</Heading>
+                        <Heading size="4xl">{date.format('DD')}</Heading>
                         <VStack>
                           <Text className="text-typography-500 font-bold">
-                            {date.format("MMM")}
+                            {date.format('MMM')}
                           </Text>
                           <Text className="text-typography-500 font-bold">
-                            {date.format("YYYY")}
+                            {date.format('YYYY')}
                           </Text>
                         </VStack>
                       </HStack>
@@ -155,20 +141,12 @@ export default function PurchasingDraft() {
                     <VStack space="sm" className="flex-1">
                       <HStack className="justify-between">
                         <VStack>
-                          <Text className="text-typography-400 text-xs">
-                            Estimasi Total
-                          </Text>
-                          <Text className="font-bold">
-                            Rp {formatNumber(draft.totalAmount)}
-                          </Text>
+                          <Text className="text-typography-400 text-xs">Estimasi Total</Text>
+                          <Text className="font-bold">Rp {formatNumber(draft.totalAmount)}</Text>
                         </VStack>
                         <VStack>
-                          <Text className="text-typography-400 text-xs">
-                            Supplier
-                          </Text>
-                          <Text className="font-bold">
-                            {draft.supplierName}
-                          </Text>
+                          <Text className="text-typography-400 text-xs">Supplier</Text>
+                          <Text className="font-bold">{draft.supplierName}</Text>
                         </VStack>
                       </HStack>
                       <HStack className="justify-between">

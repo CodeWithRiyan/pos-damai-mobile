@@ -1,18 +1,20 @@
-import { useActionDrawer } from "@/components/action-drawer";
-import Header from "@/components/header";
-import { useBulkDeleteEntity } from "@/hooks/use-bulk-delete-entity";
-import { Input, InputField, InputIcon, InputSlot } from "@/components/ui";
-import { Badge, BadgeText } from "@/components/ui/badge";
-import { Box } from "@/components/ui/box";
-import { Button, ButtonText } from "@/components/ui/button";
-import { Heading } from "@/components/ui/heading";
-import { HStack } from "@/components/ui/hstack";
-import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { Spinner } from "@/components/ui/spinner";
-import { Text } from "@/components/ui/text";
-import { Toast, ToastTitle, useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
+import { useActionDrawer } from '@/components/action-drawer';
+import Header from '@/components/header';
+import { PermissionGuard } from '@/components/permission-guard';
+import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { Input, InputField, InputIcon, InputSlot } from '@/components/ui';
+import { Badge, BadgeText } from '@/components/ui/badge';
+import { Box } from '@/components/ui/box';
+import { Button, ButtonText } from '@/components/ui/button';
+import { Heading } from '@/components/ui/heading';
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { Spinner } from '@/components/ui/spinner';
+import { Text } from '@/components/ui/text';
+import { useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
 import {
   Brand,
   useBrands,
@@ -20,39 +22,40 @@ import {
   useCapitalValueByBrand,
   useCreateBrand,
   useProductCountsByBrand,
-} from "@/lib/api/brands";
-import { getErrorMessage } from "@/lib/api/client";
-import { bulkDeleteConfirm } from "@/lib/utils/delete-confirm";
-import { showErrorToast } from "@/lib/utils/toast";
-import { exportBrands, importBrands } from "@/lib/utils/excel";
-import { useBrandStore } from "@/stores/brand";
-import { useItemSelection } from "@/hooks/use-item-selection";
-import { useRouter } from "expo-router";
-import { SearchIcon } from "lucide-react-native";
-import React from "react";
-import { FlatList } from "react-native";
+} from '@/hooks/use-brand';
+import { getErrorMessage } from '@/db/client';
+import { bulkDeleteConfirm } from '@/utils/delete-confirm';
+import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
+import { exportBrands, importBrands } from '@/utils/excel';
+import { useBrandStore } from '@/stores/brand';
+import { useItemSelection } from '@/hooks/use-item-selection';
+import { useRouter } from 'expo-router';
+import { SearchIcon } from 'lucide-react-native';
+import React, { useCallback } from 'react';
+import { FlashList } from '@shopify/flash-list';
 
 export default function BrandList() {
   const { setOpen, setData } = useBrandStore();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data, isLoading, refetch } = useBrands();
-  const { data: productCounts, refetch: refetchCounts } =
-    useProductCountsByBrand();
+  const { data: productCounts, refetch: refetchCounts } = useProductCountsByBrand();
   const { data: capitalValues } = useCapitalValueByBrand();
-  const {
-    selectedItems,
-    handleItemPress,
-    clearSelection,
-    isSelected,
-    hasSelection,
-  } = useItemSelection<Brand>();
+  const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } =
+    useItemSelection<Brand>();
 
   const brands = data || [];
 
+  const handleVersionChange = useCallback(() => {
+    refetch();
+    refetchCounts();
+  }, [refetch, refetchCounts]);
+
+  useStoreVersionSync(useBrandStore, handleVersionChange);
+
   const deleteMutation = useBulkDeleteBrand();
   const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({
-    successMessage: "Brand berhasil dihapus",
+    successMessage: 'Brand berhasil dihapus',
     deleteMutation,
     onSuccess: () => refetch(),
     clearSelection,
@@ -65,14 +68,7 @@ export default function BrandList() {
     try {
       await exportBrands(brands);
     } catch (e) {
-      toast.show({
-        placement: "top",
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="error" variant="solid">
-            <ToastTitle>{getErrorMessage(e)}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showToast(toast, { action: 'error', message: getErrorMessage(e) });
     }
   };
 
@@ -90,14 +86,7 @@ export default function BrandList() {
       }
       refetch();
       refetchCounts();
-      toast.show({
-        placement: "top",
-        render: ({ id }) => (
-          <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-            <ToastTitle>{`${successCount} brand berhasil diimpor`}</ToastTitle>
-          </Toast>
-        ),
-      });
+      showSuccessToast(toast, `${successCount} brand berhasil diimpor`);
     } catch (e) {
       showErrorToast(toast, e);
     }
@@ -136,14 +125,14 @@ export default function BrandList() {
                   <Spinner size="small" color="#FFFFFF" />
                 </Box>
               ) : (
-                <Pressable
-                  className="p-6"
-                  onPress={() =>
-                    triggerBulkDelete(bulkDeleteConfirm("brand", selectedItems))
-                  }
-                >
-                  <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
-                </Pressable>
+                <PermissionGuard permissions="products:brands-delete">
+                  <Pressable
+                    className="p-6"
+                    onPress={() => triggerBulkDelete(bulkDeleteConfirm('brand', selectedItems))}
+                  >
+                    <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
+                  </Pressable>
+                </PermissionGuard>
               )
             ) : (
               <Pressable
@@ -152,13 +141,13 @@ export default function BrandList() {
                   showActionDrawer({
                     actions: [
                       {
-                        label: "Export Data",
-                        icon: "Export",
+                        label: 'Export Data',
+                        icon: 'Export',
                         onPress: handleExport,
                       },
                       {
-                        label: "Import Data",
-                        icon: "Import",
+                        label: 'Import Data',
+                        icon: 'Import',
                         onPress: handleImport,
                       },
                     ],
@@ -169,7 +158,7 @@ export default function BrandList() {
                   name="MenuDots"
                   size={20}
                   color="#FDFBF9"
-                  style={{ transform: [{ rotate: "90deg" }] }}
+                  style={{ transform: [{ rotate: '90deg' }] }}
                 />
               </Pressable>
             )}
@@ -178,10 +167,7 @@ export default function BrandList() {
       />
       <Box className="flex-1 bg-white">
         <VStack className="flex-1">
-          <HStack
-            space="sm"
-            className="p-4 shadow-lg bg-background-0 items-center"
-          >
+          <HStack space="sm" className="p-4 shadow-lg bg-background-0 items-center">
             <Input className="flex-1 border border-background-300 rounded-lg h-10">
               <InputSlot className="pl-3">
                 <InputIcon as={SearchIcon} />
@@ -189,14 +175,14 @@ export default function BrandList() {
               <InputField placeholder="Cari nama brand" />
             </Input>
           </HStack>
-          <FlatList
+          <FlashList
             data={brands}
             className="flex-1"
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <Pressable
                 className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                  isSelected(item) ? "bg-gray-100" : ""
+                  isSelected(item) ? 'bg-gray-100' : ''
                 }`}
                 onPress={() => {
                   if (hasSelection) {
@@ -222,12 +208,9 @@ export default function BrandList() {
                     </HStack>
                   </VStack>
                   <VStack className="items-end">
-                    <Text className="text-brand-primary text-sm font-bold">
-                      Nilai Modal
-                    </Text>
+                    <Text className="text-brand-primary text-sm font-bold">Nilai Modal</Text>
                     <Text size="xs">
-                      Rp{" "}
-                      {(capitalValues?.[item.id] ?? 0).toLocaleString("id-ID")}
+                      Rp {(capitalValues?.[item.id] ?? 0).toLocaleString('id-ID')}
                     </Text>
                   </VStack>
                 </HStack>
@@ -240,13 +223,15 @@ export default function BrandList() {
             }
           />
           <HStack className="w-full p-4">
-            <Button
-              size="sm"
-              className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
-              onPress={handleAdd}
-            >
-              <ButtonText className="text-white">TAMBAH BRAND</ButtonText>
-            </Button>
+            <PermissionGuard permissions="products:brands-create">
+              <Button
+                size="sm"
+                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                onPress={handleAdd}
+              >
+                <ButtonText className="text-white">TAMBAH BRAND</ButtonText>
+              </Button>
+            </PermissionGuard>
           </HStack>
         </VStack>
       </Box>

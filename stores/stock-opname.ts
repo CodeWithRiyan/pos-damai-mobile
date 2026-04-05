@@ -1,5 +1,5 @@
-import { Product, ProductVariant } from "@/lib/api/products";
-import { create } from "zustand";
+import { Product, ProductVariant } from '@/hooks/use-product';
+import { create } from 'zustand';
 
 interface CartItem {
   product: Product;
@@ -12,11 +12,13 @@ interface StockOpnameState {
   addProductVariantId: string | null;
   openConfirm: boolean;
   cart: CartItem[];
+  version: number;
   setAddProduct: (state: Product | null, variantId?: string) => void;
   setOpenConfirm: (state: boolean) => void;
   addCartItem: (item: CartItem) => void;
   removeCartItem: (productId: string, variantId?: string) => void;
   resetCart: () => void;
+  incrementVersion: () => void;
 }
 
 export const useStockOpnameStore = create<StockOpnameState>((set) => ({
@@ -30,17 +32,12 @@ export const useStockOpnameStore = create<StockOpnameState>((set) => ({
     set((state) => {
       const existingItemIndex = state.cart?.findIndex(
         (cartItem) =>
-          cartItem.product.id === item.product.id &&
-          cartItem.variant?.id === item.variant?.id,
+          cartItem.product.id === item.product.id && cartItem.variant?.id === item.variant?.id,
       );
 
       let updatedCart: CartItem[];
 
-      if (
-        existingItemIndex !== undefined &&
-        existingItemIndex !== -1 &&
-        state.cart
-      ) {
+      if (existingItemIndex !== undefined && existingItemIndex !== -1 && state.cart) {
         updatedCart = [...state.cart];
         updatedCart[existingItemIndex] = item;
       } else {
@@ -53,14 +50,12 @@ export const useStockOpnameStore = create<StockOpnameState>((set) => ({
   removeCartItem: (productId, variantId) =>
     set((state) => {
       const updatedCart = (state.cart ?? []).filter(
-        (cartItem) =>
-          !(
-            cartItem.product.id === productId &&
-            cartItem.variant?.id === variantId
-          ),
+        (cartItem) => !(cartItem.product.id === productId && cartItem.variant?.id === variantId),
       );
 
       return { cart: updatedCart };
     }),
   resetCart: () => set({ cart: [] }),
+  version: 0,
+  incrementVersion: () => set((state) => ({ version: state.version + 1 })),
 }));

@@ -1,5 +1,5 @@
-import { Box, Heading, HStack, Pressable, Text, VStack } from "@/components/ui";
-import { formatRp } from "@/lib/utils/format";
+import { Box, Heading, HStack, Pressable, Text, VStack } from '@/components/ui';
+import { formatRp } from '@/utils/format';
 
 export default function ListProductLayout({
   name,
@@ -22,9 +22,7 @@ export default function ListProductLayout({
       <HStack className="justify-between items-center">
         <HStack space="md" className="items-center">
           <Box className="size-16 rounded-lg bg-primary-200 items-center justify-center">
-            <Heading className="text-primary-500 font-bold">
-              {name.charAt(0).toUpperCase()}
-            </Heading>
+            <Heading className="text-primary-500 font-bold">{name.charAt(0).toUpperCase()}</Heading>
           </Box>
           <VStack className="flex-1">
             <Heading size="md" className="line-clamp-2">

@@ -1,23 +1,19 @@
-import { CheckboxGroup, HStack, SearchIcon, Text } from "@/components/ui";
-import {
-  FormControl,
-  FormControlError,
-  FormControlErrorText,
-} from "@/components/ui/form-control";
-import { Grid, GridItem } from "@/components/ui/grid";
-import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
-import SelectModal from "@/components/ui/select/select-modal";
-import { VStack } from "@/components/ui/vstack";
-import { usePaymentTypes } from "@/lib/api/payment-types";
-import { useSuppliers } from "@/lib/api/suppliers";
-import { useUsers } from "@/lib/api/users";
-import { zodResolver } from "@hookform/resolvers/zod";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import dayjs from "dayjs";
-import React, { useEffect, useState } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { TouchableOpacity, View } from "react-native";
-import z from "zod";
+import { CheckboxGroup, HStack, SearchIcon, Text } from '@/components/ui';
+import { FormControl, FormControlError, FormControlErrorText } from '@/components/ui/form-control';
+import { Grid, GridItem } from '@/components/ui/grid';
+import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
+import SelectModal from '@/components/ui/select/select-modal';
+import { VStack } from '@/components/ui/vstack';
+import { usePaymentTypes } from '@/hooks/use-payment-type';
+import { useSuppliers } from '@/hooks/use-supplier';
+import { useUsers } from '@/hooks/use-user';
+import { zodResolver } from '@hookform/resolvers/zod';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
+import React, { useEffect, useState } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { Pressable, View } from 'react-native';
+import z from 'zod';
 
 // ─── Schema ────────────────────────────────────────────────────────────────
 
@@ -27,35 +23,29 @@ const purchasingFilterSchema = z
     supplierId: z.string(),
     userId: z.string(),
     paymentTypeIds: z.array(z.string()),
-    dateType: z.enum([
-      "TODAY",
-      "THIS_WEEK",
-      "THIS_MONTH",
-      "THIS_YEAR",
-      "CUSTOM",
-    ]),
+    dateType: z.enum(['TODAY', 'THIS_WEEK', 'THIS_MONTH', 'THIS_YEAR', 'CUSTOM']),
     startDate: z.date(),
     endDate: z.date(),
   })
   .refine(
     (data) => {
-      if (data.dateType !== "CUSTOM") return true;
-      return !dayjs(data.endDate).isBefore(dayjs(data.startDate), "day");
+      if (data.dateType !== 'CUSTOM') return true;
+      return !dayjs(data.endDate).isBefore(dayjs(data.startDate), 'day');
     },
     {
-      message: "Tanggal selesai tidak boleh sebelum tanggal mulai",
-      path: ["endDate"],
+      message: 'Tanggal selesai tidak boleh sebelum tanggal mulai',
+      path: ['endDate'],
     },
   );
 
 export type PurchasingFilterFormValues = z.infer<typeof purchasingFilterSchema>;
 
 export const purchasingFilterInitialValues: PurchasingFilterFormValues = {
-  search: "",
-  supplierId: "",
-  userId: "",
+  search: '',
+  supplierId: '',
+  userId: '',
   paymentTypeIds: [],
-  dateType: "TODAY",
+  dateType: 'TODAY',
   startDate: new Date(),
   endDate: new Date(),
 };
@@ -63,11 +53,11 @@ export const purchasingFilterInitialValues: PurchasingFilterFormValues = {
 // ─── Date Type Chips ────────────────────────────────────────────────────────
 
 const DATE_TYPE_OPTIONS = [
-  { value: "TODAY", label: "Hari ini" },
-  { value: "THIS_WEEK", label: "Minggu ini" },
-  { value: "THIS_MONTH", label: "Bulan ini" },
-  { value: "THIS_YEAR", label: "Tahun ini" },
-  { value: "CUSTOM", label: "Custom" },
+  { value: 'TODAY', label: 'Hari ini' },
+  { value: 'THIS_WEEK', label: 'Minggu ini' },
+  { value: 'THIS_MONTH', label: 'Bulan ini' },
+  { value: 'THIS_YEAR', label: 'Tahun ini' },
+  { value: 'CUSTOM', label: 'Custom' },
 ] as const;
 
 // ─── Section Label ──────────────────────────────────────────────────────────
@@ -91,9 +81,11 @@ function Divider() {
 export default function PurchasingFilter({
   onFilter,
   filterValues,
+  lockedSupplierId,
 }: {
   onFilter: (data: PurchasingFilterFormValues) => void;
   filterValues: PurchasingFilterFormValues;
+  lockedSupplierId?: string;
 }) {
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
@@ -107,14 +99,14 @@ export default function PurchasingFilter({
     defaultValues: purchasingFilterInitialValues,
   });
 
-  const dateType = form.watch("dateType");
-  const startDate = form.watch("startDate");
+  const dateType = form.watch('dateType');
+  const startDate = form.watch('startDate');
 
   // Seed payment types on first load
   useEffect(() => {
     if (filterValues.paymentTypeIds.length === 0 && paymentTypes) {
       form.setValue(
-        "paymentTypeIds",
+        'paymentTypeIds',
         paymentTypes.map((pt) => pt.id),
       );
     }
@@ -129,10 +121,10 @@ export default function PurchasingFilter({
 
   // When startDate changes in CUSTOM mode, clamp endDate if needed
   useEffect(() => {
-    if (dateType === "CUSTOM") {
-      const endDate = form.getValues("endDate");
-      if (dayjs(endDate).isBefore(dayjs(startDate), "day")) {
-        form.setValue("endDate", startDate);
+    if (dateType === 'CUSTOM') {
+      const endDate = form.getValues('endDate');
+      if (dayjs(endDate).isBefore(dayjs(startDate), 'day')) {
+        form.setValue('endDate', startDate);
       }
     }
   }, [startDate, dateType, form]);
@@ -145,7 +137,7 @@ export default function PurchasingFilter({
     form.reset(purchasingFilterInitialValues);
     if (paymentTypes) {
       form.setValue(
-        "paymentTypeIds",
+        'paymentTypeIds',
         paymentTypes.map((pt) => pt.id),
       );
     }
@@ -155,16 +147,15 @@ export default function PurchasingFilter({
     });
   };
 
-  const selectedPaymentTypeIds = form.watch("paymentTypeIds");
+  const selectedPaymentTypeIds = form.watch('paymentTypeIds');
 
-  const allPaymentSelected =
-    paymentTypes?.length === selectedPaymentTypeIds.length;
+  const allPaymentSelected = paymentTypes?.length === selectedPaymentTypeIds.length;
 
   const toggleSelectAllPaymentTypes = () => {
     if (allPaymentSelected) {
-      form.setValue("paymentTypeIds", []);
+      form.setValue('paymentTypeIds', []);
     } else {
-      form.setValue("paymentTypeIds", paymentTypes?.map((pt) => pt.id) ?? []);
+      form.setValue('paymentTypeIds', paymentTypes?.map((pt) => pt.id) ?? []);
     }
   };
 
@@ -174,10 +165,7 @@ export default function PurchasingFilter({
       <Controller
         name="search"
         control={form.control}
-        render={({
-          field: { onChange, onBlur, value },
-          fieldState: { error },
-        }) => (
+        render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
           <FormControl isInvalid={!!error}>
             <Input className="w-full border border-background-300 rounded-lg h-10 bg-background-50">
               <InputSlot className="pl-3">
@@ -204,36 +192,38 @@ export default function PurchasingFilter({
       <Divider />
 
       {/* ── Supplier ── */}
-      <VStack space="xs">
-        <SectionLabel>Supplier</SectionLabel>
-        <Controller
-          control={form.control}
-          name="supplierId"
-          render={({ field: { onChange, value }, fieldState: { error } }) => (
-            <FormControl isInvalid={!!error}>
-              <SelectModal
-                value={value}
-                placeholder="Semua supplier"
-                showSearch={false}
-                options={[
-                  { label: "Semua supplier", value: "" },
-                  ...(suppliers?.map((sup) => ({
-                    label: sup.name,
-                    value: sup.id,
-                  })) ?? []),
-                ]}
-                className="w-full"
-                onChange={onChange}
-              />
-              {error && (
-                <FormControlError>
-                  <FormControlErrorText>{error.message}</FormControlErrorText>
-                </FormControlError>
-              )}
-            </FormControl>
-          )}
-        />
-      </VStack>
+      {!lockedSupplierId && (
+        <VStack space="xs">
+          <SectionLabel>Supplier</SectionLabel>
+          <Controller
+            control={form.control}
+            name="supplierId"
+            render={({ field: { onChange, value }, fieldState: { error } }) => (
+              <FormControl isInvalid={!!error}>
+                <SelectModal
+                  value={value}
+                  placeholder="Semua supplier"
+                  showSearch={false}
+                  options={[
+                    { label: 'Semua supplier', value: '' },
+                    ...(suppliers?.map((sup) => ({
+                      label: sup.name,
+                      value: sup.id,
+                    })) ?? []),
+                  ]}
+                  className="w-full"
+                  onChange={onChange}
+                />
+                {error && (
+                  <FormControlError>
+                    <FormControlErrorText>{error.message}</FormControlErrorText>
+                  </FormControlError>
+                )}
+              </FormControl>
+            )}
+          />
+        </VStack>
+      )}
 
       <Divider />
 
@@ -250,9 +240,9 @@ export default function PurchasingFilter({
                 placeholder="Semua karyawan"
                 showSearch={false}
                 options={[
-                  { label: "Semua karyawan", value: "" },
+                  { label: 'Semua karyawan', value: '' },
                   ...(users?.map((u) => ({
-                    label: u.firstName,
+                    label: u.firstName || u.name || u.username,
                     value: u.id,
                   })) ?? []),
                 ]}
@@ -275,11 +265,11 @@ export default function PurchasingFilter({
       <VStack space="xs">
         <HStack className="justify-between items-center mb-1">
           <SectionLabel>Metode Pembayaran</SectionLabel>
-          <TouchableOpacity onPress={toggleSelectAllPaymentTypes}>
+          <Pressable onPress={toggleSelectAllPaymentTypes}>
             <Text className="text-xs font-semibold text-primary-500">
-              {allPaymentSelected ? "Batal semua" : "Pilih semua"}
+              {allPaymentSelected ? 'Batal semua' : 'Pilih semua'}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </HStack>
         <Controller
           control={form.control}
@@ -287,16 +277,12 @@ export default function PurchasingFilter({
           render={({ field: { onChange, value }, fieldState: { error } }) => (
             <FormControl isInvalid={!!error}>
               <CheckboxGroup value={value} onChange={onChange}>
-                <Grid _extra={{ className: "grid-cols-4" }}>
+                <Grid _extra={{ className: 'grid-cols-4' }}>
                   {paymentTypes?.map((pt) => {
                     const isChecked = value.includes(pt.id);
                     return (
-                      <GridItem
-                        key={pt.id}
-                        _extra={{ className: "col-span-2" }}
-                      >
-                        <TouchableOpacity
-                          activeOpacity={0.7}
+                      <GridItem key={pt.id} _extra={{ className: 'col-span-2' }}>
+                        <Pressable
                           onPress={() => {
                             const next = isChecked
                               ? value.filter((id) => id !== pt.id)
@@ -304,37 +290,33 @@ export default function PurchasingFilter({
                             onChange(next);
                           }}
                           className={[
-                            "flex-row items-center gap-2 px-3 py-2 rounded-lg border mb-2 mr-2",
+                            'flex-row items-center gap-2 px-3 py-2 rounded-lg border mb-2 mr-2',
                             isChecked
-                              ? "bg-primary-50 border-primary-400"
-                              : "bg-background-50 border-background-300",
-                          ].join(" ")}
+                              ? 'bg-primary-50 border-primary-400'
+                              : 'bg-background-50 border-background-300',
+                          ].join(' ')}
                         >
                           {/* Custom checkbox dot */}
                           <View
                             className={[
-                              "w-4 h-4 rounded-full border-2 items-center justify-center",
+                              'w-4 h-4 rounded-full border-2 items-center justify-center',
                               isChecked
-                                ? "border-primary-500 bg-primary-500"
-                                : "border-background-400 bg-white",
-                            ].join(" ")}
+                                ? 'border-primary-500 bg-primary-500'
+                                : 'border-background-400 bg-white',
+                            ].join(' ')}
                           >
-                            {isChecked && (
-                              <View className="w-1.5 h-1.5 rounded-full bg-white" />
-                            )}
+                            {isChecked && <View className="w-1.5 h-1.5 rounded-full bg-white" />}
                           </View>
                           <Text
                             className={[
-                              "text-xs font-medium flex-1",
-                              isChecked
-                                ? "text-primary-700"
-                                : "text-typography-500",
-                            ].join(" ")}
+                              'text-xs font-medium flex-1',
+                              isChecked ? 'text-primary-700' : 'text-typography-500',
+                            ].join(' ')}
                             numberOfLines={1}
                           >
                             {pt.name}
                           </Text>
-                        </TouchableOpacity>
+                        </Pressable>
                       </GridItem>
                     );
                   })}
@@ -363,26 +345,25 @@ export default function PurchasingFilter({
               {DATE_TYPE_OPTIONS.map((opt) => {
                 const isActive = value === opt.value;
                 return (
-                  <TouchableOpacity
+                  <Pressable
                     key={opt.value}
-                    activeOpacity={0.7}
                     onPress={() => onChange(opt.value)}
                     className={[
-                      "px-3 py-1.5 rounded-full border",
+                      'px-3 py-1.5 rounded-full border',
                       isActive
-                        ? "bg-primary-500 border-primary-500"
-                        : "bg-background-50 border-background-300",
-                    ].join(" ")}
+                        ? 'bg-primary-500 border-primary-500'
+                        : 'bg-background-50 border-background-300',
+                    ].join(' ')}
                   >
                     <Text
                       className={[
-                        "text-xs font-semibold",
-                        isActive ? "text-white" : "text-typography-500",
-                      ].join(" ")}
+                        'text-xs font-semibold',
+                        isActive ? 'text-white' : 'text-typography-500',
+                      ].join(' ')}
                     >
                       {opt.label}
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 );
               })}
             </HStack>
@@ -391,7 +372,7 @@ export default function PurchasingFilter({
       </VStack>
 
       {/* ── Custom Date Range ── */}
-      {dateType === "CUSTOM" && (
+      {dateType === 'CUSTOM' && (
         <HStack space="md">
           {/* Start Date */}
           <Controller
@@ -400,20 +381,17 @@ export default function PurchasingFilter({
             render={({ field: { onChange, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error} className="flex-1">
                 <SectionLabel>Dari</SectionLabel>
-                <TouchableOpacity
-                  activeOpacity={0.7}
+                <Pressable
                   onPress={() => setShowStartDatePicker(true)}
                   className={[
-                    "border rounded-lg px-3 py-2.5 bg-background-50",
-                    error ? "border-error-500" : "border-background-300",
-                  ].join(" ")}
+                    'border rounded-lg px-3 py-2.5 bg-background-50',
+                    error ? 'border-error-500' : 'border-background-300',
+                  ].join(' ')}
                 >
                   <Text className="text-sm text-typography-700">
-                    {value instanceof Date
-                      ? dayjs(value).format("DD MMM YYYY")
-                      : "Pilih tanggal"}
+                    {value instanceof Date ? dayjs(value).format('DD MMM YYYY') : 'Pilih tanggal'}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
                 {showStartDatePicker && (
                   <DateTimePicker
                     mode="date"
@@ -421,7 +399,7 @@ export default function PurchasingFilter({
                     value={value instanceof Date ? value : new Date()}
                     onChange={(event, selectedDate) => {
                       setShowStartDatePicker(false);
-                      if (event.type === "set" && selectedDate) {
+                      if (event.type === 'set' && selectedDate) {
                         onChange(selectedDate);
                       }
                     }}
@@ -443,31 +421,26 @@ export default function PurchasingFilter({
             render={({ field: { onChange, value }, fieldState: { error } }) => (
               <FormControl isInvalid={!!error} className="flex-1">
                 <SectionLabel>Sampai</SectionLabel>
-                <TouchableOpacity
-                  activeOpacity={0.7}
+                <Pressable
                   onPress={() => setShowEndDatePicker(true)}
                   className={[
-                    "border rounded-lg px-3 py-2.5 bg-background-50",
-                    error ? "border-error-500" : "border-background-300",
-                  ].join(" ")}
+                    'border rounded-lg px-3 py-2.5 bg-background-50',
+                    error ? 'border-error-500' : 'border-background-300',
+                  ].join(' ')}
                 >
                   <Text className="text-sm text-typography-700">
-                    {value instanceof Date
-                      ? dayjs(value).format("DD MMM YYYY")
-                      : "Pilih tanggal"}
+                    {value instanceof Date ? dayjs(value).format('DD MMM YYYY') : 'Pilih tanggal'}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
                 {showEndDatePicker && (
                   <DateTimePicker
                     mode="date"
-                    minimumDate={
-                      startDate instanceof Date ? startDate : undefined
-                    }
+                    minimumDate={startDate instanceof Date ? startDate : undefined}
                     maximumDate={new Date()}
                     value={value instanceof Date ? value : new Date()}
                     onChange={(event, selectedDate) => {
                       setShowEndDatePicker(false);
-                      if (event.type === "set" && selectedDate) {
+                      if (event.type === 'set' && selectedDate) {
                         onChange(selectedDate);
                       }
                     }}
@@ -488,22 +461,18 @@ export default function PurchasingFilter({
 
       {/* ── Actions ── */}
       <HStack space="md" className="pt-1">
-        <TouchableOpacity
-          activeOpacity={0.8}
+        <Pressable
           className="flex-1 rounded-lg h-10 flex-row justify-center items-center bg-background-100 border border-background-300"
           onPress={handleReset}
         >
-          <Text className="text-sm text-typography-600 font-semibold">
-            Reset
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          activeOpacity={0.8}
+          <Text className="text-sm text-typography-600 font-semibold">Reset</Text>
+        </Pressable>
+        <Pressable
           className="flex-[2] rounded-lg h-10 flex-row justify-center items-center bg-primary-500"
           onPress={form.handleSubmit(onSubmit)}
         >
           <Text className="text-sm text-white font-bold">Terapkan Filter</Text>
-        </TouchableOpacity>
+        </Pressable>
       </HStack>
     </VStack>
   );

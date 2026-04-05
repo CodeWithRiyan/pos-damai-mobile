@@ -1,20 +1,15 @@
-import Header from "@/components/header";
-import {
-  Checkbox,
-  CheckboxIcon,
-  CheckboxIndicator,
-  Spinner,
-} from "@/components/ui";
-import { Box } from "@/components/ui/box";
-import { Heading } from "@/components/ui/heading";
-import { HStack } from "@/components/ui/hstack";
-import { Pressable } from "@/components/ui/pressable";
-import { Text } from "@/components/ui/text";
-import { VStack } from "@/components/ui/vstack";
-import { ProductListItem, useProducts } from "@/lib/api/products";
-import { CheckIcon } from "lucide-react-native";
-import React, { useCallback, useMemo, useState } from "react";
-import { FlatList } from "react-native";
+import Header from '@/components/header';
+import { Checkbox, CheckboxIcon, CheckboxIndicator, Spinner } from '@/components/ui';
+import { Box } from '@/components/ui/box';
+import { Heading } from '@/components/ui/heading';
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { Text } from '@/components/ui/text';
+import { VStack } from '@/components/ui/vstack';
+import { ProductListItem, useProducts } from '@/hooks/use-product';
+import { CheckIcon } from 'lucide-react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { FlashList } from '@shopify/flash-list';
 
 export default function SelectingProductList({
   usedFor,
@@ -23,7 +18,7 @@ export default function SelectingProductList({
   isLoading,
   onSubmit,
 }: {
-  usedFor: "brand" | "category" | "supplier";
+  usedFor: 'brand' | 'category' | 'supplier';
   header: string;
   selectedItems?: ProductListItem[];
   isLoading?: boolean;
@@ -45,16 +40,11 @@ export default function SelectingProductList({
   });
   const products = data || [];
   const filteredProduct =
-    usedFor === "brand"
-      ? products.filter(
-          (p) =>
-            selectedItems?.some((r) => r.brandId === p.brandId) || !p.brandId,
-        )
-      : usedFor === "category"
+    usedFor === 'brand'
+      ? products.filter((p) => selectedItems?.some((r) => r.brandId === p.brandId) || !p.brandId)
+      : usedFor === 'category'
         ? products.filter(
-            (p) =>
-              selectedItems?.some((r) => r.categoryId === p.categoryId) ||
-              !p.categoryId,
+            (p) => selectedItems?.some((r) => r.categoryId === p.categoryId) || !p.categoryId,
           )
         : products;
 
@@ -91,7 +81,7 @@ export default function SelectingProductList({
       />
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
-          <FlatList
+          <FlashList
             data={filteredProduct}
             className="flex-1"
             keyExtractor={(product) => product.id}
@@ -100,17 +90,13 @@ export default function SelectingProductList({
               return (
                 <Pressable
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
-                    checked ? "bg-gray-100" : ""
+                    checked ? 'bg-gray-100' : ''
                   }`}
                   onPress={() => handlePress(product)}
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
-                      <Checkbox
-                        value={checked.toString()}
-                        isChecked={checked}
-                        size="md"
-                      >
+                      <Checkbox value={checked.toString()} isChecked={checked} size="md">
                         <CheckboxIndicator>
                           <CheckboxIcon as={CheckIcon} />
                         </CheckboxIndicator>

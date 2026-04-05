@@ -1,4 +1,4 @@
-import FinanceTransaction from "@/components/screens/finance";
+import FinanceTransaction from '@/components/screens/finance';
 
 export default function FinanceScreen() {
   return <FinanceTransaction />;

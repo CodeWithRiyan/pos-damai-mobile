@@ -1,7 +1,7 @@
-import ShiftTabs from "@/components/screens/shift/tab";
-import { VStack } from "@/components/ui";
-import { Stack } from "expo-router";
-import { View } from "react-native";
+import ShiftTabs from '@/components/screens/shift/tab';
+import { VStack } from '@/components/ui';
+import { Stack } from 'expo-router';
+import { View } from 'react-native';
 
 export default function ShiftLayout() {
   return (
@@ -11,8 +11,8 @@ export default function ShiftLayout() {
         <Stack
           screenOptions={{
             headerShown: false,
-            animation: "fade",
-            presentation: "card",
+            animation: 'fade',
+            presentation: 'card',
           }}
         />
       </View>

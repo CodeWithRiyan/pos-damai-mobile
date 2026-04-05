@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   Heading,
   Input,
@@ -8,26 +8,24 @@ import {
   SearchIcon,
   Text,
   VStack,
-} from "@/components/ui";
-import { Box } from "@/components/ui/box";
-import { HStack } from "@/components/ui/hstack";
-import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { Spinner } from "@/components/ui/spinner";
-import { useSuppliers } from "@/lib/api/suppliers";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import { FlatList } from "react-native";
+} from '@/components/ui';
+import { Box } from '@/components/ui/box';
+import { HStack } from '@/components/ui/hstack';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { Spinner } from '@/components/ui/spinner';
+import { useSuppliers } from '@/hooks/use-supplier';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { FlashList } from '@shopify/flash-list';
 
 export default function PurchasingSupplierList() {
   const { data: suppliers, isLoading: loadingSuppliers } = useSuppliers();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const router = useRouter();
 
   const filteredSuppliers =
-    suppliers?.filter(
-      (s) => !search || s.name.toLowerCase().includes(search.toLowerCase()),
-    ) ?? [];
+    suppliers?.filter((s) => !search || s.name.toLowerCase().includes(search.toLowerCase())) ?? [];
 
   return (
     <Box className="flex-1 bg-white">
@@ -37,19 +35,14 @@ export default function PurchasingSupplierList() {
         action={
           <Pressable
             className="p-6"
-            onPress={() =>
-              router.push("/(main)/management/return/purchasing/history")
-            }
+            onPress={() => router.push('/(main)/management/return/purchasing/history')}
           >
             <SolarIconBold name="History" size={20} color="#FDFBF9" />
           </Pressable>
         }
       />
       <VStack className="flex-1">
-        <HStack
-          space="sm"
-          className="p-4 shadow-lg bg-background-0 items-center"
-        >
+        <HStack space="sm" className="p-4 shadow-lg bg-background-0 items-center">
           <Input className="flex-1 border border-background-300 rounded-lg h-10">
             <InputSlot className="pl-3">
               <InputIcon as={SearchIcon} />
@@ -66,7 +59,7 @@ export default function PurchasingSupplierList() {
             <Spinner />
           </VStack>
         ) : (
-          <FlatList
+          <FlashList
             data={filteredSuppliers}
             className="flex-1"
             keyExtractor={(item) => item.id}

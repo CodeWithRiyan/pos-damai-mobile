@@ -1,13 +1,13 @@
-import Header from "@/components/header";
-import { HelloWave } from "@/components/hello-wave";
-import { Box } from "@/components/ui/box";
-import { Heading } from "@/components/ui/heading";
-import { Pressable } from "@/components/ui/pressable";
-import { SolarIconBold } from "@/components/ui/solar-icon-wrapper";
-import { Text } from "@/components/ui/text";
-import { VStack } from "@/components/ui/vstack";
-import React from "react";
-import { ScrollView } from "react-native";
+import Header from '@/components/header';
+import { HelloWave } from '@/components/hello-wave';
+import { Box } from '@/components/ui/box';
+import { Heading } from '@/components/ui/heading';
+import { Pressable } from '@/components/ui/pressable';
+import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { Text } from '@/components/ui/text';
+import { VStack } from '@/components/ui/vstack';
+import React from 'react';
+import { ScrollView } from 'react-native';
 
 export default function HomeScreen() {
   return (
@@ -20,7 +20,7 @@ export default function HomeScreen() {
               name="MenuDots"
               size={20}
               color="#FDFBF9"
-              style={{ transform: [{ rotate: "90deg" }] }}
+              style={{ transform: [{ rotate: '90deg' }] }}
             />
           </Pressable>
         }
@@ -37,8 +37,8 @@ export default function HomeScreen() {
               Managed Services
             </Heading>
             <Text size="md" className="text-typography-700">
-              Use the sidebar to navigate through management of roles and users
-              within your organization.
+              Use the sidebar to navigate through management of roles and users within your
+              organization.
             </Text>
           </Box>
 
@@ -48,8 +48,7 @@ export default function HomeScreen() {
           >
             <Heading size="sm">System Status</Heading>
             <Text size="sm">
-              Current system is operational. All local data is synced with the
-              server.
+              Current system is operational. All local data is synced with the server.
             </Text>
           </VStack>
         </VStack>

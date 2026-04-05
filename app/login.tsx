@@ -19,30 +19,28 @@ import {
   InputSlot,
   Spinner,
   Text,
-  Toast,
-  ToastDescription,
-  ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
-import { useLogin } from "@/lib/api/auth";
-import { getErrorMessage } from "@/lib/api/client";
-import { SyncEngine } from "@/lib/sync/sync-engine";
-import { useRouter } from "expo-router";
-import { useState } from "react";
-import { Image } from "expo-image";
-import Animated, { FadeInUp, FadeOutUp } from "react-native-reanimated";
+} from '@/components/ui';
+import { useLogin } from '@/hooks/use-auth';
+import { getErrorMessage } from '@/db/client';
+import { SyncEngine } from '@/db/sync-engine';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Image } from 'expo-image';
+import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
+import { showToast } from '@/utils/toast';
 
 export default function LoginScreen() {
   const router = useRouter();
   const loginMutation = useLogin();
   const toast = useToast();
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState("");
+  const [syncStatus, setSyncStatus] = useState('');
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -50,19 +48,10 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!username || !password) {
-      toast.show({
-        placement: "top",
-        render: ({ id }) => {
-          const toastId = "toast-" + id;
-          return (
-            <Toast nativeID={toastId} action="error" variant="outline">
-              <VStack space="xs">
-                <ToastTitle>Validation Error</ToastTitle>
-                <ToastDescription>Please fill in all fields.</ToastDescription>
-              </VStack>
-            </Toast>
-          );
-        },
+      showToast(toast, {
+        action: 'error',
+        message: 'Please enter both username and password.',
+        placement: 'top',
       });
       return;
     }
@@ -73,55 +62,34 @@ export default function LoginScreen() {
         onSuccess: async () => {
           try {
             setIsSyncing(true);
-            setSyncStatus("Synchronizing data...");
+            setSyncStatus('Synchronizing data...');
 
             // Perform initial full sync
             await SyncEngine.sync();
 
-            router.replace("/");
+            router.replace('/');
           } catch (syncError: any) {
-            console.error("Initial sync failed:", syncError);
             // Even if sync fails, we might want to let them in if offline is allowed
             // but for first login, it's better to ensure they have data.
-            toast.show({
-              placement: "top",
-              render: ({ id }) => {
-                const toastId = "toast-" + id;
-                return (
-                  <Toast nativeID={toastId} action="warning" variant="outline">
-                    <VStack space="xs">
-                      <ToastTitle>Sync Warning</ToastTitle>
-                      <ToastDescription>
-                        Login successful, but initial data sync failed. Some
-                        data may be missing.
-                      </ToastDescription>
-                    </VStack>
-                  </Toast>
-                );
-              },
+            showToast(toast, {
+              action: 'error',
+              message:
+                syncError.message ||
+                'Login successful, but initial data synchronization failed. Please try again.',
+              placement: 'top',
             });
-            router.replace("/");
+            router.replace('/');
           } finally {
             setIsSyncing(false);
           }
         },
         onError: (error: any) => {
           const errorMessage =
-            error.response?.data?.message ||
-            "Login failed. Please check your credentials.";
-          toast.show({
-            placement: "top",
-            render: ({ id }) => {
-              const toastId = "toast-" + id;
-              return (
-                <Toast nativeID={toastId} action="error" variant="outline">
-                  <VStack space="xs">
-                    <ToastTitle>Login Error</ToastTitle>
-                    <ToastDescription>{errorMessage}</ToastDescription>
-                  </VStack>
-                </Toast>
-              );
-            },
+            error.response?.data?.message || 'Login failed. Please check your credentials.';
+          showToast(toast, {
+            action: 'error',
+            message: errorMessage,
+            placement: 'top',
           });
         },
       },
@@ -135,7 +103,7 @@ export default function LoginScreen() {
           <VStack space="xs" className="mb-6">
             <Box className="items-center mb-2">
               <Image
-                source={require("../assets/images/logo.png")}
+                source={require('../assets/images/logo.png')}
                 style={{ width: 200, height: 66 }}
                 contentFit="contain"
               />
@@ -170,7 +138,7 @@ export default function LoginScreen() {
               </FormControlLabel>
               <Input>
                 <InputField
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="Enter your password"
                   value={password}
                   onChangeText={setPassword}
@@ -185,10 +153,7 @@ export default function LoginScreen() {
               {loginMutation.isError && (
                 <Animated.View entering={FadeInUp} exiting={FadeOutUp}>
                   <FormControlError>
-                    <FormControlErrorIcon
-                      as={AlertCircleIcon}
-                      className="text-red-500"
-                    />
+                    <FormControlErrorIcon as={AlertCircleIcon} className="text-red-500" />
                     <FormControlErrorText className="text-red-500 font-medium">
                       {getErrorMessage(loginMutation.error)}
                     </FormControlErrorText>
@@ -207,13 +172,11 @@ export default function LoginScreen() {
                 <HStack space="sm" className="items-center">
                   <Spinner color="white" />
                   <ButtonText className="font-bold text-white">
-                    {isSyncing ? syncStatus : "Signing In..."}
+                    {isSyncing ? syncStatus : 'Signing In...'}
                   </ButtonText>
                 </HStack>
               ) : (
-                <ButtonText className="font-bold text-white">
-                  Sign In
-                </ButtonText>
+                <ButtonText className="font-bold text-white">Sign In</ButtonText>
               )}
             </Button>
           </VStack>

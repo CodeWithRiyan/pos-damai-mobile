@@ -12,34 +12,31 @@ import {
   Text,
   Textarea,
   TextareaInput,
-} from "@/components/ui";
+} from '@/components/ui';
 import {
   FormControl,
   FormControlError,
   FormControlErrorText,
   FormControlLabel,
   FormControlLabelText,
-} from "@/components/ui/form-control";
-import { useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
-import { useCreateStoreSupply } from "@/lib/api/store-supplies";
-import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
-import { useStoreSuppliesStore } from "@/stores/store-supplies";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
-import React from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import z from "zod";
+} from '@/components/ui/form-control';
+import { useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
+import { useCreateStoreSupply } from '@/hooks/use-store-supplies';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useStoreSuppliesStore } from '@/stores/store-supplies';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import z from 'zod';
 
 interface StoreSuppliesConfirmFormProps {
   date: Date;
 }
 
-export default function StoreSuppliesConfirmForm({
-  date,
-}: StoreSuppliesConfirmFormProps) {
-  const { openConfirm, setOpenConfirm, resetCart, cart } =
-    useStoreSuppliesStore();
+export default function StoreSuppliesConfirmForm({ date }: StoreSuppliesConfirmFormProps) {
+  const { openConfirm, setOpenConfirm, resetCart, cart } = useStoreSuppliesStore();
   const router = useRouter();
   const toast = useToast();
 
@@ -50,7 +47,7 @@ export default function StoreSuppliesConfirmForm({
   type StoreSuppliesFormValues = z.infer<typeof storeSupplySchema>;
 
   const initialValues: StoreSuppliesFormValues = {
-    note: "",
+    note: '',
   };
 
   const form = useForm<StoreSuppliesFormValues>({
@@ -61,25 +58,21 @@ export default function StoreSuppliesConfirmForm({
   const createMutation = useCreateStoreSupply();
   const isLoading = createMutation.isPending;
 
-  const onSubmit: SubmitHandler<StoreSuppliesFormValues> = (
-    data: StoreSuppliesFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<StoreSuppliesFormValues> = (data: StoreSuppliesFormValues) => {
     const submissionData = {
       date: date,
       note: data.note,
       items: (cart || []).map((item) => ({
-        product: {
-          id: item.product.id,
-          name: item.product.name,
-          variantId: item.variant?.id,
-        },
+        productId: item.product.id,
         quantity: item.quantity,
+        unitPrice: item.product.purchasePrice || 0,
       })),
     };
 
     createMutation.mutate(submissionData, {
       onSuccess: () => {
-        showSuccessToast(toast, "Kebutuhan Toko berhasil disimpan");
+        useStoreSuppliesStore.getState().incrementVersion();
+        showSuccessToast(toast, 'Kebutuhan Toko berhasil disimpan');
         setOpenConfirm(false);
         resetCart();
         router.back();
@@ -109,19 +102,14 @@ export default function StoreSuppliesConfirmForm({
             <VStack space="sm" className="bg-background-50 p-3 rounded-lg">
               <HStack className="justify-between">
                 <Text className="text-slate-500">Tanggal:</Text>
-                <Text className="font-bold">
-                  {date.toLocaleDateString("id-ID")}
-                </Text>
+                <Text className="font-bold">{date.toLocaleDateString('id-ID')}</Text>
               </HStack>
             </VStack>
 
             <Controller
               name="note"
               control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl isInvalid={!!error}>
                   <FormControlLabel>
                     <FormControlLabelText>Keterangan</FormControlLabelText>
@@ -137,17 +125,15 @@ export default function StoreSuppliesConfirmForm({
                   </Textarea>
                   {error && (
                     <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
+                      <FormControlErrorText>{error.message}</FormControlErrorText>
                     </FormControlError>
                   )}
                 </FormControl>
               )}
             />
             <Text className="text-typography-400 font-bold">
-              Pastikan Anda / Karyawan Anda tidak melakukan transaksi apapun,
-              karena proses ini akan mempengaruhi riwayat stok barang anda!
+              Pastikan Anda / Karyawan Anda tidak melakukan transaksi apapun, karena proses ini akan
+              mempengaruhi riwayat stok barang anda!
             </Text>
             <Text className="font-bold">
               Apakah anda yakin untuk menyimpan data Kebutuhan Toko?

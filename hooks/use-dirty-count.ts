@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { db } from "@/lib/db";
-import * as schema from "@/lib/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { useEffect, useState } from 'react';
+import { db } from '@/db';
+import * as schema from '@/db/schema';
+import { eq, sql } from 'drizzle-orm';
 
 export function useDirtyCount() {
   const [dirtyCount, setDirtyCount] = useState(0);
@@ -51,12 +51,12 @@ export function useDirtyCount() {
 
       setDirtyCount(total);
     } catch (error: unknown) {
-      if (error instanceof Error && error.message?.includes("no such table")) {
+      if (error instanceof Error && error.message?.includes('no such table')) {
         // Silently ignore because this happens during database reset when tables are dropped
         setDirtyCount(0);
         return;
       }
-      console.warn("[useDirtyCount] Failed to fetch dirty count:", error);
+      console.warn('[useDirtyCount] Failed to fetch dirty count:', error);
     }
   };
 

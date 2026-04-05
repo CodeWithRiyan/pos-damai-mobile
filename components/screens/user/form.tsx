@@ -1,4 +1,4 @@
-import Header from "@/components/header";
+import Header from '@/components/header';
 import {
   FormControl,
   FormControlError,
@@ -10,16 +10,14 @@ import {
   InputField,
   Pressable,
   Spinner,
-  Switch,
   Text,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
-import SelectModal from "@/components/ui/select/select-modal";
-import { showErrorToast } from "@/lib/utils/toast";
-import { useRoles } from "@/lib/api/roles";
+} from '@/components/ui';
+import SelectModal from '@/components/ui/select/select-modal';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useUserStore } from '@/stores/user';
+import { useRoles } from '@/hooks/use-role';
 import {
   CreateUserDTO,
   UpdateUserDTO,
@@ -27,13 +25,13 @@ import {
   useUpdateUser,
   useUser,
   useUsers,
-} from "@/lib/api/users";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { ScrollView } from "react-native";
-import { z } from "zod";
+} from '@/hooks/use-user';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { ScrollView } from 'react-native';
+import { z } from 'zod';
 
 export default function UserForm() {
   const router = useRouter();
@@ -42,21 +40,19 @@ export default function UserForm() {
   const userId = id as string;
 
   const userSchema = z.object({
-    name: z.string().min(1, "Nama wajib diisi."),
-    username: z.string().min(1, "Username wajib diisi."),
-    password: userId ? z.string() : z.string().min(1, "Password wajib diisi."),
-    roleId: z.string().min(1, "Role wajib diisi."),
-    isActive: z.boolean(),
+    name: z.string().min(1, 'Nama wajib diisi.'),
+    username: z.string().min(1, 'Username wajib diisi.'),
+    password: userId ? z.string() : z.string().min(1, 'Password wajib diisi.'),
+    roleId: z.string().min(1, 'Role wajib diisi.'),
   });
 
   type UserFormValues = z.infer<typeof userSchema>;
 
   const initialValues: UserFormValues = {
-    name: "",
-    username: "",
-    password: "",
-    roleId: "",
-    isActive: true,
+    name: '',
+    username: '',
+    password: '',
+    roleId: '',
   };
 
   const form = useForm<UserFormValues>({
@@ -65,7 +61,7 @@ export default function UserForm() {
   });
 
   const { refetch: refetchUsers } = useUsers();
-  const { data: user, refetch: refetchUser } = useUser(userId || "");
+  const { data: user, refetch: refetchUser } = useUser(userId || '');
   const { data: roles = [] } = useRoles();
   const createMutation = useCreateUser();
   const updateMutation = useUpdateUser();
@@ -77,17 +73,15 @@ export default function UserForm() {
   useEffect(() => {
     if (userId && user) {
       form.reset({
-        name: user.firstName || "",
+        name: user.name || user.firstName || '',
         username: user.username,
-        password: "",
-        roleId: user.roles[0].roleId || "",
-        isActive: user.isActive,
+        password: '',
+        roleId: user.roles?.[0]?.id || '',
       });
     } else {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form, user, userId]);
+  }, [form, user, userId, roles.length]);
 
   const onRefetch = () => {
     refetchUsers();
@@ -112,38 +106,23 @@ export default function UserForm() {
       updateMutation.mutate(updateData, {
         onSuccess: () => {
           onRefetch();
+          useUserStore.getState().incrementVersion();
           handleCancel();
 
-          toast.show({
-            placement: "top",
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Karyawan berhasil diubah</ToastTitle>
-              </Toast>
-            ),
-          });
+          showSuccessToast(toast, 'Karyawan berhasil diubah');
         },
         onError: (error) => {
           showErrorToast(toast, error);
         },
       });
     } else {
-      const { isActive, ...restData } = data;
-      const createData: CreateUserDTO = restData;
-
-      createMutation.mutate(createData, {
+      createMutation.mutate(data, {
         onSuccess: () => {
           onRefetch();
+          useUserStore.getState().incrementVersion();
           handleCancel();
 
-          toast.show({
-            placement: "top",
-            render: ({ id }) => (
-              <Toast nativeID={`toast-${id}`} action="success" variant="solid">
-                <ToastTitle>Karyawan berhasil diubah</ToastTitle>
-              </Toast>
-            ),
-          });
+          showSuccessToast(toast, 'Karyawan berhasil diubah');
         },
         onError: (error) => {
           showErrorToast(toast, error);
@@ -154,17 +133,14 @@ export default function UserForm() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header={isAdd ? "TAMBAH KARYAWAN" : "EDIT KARYAWAN"} isGoBack />
+      <Header header={isAdd ? 'TAMBAH KARYAWAN' : 'EDIT KARYAWAN'} isGoBack />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="lg" className="p-4">
           <Controller
             name="name"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Nama</FormControlLabelText>
@@ -189,10 +165,7 @@ export default function UserForm() {
           <Controller
             name="username"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isRequired isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Username</FormControlLabelText>
@@ -219,10 +192,7 @@ export default function UserForm() {
           <Controller
             name="password"
             control={form.control}
-            render={({
-              field: { onChange, onBlur, value },
-              fieldState: { error },
-            }) => (
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isRequired={isAdd} isInvalid={!!error}>
                 <FormControlLabel>
                   <FormControlLabelText>Password</FormControlLabelText>
@@ -273,32 +243,7 @@ export default function UserForm() {
             )}
           />
 
-          {!!userId && (
-            <Controller
-              control={form.control}
-              name="isActive"
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
-                <FormControl
-                  isInvalid={!!error}
-                  className="flex-row gap-4 items-center border border-background-300 px-4 rounded-md flex-1"
-                >
-                  <FormControlLabel className="mb-0 flex-1">
-                    <FormControlLabelText>Akun Aktif</FormControlLabelText>
-                  </FormControlLabel>
-                  <Switch
-                    size="md"
-                    value={value}
-                    onChange={onChange}
-                    onBlur={onBlur}
-                    className="border-none"
-                  />
-                </FormControl>
-              )}
-            />
-          )}
+
         </VStack>
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">

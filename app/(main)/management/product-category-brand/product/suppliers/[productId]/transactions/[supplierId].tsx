@@ -1,3 +1,3 @@
-import ProductSupplierTransactions from "@/components/screens/product/supplier-transactions";
+import ProductSupplierTransactions from '@/components/screens/product/supplier-transactions';
 
 export default ProductSupplierTransactions;

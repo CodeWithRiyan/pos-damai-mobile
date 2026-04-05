@@ -13,32 +13,32 @@ import {
   RadioGroup,
   RadioLabel,
   Text,
-} from "@/components/ui";
+} from '@/components/ui';
 import {
   FormControl,
   FormControlError,
   FormControlErrorText,
   FormControlLabel,
   FormControlLabelText,
-} from "@/components/ui/form-control";
-import { Input, InputField } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { useToast } from "@/components/ui/toast";
-import { VStack } from "@/components/ui/vstack";
-import { showErrorToast, showSuccessToast } from "@/lib/utils/toast";
+} from '@/components/ui/form-control';
+import { Input, InputField } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { useToast } from '@/components/ui/toast';
+import { VStack } from '@/components/ui/vstack';
+import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import {
   useCreatePaymentType,
-  usePaymentType,
   usePaymentTypes,
   useUpdatePaymentType,
-} from "@/lib/api/payment-types";
-import { usePaymentTypeStore } from "@/stores/payment-type";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Percent } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { CalcType } from "@/lib/constants";
-import z from "zod";
+  refetchPaymentTypeById,
+} from '@/hooks/use-payment-type';
+import { usePaymentTypeStore } from '@/stores/payment-type';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Percent } from 'lucide-react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import { CalcType, DEFAULT_PAYMENT_TYPE } from '@/constants';
+import z from 'zod';
 
 export default function PaymentTypeForm() {
   const { open, setOpen, data: dataPaymentType } = usePaymentTypeStore();
@@ -46,17 +46,17 @@ export default function PaymentTypeForm() {
 
   const paymentTypeSchema = z
     .object({
-      name: z.string().min(1, "Nama Pembayaran wajib diisi."),
+      name: z.string().min(1, 'Nama Pembayaran wajib diisi.'),
       commission: z.number(),
-      commissionType: z.enum(["FLAT", "PERCENTAGE"]),
+      commissionType: z.enum(['FLAT', 'PERCENTAGE']),
       minimalAmount: z.number(),
     })
     .superRefine((data, ctx) => {
       if (data.commission > 0 && !data.minimalAmount) {
         ctx.addIssue({
-          code: "custom",
-          message: "Jumlah minimal pembayaran wajib diisi.",
-          path: ["minimalAmount"],
+          code: 'custom',
+          message: 'Jumlah minimal pembayaran wajib diisi.',
+          path: ['minimalAmount'],
         });
       }
     });
@@ -64,7 +64,7 @@ export default function PaymentTypeForm() {
   type PaymentTypeFormValues = z.infer<typeof paymentTypeSchema>;
 
   const initialValues: PaymentTypeFormValues = {
-    name: "",
+    name: '',
     commission: 0,
     commissionType: CalcType.PERCENTAGE,
     minimalAmount: 0,
@@ -75,42 +75,45 @@ export default function PaymentTypeForm() {
     defaultValues: initialValues,
   });
 
-  const [commisionInput, setCommisionInput] = useState<string>("");
+  const [commisionInput, setCommisionInput] = useState<string>('');
   const { refetch: refetchPaymentTypes } = usePaymentTypes();
-  const { refetch: refetchPaymentType } = usePaymentType(
-    dataPaymentType?.id || "",
-  );
 
   const createMutation = useCreatePaymentType();
   const updateMutation = useUpdatePaymentType();
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  const onRefetch = () => {
+  const onRefetch = useCallback(() => {
     refetchPaymentTypes();
-    if (dataPaymentType) refetchPaymentType();
-  };
+  }, [refetchPaymentTypes]);
 
   useEffect(() => {
     if (dataPaymentType) {
-      setCommisionInput(dataPaymentType.commission.toString());
-
-      form.reset({
-        name: dataPaymentType.name,
-        commission: dataPaymentType.commission,
-        commissionType: dataPaymentType.commissionType || CalcType.PERCENTAGE,
-        minimalAmount: dataPaymentType.minimalAmount,
+      refetchPaymentTypeById(dataPaymentType.id).then((freshData) => {
+        if (freshData) {
+          setCommisionInput(freshData.commission.toString());
+          form.reset({
+            name: freshData.name,
+            commission: freshData.commission,
+            commissionType: freshData.commissionType || CalcType.PERCENTAGE,
+            minimalAmount: freshData.minimalAmount,
+          });
+        }
       });
     } else {
-      setCommisionInput("");
+      setCommisionInput('');
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataPaymentType, form]);
 
-  const onSubmit: SubmitHandler<PaymentTypeFormValues> = (
-    data: PaymentTypeFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<PaymentTypeFormValues> = (data: PaymentTypeFormValues) => {
+    if (dataPaymentType && dataPaymentType.name === DEFAULT_PAYMENT_TYPE) {
+      showToast(toast, {
+        action: 'error',
+        message: 'Pembayaran default tidak dapat diubah',
+      });
+      return;
+    }
     if (dataPaymentType) {
       updateMutation.mutate(
         {
@@ -119,7 +122,8 @@ export default function PaymentTypeForm() {
         },
         {
           onSuccess: (updatedData) => {
-            showSuccessToast(toast, "Jenis pembayaran berhasil diperbarui");
+            showSuccessToast(toast, 'Jenis pembayaran berhasil diperbarui');
+            usePaymentTypeStore.getState().incrementVersion();
             if (usePaymentTypeStore.getState().onSuccess) {
               usePaymentTypeStore.getState().onSuccess!(updatedData as any);
             }
@@ -133,7 +137,8 @@ export default function PaymentTypeForm() {
     } else {
       createMutation.mutate(data, {
         onSuccess: (newData) => {
-          showSuccessToast(toast, "Jenis pembayaran berhasil ditambahkan");
+          showSuccessToast(toast, 'Jenis pembayaran berhasil ditambahkan');
+          usePaymentTypeStore.getState().incrementVersion();
           if (usePaymentTypeStore.getState().onSuccess) {
             usePaymentTypeStore.getState().onSuccess!(newData);
           }
@@ -159,9 +164,7 @@ export default function PaymentTypeForm() {
       <ModalContent className="p-0 max-h-[90%]">
         <ModalHeader className="p-4 border-b border-background-300">
           <Heading size="md" className="text-center flex-1">
-            {dataPaymentType
-              ? "EDIT JENIS PEMBAYARAN"
-              : "TAMBAH JENIS PEMBAYARAN"}
+            {dataPaymentType ? 'EDIT JENIS PEMBAYARAN' : 'TAMBAH JENIS PEMBAYARAN'}
           </Heading>
         </ModalHeader>
         <ModalBody className="m-0" showsVerticalScrollIndicator={false}>
@@ -169,10 +172,7 @@ export default function PaymentTypeForm() {
             <Controller
               name="name"
               control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl isRequired isInvalid={!!error}>
                   <FormControlLabel>
                     <FormControlLabelText>Nama Pembayaran</FormControlLabelText>
@@ -188,9 +188,7 @@ export default function PaymentTypeForm() {
                   </Input>
                   {error && (
                     <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
+                      <FormControlErrorText>{error.message}</FormControlErrorText>
                     </FormControlError>
                   )}
                 </FormControl>
@@ -200,7 +198,7 @@ export default function PaymentTypeForm() {
               name="commission"
               control={form.control}
               render={({
-                field: { onChange, onBlur, value },
+                field: { onChange, onBlur, value: _commissionValue },
                 fieldState: { error },
               }) => (
                 <FormControl isInvalid={!!error} className="flex-1">
@@ -231,10 +229,7 @@ export default function PaymentTypeForm() {
                     <Controller
                       name="commissionType"
                       control={form.control}
-                      render={({
-                        field: { onChange, onBlur, value },
-                        fieldState: { error },
-                      }) => (
+                      render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                         <FormControl isRequired isInvalid={!!error}>
                           <RadioGroup
                             value={value}
@@ -248,9 +243,9 @@ export default function PaymentTypeForm() {
                               isInvalid={false}
                               isDisabled={false}
                               className={`size-10 border rounded-sm flex items-center justify-center${
-                                value === "PERCENTAGE"
-                                  ? " bg-primary-200 text-primary-500 border-primary-500"
-                                  : " bg-background-100 border-background-300"
+                                value === 'PERCENTAGE'
+                                  ? ' bg-primary-200 text-primary-500 border-primary-500'
+                                  : ' bg-background-100 border-background-300'
                               }`}
                             >
                               <RadioLabel>
@@ -263,9 +258,9 @@ export default function PaymentTypeForm() {
                               isInvalid={false}
                               isDisabled={false}
                               className={`size-10 border rounded-sm flex items-center justify-center${
-                                value === "FLAT"
-                                  ? " bg-primary-200 text-primary-500 border-primary-500"
-                                  : " bg-background-100 border-background-300"
+                                value === 'FLAT'
+                                  ? ' bg-primary-200 text-primary-500 border-primary-500'
+                                  : ' bg-background-100 border-background-300'
                               }`}
                             >
                               <RadioLabel className="font-bold">Rp</RadioLabel>
@@ -277,9 +272,7 @@ export default function PaymentTypeForm() {
                   </HStack>
                   {error && (
                     <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
+                      <FormControlErrorText>{error.message}</FormControlErrorText>
                     </FormControlError>
                   )}
                 </FormControl>
@@ -288,15 +281,10 @@ export default function PaymentTypeForm() {
             <Controller
               name="minimalAmount"
               control={form.control}
-              render={({
-                field: { onChange, onBlur, value },
-                fieldState: { error },
-              }) => (
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                 <FormControl isInvalid={!!error} className="flex-1">
                   <FormControlLabel>
-                    <FormControlLabelText>
-                      Jumlah Minimal Pembayaran
-                    </FormControlLabelText>
+                    <FormControlLabelText>Jumlah Minimal Pembayaran</FormControlLabelText>
                   </FormControlLabel>
                   <Input>
                     <InputField
@@ -312,9 +300,7 @@ export default function PaymentTypeForm() {
                   </Input>
                   {error && (
                     <FormControlError>
-                      <FormControlErrorText>
-                        {error.message}
-                      </FormControlErrorText>
+                      <FormControlErrorText>{error.message}</FormControlErrorText>
                     </FormControlError>
                   )}
                 </FormControl>
@@ -333,7 +319,7 @@ export default function PaymentTypeForm() {
                 <Spinner size="small" color="#FFFFFF" />
               ) : (
                 <Text size="sm" className="text-typography-0 font-bold">
-                  {!dataPaymentType ? "SIMPAN" : "PERBARUI"}
+                  {!dataPaymentType ? 'SIMPAN' : 'PERBARUI'}
                 </Text>
               )}
             </Pressable>

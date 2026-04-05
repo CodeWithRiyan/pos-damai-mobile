@@ -29,21 +29,20 @@ import {
   Text,
   Textarea,
   TextareaInput,
-  Toast,
-  ToastTitle,
   useToast,
   VStack,
-} from "@/components/ui";
-import { ProductVariant } from "@/lib/api/products";
-import { findSellPrice } from "@/lib/price";
-import { useTransactionStore } from "@/stores/transaction";
-import { PriceType, ProductType } from "@/lib/constants";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import z from "zod";
+} from '@/components/ui';
+import { ProductVariant } from '@/hooks/use-product';
+import { findSellPrice } from '@/utils/price';
+import { useTransactionStore } from '@/stores/transaction';
+import { PriceType, ProductType } from '@/constants';
+import { showToast } from '@/utils/toast';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect } from 'react';
+import { Controller, SubmitHandler, useForm } from 'react-hook-form';
+import z from 'zod';
 
-import { formatRp } from "@/lib/utils/format";
+import { formatRp } from '@/utils/format';
 export default function PopupAddProduct() {
   const toast = useToast();
   const {
@@ -58,9 +57,7 @@ export default function PopupAddProduct() {
 
   const currentProductInCart = addProductVariantId
     ? cart.find(
-        (item) =>
-          item.product.id === addProduct?.id &&
-          item.variant?.id === addProductVariantId,
+        (item) => item.product.id === addProduct?.id && item.variant?.id === addProductVariantId,
       )
     : !addProductVariantId && addProduct?.type !== ProductType.MULTIUNIT
       ? cart.find((item) => item.product.id === addProduct?.id)
@@ -75,7 +72,7 @@ export default function PopupAddProduct() {
   const addProductSchema = z
     .object({
       variantUnitId: z.string().nullable(),
-      quantity: z.number().min(0.001, "Jumlah harus minimal 0.001"),
+      quantity: z.number().min(0.001, 'Jumlah harus minimal 0.001'),
       isTempSellPrice: z.boolean(),
       tempSellPrice: z.number(),
       addNote: z.boolean(),
@@ -84,21 +81,20 @@ export default function PopupAddProduct() {
     .superRefine((data, ctx) => {
       if (data.isTempSellPrice && data.tempSellPrice === 0) {
         ctx.addIssue({
-          code: "custom",
-          message: "Harga sementara tidak boleh 0 (Nol)",
-          path: ["tempSellPrice"],
+          code: 'custom',
+          message: 'Harga sementara tidak boleh 0 (Nol)',
+          path: ['tempSellPrice'],
         });
       }
       if (
         data.isTempSellPrice &&
-        data.tempSellPrice <
-          (currentProductInCart?.product.purchasePrice || 0) &&
+        data.tempSellPrice < (currentProductInCart?.product.purchasePrice || 0) &&
         currentProductInCart?.product.type !== ProductType.MULTIUNIT
       ) {
         ctx.addIssue({
-          code: "custom",
-          message: "Harga sementara tidak boleh kurang dari harga beli",
-          path: ["tempSellPrice"],
+          code: 'custom',
+          message: 'Harga sementara tidak boleh kurang dari harga beli',
+          path: ['tempSellPrice'],
         });
       }
     });
@@ -106,13 +102,12 @@ export default function PopupAddProduct() {
   type AddProductFormValues = z.infer<typeof addProductSchema>;
 
   const initialValues: AddProductFormValues = {
-    variantUnitId:
-      addProduct?.variants.find((item) => item.netto === 1)?.id || "",
+    variantUnitId: addProduct?.variants.find((item) => item.netto === 1)?.id || '',
     quantity: 1,
     addNote: false,
     isTempSellPrice: false,
     tempSellPrice: 0,
-    note: "",
+    note: '',
   };
 
   const form = useForm<AddProductFormValues>({
@@ -120,24 +115,14 @@ export default function PopupAddProduct() {
     defaultValues: initialValues,
   });
 
-  const quantity = form.watch("quantity");
-  const isTempSellPriceChecked = form.watch("isTempSellPrice");
-  const tempSellPrice = form.watch("tempSellPrice");
-  const isAddNoteChecked = form.watch("addNote");
-  const variantUnitId = form.watch("variantUnitId");
+  const quantity = form.watch('quantity');
+  const isTempSellPriceChecked = form.watch('isTempSellPrice');
+  const tempSellPrice = form.watch('tempSellPrice');
+  const isAddNoteChecked = form.watch('addNote');
+  const variantUnitId = form.watch('variantUnitId');
 
   const showValidationError = (message?: string) => {
-    toast.show({
-      placement: "top",
-      render: ({ id }) => {
-        const toastId = "toast-" + id;
-        return (
-          <Toast nativeID={toastId} action="error" variant="solid">
-            <ToastTitle>{message || "Terjadi kesalahan"}</ToastTitle>
-          </Toast>
-        );
-      },
-    });
+    showToast(toast, { action: 'error', message: message || 'Terjadi kesalahan' });
   };
 
   useEffect(() => {
@@ -145,55 +130,34 @@ export default function PopupAddProduct() {
       form.reset({
         quantity: currentProductInCart?.quantity || 1,
         isTempSellPrice:
-          customer?.category === PriceType.WHOLESALE &&
-          currentProductInCart.variant?.netto !== 1
+          customer?.category === PriceType.WHOLESALE && currentProductInCart.variant?.netto !== 1
             ? false
             : !!currentProductInCart?.tempSellPrice,
         tempSellPrice: currentProductInCart?.tempSellPrice || 0,
         addNote: !!currentProductInCart?.note,
-        note: currentProductInCart?.note || "",
+        note: currentProductInCart?.note || '',
         variantUnitId:
-          addProductVariantId ||
-          addProduct?.variants.find((item) => item.netto === 1)?.id ||
-          null,
+          addProductVariantId || addProduct?.variants.find((item) => item.netto === 1)?.id || null,
       });
     } else {
       form.reset(initialValues);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, currentProductInCart, addProductVariantId, addProduct]);
 
-  const onSubmit: SubmitHandler<AddProductFormValues> = (
-    data: AddProductFormValues,
-  ) => {
+  const onSubmit: SubmitHandler<AddProductFormValues> = (data: AddProductFormValues) => {
     if (addProduct?.type === ProductType.MULTIUNIT && !data.variantUnitId) {
-      toast.show({
-        placement: "top",
-        render: ({ id }) => {
-          const toastId = "toast-" + id;
-          return (
-            <Toast nativeID={toastId} action="error" variant="solid">
-              <ToastTitle>Unit belum dipilih</ToastTitle>
-            </Toast>
-          );
-        },
-      });
+      showToast(toast, { action: 'error', message: 'Unit belum dipilih' });
       return;
     }
 
     if (addProduct?.type === ProductType.MULTIUNIT) {
-      const selectedVariant = addProduct.variants.find(
-        (item) => item.id === data.variantUnitId,
-      );
+      const selectedVariant = addProduct.variants.find((item) => item.id === data.variantUnitId);
 
       if (!selectedVariant) return;
 
       const selectedNetto = selectedVariant.netto;
 
-      const resolveMultiunitPrice = (
-        variant: ProductVariant,
-        qty: number,
-      ): number | undefined => {
+      const resolveMultiunitPrice = (variant: ProductVariant, qty: number): number | undefined => {
         const variantNetto = variant.netto;
         if (data.isTempSellPrice) {
           return data.tempSellPrice;
@@ -257,9 +221,7 @@ export default function PopupAddProduct() {
         return result;
       };
 
-      const totalNetto = parseFloat(
-        (selectedNetto * data.quantity).toFixed(10),
-      );
+      const totalNetto = parseFloat((selectedNetto * data.quantity).toFixed(10));
       const decomposed = decompose(totalNetto, sortedVariants);
 
       // Remove the variant being edited from cart first
@@ -267,16 +229,12 @@ export default function PopupAddProduct() {
 
       for (const { variant, quantity } of decomposed) {
         const existingItem = cart.find(
-          (item) =>
-            item.product.id === addProduct.id &&
-            item.variant?.id === variant.id,
+          (item) => item.product.id === addProduct.id && item.variant?.id === variant.id,
         );
 
         // Prevent double-counting for the variant being edited
         const existingQty =
-          existingItem && variant.id !== selectedVariant.id
-            ? existingItem.quantity
-            : 0;
+          existingItem && variant.id !== selectedVariant.id ? existingItem.quantity : 0;
 
         const finalQty = existingQty + quantity;
         addCartItem({
@@ -299,9 +257,7 @@ export default function PopupAddProduct() {
         quantity: data.quantity,
         tempSellPrice: data.isTempSellPrice ? data.tempSellPrice : undefined,
         note: data.addNote ? data.note : undefined,
-        variant: addProduct.variants.find(
-          (item) => item.id === data.variantUnitId,
-        ),
+        variant: addProduct.variants.find((item) => item.id === data.variantUnitId),
       });
       setAddProduct(null);
     }
@@ -340,9 +296,7 @@ export default function PopupAddProduct() {
                             sellPrices: addProduct?.sellPrices || [],
                             type: customer?.category,
                             quantity: quantity || 0,
-                            unitVariant: addProduct?.variants.find(
-                              (f) => f.id === variantUnitId,
-                            ),
+                            unitVariant: addProduct?.variants.find((f) => f.id === variantUnitId),
                           }),
                       )}
                     </Heading>
@@ -361,22 +315,16 @@ export default function PopupAddProduct() {
                         <FormControlLabelText>Pilih Unit</FormControlLabelText>
                       </FormControlLabel>
                       <RadioGroup
-                        value={value || ""}
+                        value={value || ''}
                         onChange={(v) => {
-                          const variant = cart?.find(
-                            (f) => f.variant?.id === v,
-                          );
+                          const variant = cart?.find((f) => f.variant?.id === v);
                           onChange(v);
-                          form.setValue("quantity", variant?.quantity || 1);
+                          form.setValue('quantity', variant?.quantity || 1);
                         }}
                       >
                         <VStack space="sm">
                           {variantUnitOptions.map((variant) => (
-                            <Radio
-                              key={variant.value}
-                              value={variant.value}
-                              size="md"
-                            >
+                            <Radio key={variant.value} value={variant.value} size="md">
                               <RadioIndicator>
                                 <RadioIcon as={CircleIcon} />
                               </RadioIndicator>
@@ -389,10 +337,7 @@ export default function PopupAddProduct() {
                   )}
                 />
               )}
-              <HStack
-                space="md"
-                className="w-full justify-between items-center"
-              >
+              <HStack space="md" className="w-full justify-between items-center">
                 <Pressable
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                   disabled={quantity <= 0}
@@ -400,7 +345,7 @@ export default function PopupAddProduct() {
                     const currentQuantity = quantity;
 
                     if (currentQuantity && currentQuantity > 0) {
-                      form.setValue("quantity", currentQuantity - 1);
+                      form.setValue('quantity', currentQuantity - 1);
                     }
                   }}
                 >
@@ -411,15 +356,8 @@ export default function PopupAddProduct() {
                 <Controller
                   name="quantity"
                   control={form.control}
-                  render={({
-                    field: { onChange, onBlur, value },
-                    fieldState: { error },
-                  }) => (
-                    <FormControl
-                      isRequired
-                      isInvalid={!!error}
-                      className="w-44 h-full"
-                    >
+                  render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                    <FormControl isRequired isInvalid={!!error} className="w-44 h-full">
                       <Input className="flex-1 border-transparent data-[focus=true]:border-transparent bg-transparent">
                         <InputField
                           value={value.toString()}
@@ -439,7 +377,7 @@ export default function PopupAddProduct() {
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                   onPress={() => {
                     const currentQuantity = quantity;
-                    form.setValue("quantity", currentQuantity + 1);
+                    form.setValue('quantity', currentQuantity + 1);
                   }}
                 >
                   <Heading size="2xl" className="text-primary-500">
@@ -451,10 +389,7 @@ export default function PopupAddProduct() {
                 <Controller
                   name="isTempSellPrice"
                   control={form.control}
-                  render={({
-                    field: { onChange, onBlur, value },
-                    fieldState: { error },
-                  }) => (
+                  render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                     <FormControl isInvalid={!!error}>
                       <Checkbox
                         value={value.toString()}
@@ -462,7 +397,7 @@ export default function PopupAddProduct() {
                         size="md"
                         onChange={(v) => {
                           onChange(v);
-                          form.setValue("tempSellPrice", 0);
+                          form.setValue('tempSellPrice', 0);
                         }}
                         onBlur={onBlur}
                       >
@@ -473,9 +408,7 @@ export default function PopupAddProduct() {
                       </Checkbox>
                       {error && (
                         <FormControlError>
-                          <FormControlErrorText>
-                            {error.message}
-                          </FormControlErrorText>
+                          <FormControlErrorText>{error.message}</FormControlErrorText>
                         </FormControlError>
                       )}
                     </FormControl>
@@ -485,15 +418,10 @@ export default function PopupAddProduct() {
                   <Controller
                     name="tempSellPrice"
                     control={form.control}
-                    render={({
-                      field: { onChange, onBlur, value },
-                      fieldState: { error },
-                    }) => (
+                    render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                       <FormControl isInvalid={!!error}>
                         <FormControlLabel>
-                          <FormControlLabelText>
-                            Harga Sementara
-                          </FormControlLabelText>
+                          <FormControlLabelText>Harga Sementara</FormControlLabelText>
                         </FormControlLabel>
                         <Input>
                           <InputField
@@ -519,10 +447,7 @@ export default function PopupAddProduct() {
                 <Controller
                   name="addNote"
                   control={form.control}
-                  render={({
-                    field: { onChange, onBlur, value },
-                    fieldState: { error },
-                  }) => (
+                  render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                     <FormControl isInvalid={!!error}>
                       <Checkbox
                         value={value.toString()}
@@ -530,7 +455,7 @@ export default function PopupAddProduct() {
                         size="md"
                         onChange={(v) => {
                           onChange(v);
-                          if (!v) form.setValue("note", "");
+                          if (!v) form.setValue('note', '');
                         }}
                         onBlur={onBlur}
                       >
@@ -541,9 +466,7 @@ export default function PopupAddProduct() {
                       </Checkbox>
                       {error && (
                         <FormControlError>
-                          <FormControlErrorText>
-                            {error.message}
-                          </FormControlErrorText>
+                          <FormControlErrorText>{error.message}</FormControlErrorText>
                         </FormControlError>
                       )}
                     </FormControl>
@@ -553,10 +476,7 @@ export default function PopupAddProduct() {
                   <Controller
                     name="note"
                     control={form.control}
-                    render={({
-                      field: { onChange, onBlur, value },
-                      fieldState: { error },
-                    }) => (
+                    render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
                       <FormControl isInvalid={!!error}>
                         <FormControlLabel>
                           <FormControlLabelText>Catatan</FormControlLabelText>
@@ -572,9 +492,7 @@ export default function PopupAddProduct() {
                         </Textarea>
                         {error && (
                           <FormControlError>
-                            <FormControlErrorText>
-                              {error.message}
-                            </FormControlErrorText>
+                            <FormControlErrorText>{error.message}</FormControlErrorText>
                           </FormControlError>
                         )}
                       </FormControl>
@@ -595,10 +513,8 @@ export default function PopupAddProduct() {
               <Pressable
                 className="flex-1 items-center justify-center h-12 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
                 onPress={form.handleSubmit(onSubmit, (errors) => {
-                  if (errors.quantity)
-                    showValidationError(errors.quantity.message);
-                  else if (errors.tempSellPrice)
-                    showValidationError(errors.tempSellPrice.message);
+                  if (errors.quantity) showValidationError(errors.quantity.message);
+                  else if (errors.tempSellPrice) showValidationError(errors.tempSellPrice.message);
                 })}
               >
                 <Text size="lg" className="text-white font-bold">
