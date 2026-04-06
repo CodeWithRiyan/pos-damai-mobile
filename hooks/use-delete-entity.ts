@@ -15,7 +15,7 @@ interface UseDeleteEntityOptions {
 }
 
 interface TriggerDeleteParams {
-  id: string;
+  id?: string;
   title: string;
   description: ReactNode;
 }
@@ -41,7 +41,7 @@ export function useDeleteEntity({
         closeText: 'BATAL',
         okVariant: 'destructive' as const,
         onOk: () => {
-          deleteMutation.mutate(id, {
+          deleteMutation.mutate(id!, {
             onSuccess: () => {
               hidePopUpConfirm();
               onSuccess?.();

@@ -67,7 +67,7 @@ export async function fetchPayables(params?: {
       const realizations = await db
         .select()
         .from(payableRealizations)
-        .where(eq(payableRealizations.payableId, p.id));
+        .where(and(eq(payableRealizations.payableId, p.id), isNull(payableRealizations.deletedAt)));
 
       const totalRealization = realizations.reduce((sum, r) => sum + (r.nominal || 0), 0);
 
@@ -143,7 +143,7 @@ export async function fetchPayableDetail(id: string): Promise<Payable | null> {
   const realizations = await db
     .select()
     .from(payableRealizations)
-    .where(eq(payableRealizations.payableId, p.id));
+    .where(and(eq(payableRealizations.payableId, p.id), isNull(payableRealizations.deletedAt)));
 
   const totalRealization = realizations.reduce((sum, r) => sum + (r.nominal || 0), 0);
 
@@ -619,6 +619,117 @@ export function useBulkDeletePayableBySupplier() {
             })
             .where(eq(payables.id, p.id));
         }
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    loading: isLoading,
+    isPending: isLoading,
+    error,
+  };
+}
+
+export async function fetchPayableRealizationDetail(id: string) {
+  const result = await db
+    .select()
+    .from(payableRealizations)
+    .where(eq(payableRealizations.id, id))
+    .limit(1);
+
+  if (result.length === 0) return null;
+  const r = result[0];
+  return {
+    id: r.id,
+    payableId: r.payableId,
+    nominal: r.nominal,
+    realizationDate: r.realizationDate,
+    paymentMethodId: r.paymentMethodId,
+    paymentMethodName: r.paymentMethodName,
+    note: r.note,
+  };
+}
+
+export function usePayableRealizationDetail(id: string) {
+  const [data, setData] = useState<Awaited<ReturnType<typeof fetchPayableRealizationDetail>>>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetch = useCallback(async () => {
+    if (!id) {
+      setData(null);
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await fetchPayableRealizationDetail(id);
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data, isLoading, error, refetch: fetch };
+}
+
+export function useUpdatePayableRealization() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const mutate = useCallback(
+    async (
+      data: {
+        id: string;
+        nominal?: number;
+        realizationDate?: Date;
+        paymentMethodId?: string;
+        paymentMethodName?: string;
+        note?: string;
+      },
+      options?: { onSuccess?: () => void; onError?: (error: Error) => void },
+    ) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const now = new Date();
+        const { id, ...fields } = data;
+        const updateFields: any = {
+          updatedAt: now,
+          _dirty: true,
+        };
+        if (fields.nominal !== undefined) updateFields.nominal = fields.nominal;
+        if (fields.realizationDate !== undefined)
+          updateFields.realizationDate = fields.realizationDate;
+        if (fields.paymentMethodId !== undefined)
+          updateFields.paymentMethodId = fields.paymentMethodId;
+        if (fields.paymentMethodName !== undefined)
+          updateFields.paymentMethodName = fields.paymentMethodName;
+        if (fields.note !== undefined) updateFields.note = fields.note;
+
+        await db
+          .update(payableRealizations)
+          .set(updateFields)
+          .where(eq(payableRealizations.id, id));
         options?.onSuccess?.();
       } catch (err) {
         const error = err as Error;

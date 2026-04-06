@@ -97,7 +97,7 @@ export default function SelectingProductList({
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
-                      <Checkbox isChecked={checked} size="md" onPress={() => handlePress(product)}>
+                      <Checkbox value={product.id} isChecked={checked} size="md" onChange={() => handlePress(product)}>
                         <CheckboxIndicator>
                           <CheckboxIcon as={CheckIcon} />
                         </CheckboxIndicator>

@@ -67,8 +67,17 @@ export async function createStoreSupply(data: {
   note?: string;
   items: Array<{
     productId: string;
+    productName?: string;
+    productBarcode?: string;
+    productCategory?: string;
+    productBrand?: string;
+    productUnit?: string;
+    variantId?: string;
+    variantName?: string;
+    variantCode?: string;
+    variantNetto?: number;
     quantity: number;
-    unitPrice: number;
+    purchasePrice: number;
   }>;
 }): Promise<StoreSupply> {
   const orgId = useAuthStore.getState().getOrganizationId();
@@ -78,7 +87,7 @@ export async function createStoreSupply(data: {
   const now = new Date();
   const userId = useAuthStore.getState().profile?.id;
 
-  const totalAmount = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+  const totalAmount = data.items.reduce((sum, item) => sum + item.quantity * item.purchasePrice, 0);
 
   const newSupply = {
     id,
@@ -105,8 +114,19 @@ export async function createStoreSupply(data: {
       id: itemId,
       storeSupplyId: id,
       productId: item.productId,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
+      productName: item.productName || null,
+      productBarcode: item.productBarcode || null,
+      productCategory: item.productCategory || null,
+      productBrand: item.productBrand || null,
+      productUnit: item.productUnit || null,
+      variantId: item.variantId || null,
+      variantName: item.variantName || null,
+      variantCode: item.variantCode || null,
+      variantNetto: item.variantNetto || null,
+      quantitySystem: item.quantity,
+      quantityPhysical: item.quantity,
+      usage: item.quantity,
+      purchasePrice: item.purchasePrice,
       organizationId: orgId,
       createdAt: now,
       updatedAt: now,
@@ -184,7 +204,20 @@ export function useCreateStoreSupply() {
       data: {
         date: Date;
         note?: string;
-        items: Array<{ productId: string; quantity: number; unitPrice: number }>;
+        items: Array<{
+          productId: string;
+          productName?: string;
+          productBarcode?: string;
+          productCategory?: string;
+          productBrand?: string;
+          productUnit?: string;
+          variantId?: string;
+          variantName?: string;
+          variantCode?: string;
+          variantNetto?: number;
+          quantity: number;
+          purchasePrice: number;
+        }>;
       },
       options?: { onSuccess?: (data: StoreSupply) => void; onError?: (error: Error) => void },
     ) => {

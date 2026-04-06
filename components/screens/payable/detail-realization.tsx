@@ -3,16 +3,14 @@ import Header from '@/components/header';
 import { Box, HStack, Text, VStack } from '@/components/ui';
 import { Grid, GridItem } from '@/components/ui/grid';
 import { Pressable } from '@/components/ui/pressable';
-import {
-  SolarIconBold,
-  SolarIconBoldDuotone,
-} from '@/components/ui/solar-icon-wrapper';
+import { SolarIconBold, SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
 import { useDeletePayableRealization, usePayableDetail } from '@/hooks/use-payable';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import dayjs from 'dayjs';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import { ScrollView } from 'react-native';
 
 import { formatRp } from '@/utils/format';
@@ -32,6 +30,12 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
   const payableRealizationList = payable?.realizations || [];
   const isPayedOff = (payable?.totalRealization || 0) === (payable?.nominal || 0);
 
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
+
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Pembayaran berhasil dihapus',
     deleteMutation,
@@ -39,7 +43,7 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
     goBack: false,
   });
 
-  const handleRealizationAction = (realization: { id: string }) => {
+  const handleRealizationAction = (realization: { id: string; nominal: number }) => {
     showActionDrawer({
       actions: [
         {
@@ -57,8 +61,10 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
           icon: 'TrashBin2',
           theme: 'red',
           onPress: () => {
-            triggerDelete(singleDeleteConfirm('pembayaran', realization.id));
             hideActionDrawer();
+            setTimeout(() => {
+              triggerDelete(singleDeleteConfirm('pembayaran', realization.id));
+            }, 300);
           },
         },
       ],
@@ -75,10 +81,7 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header
-        header="DETAIL REALISASI HUTANG"
-        isGoBack
-      />
+      <Header header="DETAIL REALISASI HUTANG" isGoBack />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="md" className="flex-1">
@@ -128,61 +131,62 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
 
         <VStack>
           {payableRealizationList?.map((realization, index) => (
-            <HStack key={realization.id} className="p-4">
-              <HStack space="md" className="items-center w-full">
-                <Grid
-                  _extra={{ className: 'grid-cols-2' }}
-                  className="relative border border-background-200 rounded-md bg-background-0 p-4 pt-10 gap-2 w-full"
+            <Box key={realization.id} className="relative px-4 py-2">
+              <Grid
+                _extra={{ className: 'grid-cols-2' }}
+                className="relative border border-background-200 rounded-md bg-background-0 p-4 pt-10 gap-2 w-full"
+              >
+                <GridItem _extra={{ className: 'col-span-3' }} className="absolute top-0 left-0">
+                  <Box className="absolute top-0 left-0 py-1 px-4 rounded-br-md bg-info-50">
+                    <Text className="text-info-400 text-sm font-bold">{`Tgl Pembayaran: ${dayjs(realization.realizationDate).format('DD/MM/YYYY HH:mm')}`}</Text>
+                  </Box>
+                </GridItem>
+                <GridItem
+                  _extra={{
+                    className: 'col-span-1',
+                  }}
                 >
-                  <GridItem _extra={{ className: 'col-span-3' }} className="absolute top-0 left-0">
-                    <Box className="absolute top-0 left-0 py-1 px-4 rounded-br-md bg-info-50">
-                      <Text className="text-info-400 text-sm font-bold">{`Tgl Pembayaran: ${dayjs(realization.realizationDate).format('DD/MM/YYYY HH:mm')}`}</Text>
-                    </Box>
-                  </GridItem>
-                  <GridItem
-                    _extra={{
-                      className: 'col-span-1',
-                    }}
-                  >
-                    <Text className="text-gray-500 text-sm">No.</Text>
-                    <Text className="text-sm font-bold">{index + 1}</Text>
-                  </GridItem>
-                  <GridItem
-                    _extra={{
-                      className: 'col-span-1',
-                    }}
-                  >
-                    <Text className="text-gray-500 text-sm">Nominal</Text>
-                    <Text className="text-sm font-bold">{formatRp(realization.nominal)}</Text>
-                  </GridItem>
-                  <GridItem
-                    _extra={{
-                      className: 'col-span-2',
-                    }}
-                  >
-                    <HStack space="sm">
-                      <Text className="text-gray-500 text-sm">Catatan:</Text>
-                      <Text className="text-sm font-bold">{realization.note || '-'}</Text>
-                    </HStack>
-                  </GridItem>
-                  {!isReport && (
-                    <GridItem _extra={{ className: 'col-span-3' }}>
-                      <Pressable
-                        className="h-8 w-8 rounded-md items-center justify-center border border-background-200"
-                        onPress={() => handleRealizationAction(realization)}
-                      >
-                        <SolarIconBold
-                          name="MenuDots"
-                          size={16}
-                          color="#3d2117"
-                          style={{ transform: [{ rotate: '90deg' }] }}
-                        />
-                      </Pressable>
-                    </GridItem>
-                  )}
-                </Grid>
-              </HStack>
-            </HStack>
+                  <Text className="text-gray-500 text-sm">No.</Text>
+                  <Text className="text-sm font-bold">{index + 1}</Text>
+                </GridItem>
+                <GridItem
+                  _extra={{
+                    className: 'col-span-1',
+                  }}
+                >
+                  <Text className="text-gray-500 text-sm">Nominal</Text>
+                  <Text className="text-sm font-bold">{formatRp(realization.nominal)}</Text>
+                </GridItem>
+                <GridItem
+                  _extra={{
+                    className: 'col-span-2',
+                  }}
+                >
+                  <HStack space="sm">
+                    <Text className="text-gray-500 text-sm">Catatan:</Text>
+                    <Text className="text-sm font-bold">{realization.note || '-'}</Text>
+                  </HStack>
+                </GridItem>
+              </Grid>
+              {!isReport && (
+                <Pressable
+                  className="absolute top-4 right-6 h-8 w-8 rounded-md items-center justify-center"
+                  onPress={() =>
+                    handleRealizationAction({
+                      id: realization.id as string,
+                      nominal: realization.nominal,
+                    })
+                  }
+                >
+                  <SolarIconBold
+                    name="MenuDots"
+                    size={16}
+                    color="#3d2117"
+                    style={{ transform: [{ rotate: '90deg' }] }}
+                  />
+                </Pressable>
+              )}
+            </Box>
           ))}
           {payableRealizationList?.length === 0 && (
             <Box className="p-8 items-center">

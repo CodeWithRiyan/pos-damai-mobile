@@ -64,8 +64,15 @@ export default function StoreSuppliesConfirmForm({ date }: StoreSuppliesConfirmF
       note: data.note,
       items: (cart || []).map((item) => ({
         productId: item.product.id,
+        productName: item.product.name,
+        productBarcode: item.product.barcode || undefined,
+        productUnit: item.product.unit || undefined,
+        variantId: item.variant?.id,
+        variantName: item.variant?.name,
+        variantCode: item.variant?.code,
+        variantNetto: item.variant?.netto ?? undefined,
         quantity: item.quantity,
-        unitPrice: item.product.purchasePrice || 0,
+        purchasePrice: item.product.purchasePrice || 0,
       })),
     };
 

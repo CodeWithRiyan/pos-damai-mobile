@@ -1,13 +1,13 @@
-import Header from "@/components/header";
-import { Heading, HStack, Pressable, Text, VStack } from "@/components/ui";
-import { Box } from "@/components/ui/box";
-import { Spinner } from "@/components/ui/spinner";
-import dayjs from "dayjs";
-import { useLocalSearchParams } from "expo-router";
-import { ScrollView } from "react-native";
+import Header from '@/components/header';
+import { Heading, HStack, Pressable, Text, VStack } from '@/components/ui';
+import { Box } from '@/components/ui/box';
+import { Spinner } from '@/components/ui/spinner';
+import dayjs from 'dayjs';
+import { useLocalSearchParams } from 'expo-router';
+import { ScrollView } from 'react-native';
 
-import { formatNumber } from "@/utils/format";
-import { _dummyReports } from ".";
+import { formatNumber } from '@/utils/format';
+import { _dummyReports } from '.';
 
 export default function ProfitLostDetailHistory() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -28,16 +28,16 @@ export default function ProfitLostDetailHistory() {
 
   const transactionTypeLabelHelper = (type: string) => {
     switch (type) {
-      case "SALE":
-        return "Penjualan";
-      case "PURCHASE":
-        return "Pembelian";
-      case "OTHER_INCOME":
-        return "Pendapatan lain";
-      case "OTHER_EXPENSE":
-        return "Pengeluaran lain";
+      case 'SALE':
+        return 'Penjualan';
+      case 'PURCHASE':
+        return 'Pembelian';
+      case 'OTHER_INCOME':
+        return 'Pendapatan lain';
+      case 'OTHER_EXPENSE':
+        return 'Pengeluaran lain';
       default:
-        return "";
+        return '';
     }
   };
 
@@ -45,15 +45,13 @@ export default function ProfitLostDetailHistory() {
     <VStack className="flex-1 bg-white">
       <Header
         header="LAPORAN LABA RUGI"
-        subHeader={dayjs(report?.createdAt).format("DD MMMM YYYY")}
+        subHeader={dayjs(report?.createdAt).format('DD MMMM YYYY')}
         isGoBack
       />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {!report?.transactions.length ? (
           <Box className="flex-1 justify-center items-center py-10">
-            <Text className="text-gray-500">
-              Belum ada histori transaksi shift
-            </Text>
+            <Text className="text-gray-500">Belum ada histori transaksi shift</Text>
           </Box>
         ) : (
           report.transactions.map((trx) => {
@@ -65,18 +63,12 @@ export default function ProfitLostDetailHistory() {
               >
                 <HStack space="xl" className="items-center">
                   <VStack>
-                    <Text className="text-typography-500 font-bold">
-                      {date.format("HH:mm:ss")}
-                    </Text>
+                    <Text className="text-typography-500 font-bold">{date.format('HH:mm:ss')}</Text>
                     <HStack space="sm" className="items-center">
-                      <Heading size="4xl">{date.format("DD")}</Heading>
+                      <Heading size="4xl">{date.format('DD')}</Heading>
                       <VStack>
-                        <Text className="text-typography-500 font-bold">
-                          {date.format("MMM")}
-                        </Text>
-                        <Text className="text-typography-500 font-bold">
-                          {date.format("YYYY")}
-                        </Text>
+                        <Text className="text-typography-500 font-bold">{date.format('MMM')}</Text>
+                        <Text className="text-typography-500 font-bold">{date.format('YYYY')}</Text>
                       </VStack>
                     </HStack>
                   </VStack>
@@ -93,12 +85,8 @@ export default function ProfitLostDetailHistory() {
                   </VStack>
                   <HStack space="xl" className="items-center">
                     <VStack>
-                      <Text className="text-typography-400 text-xs">
-                        Total Transaksi
-                      </Text>
-                      <Text className="font-bold">
-                        Rp {formatNumber(trx.amount)}
-                      </Text>
+                      <Text className="text-typography-400 text-xs">Total Transaksi</Text>
+                      <Text className="font-bold">Rp {formatNumber(trx.amount)}</Text>
                     </VStack>
                     <Text className="text-typography-400 text-lg">›</Text>
                   </HStack>

@@ -92,8 +92,7 @@ export default function ReceivableRealizationForm() {
   const { data: paymentMethods = [] } = usePaymentTypes();
   const defaultOption = {
     label:
-      DEFAULT_PAYMENT_TYPE.charAt(0).toUpperCase() +
-      DEFAULT_PAYMENT_TYPE.slice(1).toLowerCase(),
+      DEFAULT_PAYMENT_TYPE.charAt(0).toUpperCase() + DEFAULT_PAYMENT_TYPE.slice(1).toLowerCase(),
     value: DEFAULT_PAYMENT_TYPE,
   };
   const paymentMethodOptions =

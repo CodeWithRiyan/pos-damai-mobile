@@ -1,4 +1,4 @@
-import ProfitLossReport from "@/components/screens/profit-loss-report";
+import ProfitLossReport from '@/components/screens/profit-loss-report';
 
 export default function ProfitLossReportScreen() {
   return <ProfitLossReport />;

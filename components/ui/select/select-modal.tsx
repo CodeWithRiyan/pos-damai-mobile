@@ -74,14 +74,14 @@ export default function SelectModal({
   const [open, setOpen] = useState<boolean>(false);
   const [search, setSearch] = useState<string>('');
 
-  const filteredOptions = options.filter((option) =>
-    option.label.toLowerCase().includes(search.toLowerCase()),
+  const filteredOptions = options?.filter((option) =>
+    option?.label?.toLowerCase()?.includes(search?.toLowerCase()),
   );
 
   const filteredOptionsGroup = optionsGroup?.map((group) => ({
     ...group,
-    options: group.options.filter((option) =>
-      option.label.toLowerCase().includes(search.toLowerCase()),
+    options: group?.options?.filter((option) =>
+      option.label?.toLowerCase()?.includes(search?.toLowerCase()),
     ),
   }));
 

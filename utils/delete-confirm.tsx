@@ -14,7 +14,7 @@ export function bulkDeleteConfirm(entityLabel: string, selectedItems: { id: stri
   };
 }
 
-export function singleDeleteConfirm(entityLabel: string, id: string, itemName?: string) {
+export function singleDeleteConfirm(entityLabel: string, id?: string, itemName?: string) {
   return {
     id,
     title: `HAPUS ${entityLabel.toUpperCase()}`,

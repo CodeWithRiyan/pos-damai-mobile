@@ -76,7 +76,11 @@ export default function StockOpnameList({ isReport }: { isReport?: boolean }) {
                     </VStack>
                     <HStack className="absolute right-0 top-0 h-full">
                       <HStack className="h-full items-center justify-center">
-                        {so.totalLoss === 0 ? (
+                        {so.totalGain > 0 ? (
+                          <Heading size="sm" className="text-success-600">
+                            Lebih
+                          </Heading>
+                        ) : so.totalLoss === 0 ? (
                           <Heading size="sm" className="text-success-600">
                             Sesuai
                           </Heading>

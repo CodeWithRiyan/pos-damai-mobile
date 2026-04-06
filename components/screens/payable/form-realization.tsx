@@ -24,7 +24,12 @@ import {
 } from '@/components/ui';
 import SelectModal from '@/components/ui/select/select-modal';
 import { SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
-import { useCreatePayableRealization, usePayableBySupplier } from '@/hooks/use-payable';
+import {
+  useCreatePayableRealization,
+  useUpdatePayableRealization,
+  usePayableBySupplier,
+  usePayableRealizationDetail,
+} from '@/hooks/use-payable';
 import { DEFAULT_PAYMENT_TYPE } from '@/constants';
 import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { usePaymentTypes } from '@/hooks/use-payment-type';
@@ -49,8 +54,11 @@ export default function PayableRealizationForm() {
 
   const supplierId = params.supplierId as string;
   const action = params.actionRealization as string;
+  const realizationId = params.realizationId as string;
   const isAdd = action === 'add';
   const payableIds = (params.payableIds as string)?.split('-') || [];
+
+  const { data: realizationDetail } = usePayableRealizationDetail(isAdd ? '' : realizationId);
 
   const payableRealizationSchema = z.object({
     nominal: z.number().min(1, 'Nominal wajib diisi.'),
@@ -98,8 +106,7 @@ export default function PayableRealizationForm() {
   const { data: paymentMethods = [] } = usePaymentTypes();
   const defaultOption = {
     label:
-      DEFAULT_PAYMENT_TYPE.charAt(0).toUpperCase() +
-      DEFAULT_PAYMENT_TYPE.slice(1).toLowerCase(),
+      DEFAULT_PAYMENT_TYPE.charAt(0).toUpperCase() + DEFAULT_PAYMENT_TYPE.slice(1).toLowerCase(),
     value: DEFAULT_PAYMENT_TYPE,
   };
   const paymentMethodOptions =
@@ -126,9 +133,24 @@ export default function PayableRealizationForm() {
     }
   }, [paymentMethods]);
 
-  const createMutation = useCreatePayableRealization();
+  useEffect(() => {
+    if (!isAdd && realizationDetail) {
+      form.reset({
+        nominal: realizationDetail.nominal,
+        payOff: false,
+        realizationDate: realizationDetail.realizationDate
+          ? new Date(realizationDetail.realizationDate)
+          : new Date(),
+        paymentTypeId: realizationDetail.paymentMethodId || '',
+        note: realizationDetail.note || '',
+      });
+    }
+  }, [realizationDetail, isAdd]);
 
-  const isLoading = createMutation.isPending;
+  const createMutation = useCreatePayableRealization();
+  const updateMutation = useUpdatePayableRealization();
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   const toast = useToast();
 
@@ -137,6 +159,28 @@ export default function PayableRealizationForm() {
   ) => {
     const paymentMethodName =
       paymentMethods.find((pm) => pm.id === data.paymentTypeId)?.name || DEFAULT_PAYMENT_TYPE;
+
+    if (!isAdd && realizationId) {
+      updateMutation.mutate(
+        {
+          id: realizationId,
+          nominal: data.nominal,
+          realizationDate: data.realizationDate,
+          paymentMethodId: data.paymentTypeId,
+          paymentMethodName,
+          note: data.note,
+        },
+        {
+          onSuccess: () => {
+            usePayableStore.getState().incrementVersion();
+            showSuccessToast(toast, 'Pembayaran berhasil diperbarui');
+            router.back();
+          },
+          onError: (error) => showErrorToast(toast, error),
+        },
+      );
+      return;
+    }
 
     if (payableIds.length === 1) {
       createMutation.mutate(
@@ -212,7 +256,6 @@ export default function PayableRealizationForm() {
           <Controller
             name="nominal"
             control={form.control}
-            disabled={!isAdd}
             render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isRequired isDisabled={payOff} isInvalid={!!error}>
                 <FormControlLabel>

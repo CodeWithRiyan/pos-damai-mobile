@@ -81,8 +81,7 @@ export default function TransactionCheckoutForm() {
   // Map payment types to select options
   const defaultPaymentOption = {
     label:
-      DEFAULT_PAYMENT_TYPE.charAt(0).toUpperCase() +
-      DEFAULT_PAYMENT_TYPE.slice(1).toLowerCase(),
+      DEFAULT_PAYMENT_TYPE.charAt(0).toUpperCase() + DEFAULT_PAYMENT_TYPE.slice(1).toLowerCase(),
     value: DEFAULT_PAYMENT_TYPE,
   };
   const paymentTypes =

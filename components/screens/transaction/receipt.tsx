@@ -113,7 +113,7 @@ export default function TransactionReceipt() {
             <HStack space="md" className="w-full">
               <Pressable
                 className="flex-1 rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-primary-500 border border-primary-500 active:bg-primary-400"
-                onPress={() => router.back()}
+                onPress={() => router.push('/(main)/transaction')}
               >
                 <Icon as={Check} size="xl" color="#ffffff" />
                 <Text size="md" className="text-typography-0 font-bold">
