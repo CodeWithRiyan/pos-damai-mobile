@@ -106,8 +106,11 @@ export async function createStockOpname(data: {
 
   for (const item of data.items) {
     const diff = item.physicalQuantity - item.systemQuantity;
-    if (diff > 0) totalGain += diff;
-    if (diff < 0) totalLoss += Math.abs(diff);
+    const purchasePrice = item.purchasePrice ?? 0;
+    const financialImpact = diff * purchasePrice;
+
+    if (financialImpact > 0) totalGain += financialImpact;
+    if (financialImpact < 0) totalLoss += Math.abs(financialImpact);
   }
 
   const newOpname = {

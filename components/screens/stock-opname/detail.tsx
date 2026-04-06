@@ -116,7 +116,7 @@ export default function StockOpnameDetail() {
                 <GridItem _extra={{ className: 'col-span-1' }}>
                   <Text className="text-gray-500">Selisih</Text>
                   <Text
-                    className={`font-bold ${item.difference < 0 ? 'text-error-500' : 'text-success-500'}`}
+                    className={`font-bold ${item.difference > 0 ? 'text-success-500' : item.difference < 0 ? 'text-error-500' : 'text-gray-500'}`}
                   >
                     {item.difference > 0 ? '+' : ''}
                     {item.difference}
@@ -125,7 +125,7 @@ export default function StockOpnameDetail() {
                 <GridItem _extra={{ className: 'col-span-1' }}>
                   <Text className="text-gray-500">Impact (Rp)</Text>
                   <Text
-                    className={`font-bold ${(item.financialImpact ?? 0) < 0 ? 'text-error-500' : 'text-success-500'}`}
+                    className={`font-bold ${item.difference > 0 ? 'text-success-500' : item.difference < 0 ? 'text-error-500' : 'text-gray-500'}`}
                   >
                     {formatMoney(Math.abs(item.financialImpact || 0))}
                   </Text>
