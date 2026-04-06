@@ -1,6 +1,6 @@
 import { payables, payableRealizations, suppliers, users, paymentTypes } from '@/db/schema';
 import { db } from '@/db';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import { eq, and, isNull, like, desc, sql, sum } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
 

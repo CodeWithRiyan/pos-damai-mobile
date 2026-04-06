@@ -6,7 +6,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useTransactionReturn } from '@/hooks/use-return-transaction';
 import { TransactionItem, useTransaction } from '@/hooks/use-transaction';
 import { formatDisplayRefId } from '@/utils/reference';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Check, Printer, Send } from 'lucide-react-native';

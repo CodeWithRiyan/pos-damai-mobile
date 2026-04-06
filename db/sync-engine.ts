@@ -4,8 +4,8 @@ import { eq, inArray } from 'drizzle-orm';
 import type { SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
 import { apiClient } from './client';
 import { storageAdapter } from '@/utils/storage';
-import { useAuthStore } from '@/stores/auth';
-import { useSyncQueueStore } from '@/stores/sync-queue';
+import { useAuthStore } from '@/stores/system/auth';
+import { useSyncQueueStore } from '@/stores/system/sync-queue';
 
 interface SyncRecord {
   [key: string]: unknown;
@@ -183,15 +183,18 @@ export class SyncEngine {
                 realizations?: unknown;
               };
 
-                // Insert with schema fallback - handles missing columns automatically
+              // Insert with schema fallback - handles missing columns automatically
               try {
-                await tx.insert(table).values(valuesToInsert as any).onConflictDoUpdate({
-                  target: target,
-                  set: valuesToInsert as any,
-                });
+                await tx
+                  .insert(table)
+                  .values(valuesToInsert as any)
+                  .onConflictDoUpdate({
+                    target: target,
+                    set: valuesToInsert as any,
+                  });
               } catch (insertError: unknown) {
                 const insertErr = insertError as Error & { message?: string };
-                
+
                 // Check if it's a "no such column" error
                 if (insertErr.message?.includes('no such column')) {
                   // Extract column name from error message
@@ -199,20 +202,25 @@ export class SyncEngine {
                   if (match) {
                     const missingColumn = match[1];
                     const tableName = (table as any).name || serverKey;
-                    console.log(`[Sync] Missing column '${missingColumn}' in table '${tableName}', adding...`);
-                    
+                    console.log(
+                      `[Sync] Missing column '${missingColumn}' in table '${tableName}', adding...`,
+                    );
+
                     // Add the missing column outside the transaction using expo-sqlite directly
                     const expoDb = (db as any).$client;
                     await expoDb.runAsync(
-                      `ALTER TABLE \`${tableName}\` ADD \`${missingColumn}\` text`
+                      `ALTER TABLE \`${tableName}\` ADD \`${missingColumn}\` text`,
                     );
                     console.log(`[Sync] Added column '${missingColumn}' to table '${tableName}'`);
-                    
+
                     // Retry the insert within the transaction
-                    await tx.insert(table).values(valuesToInsert as any).onConflictDoUpdate({
-                      target: target,
-                      set: valuesToInsert as any,
-                    });
+                    await tx
+                      .insert(table)
+                      .values(valuesToInsert as any)
+                      .onConflictDoUpdate({
+                        target: target,
+                        set: valuesToInsert as any,
+                      });
                   }
                 } else {
                   throw insertError;

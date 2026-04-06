@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import { Box } from '@/components/ui/box';
 import { Heading } from '@/components/ui/heading';
 import { HStack } from '@/components/ui/hstack';
@@ -7,7 +7,7 @@ import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
 import useBreakpoint from '@/hooks/use-breakpoint';
 import { useLogout } from '@/hooks/use-auth';
-import { useSidebarStore } from '@/stores/sidebar';
+import { useSidebarStore } from '@/stores/ui/sidebar';
 import { Link, LinkProps, usePathname, useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
 import { usePermission } from '@/hooks/use-permission';
@@ -102,7 +102,12 @@ export function Sidebar() {
         href: '/report',
         requiredPermission: 'reports:read',
       },
-      { label: 'Pengaturan', icon: 'Settings', href: '/setting', requiredPermission: 'settings:read' },
+      {
+        label: 'Pengaturan',
+        icon: 'Settings',
+        href: '/setting',
+        requiredPermission: 'settings:read',
+      },
     ];
 
     return items.filter((item) => {

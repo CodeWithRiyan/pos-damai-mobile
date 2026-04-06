@@ -7,7 +7,7 @@ import { TransactionItem, useTransaction } from '@/hooks/use-transaction';
 import { formatDisplayRefId } from '@/utils/reference';
 import { getReceiptActions } from '@/utils/receipt-actions';
 import { ProductType, Status } from '@/constants';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Check, Printer } from 'lucide-react-native';

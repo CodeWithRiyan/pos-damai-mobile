@@ -7,7 +7,7 @@ import {
   productVariants,
 } from '@/db/schema';
 import { db } from '@/db';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
 

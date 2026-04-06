@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import { useProductStore } from '@/stores/product';
 import { and, eq, isNull, like, or, desc, inArray } from 'drizzle-orm';
 import { InventoryTxType, ProductType, Status } from '@/constants';

@@ -13,7 +13,7 @@ import { useSyncManager } from '@/hooks/use-sync-manager';
 import { checkAndResetDbOnUpdate, initializeDb } from '@/db';
 import { authStorageAdapter, initializeStorage } from '@/utils/storage';
 import { SyncFloatingButton } from '@/components/sync-floating-button';
-import { useNetworkMonitoring } from '@/stores/network';
+import { useNetworkMonitoring } from '@/stores/system/network';
 import * as NavigationBar from 'expo-navigation-bar';
 
 export const unstable_settings = {
@@ -51,7 +51,7 @@ export default function RootLayout() {
       }
 
       // Rehydrate auth store after storage is ready
-      const { useAuthStore } = await import('@/stores/auth');
+      const { useAuthStore } = await import('@/stores/system/auth');
       useAuthStore.getState().rehydrate();
 
       setIsStorageReady(true);

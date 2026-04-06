@@ -1,18 +1,9 @@
-import { useSidebarStore } from "@/stores/sidebar";
-import { useRouter } from "expo-router";
-import React from "react";
-import { View } from "react-native";
-import {
-  ArrowLeftIcon,
-  CloseIcon,
-  Heading,
-  HStack,
-  Icon,
-  MenuIcon,
-  Text,
-  VStack,
-} from "./ui";
-import { Pressable } from "./ui/pressable";
+import { useSidebarStore } from '@/stores/ui/sidebar';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { View } from 'react-native';
+import { ArrowLeftIcon, CloseIcon, Heading, HStack, Icon, MenuIcon, Text, VStack } from './ui';
+import { Pressable } from './ui/pressable';
 
 export default function Header({
   header,
@@ -83,17 +74,12 @@ export default function Header({
           )}
         </Pressable>
       )}
-      <HStack
-        space="sm"
-        className="absolute inset-0 justify-center items-center"
-      >
+      <HStack space="sm" className="absolute inset-0 justify-center items-center">
         <VStack className="justify-center items-center">
           <Heading size="sm" className="text-typography-0">
             {header}
           </Heading>
-          {subHeader && (
-            <Text className="text-typography-0 text-xs">{subHeader}</Text>
-          )}
+          {subHeader && <Text className="text-typography-0 text-xs">{subHeader}</Text>}
         </VStack>
       </HStack>
       {selectedItemsPosition === 'right' && selectedItemsLength ? <CancelSelectedItems /> : action}

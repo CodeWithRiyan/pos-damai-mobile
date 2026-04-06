@@ -1,7 +1,7 @@
 import { Purchase, PurchaseItem, payables } from '@/db/schema';
 import * as schema from '@/db/schema';
 import { db } from '@/db';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import { usePayableStore } from '@/stores/payable';
 import { InventoryTxType, Status, DEFAULT_PAYMENT_TYPE } from '@/constants';
 import { and, eq, isNull, like, desc, or, isNotNull, gte, lte } from 'drizzle-orm';
