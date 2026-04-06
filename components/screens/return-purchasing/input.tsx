@@ -15,7 +15,7 @@ import { Pressable } from '@/components/ui/pressable';
 import { useProducts } from '@/hooks/use-product';
 import { useReturnPurchasingStore } from '@/stores/return-purchasing';
 import { useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { FlashList } from '@shopify/flash-list';
 import { LayoutChangeEvent, ScrollView } from 'react-native';
 import ReturnPurchasingConfirmForm from './form';
@@ -26,15 +26,17 @@ import ListProductLayout from '@/components/ui/layout/list-product-layout';
 import { SolarIconBold, SolarIconOutline } from '@/components/ui/solar-icon-wrapper';
 import { formatNumber } from '@/utils/format';
 import classNames from 'classnames';
+import { useFocusEffect } from 'expo-router';
 export default function ReturnPurchasingInput() {
   const { cart, setAddProduct, setOpenConfirm, removeCartItem, resetCart } =
     useReturnPurchasingStore();
   const [search, setSearch] = useState<string>('');
   const { supplierId } = useLocalSearchParams<{ supplierId: string }>();
-  const { data: products = [] } = useProducts({
+  const { data: products = [], refetch } = useProducts({
     forceParent: true,
     supplierId,
     search,
+    isReturnPurchasing: true,
   });
   const [layout, setLayout] = useState<'list' | 'grid'>('list');
   const [deviceWidth, setDeviceWidth] = useState<number>(0);
@@ -47,6 +49,12 @@ export default function ReturnPurchasingInput() {
     const { width } = event.nativeEvent.layout;
     setDeviceWidth(width);
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
 
   return (
     <Box className="flex-1 bg-white" onLayout={handleLayout}>
@@ -113,7 +121,7 @@ export default function ReturnPurchasingInput() {
               ListEmptyComponent={
                 <Box className="p-8 items-center">
                   <Text className="text-slate-400 italic">
-                    Tidak ada produk yang dibeli dari customer ini
+                    Tidak ada produk yang dibeli dari supplier ini
                   </Text>
                 </Box>
               }
@@ -138,7 +146,7 @@ export default function ReturnPurchasingInput() {
               ListEmptyComponent={
                 <Box className="p-8 items-center">
                   <Text className="text-slate-400 italic">
-                    Tidak ada produk yang dibeli dari customer ini
+                    Tidak ada produk yang dibeli dari supplier ini
                   </Text>
                 </Box>
               }

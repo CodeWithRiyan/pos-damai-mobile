@@ -6,11 +6,13 @@ import {
   categories,
   brands,
   productVariants,
+  inventoryTransactions,
 } from '@/db/schema';
 import { db } from '@/db';
 import { useAuthStore } from '@/stores/system/auth';
 import { eq, and, isNull, like, desc } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
+import { InventoryTxType, Status } from '@/constants';
 
 export interface SupplierReturn {
   id: string;
@@ -235,6 +237,34 @@ export async function createSupplierReturn(data: {
       _dirty: true,
       _syncedAt: null,
     } as any);
+
+    if (data.returnType === 'CASH') {
+      await db.insert(inventoryTransactions).values({
+        id: `invtx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        local_ref_id: `${id}_${item.productId}`,
+        productId: item.productId,
+        productName: productName || null,
+        productBarcode: productBarcode || null,
+        productCategory: productCategory || null,
+        productBrand: productBrand || null,
+        productUnit: productUnit || null,
+        variantId: variantId || null,
+        variantName: variantName || null,
+        variantCode: variantCode || null,
+        variantNetto: variantNetto || null,
+        type: InventoryTxType.RETURN_PURCHASE,
+        quantity: -item.quantity,
+        contextName: supplier[0]?.name || null,
+        organizationId: orgId,
+        createdBy: userId,
+        updatedBy: userId,
+        createdAt: now,
+        updatedAt: now,
+        status: Status.COMPLETED,
+        _dirty: true,
+        _syncedAt: null,
+      } as any);
+    }
   }
 
   return newReturn as unknown as SupplierReturn;

@@ -68,14 +68,15 @@ export default function ReturnTransactionConfirmForm() {
   const onSubmit: SubmitHandler<ReturnTransactionFormValues> = (
     data: ReturnTransactionFormValues,
   ) => {
-    const totalAmount = cart.reduce((acc, item) => acc + item.quantity * (item.sellPrice || 0), 0);
+    const cartItems = cart ?? [];
+    const totalAmount = cartItems.reduce((acc, item) => acc + item.quantity * (item.sellPrice || 0), 0);
 
     const returnData = {
       customerId: customerId || '',
       totalAmount,
       returnType: data.returnType as 'CASH' | 'ITEM',
       note: data.reason,
-      items: cart.map((item) => ({
+      items: cartItems.map((item) => ({
         productId: item.product.id,
         variantId: item.variant?.id,
         productName: item.product.name || '',

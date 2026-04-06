@@ -321,6 +321,18 @@ export async function fetchTransaction(id: string): Promise<Transaction | null> 
   } as Transaction;
 }
 
+export async function fetchTransactionByReturnId(returnId: string): Promise<Transaction | null> {
+  const result = await db
+    .select()
+    .from(schema.transactions)
+    .where(eq(schema.transactions.returnId, returnId))
+    .limit(1);
+
+  if (result.length === 0) return null;
+
+  return fetchTransaction(result[0].id);
+}
+
 export async function createTransaction(data: CreateTransactionDTO): Promise<Transaction> {
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) throw new Error('ID Organisasi tidak ditemukan');
@@ -608,8 +620,25 @@ export async function fetchPurchasedProducts(customerId: string): Promise<any[]>
           .limit(1);
 
         if (product[0]) {
+          const sellPrices = await db
+            .select()
+            .from(schema.productPrices)
+            .where(eq(schema.productPrices.productId, productId));
+
+          const variants = await db
+            .select()
+            .from(schema.productVariants)
+            .where(
+              and(
+                eq(schema.productVariants.productId, productId),
+                isNull(schema.productVariants.deletedAt),
+              ),
+            );
+
           productMap.set(productId, {
             ...product[0],
+            sellPrices,
+            variants,
             lastSellPrice: item.sellPrice,
           });
         }
@@ -681,6 +710,37 @@ export function useTransaction(id: string) {
       setLoading(false);
     }
   }, [id]);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data, isLoading: loading, loading: loading, error, refetch: fetch };
+}
+
+export function useTransactionByReturnId(returnId: string) {
+  const [data, setData] = useState<Transaction | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetch = useCallback(async () => {
+    if (!returnId) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchTransactionByReturnId(returnId);
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setLoading(false);
+    }
+  }, [returnId]);
 
   useEffect(() => {
     fetch();

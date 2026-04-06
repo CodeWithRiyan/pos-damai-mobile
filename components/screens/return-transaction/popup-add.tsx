@@ -42,8 +42,9 @@ import { ProductType } from '@/constants';
 import { formatNumber } from '@/utils/format';
 export default function PopupAddProduct() {
   const toast = useToast();
-  const { addProduct, addProductVariantId, cart, setAddProduct, addCartItem, removeCartItem } =
+  const { addProduct, addProductVariantId, cart: _cart, setAddProduct, addCartItem, removeCartItem } =
     useReturnTransactionStore();
+  const cart = _cart ?? [];
 
   const currentProductInCart = addProductVariantId
     ? cart.find(
@@ -54,7 +55,7 @@ export default function PopupAddProduct() {
       : undefined;
 
   const variantUnitOptions =
-    addProduct?.variants.map((item) => ({
+    addProduct?.variants?.map((item) => ({
       label: item.name,
       value: item.id,
     })) || [];

@@ -69,6 +69,7 @@ export interface ProductParams {
   supplierId?: string;
   forceParent?: boolean;
   forceParentMultiUnit?: boolean;
+  isReturnPurchasing?: boolean;
 }
 
 export type ProductListItem = Omit<Product, 'sellPrices' | 'variants'>;
@@ -128,10 +129,37 @@ export async function fetchProducts(params?: ProductParams): Promise<Product[]> 
   }
 
   if (params?.supplierId) {
-    conditions.push(eq(schema.products.supplierId, params.supplierId) as any);
+    conditions.push(
+      or(
+        eq(schema.products.supplierId, params.supplierId),
+        isNull(schema.products.supplierId),
+      ) as any,
+    );
   }
 
-  const productResult = await db
+  let productResult: any[] = [];
+
+  if (params?.isReturnPurchasing && params?.supplierId) {
+    const purchasedProducts = await db
+      .select({
+        productId: schema.purchaseItems.productId,
+      })
+      .from(schema.purchaseItems)
+      .innerJoin(schema.purchases, eq(schema.purchaseItems.purchaseId, schema.purchases.id))
+      .where(
+        and(eq(schema.purchases.supplierId, params.supplierId), isNull(schema.purchases.deletedAt)),
+      );
+
+    const purchasedProductIds = [...new Set(purchasedProducts.map((p) => p.productId))];
+
+    if (purchasedProductIds.length > 0) {
+      conditions.push(inArray(schema.products.id, purchasedProductIds) as any);
+    } else {
+      return [];
+    }
+  }
+
+  productResult = await db
     .select({
       product: schema.products,
       discount: schema.discounts,
@@ -225,7 +253,7 @@ export async function fetchProducts(params?: ProductParams): Promise<Product[]> 
     if (product.type === ProductType.DEFAULT) {
       items.push({
         ...product,
-        sellPrices: product.sellPrices.map((p) => ({
+        sellPrices: product.sellPrices.map((p: { type: string; minimumPurchase: any }) => ({
           ...p,
           type: p.type as ProductPrice['type'],
           minimumPurchase: p.minimumPurchase || 0,
@@ -244,7 +272,7 @@ export async function fetchProducts(params?: ProductParams): Promise<Product[]> 
       (product.type === ProductType.MULTIUNIT || product.type === ProductType.VARIANTS) &&
       hasVariants
     ) {
-      product.variants.forEach((variant) => {
+      product.variants.forEach((variant: { id: any; name: any; code: any }) => {
         const compositeId = `${product.id}-${variant.id}`;
         const variantProduct: Product = {
           ...product,
@@ -259,7 +287,7 @@ export async function fetchProducts(params?: ProductParams): Promise<Product[]> 
           isFavorite: !!product.isFavorite,
           minimumStock: product.minimumStock || 0,
           purchasePrice: product.purchasePrice || 0,
-          sellPrices: product.sellPrices.map((p) => ({
+          sellPrices: product.sellPrices.map((p: { type: string; minimumPurchase: any }) => ({
             ...p,
             type: p.type as ProductPrice['type'],
             minimumPurchase: p.minimumPurchase || 0,
@@ -282,7 +310,7 @@ export async function fetchProducts(params?: ProductParams): Promise<Product[]> 
         isFavorite: !!product.isFavorite,
         minimumStock: product.minimumStock || 0,
         purchasePrice: product.purchasePrice || 0,
-        sellPrices: product.sellPrices.map((p) => ({
+        sellPrices: product.sellPrices.map((p: { type: string; minimumPurchase: any }) => ({
           ...p,
           type: p.type as ProductPrice['type'],
           minimumPurchase: p.minimumPurchase || 0,
@@ -754,6 +782,7 @@ export function useProducts(params?: ProductParams) {
     params?.supplierId,
     params?.forceParent,
     params?.forceParentMultiUnit,
+    params?.isReturnPurchasing,
   ]);
 
   useEffect(() => {
