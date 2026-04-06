@@ -79,11 +79,21 @@ export default function TransactionCheckoutForm() {
   );
 
   // Map payment types to select options
+  const defaultPaymentOption = {
+    label:
+      DEFAULT_PAYMENT_TYPE.charAt(0).toUpperCase() +
+      DEFAULT_PAYMENT_TYPE.slice(1).toLowerCase(),
+    value: DEFAULT_PAYMENT_TYPE,
+  };
   const paymentTypes =
-    paymentTypesData?.map((pt) => ({
-      label: pt.name,
-      value: pt.id,
-    })) || [];
+    paymentTypesData && paymentTypesData.length > 0
+      ? [
+          defaultPaymentOption,
+          ...paymentTypesData
+            .filter((pt) => pt.id !== DEFAULT_PAYMENT_TYPE)
+            .map((pt) => ({ label: pt.name, value: pt.id })),
+        ]
+      : [defaultPaymentOption];
   // const createMutation = useCreateTransaction();
 
   const transactionSchema = z
@@ -181,11 +191,16 @@ export default function TransactionCheckoutForm() {
   useEffect(() => {
     if (cartTotal) {
       form.setValue('status', status);
-      if (!transaction && paymentTypesData && paymentTypesData.length > 0) {
-        const defaultPaymentType =
-          paymentTypesData?.find((pt, _i) => pt.isDefault || pt.name === DEFAULT_PAYMENT_TYPE)
-            ?.id || '';
-        form.setValue('paymentTypeId', defaultPaymentType);
+      if (!transaction) {
+        if (paymentTypesData && paymentTypesData.length > 0) {
+          const defaultPaymentType =
+            paymentTypesData.find(
+              (pt) => pt.isDefault || pt.name.toLowerCase() === DEFAULT_PAYMENT_TYPE.toLowerCase(),
+            )?.id || paymentTypesData[0].id;
+          form.setValue('paymentTypeId', defaultPaymentType);
+        } else {
+          form.setValue('paymentTypeId', DEFAULT_PAYMENT_TYPE);
+        }
       }
       if (transaction) {
         form.setValue('note', transaction.note || '');

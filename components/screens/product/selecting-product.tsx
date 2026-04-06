@@ -12,7 +12,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { FlashList } from '@shopify/flash-list';
 
 export default function SelectingProductList({
-  usedFor,
+  usedFor: _usedFor,
   header,
   selectedItems,
   isLoading,
@@ -29,7 +29,8 @@ export default function SelectingProductList({
 
   const isSelected = useCallback(
     (productId: string) => {
-      if (productId in overrides) return overrides[productId];
+      const hasOverride = productId in overrides;
+      if (hasOverride) return overrides[productId];
       return selectedItems?.some((r) => r.id === productId) ?? false;
     },
     [selectedItems, overrides],
@@ -39,19 +40,19 @@ export default function SelectingProductList({
     forceParent: true,
   });
   const products = data || [];
-  const filteredProduct =
-    usedFor === 'brand'
-      ? products.filter((p) => selectedItems?.some((r) => r.brandId === p.brandId) || !p.brandId)
-      : usedFor === 'category'
-        ? products.filter(
-            (p) => selectedItems?.some((r) => r.categoryId === p.categoryId) || !p.categoryId,
-          )
-        : products;
 
-  const selectedProducts = useMemo(
-    () => filteredProduct.filter((p) => isSelected(p.id)),
-    [filteredProduct, isSelected],
-  );
+  const selectedProducts = useMemo(() => {
+    const result: ProductListItem[] = [];
+
+    products.forEach((p) => {
+      const currentlySelected = isSelected(p.id);
+      if (currentlySelected) {
+        result.push(p);
+      }
+    });
+
+    return result;
+  }, [products, isSelected]);
 
   const handlePress = (item: ProductListItem) => {
     setOverrides((prev) => ({
@@ -82,7 +83,7 @@ export default function SelectingProductList({
       <Box className="flex-1 bg-white">
         <VStack space="lg" className="flex-1">
           <FlashList
-            data={filteredProduct}
+            data={products}
             className="flex-1"
             keyExtractor={(product) => product.id}
             renderItem={({ item: product }) => {
@@ -96,7 +97,7 @@ export default function SelectingProductList({
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
-                      <Checkbox value={checked.toString()} isChecked={checked} size="md">
+                      <Checkbox isChecked={checked} size="md" onPress={() => handlePress(product)}>
                         <CheckboxIndicator>
                           <CheckboxIcon as={CheckIcon} />
                         </CheckboxIndicator>

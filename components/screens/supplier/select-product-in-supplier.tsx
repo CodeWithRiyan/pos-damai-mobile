@@ -1,5 +1,10 @@
 import { useToast } from '@/components/ui/toast';
-import { ProductListItem, useAssignProductsToSupplier, useProducts } from '@/hooks/use-product';
+import {
+  ProductListItem,
+  useAssignProductsToSupplier,
+  useUnassignProductsFromSupplier,
+  useProducts,
+} from '@/hooks/use-product';
 import { useSupplier } from '@/hooks/use-supplier';
 import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -10,36 +15,46 @@ export default function SelectProductInSupplier() {
   const { id } = useLocalSearchParams();
   const supplierId = id as string;
   const { data } = useSupplier(supplierId);
-  const { data: products } = useProducts({ supplierId, forceParent: true });
+  const { data: products } = useProducts({ forceParent: true });
   const toast = useToast();
 
-  const assignMutation = useAssignProductsToSupplier();
-  const isLoading = assignMutation.isPending;
+  const originalProducts = products?.filter((p) => p.supplierId === supplierId) ?? [];
 
-  const handleSubmit = (selectedProducts: ProductListItem[]) => {
-    if (selectedProducts.length === 0) {
-      showToast(toast, { action: 'error', message: 'Pilih produk terlebih dahulu' });
+  const assignMutation = useAssignProductsToSupplier();
+  const unassignMutation = useUnassignProductsFromSupplier();
+  const isLoading = assignMutation.isPending || unassignMutation.isPending;
+
+  const handleSubmit = async (selectedProducts: ProductListItem[]) => {
+    const selectedIds = new Set(selectedProducts.map((p) => p.id));
+    const originalIds = new Set(originalProducts.map((p) => p.id));
+
+    const toAssign = selectedProducts.filter((p) => !originalIds.has(p.id)).map((p) => p.id);
+    const toUnassign = originalProducts.filter((p) => !selectedIds.has(p.id)).map((p) => p.id);
+
+    if (toAssign.length === 0 && toUnassign.length === 0) {
+      showToast(toast, { action: 'warning', message: 'Tidak ada perubahan' });
       return;
     }
 
-    const productIds = selectedProducts.map((p) => p.id);
-
-    assignMutation.mutate(productIds, supplierId, {
-      onSuccess: () => {
-        showSuccessToast(toast, `Produk berhasil ditambahkan ke ${data?.name}`);
-        router.back();
-      },
-      onError: (error: Error) => {
-        showErrorToast(toast, error);
-      },
-    });
+    try {
+      if (toAssign.length > 0) {
+        await assignMutation.mutateAsync(toAssign, supplierId);
+      }
+      if (toUnassign.length > 0) {
+        await unassignMutation.mutateAsync(toUnassign);
+      }
+      showSuccessToast(toast, `Produk berhasil diperbarui untuk ${data?.name}`);
+      router.back();
+    } catch (error) {
+      showErrorToast(toast, error as Error);
+    }
   };
 
   return (
     <SelectingProductList
       usedFor="supplier"
       header={`TAMBAH PRODUK KE ${data?.name?.toUpperCase() ?? 'SUPPLIER'}`}
-      selectedItems={products}
+      selectedItems={originalProducts}
       isLoading={isLoading}
       onSubmit={handleSubmit}
     />

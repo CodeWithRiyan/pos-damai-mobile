@@ -29,7 +29,7 @@ import { exportCategories, importCategories } from '@/utils/excel';
 import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { useCategoryStore } from '@/stores/category';
 import { useItemSelection } from '@/hooks/use-item-selection';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { SearchIcon } from 'lucide-react-native';
 import React, { useCallback } from 'react';
 import { FlashList } from '@shopify/flash-list';
@@ -40,7 +40,7 @@ export default function CategoryList() {
   const router = useRouter();
   const { data, isLoading, refetch } = useCategories();
   const { data: productCounts, refetch: refetchCounts } = useProductCountsByCategory();
-  const { data: capitalValues } = useCapitalValueByCategory();
+  const { data: capitalValues, refetch: refetchCapital } = useCapitalValueByCategory();
   const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } =
     useItemSelection<Category>();
 
@@ -49,9 +49,18 @@ export default function CategoryList() {
   const handleVersionChange = useCallback(() => {
     refetch();
     refetchCounts();
-  }, [refetch, refetchCounts]);
+    refetchCapital();
+  }, [refetch, refetchCounts, refetchCapital]);
 
   useStoreVersionSync(useCategoryStore, handleVersionChange);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+      refetchCounts();
+      refetchCapital();
+    }, [refetch, refetchCounts, refetchCapital]),
+  );
 
   const deleteMutation = useBulkDeleteCategory();
   const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({
@@ -60,6 +69,19 @@ export default function CategoryList() {
     onSuccess: () => refetch(),
     clearSelection,
   });
+
+  const handleBulkDeleteWithCheck = (items: Category[] | null) => {
+    const idsWithProducts = items?.filter((item) => (productCounts?.[item.id] || 0) > 0);
+    if (idsWithProducts && idsWithProducts.length > 0) {
+      const names = idsWithProducts.map((i) => i.name).join(', ');
+      showToast(toast, {
+        action: 'error',
+        message: `Tidak dapat menghapus. Kategori "${names}" sedang digunakan oleh produk.`,
+      });
+      return;
+    }
+    triggerBulkDelete(bulkDeleteConfirm('kategori', items));
+  };
   const createMutation = useCreateCategory();
   const toast = useToast();
 
@@ -128,7 +150,7 @@ export default function CategoryList() {
                 <PermissionGuard permissions="products:categories-delete">
                   <Pressable
                     className="p-6"
-                    onPress={() => triggerBulkDelete(bulkDeleteConfirm('kategori', selectedItems))}
+                    onPress={() => handleBulkDeleteWithCheck(selectedItems)}
                   >
                     <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
                   </Pressable>

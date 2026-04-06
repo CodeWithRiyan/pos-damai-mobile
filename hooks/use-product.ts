@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
 import { useAuthStore } from '@/stores/auth';
+import { useProductStore } from '@/stores/product';
 import { and, eq, isNull, like, or, desc, inArray } from 'drizzle-orm';
 import { InventoryTxType, ProductType, Status } from '@/constants';
 
@@ -648,17 +649,15 @@ export async function assignProductsToBrand(productIds: string[], brandId: strin
   const now = new Date();
   const userId = useAuthStore.getState().profile?.id;
 
-  for (const productId of productIds) {
-    await db
-      .update(schema.products)
-      .set({
-        brandId,
-        updatedBy: userId,
-        updatedAt: now,
-        _dirty: true,
-      })
-      .where(eq(schema.products.id, productId));
-  }
+  await db
+    .update(schema.products)
+    .set({
+      brandId,
+      updatedBy: userId,
+      updatedAt: now,
+      _dirty: true,
+    })
+    .where(inArray(schema.products.id, productIds));
 }
 
 export async function unassignProductsFromCategory(productIds: string[]): Promise<void> {
@@ -827,15 +826,15 @@ export function useProductLog(productId: string) {
 }
 
 export function useProductsByCategory(categoryId: string) {
-  return useProducts({ categoryId });
+  return useProducts({ categoryId, forceParent: true });
 }
 
 export function useProductsByBrand(brandId: string) {
-  return useProducts({ brandId });
+  return useProducts({ brandId, forceParent: true });
 }
 
 export function useProductsBySupplier(supplierId: string) {
-  return useProducts({ supplierId });
+  return useProducts({ supplierId, forceParent: true });
 }
 
 export function useCreateProduct() {
@@ -966,6 +965,7 @@ export function useAssignProductsToCategory() {
       setError(null);
       try {
         await assignProductsToCategory(productIds, categoryId);
+        useProductStore.getState().incrementVersion();
         options?.onSuccess?.();
       } catch (err) {
         const error = err as Error;
@@ -1026,6 +1026,7 @@ export function useAssignProductsToBrand() {
       setError(null);
       try {
         await assignProductsToBrand(productIds, brandId);
+        useProductStore.getState().incrementVersion();
         options?.onSuccess?.();
       } catch (err) {
         const error = err as Error;
@@ -1055,6 +1056,7 @@ export function useUnassignProductsFromCategory() {
       setError(null);
       try {
         await unassignProductsFromCategory(productIds);
+        useProductStore.getState().incrementVersion();
         options?.onSuccess?.();
       } catch (err) {
         const error = err as Error;
@@ -1113,6 +1115,7 @@ export function useUnassignProductsFromBrand() {
       setError(null);
       try {
         await unassignProductsFromBrand(productIds);
+        useProductStore.getState().incrementVersion();
         options?.onSuccess?.();
       } catch (err) {
         const error = err as Error;

@@ -96,7 +96,6 @@ export async function fetchPayableBySupplier(): Promise<PayableBySupplier[]> {
   if (!orgId) return [];
 
   const allPayables = await fetchPayables();
-  console.log('All payables fetched for grouping:', allPayables);
 
   const grouped = new Map<string, Payable[]>();
   for (const payable of allPayables) {
@@ -560,6 +559,7 @@ export function useCreatePayableRealization() {
         nominal: number;
         realizationDate: Date;
         paymentMethodId: string;
+        paymentMethodName?: string;
         note?: string;
       },
       options?: { onSuccess?: () => void; onError?: (error: Error) => void },
@@ -619,6 +619,47 @@ export function useBulkDeletePayableBySupplier() {
             })
             .where(eq(payables.id, p.id));
         }
+        options?.onSuccess?.();
+      } catch (err) {
+        const error = err as Error;
+        setError(error);
+        options?.onError?.(error);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  return {
+    mutate,
+    mutateAsync: mutate,
+    isLoading,
+    loading: isLoading,
+    isPending: isLoading,
+    error,
+  };
+}
+
+export function useDeletePayableRealization() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const mutate = useCallback(
+    async (id: string, options?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const now = new Date();
+        await db
+          .update(payableRealizations)
+          .set({
+            deletedAt: now,
+            updatedAt: now,
+            _dirty: true,
+          })
+          .where(eq(payableRealizations.id, id));
         options?.onSuccess?.();
       } catch (err) {
         const error = err as Error;

@@ -243,7 +243,6 @@ export async function createPurchase(data: CreatePurchasingDTO): Promise<Purchas
       } as any);
     }
   }
-  console.log('Purchase created with data:', newPurchase);
 
   if (data.isPayable && data.dueDate && data.status === Status.COMPLETED) {
     const nominal = totalAmount;
@@ -266,7 +265,6 @@ export async function createPurchase(data: CreatePurchasingDTO): Promise<Purchas
       _syncedAt: null,
     } as any);
     usePayableStore.getState().incrementVersion();
-    console.log('Payable created for purchase with nominal:', nominal);
   }
 
   return newPurchase as unknown as Purchase;

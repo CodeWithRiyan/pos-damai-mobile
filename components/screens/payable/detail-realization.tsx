@@ -6,11 +6,10 @@ import { Pressable } from '@/components/ui/pressable';
 import {
   SolarIconBold,
   SolarIconBoldDuotone,
-  SolarIconLinear,
 } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { useDeletePayable, usePayableDetail } from '@/hooks/use-payable';
+import { useDeletePayableRealization, usePayableDetail } from '@/hooks/use-payable';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -26,18 +25,21 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
   const supplierId = params.supplierId as string;
   const payableId = payableIds?.split('-')[0] || '';
 
-  const { data: payable, isLoading } = usePayableDetail(payableId);
-  const deleteMutation = useDeletePayable();
+  const { data: payable, isLoading, refetch } = usePayableDetail(payableId);
+  console.log('payable', payable);
+  const deleteMutation = useDeletePayableRealization();
 
   const payableRealizationList = payable?.realizations || [];
   const isPayedOff = (payable?.totalRealization || 0) === (payable?.nominal || 0);
 
   const { triggerDelete } = useDeleteEntity({
-    successMessage: 'Hutang berhasil dihapus',
+    successMessage: 'Pembayaran berhasil dihapus',
     deleteMutation,
+    onSuccess: () => refetch(),
+    goBack: false,
   });
 
-  const handleAction = () => {
+  const handleRealizationAction = (realization: { id: string }) => {
     showActionDrawer({
       actions: [
         {
@@ -45,7 +47,7 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
           icon: 'Pen',
           onPress: () => {
             router.navigate(
-              `/(main)/management/payable-receivable/payable/edit?payableId=${payable?.id}` as any,
+              `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/edit/${realization.id}?payableIds=${payableId}` as any,
             );
             hideActionDrawer();
           },
@@ -55,7 +57,7 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
           icon: 'TrashBin2',
           theme: 'red',
           onPress: () => {
-            triggerDelete(singleDeleteConfirm('hutang', payableId));
+            triggerDelete(singleDeleteConfirm('pembayaran', realization.id));
             hideActionDrawer();
           },
         },
@@ -75,20 +77,6 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
     <VStack className="flex-1 bg-white">
       <Header
         header="DETAIL REALISASI HUTANG"
-        action={
-          !isReport && (
-            <HStack space="sm">
-              <Pressable className="p-6" onPress={handleAction}>
-                <SolarIconBold
-                  name="MenuDots"
-                  size={20}
-                  color="#FDFBF9"
-                  style={{ transform: [{ rotate: '90deg' }] }}
-                />
-              </Pressable>
-            </HStack>
-          )
-        }
         isGoBack
       />
 
@@ -98,7 +86,7 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
             <HStack space="sm" className="items-center">
               <SolarIconBoldDuotone name="UserCircle" size={24} color="#3b82f6" />
               <Text className="text-primary-500 font-bold">
-                {payable?.supplier?.name || 'Unknown Supplier'}
+                {payable?.supplierName || 'Unknown Supplier'}
               </Text>
             </HStack>
             <HStack space="xs" className="items-center">
@@ -181,13 +169,14 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
                     <GridItem _extra={{ className: 'col-span-3' }}>
                       <Pressable
                         className="h-8 w-8 rounded-md items-center justify-center border border-background-200"
-                        onPress={() => {
-                          router.navigate(
-                            `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/edit/${realization.id}?payableIds=${payableId}` as any,
-                          );
-                        }}
+                        onPress={() => handleRealizationAction(realization)}
                       >
-                        <SolarIconLinear name="Pen" size={16} color="#3d2117" />
+                        <SolarIconBold
+                          name="MenuDots"
+                          size={16}
+                          color="#3d2117"
+                          style={{ transform: [{ rotate: '90deg' }] }}
+                        />
                       </Pressable>
                     </GridItem>
                   )}

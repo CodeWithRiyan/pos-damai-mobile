@@ -1,15 +1,15 @@
-import Header from "@/components/header";
-import { Heading, HStack, Pressable, Text, VStack } from "@/components/ui";
-import { Box } from "@/components/ui/box";
-import { Spinner } from "@/components/ui/spinner";
-import dayjs from "dayjs";
-import { useRouter } from "expo-router";
-import React, { useMemo, useState } from "react";
+import Header from '@/components/header';
+import { Heading, HStack, Pressable, Text, VStack } from '@/components/ui';
+import { Box } from '@/components/ui/box';
+import { Spinner } from '@/components/ui/spinner';
+import dayjs from 'dayjs';
+import { useRouter } from 'expo-router';
+import React, { useMemo, useState } from 'react';
 
-import { Grid, GridItem } from "@/components/ui/grid";
-import SelectModal from "@/components/ui/select/select-modal";
-import { formatNumber } from "@/utils/format";
-import { ScrollView } from "react-native";
+import { Grid, GridItem } from '@/components/ui/grid';
+import SelectModal from '@/components/ui/select/select-modal';
+import { formatNumber } from '@/utils/format';
+import { ScrollView } from 'react-native';
 
 interface ProfitLossReport {
   id: string;
@@ -31,14 +31,14 @@ interface ProfitLossTransactionItems {
   id: string;
   transactionId: string; // TODO: ini akan digunakan oleh FE untuk redirect ke struk sesuai dengan tipe transaksi.
   date: Date;
-  transactionType: "SALE" | "PURCHASE" | "OTHER_INCOME" | "OTHER_EXPENSE";
+  transactionType: 'SALE' | 'PURCHASE' | 'OTHER_INCOME' | 'OTHER_EXPENSE';
   amount: number;
 }
 
 export const _dummyReports: ProfitLossReport[] = [
   {
-    id: "1",
-    local_ref_id: "PLR-001",
+    id: '1',
+    local_ref_id: 'PLR-001',
     saleAmount: 100000,
     purchaseAmount: 18000,
     otherIncomeAmount: 0,
@@ -46,28 +46,28 @@ export const _dummyReports: ProfitLossReport[] = [
     date: new Date(),
     transactions: [
       {
-        id: "1",
-        transactionId: "T-001",
+        id: '1',
+        transactionId: 'T-001',
         date: new Date(),
-        transactionType: "SALE",
+        transactionType: 'SALE',
         amount: 100000,
       },
       {
-        id: "2",
-        transactionId: "T-002",
+        id: '2',
+        transactionId: 'T-002',
         date: new Date(),
-        transactionType: "PURCHASE",
+        transactionType: 'PURCHASE',
         amount: 18000,
       },
       {
-        id: "3",
-        transactionId: "T-003",
+        id: '3',
+        transactionId: 'T-003',
         date: new Date(),
-        transactionType: "OTHER_EXPENSE",
+        transactionType: 'OTHER_EXPENSE',
         amount: 10000,
       },
     ],
-    organizationId: "org-123",
+    organizationId: 'org-123',
     createdBy: null,
     updatedBy: null,
     createdAt: new Date(),
@@ -75,11 +75,11 @@ export const _dummyReports: ProfitLossReport[] = [
   },
 ];
 
-export default function ProfitLossReport() {
-  const header = "LAPORAN LABA RUGI";
+export default function ProfitLossReportScreen() {
+  const header = 'LAPORAN LABA RUGI';
   const router = useRouter();
 
-  const [dateType, setDateType] = useState<string | null>("TODAY");
+  const [dateType, setDateType] = useState<string | null>('TODAY');
 
   const reports = _dummyReports;
   const isLoading = false;
@@ -104,10 +104,7 @@ export default function ProfitLossReport() {
     });
 
     const totalNetProfit =
-      totalSaleAmount +
-      totalOtherIncomeAmount -
-      totalPurchaseAmount -
-      totalOtherExpensesAmount;
+      totalSaleAmount + totalOtherIncomeAmount - totalPurchaseAmount - totalOtherExpensesAmount;
 
     return {
       totalSaleAmount,
@@ -131,32 +128,32 @@ export default function ProfitLossReport() {
 
   const optionsDates = [
     {
-      label: "Hari ini",
-      value: "TODAY",
+      label: 'Hari ini',
+      value: 'TODAY',
     },
     {
-      label: "Kemarin",
-      value: "YESTERDAY",
+      label: 'Kemarin',
+      value: 'YESTERDAY',
     },
     {
-      label: "Minggu ini",
-      value: "THIS_WEEK",
+      label: 'Minggu ini',
+      value: 'THIS_WEEK',
     },
     {
-      label: "Bulan ini",
-      value: "THIS_MONTH",
+      label: 'Bulan ini',
+      value: 'THIS_MONTH',
     },
     {
-      label: "Bulan lalu",
-      value: "LAST_MONTH",
+      label: 'Bulan lalu',
+      value: 'LAST_MONTH',
     },
     {
-      label: "Tahun ini",
-      value: "THIS_YEAR",
+      label: 'Tahun ini',
+      value: 'THIS_YEAR',
     },
     {
-      label: "Tahun lalu",
-      value: "LAST_YEAR",
+      label: 'Tahun lalu',
+      value: 'LAST_YEAR',
     },
   ];
 
@@ -165,7 +162,7 @@ export default function ProfitLossReport() {
       <Header header={header} isGoBack />
       <VStack space="md" className="flex-1 p-4 items-center">
         <SelectModal
-          value={dateType || "TODAY"}
+          value={dateType || 'TODAY'}
           placeholder="Pilih Tanggal"
           options={optionsDates}
           className="w-full"
@@ -175,16 +172,15 @@ export default function ProfitLossReport() {
         <ScrollView showsVerticalScrollIndicator={false}>
           <VStack space="lg">
             <Grid
-              _extra={{ className: "grid-cols-2" }}
+              _extra={{ className: 'grid-cols-2' }}
               className="p-4 border border-background-300 rounded-lg"
             >
-              <GridItem _extra={{ className: "col-span-1" }}>
+              <GridItem _extra={{ className: 'col-span-1' }}>
                 <VStack space="md">
                   <VStack>
                     <Text className="text-sm">Total Pemasukan</Text>
                     <Heading size="xl" className="text-success-500">
-                      Rp{" "}
-                      {formatNumber(totalSaleAmount + totalOtherIncomeAmount)}
+                      Rp {formatNumber(totalSaleAmount + totalOtherIncomeAmount)}
                     </Heading>
                   </VStack>
                   <VStack>
@@ -201,15 +197,12 @@ export default function ProfitLossReport() {
                   </VStack>
                 </VStack>
               </GridItem>
-              <GridItem _extra={{ className: "col-span-1" }}>
+              <GridItem _extra={{ className: 'col-span-1' }}>
                 <VStack space="md">
                   <VStack className="items-end">
                     <Text className="text-sm">Total Pengeluaran</Text>
                     <Heading size="xl" className="text-error-500">
-                      Rp{" "}
-                      {formatNumber(
-                        totalPurchaseAmount + totalOtherExpensesAmount,
-                      )}
+                      Rp {formatNumber(totalPurchaseAmount + totalOtherExpensesAmount)}
                     </Heading>
                   </VStack>
                   <VStack className="items-end">
@@ -233,23 +226,19 @@ export default function ProfitLossReport() {
             </VStack>
             {!reports.length && (
               <Box className="flex-1 justify-center items-center py-10">
-                <Text className="text-gray-500">
-                  Belum ada histori transaksi
-                </Text>
+                <Text className="text-gray-500">Belum ada histori transaksi</Text>
               </Box>
             )}
             {!!reports.length &&
               reports.map((report) => {
-                const date = report.createdAt
-                  ? dayjs(report.createdAt)
-                  : dayjs();
+                const date = report.createdAt ? dayjs(report.createdAt) : dayjs();
                 return (
                   <Pressable
                     key={report.id}
                     className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
                     onPress={() =>
                       router.navigate({
-                        pathname: "/(main)/report/profit-loss/[id]",
+                        pathname: '/(main)/report/profit-loss/[id]',
                         params: { id: report.id },
                       })
                     }
@@ -257,57 +246,46 @@ export default function ProfitLossReport() {
                     <HStack space="xl" className="items-center">
                       <VStack>
                         <HStack space="sm" className="items-center">
-                          <Heading size="4xl">{date.format("DD")}</Heading>
+                          <Heading size="4xl">{date.format('DD')}</Heading>
                           <VStack>
                             <Text className="text-typography-500 font-bold">
-                              {date.format("MMM")}
+                              {date.format('MMM')}
                             </Text>
                             <Text className="text-typography-500 font-bold">
-                              {date.format("YYYY")}
+                              {date.format('YYYY')}
                             </Text>
                           </VStack>
                         </HStack>
                         <Heading size="md">{`${report.transactions.length} Transaksi`}</Heading>
                       </VStack>
-                      <Grid
-                        _extra={{ className: "grid-cols-2" }}
-                        className="flex-1"
-                      >
-                        <GridItem _extra={{ className: "col-span-1" }}>
+                      <Grid _extra={{ className: 'grid-cols-2' }} className="flex-1">
+                        <GridItem _extra={{ className: 'col-span-1' }}>
                           <VStack>
-                            <Text className="text-typography-400 text-xs">
-                              Penjualan
-                            </Text>
+                            <Text className="text-typography-400 text-xs">Penjualan</Text>
                             <Text className="font-bold">
                               Rp {formatNumber(report.saleAmount ?? 0)}
                             </Text>
                           </VStack>
                         </GridItem>
-                        <GridItem _extra={{ className: "col-span-1" }}>
+                        <GridItem _extra={{ className: 'col-span-1' }}>
                           <VStack>
-                            <Text className="text-typography-400 text-xs">
-                              Pembelian
-                            </Text>
+                            <Text className="text-typography-400 text-xs">Pembelian</Text>
                             <Text className="font-bold">
                               Rp {formatNumber(report.purchaseAmount ?? 0)}
                             </Text>
                           </VStack>
                         </GridItem>
-                        <GridItem _extra={{ className: "col-span-1" }}>
+                        <GridItem _extra={{ className: 'col-span-1' }}>
                           <VStack>
-                            <Text className="text-typography-400 text-xs">
-                              Pemasukkan Lain
-                            </Text>
+                            <Text className="text-typography-400 text-xs">Pemasukkan Lain</Text>
                             <Text className="font-bold">
                               Rp {formatNumber(report.otherIncomeAmount ?? 0)}
                             </Text>
                           </VStack>
                         </GridItem>
-                        <GridItem _extra={{ className: "col-span-1" }}>
+                        <GridItem _extra={{ className: 'col-span-1' }}>
                           <VStack>
-                            <Text className="text-typography-400 text-xs">
-                              Pengeluaran Lain
-                            </Text>
+                            <Text className="text-typography-400 text-xs">Pengeluaran Lain</Text>
                             <Text className="font-bold">
                               Rp {formatNumber(report.otherExpensesAmount ?? 0)}
                             </Text>

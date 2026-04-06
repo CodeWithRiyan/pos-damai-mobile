@@ -54,7 +54,7 @@ const purchasingSchema = z
     dueDate: z.date().nullable(),
     isCashdrawer: z.boolean(),
     status: z.string(),
-    paymentMethodId: z.string().min(1, 'Metode pembayaran harus dipilih'),
+    paymentMethodId: z.string(),
     note: z.string(),
   })
   .superRefine((data, ctx) => {
@@ -118,22 +118,37 @@ export default function PurchasingCheckoutForm() {
     return { grandTotal: cartTotal };
   }, [cartTotal]);
 
+  const defaultPaymentOption = {
+    label:
+      DEFAULT_PAYMENT_TYPE.charAt(0).toUpperCase() +
+      DEFAULT_PAYMENT_TYPE.slice(1).toLowerCase(),
+    value: DEFAULT_PAYMENT_TYPE,
+  };
   const paymentTypes =
-    paymentTypesData?.map((pt) => ({
-      label: pt.name,
-      value: pt.id,
-    })) || [];
+    paymentTypesData && paymentTypesData.length > 0
+      ? [
+          defaultPaymentOption,
+          ...paymentTypesData
+            .filter((pt) => pt.id !== DEFAULT_PAYMENT_TYPE)
+            .map((pt) => ({ label: pt.name, value: pt.id })),
+        ]
+      : [defaultPaymentOption];
 
   const toast = useToast();
 
   useEffect(() => {
     if (cartTotal) {
       form.setValue('status', status);
-      if (!purchase && paymentTypesData && paymentTypesData.length > 0) {
-        const defaultPaymentType =
-          paymentTypesData?.find((pt) => pt.isDefault || pt.name === DEFAULT_PAYMENT_TYPE)?.id ||
-          '';
-        form.setValue('paymentMethodId', defaultPaymentType);
+      if (!purchase) {
+        if (paymentTypesData && paymentTypesData.length > 0) {
+          const defaultPaymentType =
+            paymentTypesData.find(
+              (pt) => pt.isDefault || pt.name.toLowerCase() === DEFAULT_PAYMENT_TYPE.toLowerCase(),
+            )?.id || paymentTypesData[0].id;
+          form.setValue('paymentMethodId', defaultPaymentType);
+        } else {
+          form.setValue('paymentMethodId', DEFAULT_PAYMENT_TYPE);
+        }
       }
       if (purchase) {
         form.setValue('supplierId', purchase.supplierId);

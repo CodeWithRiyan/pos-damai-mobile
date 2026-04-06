@@ -9,11 +9,12 @@ import { useBrands, useDeleteBrand, refetchBrandById, Brand } from '@/hooks/use-
 import { Product, useProductsByBrand, useUnassignProductsFromBrand } from '@/hooks/use-product';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useBrandStore } from '@/stores/brand';
+import { useProductStore } from '@/stores/product';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import { useItemSelection } from '@/hooks/use-item-selection';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView } from 'react-native';
 
@@ -38,7 +39,7 @@ export default function BrandDetail() {
   } = useItemSelection<Product>();
 
   const { refetch: refetchBrands } = useBrands();
-  const { data: products } = useProductsByBrand(brandId || '');
+  const { data: products, isLoading, refetch: refetchProducts } = useProductsByBrand(brandId || '');
   const deleteMutation = useDeleteBrand();
   const unassignProductMutation = useUnassignProductsFromBrand();
   const toast = useToast();
@@ -59,7 +60,22 @@ export default function BrandDetail() {
     refetchBrands();
   }, [brandId, refetchBrands]);
 
+  const onProductRefetch = useCallback(() => {
+    refetchProducts();
+    refetchBrands();
+  }, [refetchProducts, refetchBrands]);
+
   useStoreVersionSync(useBrandStore, onRefetch);
+  useStoreVersionSync(useProductStore, onProductRefetch);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchProducts();
+      if (brandId) {
+        refetchBrandById(brandId).then(setBrand);
+      }
+    }, [brandId, refetchProducts]),
+  );
 
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Brand berhasil dihapus',
@@ -69,6 +85,26 @@ export default function BrandDetail() {
       onRefetch();
     },
   });
+
+  const handleDeletePress = () => {
+    const productCount = dataProducts.length;
+    if (productCount > 0) {
+      showErrorToast(toast, `Tidak dapat menghapus. ${productCount} produk menggunakan brand ini.`);
+      return;
+    }
+    triggerDelete(singleDeleteConfirm('brand', brand?.id || '', brand?.name));
+  };
+
+  if (isLoading) {
+    return (
+      <VStack className="flex-1 bg-white">
+        <Header header="DETAIL BRAND" isGoBack />
+        <Box className="flex-1 justify-center items-center">
+          <Spinner size="large" />
+        </Box>
+      </VStack>
+    );
+  }
 
   const handleDeleteProductPress = () => {
     const productIds = selectedProducts?.map((m) => m.id) || [];
@@ -122,7 +158,7 @@ export default function BrandDetail() {
           icon: 'TrashBin2',
           theme: 'red',
           onPress: () => {
-            triggerDelete(singleDeleteConfirm('brand', brand?.id || '', brand?.name));
+            handleDeletePress();
             hideActionDrawer();
           },
         },
@@ -256,7 +292,7 @@ export default function BrandDetail() {
           }}
         >
           <Text size="sm" className="text-typography-0 font-bold">
-            TAMBAHKAN PRODUK
+            SEMATKAN PRODUK
           </Text>
         </Pressable>
       </VStack>
