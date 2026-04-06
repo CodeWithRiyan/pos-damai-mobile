@@ -1,6 +1,7 @@
 import BrandForm from '@/components/screens/brand/form';
 import CashDrawerForm from '@/components/screens/cashdrawer/form';
 import CategoryForm from '@/components/screens/category/form';
+import CustomerModalForm from '@/components/screens/customer/modal-form';
 import DiscountForm from '@/components/screens/discount/form';
 import PaymentTypeForm from '@/components/screens/payment-type/form';
 import { Sidebar } from '@/components/sidebar';
@@ -23,6 +24,7 @@ export default function MainLayout() {
       </View>
       <CategoryForm />
       <BrandForm />
+      <CustomerModalForm />
       <DiscountForm />
       <PaymentTypeForm />
       <CashDrawerForm />

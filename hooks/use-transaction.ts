@@ -475,7 +475,7 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
 
         await tx.insert(schema.inventoryTransactions).values({
           id: `invtx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          local_ref_id: `${finalLocalRefId}_${productId}`,
+          local_ref_id: `${finalLocalRefId}_${item.variant?.id ? `${productId}_${item.variant.id}` : product.id}`,
           productId,
           productName: item.productName || null,
           productBarcode: item.product.barcode || null,

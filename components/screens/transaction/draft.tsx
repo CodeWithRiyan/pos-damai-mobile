@@ -96,7 +96,7 @@ export default function TransactionDraft() {
   if (isLoading) {
     return (
       <VStack className="flex-1 bg-white">
-        <Header header="DRAFT TRANSAKSI" isGoBack />
+        <Header header="DRAFT TRANSAKSI" isGoBack onGoBack={() => router.push('/(main)/transaction')} />
         <Box className="flex-1 justify-center items-center">
           <Spinner size="large" />
         </Box>
@@ -106,7 +106,7 @@ export default function TransactionDraft() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header="DRAFT TRANSAKSI" isGoBack />
+      <Header header="DRAFT TRANSAKSI" isGoBack onGoBack={() => router.push('/(main)/transaction')} />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {drafts.length === 0 ? (
           <Box className="flex-1 justify-center items-center py-10">

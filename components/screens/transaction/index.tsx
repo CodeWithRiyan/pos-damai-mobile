@@ -28,6 +28,7 @@ import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useCurrentShift } from '@/hooks/use-shift';
 import { useLocalUsers } from '@/hooks/use-user';
 import { calculateLineItemTotal, findSellPrice } from '@/utils/price';
+import { useCustomerStore } from '@/stores/customer';
 import { useProductStore } from '@/stores/product';
 import { useTransactionStore } from '@/stores/transaction';
 import { PriceType, ProductType, Status } from '@/constants';
@@ -58,7 +59,7 @@ export default function TransactionList() {
     removeCartItem,
     resetCart,
   } = useTransactionStore();
-  const { data: customers } = useCustomers();
+  const { data: customers, refetch: refetchCustomers } = useCustomers();
   const { data: localUsers } = useLocalUsers();
   const { data: returnCustomer } = useCustomer(searchParams.returnCustomerId);
   const { data: products, refetch } = useProducts({ forceParent: true });
@@ -69,11 +70,16 @@ export default function TransactionList() {
   const [layout, setLayout] = useState<'list' | 'grid'>('list');
   const [buyerType, setBuyerType] = useState<'customer' | 'employee'>('customer');
 
-  const handleVersionChange = React.useCallback(() => {
+  const handleProductVersionChange = React.useCallback(() => {
     refetch();
   }, [refetch]);
 
-  useStoreVersionSync(useProductStore, handleVersionChange);
+  const handleCustomerVersionChange = React.useCallback(() => {
+    refetchCustomers();
+  }, [refetchCustomers]);
+
+  useStoreVersionSync(useProductStore, handleProductVersionChange);
+  useStoreVersionSync(useCustomerStore, handleCustomerVersionChange);
 
   const isDirty = !!cart.length || customer || employee;
 
@@ -242,9 +248,12 @@ export default function TransactionList() {
                   <>
                     <Pressable
                       className="size-10 rounded-full bg-primary-500 items-center justify-center"
-                      onPress={() =>
-                        router.push('/(main)/management/customer-supplier/customer/add')
-                      }
+                      onPress={() => {
+                        useCustomerStore.getState().setData(null);
+                        useCustomerStore.getState().setOpen(true, (newCustomer) => {
+                          setCustomer(newCustomer as any);
+                        });
+                      }}
                     >
                       <Icon as={PlusIcon} color="white" />
                     </Pressable>

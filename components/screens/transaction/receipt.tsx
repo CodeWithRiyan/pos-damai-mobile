@@ -61,7 +61,7 @@ export default function TransactionReceipt() {
   if (isLoading || !id) {
     return (
       <VStack className="flex-1 bg-primary-200">
-        <Header header="STRUK PENJUALAN BARANG" isGoBack />
+        <Header header="STRUK PENJUALAN BARANG" isGoBack onGoBack={() => router.push('/(main)/transaction')} />
         <Box className="flex-1 justify-center items-center">
           <Spinner size="large" />
         </Box>
@@ -72,7 +72,7 @@ export default function TransactionReceipt() {
   if (!transaction) {
     return (
       <VStack className="flex-1 bg-primary-200">
-        <Header header="STRUK PENJUALAN BARANG" isGoBack />
+        <Header header="STRUK PENJUALAN BARANG" isGoBack onGoBack={() => router.push('/(main)/transaction')} />
         <Box className="flex-1 justify-center items-center">
           <Text>Data transaksi tidak ditemukan</Text>
         </Box>
@@ -89,6 +89,7 @@ export default function TransactionReceipt() {
       <Header
         header={transaction?.returnId ? 'STRUK PENUKARAN BARANG' : 'STRUK PENJUALAN BARANG'}
         isGoBack
+        onGoBack={() => router.push('/(main)/transaction')}
         action={
           <Pressable
             className="p-6"

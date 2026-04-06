@@ -69,7 +69,10 @@ export default function StockOpnameConfirmForm({ date }: StockOpnameConfirmFormP
       let gain = 0;
       let loss = 0;
 
-      const cartByProduct = new Map<string, typeof cart[0] & { physicalStockByVariant: Map<string, number> }>();
+      const cartByProduct = new Map<
+        string,
+        (typeof cart)[0] & { physicalStockByVariant: Map<string, number> }
+      >();
 
       for (const item of cart) {
         const key = item.product.id;
@@ -100,10 +103,9 @@ export default function StockOpnameConfirmForm({ date }: StockOpnameConfirmFormP
             ),
           );
 
-        let currentStock: number;
         let physicalStockInBaseUnit: number;
 
-        currentStock = transactions.reduce((sum, t) => sum + t.quantity, 0);
+        const currentStock = transactions.reduce((sum, t) => sum + t.quantity, 0);
 
         if (isMultiunit) {
           physicalStockInBaseUnit = 0;
@@ -136,7 +138,10 @@ export default function StockOpnameConfirmForm({ date }: StockOpnameConfirmFormP
   }, [openConfirm, cart]);
 
   const onSubmit: SubmitHandler<StockOpnameFormValues> = async (data: StockOpnameFormValues) => {
-    const cartByProduct = new Map<string, typeof cart[0] & { physicalStockByVariant: Map<string, number> }>();
+    const cartByProduct = new Map<
+      string,
+      (typeof cart)[0] & { physicalStockByVariant: Map<string, number> }
+    >();
 
     for (const item of cart) {
       const key = item.product.id;
