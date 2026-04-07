@@ -136,6 +136,35 @@ export default function ReceivableRealizationDetail() {
           </VStack>
         </VStack>
 
+        {receivable?.transactionItems && receivable.transactionItems.length > 0 && (
+          <VStack className="px-4 py-2 bg-gray-50 border-y border-gray-200">
+            <Text className="font-bold text-sm text-gray-500 mb-2">Daftar Produk:</Text>
+            {receivable.transactionItems.map((item, idx) => (
+              <HStack key={idx} className="justify-between py-1">
+                <Text size="xs" className="flex-1">
+                  {item.productName}
+                </Text>
+                <Text size="xs" className="text-gray-500">
+                  {item.quantity} x {formatRp(item.unitPrice)}
+                </Text>
+                <Text size="xs" className="font-bold ml-2">
+                  {formatRp(item.totalPrice)}
+                </Text>
+              </HStack>
+            ))}
+            <HStack className="justify-between mt-1 pt-1 border-t border-gray-200">
+              <Text size="xs" className="font-bold">
+                Total
+              </Text>
+              <Text size="xs" className="font-bold text-primary-500">
+                {formatRp(
+                  receivable.transactionItems.reduce((sum, item) => sum + item.totalPrice, 0),
+                )}
+              </Text>
+            </HStack>
+          </VStack>
+        )}
+
         <VStack>
           {receivableRealizationList?.map((realization, index) => (
             <HStack key={realization.id} className="p-4">

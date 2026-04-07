@@ -1,8 +1,17 @@
-import { receivables, receivableRealizations, customers, users, paymentTypes } from '@/db/schema';
+import { receivables, receivableRealizations, customers, users, paymentTypes, transactions, transactionItems as transactionItemsTable } from '@/db/schema';
 import { db } from '@/db';
 import { useAuthStore } from '@/stores/system/auth';
 import { eq, and, isNull, like, desc } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
+
+export interface TransactionItemData {
+  id: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
 
 export interface Receivable {
   id: string;
@@ -18,6 +27,7 @@ export interface Receivable {
   dueDate: Date | null;
   nearestDueDate?: Date | null;
   note?: string;
+  transactionId?: string;
   user?: { id: string; name: string; firstName?: string };
   realizations?: Array<{
     id: string;
@@ -26,6 +36,7 @@ export interface Receivable {
     realizationDate?: Date;
     note?: string;
   }>;
+  transactionItems?: TransactionItemData[];
 }
 
 export interface ReceivableByUser {
@@ -67,12 +78,29 @@ export async function fetchReceivables(params?: {
 
       const totalRealization = realizations.reduce((sum, rlz) => sum + (rlz.nominal || 0), 0);
 
+      let transactionItemsData: TransactionItemData[] = [];
+      if (r.transactionId) {
+        const items = await db
+          .select()
+          .from(transactionItemsTable)
+          .where(eq(transactionItemsTable.transactionId, r.transactionId));
+        transactionItemsData = items.map(item => ({
+          id: item.id,
+          productId: item.productId,
+          productName: item.productName || '',
+          quantity: item.quantity,
+          unitPrice: item.sellPrice,
+          totalPrice: item.quantity * item.sellPrice,
+        }));
+      }
+
       return {
         ...r,
         customerName: r.customerName || '',
         totalRealization,
         totalReceivable: (r.nominal || 0) - totalRealization,
         status: r.status || 'PENDING',
+        transactionId: r.transactionId || undefined,
         user: r.userName
           ? {
               id: r.userId,
@@ -87,6 +115,7 @@ export async function fetchReceivables(params?: {
           realizationDate: rlz.realizationDate,
           note: rlz.note,
         })),
+        transactionItems: transactionItemsData,
       } as Receivable;
     }),
   );
@@ -135,12 +164,36 @@ export async function fetchReceivableDetail(id: string): Promise<Receivable | nu
 
   const totalRealization = realizations.reduce((sum, rlz) => sum + (rlz.nominal || 0), 0);
 
+  let transactionItemsData: TransactionItemData[] = [];
+  if (r.transactionId) {
+    const items = await db
+      .select()
+      .from(transactionItemsTable)
+      .where(eq(transactionItemsTable.transactionId, r.transactionId));
+    transactionItemsData = items.map(item => ({
+      id: item.id,
+      productId: item.productId,
+      productName: item.productName || '',
+      quantity: item.quantity,
+      unitPrice: item.sellPrice,
+      totalPrice: item.quantity * item.sellPrice,
+    }));
+  }
+
   return {
     ...r,
     customerName: r.customerName || '',
     totalRealization,
     totalReceivable: (r.nominal || 0) - totalRealization,
     status: r.status || 'PENDING',
+    transactionId: r.transactionId || undefined,
+    user: r.userName
+      ? {
+          id: r.userId,
+          name: r.userName,
+          firstName: r.userName.split(' ')[0],
+        }
+      : undefined,
     realizations: realizations.map((rlz) => ({
       id: rlz.id,
       nominal: rlz.nominal,
@@ -148,6 +201,7 @@ export async function fetchReceivableDetail(id: string): Promise<Receivable | nu
       realizationDate: rlz.realizationDate,
       note: rlz.note,
     })),
+    transactionItems: transactionItemsData,
   } as Receivable;
 }
 
@@ -204,6 +258,7 @@ export async function createReceivable(data: {
     customerPhone,
     customerAddress,
     status: 'PENDING',
+    transactionId: data.transactionId || null,
     organizationId: orgId,
     createdAt: now,
     updatedAt: now,
