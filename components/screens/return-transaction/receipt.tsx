@@ -4,9 +4,9 @@ import { Box, Heading, HStack, Icon, Pressable, Text, VStack } from '@/component
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { useTransactionReturn } from '@/hooks/use-return-transaction';
-import { TransactionItem, useTransaction } from '@/hooks/use-transaction';
+import { TransactionItem, useTransactionByReturnId } from '@/hooks/use-transaction';
 import { formatDisplayRefId } from '@/utils/reference';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Check, Printer, Send } from 'lucide-react-native';
@@ -32,7 +32,7 @@ export default function ReturnTransactionReceipt() {
     data: transaction,
     isLoading: isLoadingTransaction,
     refetch: refetchTransaction,
-  } = useTransaction(id || '');
+  } = useTransactionByReturnId(id || '');
   const profile = useAuthStore((state) => state.profile);
   const isLoading = isLoadingReturnData || isLoadingTransaction;
   const [refreshing, setRefreshing] = useState(false);

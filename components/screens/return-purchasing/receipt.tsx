@@ -4,7 +4,7 @@ import { Box, Heading, HStack, Pressable, Text, VStack } from '@/components/ui';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { usePurchaseReturn } from '@/hooks/use-supplier-return';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import dayjs from 'dayjs';
 import { useLocalSearchParams } from 'expo-router';
 import { ScrollView } from 'react-native';

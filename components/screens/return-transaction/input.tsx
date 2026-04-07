@@ -29,8 +29,9 @@ import classNames from 'classnames';
 import { LayoutChangeEvent } from 'react-native';
 export default function ReturnTransactionInput() {
   const { customerId } = useLocalSearchParams<{ customerId: string }>();
-  const { cart, setAddProduct, setOpenConfirm, removeCartItem, resetCart } =
+  const { cart: _cart, setAddProduct, setOpenConfirm, removeCartItem, resetCart } =
     useReturnTransactionStore();
+  const cart = _cart ?? [];
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_search, setSearch] = useState<string>('');
   const { data: products = [] } = usePurchasedProducts(customerId!);

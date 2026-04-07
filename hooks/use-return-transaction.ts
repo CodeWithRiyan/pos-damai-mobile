@@ -9,7 +9,7 @@ import {
   brands,
 } from '@/db/schema';
 import { db } from '@/db';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import { eq, and, isNull, like, desc } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
 import { deductCustomerStats } from '@/utils/points';

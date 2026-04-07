@@ -27,9 +27,9 @@ export default function ReportScreen() {
       icon: 'Chart',
     },
     {
-      label: "Laporan Setor Tunai",
-      href: "/report/cash-deposit",
-      icon: "Chart",
+      label: 'Laporan Setor Tunai',
+      href: '/report/cash-deposit',
+      icon: 'Chart',
     },
     {
       label: 'Laporan Keuangan Kasir',

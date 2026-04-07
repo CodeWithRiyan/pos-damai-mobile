@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import { and, eq, isNull, inArray } from 'drizzle-orm';
 
 export type CustomerCategory = 'RETAIL' | 'WHOLESALE';
@@ -88,6 +88,17 @@ export async function createCustomer(data: CreateCustomerDTO): Promise<Customer>
 
   const userId = useAuthStore.getState().profile?.id;
 
+  if (data.code) {
+    const existing = await db
+      .select({ id: schema.customers.id })
+      .from(schema.customers)
+      .where(and(eq(schema.customers.code, data.code), isNull(schema.customers.deletedAt)))
+      .limit(1);
+    if (existing.length > 0) {
+      throw new Error(`Kode pelanggan "${data.code}" sudah digunakan`);
+    }
+  }
+
   const newCustomer: Customer = {
     id,
     name: data.name,
@@ -121,6 +132,22 @@ export async function updateCustomer(data: UpdateCustomerDTO): Promise<void> {
   const now = new Date();
 
   const userId = useAuthStore.getState().profile?.id;
+
+  if (rest.code) {
+    const existing = await db
+      .select({ id: schema.customers.id })
+      .from(schema.customers)
+      .where(
+        and(
+          eq(schema.customers.code, rest.code),
+          isNull(schema.customers.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (existing.length > 0 && existing[0].id !== id) {
+      throw new Error(`Kode pelanggan "${rest.code}" sudah digunakan`);
+    }
+  }
 
   await db
     .update(schema.customers)

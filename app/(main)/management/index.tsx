@@ -21,11 +21,7 @@ export default function ManagementScreen() {
         label: 'Produk, Kategori dan Brand',
         href: '/management/product-category-brand',
         icon: 'Box',
-        requiredPermission: [
-          'products:read',
-          'products:categories-read',
-          'products:brands-read',
-        ],
+        requiredPermission: ['products:read', 'products:categories-read', 'products:brands-read'],
       },
       {
         label: 'Pelanggan dan Supplier',

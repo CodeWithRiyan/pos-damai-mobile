@@ -125,7 +125,7 @@ export default function ReceivableDetail() {
                 <HStack space="md">
                   <SolarIconBoldDuotone name="UserCircle" size={20} color="#3b82f6" />
                   <Text className="text-typography-500 text-sm">
-                    {receivable?.user?.firstName || receivable?.user?.username || 'Unknown User'}
+                    {receivable?.user?.firstName || receivable?.user?.name || 'Unknown User'}
                   </Text>
                 </HStack>
                 <VStack className="mt-2">

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
+import { useProductStore } from '@/stores/product';
 import { and, eq, isNull, like, or, desc, inArray } from 'drizzle-orm';
 import { InventoryTxType, ProductType, Status } from '@/constants';
 
@@ -68,6 +69,7 @@ export interface ProductParams {
   supplierId?: string;
   forceParent?: boolean;
   forceParentMultiUnit?: boolean;
+  isReturnPurchasing?: boolean;
 }
 
 export type ProductListItem = Omit<Product, 'sellPrices' | 'variants'>;
@@ -130,7 +132,29 @@ export async function fetchProducts(params?: ProductParams): Promise<Product[]> 
     conditions.push(eq(schema.products.supplierId, params.supplierId) as any);
   }
 
-  const productResult = await db
+  let productResult: any[] = [];
+
+  if (params?.isReturnPurchasing && params?.supplierId) {
+    const purchasedProducts = await db
+      .select({
+        productId: schema.purchaseItems.productId,
+      })
+      .from(schema.purchaseItems)
+      .innerJoin(schema.purchases, eq(schema.purchaseItems.purchaseId, schema.purchases.id))
+      .where(
+        and(eq(schema.purchases.supplierId, params.supplierId), isNull(schema.purchases.deletedAt)),
+      );
+
+    const purchasedProductIds = [...new Set(purchasedProducts.map((p) => p.productId))];
+
+    if (purchasedProductIds.length > 0) {
+      conditions.push(inArray(schema.products.id, purchasedProductIds) as any);
+    } else {
+      return [];
+    }
+  }
+
+  productResult = await db
     .select({
       product: schema.products,
       discount: schema.discounts,
@@ -224,7 +248,7 @@ export async function fetchProducts(params?: ProductParams): Promise<Product[]> 
     if (product.type === ProductType.DEFAULT) {
       items.push({
         ...product,
-        sellPrices: product.sellPrices.map((p) => ({
+        sellPrices: product.sellPrices.map((p: { type: string; minimumPurchase: any }) => ({
           ...p,
           type: p.type as ProductPrice['type'],
           minimumPurchase: p.minimumPurchase || 0,
@@ -243,7 +267,7 @@ export async function fetchProducts(params?: ProductParams): Promise<Product[]> 
       (product.type === ProductType.MULTIUNIT || product.type === ProductType.VARIANTS) &&
       hasVariants
     ) {
-      product.variants.forEach((variant) => {
+      product.variants.forEach((variant: { id: any; name: any; code: any }) => {
         const compositeId = `${product.id}-${variant.id}`;
         const variantProduct: Product = {
           ...product,
@@ -258,7 +282,7 @@ export async function fetchProducts(params?: ProductParams): Promise<Product[]> 
           isFavorite: !!product.isFavorite,
           minimumStock: product.minimumStock || 0,
           purchasePrice: product.purchasePrice || 0,
-          sellPrices: product.sellPrices.map((p) => ({
+          sellPrices: product.sellPrices.map((p: { type: string; minimumPurchase: any }) => ({
             ...p,
             type: p.type as ProductPrice['type'],
             minimumPurchase: p.minimumPurchase || 0,
@@ -281,7 +305,7 @@ export async function fetchProducts(params?: ProductParams): Promise<Product[]> 
         isFavorite: !!product.isFavorite,
         minimumStock: product.minimumStock || 0,
         purchasePrice: product.purchasePrice || 0,
-        sellPrices: product.sellPrices.map((p) => ({
+        sellPrices: product.sellPrices.map((p: { type: string; minimumPurchase: any }) => ({
           ...p,
           type: p.type as ProductPrice['type'],
           minimumPurchase: p.minimumPurchase || 0,
@@ -648,17 +672,15 @@ export async function assignProductsToBrand(productIds: string[], brandId: strin
   const now = new Date();
   const userId = useAuthStore.getState().profile?.id;
 
-  for (const productId of productIds) {
-    await db
-      .update(schema.products)
-      .set({
-        brandId,
-        updatedBy: userId,
-        updatedAt: now,
-        _dirty: true,
-      })
-      .where(eq(schema.products.id, productId));
-  }
+  await db
+    .update(schema.products)
+    .set({
+      brandId,
+      updatedBy: userId,
+      updatedAt: now,
+      _dirty: true,
+    })
+    .where(inArray(schema.products.id, productIds));
 }
 
 export async function unassignProductsFromCategory(productIds: string[]): Promise<void> {
@@ -755,6 +777,7 @@ export function useProducts(params?: ProductParams) {
     params?.supplierId,
     params?.forceParent,
     params?.forceParentMultiUnit,
+    params?.isReturnPurchasing,
   ]);
 
   useEffect(() => {
@@ -827,15 +850,15 @@ export function useProductLog(productId: string) {
 }
 
 export function useProductsByCategory(categoryId: string) {
-  return useProducts({ categoryId });
+  return useProducts({ categoryId, forceParent: true });
 }
 
 export function useProductsByBrand(brandId: string) {
-  return useProducts({ brandId });
+  return useProducts({ brandId, forceParent: true });
 }
 
 export function useProductsBySupplier(supplierId: string) {
-  return useProducts({ supplierId });
+  return useProducts({ supplierId, forceParent: true });
 }
 
 export function useCreateProduct() {
@@ -966,6 +989,7 @@ export function useAssignProductsToCategory() {
       setError(null);
       try {
         await assignProductsToCategory(productIds, categoryId);
+        useProductStore.getState().incrementVersion();
         options?.onSuccess?.();
       } catch (err) {
         const error = err as Error;
@@ -1026,6 +1050,7 @@ export function useAssignProductsToBrand() {
       setError(null);
       try {
         await assignProductsToBrand(productIds, brandId);
+        useProductStore.getState().incrementVersion();
         options?.onSuccess?.();
       } catch (err) {
         const error = err as Error;
@@ -1055,6 +1080,7 @@ export function useUnassignProductsFromCategory() {
       setError(null);
       try {
         await unassignProductsFromCategory(productIds);
+        useProductStore.getState().incrementVersion();
         options?.onSuccess?.();
       } catch (err) {
         const error = err as Error;
@@ -1113,6 +1139,7 @@ export function useUnassignProductsFromBrand() {
       setError(null);
       try {
         await unassignProductsFromBrand(productIds);
+        useProductStore.getState().incrementVersion();
         options?.onSuccess?.();
       } catch (err) {
         const error = err as Error;

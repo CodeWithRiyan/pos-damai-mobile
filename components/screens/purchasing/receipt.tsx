@@ -5,7 +5,7 @@ import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { usePurchase } from '@/hooks/use-purchasing';
 import { formatDisplayRefId } from '@/utils/reference';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';

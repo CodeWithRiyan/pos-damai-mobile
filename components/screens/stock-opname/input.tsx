@@ -37,6 +37,37 @@ export default function StockOpnameInput() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const isDirty = !!cart.length;
 
+  const unifiedCart = React.useMemo(() => {
+    const grouped = new Map<string, {
+      product: typeof cart[0]['product'];
+      physicalStockByVariant: Map<string, number>;
+      totalPhysicalStock: number;
+    }>();
+
+    for (const item of cart) {
+      const key = item.product.id;
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          product: item.product,
+          physicalStockByVariant: new Map(),
+          totalPhysicalStock: 0,
+        });
+      }
+      const existing = grouped.get(key)!;
+      const variantKey = item.variant?.id || 'default';
+      const currentQty = existing.physicalStockByVariant.get(variantKey) || 0;
+      existing.physicalStockByVariant.set(variantKey, currentQty + item.physicalStock);
+
+      if (item.product.type === ProductType.MULTIUNIT && item.variant) {
+        existing.totalPhysicalStock += item.physicalStock * (item.variant.netto || 1);
+      } else {
+        existing.totalPhysicalStock += item.physicalStock;
+      }
+    }
+
+    return Array.from(grouped.values());
+  }, [cart]);
+
   const onDateChange = (_event: unknown, selectedDate?: Date) => {
     setShowDatePicker(false);
     if (selectedDate) {
@@ -116,27 +147,22 @@ export default function StockOpnameInput() {
         </VStack>
         <VStack space="lg" className="flex-1">
           <FlashList
-            data={cart}
+            data={unifiedCart}
             className="flex-1"
-            keyExtractor={(item, index) => `${item.product.id}-${item.variant?.id || ''}-${index}`}
+            keyExtractor={(item) => item.product.id}
             renderItem={({ item, index }) => (
               <Pressable
                 className="relative px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
                 onPress={() => {
-                  setAddProduct(item.product, item.variant?.id);
+                  setAddProduct(item.product);
                   setDeleteItem(null);
                 }}
                 onLongPress={() => {
-                  const newDeleteItem =
-                    item.product.type === ProductType.MULTIUNIT
-                      ? item.variant?.id || ''
-                      : item.product.id;
-
-                  if (deleteItem === newDeleteItem) {
+                  if (deleteItem === item.product.id) {
                     setDeleteItem(null);
                     return;
                   }
-                  setDeleteItem(newDeleteItem);
+                  setDeleteItem(item.product.id);
                 }}
               >
                 <HStack className="justify-between items-center">
@@ -146,19 +172,15 @@ export default function StockOpnameInput() {
                     </Box>
                     <VStack className="flex-1">
                       <Heading size="md" className="line-clamp-2">
-                        {item.variant && item.product.type === ProductType.MULTIUNIT
-                          ? `${item.product.name} - ${item.variant.name}`
-                          : item.product.name}
+                        {item.product.name}
                       </Heading>
                       <Text size="sm" className="text-slate-500">
-                        {item.variant && item.product.type === ProductType.MULTIUNIT
-                          ? item.variant.code
-                          : item.product.code}
+                        {item.product.code}
                       </Text>
                     </VStack>
                     <HStack space="sm">
                       <Box className="h-10 min-w-10 items-center justify-center bg-background-0 px-2 rounded-lg border border-gray-300">
-                        <Text className="font-bold">{item.physicalStock}</Text>
+                        <Text className="font-bold">{item.totalPhysicalStock}</Text>
                       </Box>
                     </HStack>
                   </HStack>
@@ -166,15 +188,10 @@ export default function StockOpnameInput() {
                 <Pressable
                   className={classNames(
                     'absolute right-0 top-0 bottom-0 w-0 bg-error-500 items-center justify-center overflow-hidden transaction-all duration-300',
-                    item.product.type !== ProductType.MULTIUNIT &&
-                      deleteItem === item.product.id &&
-                      'w-16',
-                    item.product.type === ProductType.MULTIUNIT &&
-                      deleteItem === item.variant?.id &&
-                      'w-16',
+                    deleteItem === item.product.id && 'w-16',
                   )}
                   onPress={() => {
-                    removeCartItem(item.product?.id || '', item.variant?.id);
+                    removeCartItem(item.product.id);
                     setDeleteItem(null);
                   }}
                 >
@@ -188,7 +205,7 @@ export default function StockOpnameInput() {
               </Box>
             }
           />
-          {!!cart.length && (
+          {!!unifiedCart.length && (
             <HStack space="md" className="w-full p-4">
               <Pressable
                 className="flex-1 flex-row items-center justify-center h-16 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
@@ -202,7 +219,6 @@ export default function StockOpnameInput() {
           )}
         </VStack>
       </HStack>
-      <PopupAddStockOpname />
       <PopupAddStockOpname />
       <StockOpnameConfirmForm date={date} />
     </Box>

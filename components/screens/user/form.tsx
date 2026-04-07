@@ -18,14 +18,7 @@ import SelectModal from '@/components/ui/select/select-modal';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useUserStore } from '@/stores/user';
 import { useRoles } from '@/hooks/use-role';
-import {
-  CreateUserDTO,
-  UpdateUserDTO,
-  useCreateUser,
-  useUpdateUser,
-  useUser,
-  useUsers,
-} from '@/hooks/use-user';
+import { UpdateUserDTO, useCreateUser, useUpdateUser, useUser, useUsers } from '@/hooks/use-user';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
@@ -242,8 +235,6 @@ export default function UserForm() {
               </FormControl>
             )}
           />
-
-
         </VStack>
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">

@@ -1,6 +1,6 @@
 import { receivables, receivableRealizations, customers, users, paymentTypes } from '@/db/schema';
 import { db } from '@/db';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import { eq, and, isNull, like, desc } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -18,7 +18,7 @@ export interface Receivable {
   dueDate: Date | null;
   nearestDueDate?: Date | null;
   note?: string;
-  user?: { id: string; name: string; firstName?: string; username?: string };
+  user?: { id: string; name: string; firstName?: string };
   realizations?: Array<{
     id: string;
     nominal: number;
@@ -67,22 +67,17 @@ export async function fetchReceivables(params?: {
 
       const totalRealization = realizations.reduce((sum, rlz) => sum + (rlz.nominal || 0), 0);
 
-      const userResult = await db.select().from(users).where(eq(users.id, r.userId)).limit(1);
-
-      const user = userResult[0];
-
       return {
         ...r,
         customerName: r.customerName || '',
         totalRealization,
         totalReceivable: (r.nominal || 0) - totalRealization,
         status: r.status || 'PENDING',
-        user: user
+        user: r.userName
           ? {
-              id: user.id,
-              name: user.name,
-              firstName: user.name.split(' ')[0],
-              username: user.username,
+              id: r.userId,
+              name: r.userName,
+              firstName: r.userName.split(' ')[0],
             }
           : undefined,
         realizations: realizations.map((rlz) => ({
@@ -507,6 +502,7 @@ export function useCreateReceivableRealization() {
         nominal: number;
         realizationDate: Date;
         paymentMethodId: string;
+        paymentMethodName?: string;
         note?: string;
       },
       options?: { onSuccess?: () => void; onError?: (error: Error) => void },

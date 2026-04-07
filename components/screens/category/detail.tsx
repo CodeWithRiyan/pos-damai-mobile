@@ -18,11 +18,12 @@ import {
   useUnassignProductsFromCategory,
 } from '@/hooks/use-product';
 import { useCategoryStore } from '@/stores/category';
+import { useProductStore } from '@/stores/product';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import { useItemSelection } from '@/hooks/use-item-selection';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView } from 'react-native';
 
@@ -46,7 +47,11 @@ export default function CategoryDetail() {
   } = useItemSelection<Product>();
 
   const { refetch: refetchCategories } = useCategories();
-  const { data: products = [] } = useProductsByCategory(categoryId || '');
+  const {
+    data: products = [],
+    isLoading,
+    refetch: refetchProducts,
+  } = useProductsByCategory(categoryId || '');
   const deleteMutation = useDeleteCategory();
   const unassignProductMutation = useUnassignProductsFromCategory();
   const toast = useToast();
@@ -65,7 +70,22 @@ export default function CategoryDetail() {
     refetchCategories();
   }, [categoryId, refetchCategories]);
 
+  const onProductRefetch = useCallback(() => {
+    refetchProducts();
+    refetchCategories();
+  }, [refetchProducts, refetchCategories]);
+
   useStoreVersionSync(useCategoryStore, onRefetch);
+  useStoreVersionSync(useProductStore, onProductRefetch);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchProducts();
+      if (categoryId) {
+        refetchCategoryById(categoryId).then(setCategory);
+      }
+    }, [categoryId, refetchProducts]),
+  );
 
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Kategori berhasil dihapus',
@@ -75,6 +95,29 @@ export default function CategoryDetail() {
       onRefetch();
     },
   });
+
+  const handleDeletePress = () => {
+    const productCount = products.length;
+    if (productCount > 0) {
+      showErrorToast(
+        toast,
+        `Tidak dapat menghapus. ${productCount} produk menggunakan kategori ini.`,
+      );
+      return;
+    }
+    triggerDelete(singleDeleteConfirm('kategori', category?.id || '', category?.name));
+  };
+
+  if (isLoading) {
+    return (
+      <VStack className="flex-1 bg-white">
+        <Header header="DETAIL KATEGORI" isGoBack />
+        <Box className="flex-1 justify-center items-center">
+          <Spinner size="large" />
+        </Box>
+      </VStack>
+    );
+  }
 
   const handleDeleteProductPress = () => {
     const productIds = selectedProducts?.map((m) => m.id) || [];
@@ -129,7 +172,7 @@ export default function CategoryDetail() {
           icon: 'TrashBin2',
           theme: 'red',
           onPress: () => {
-            triggerDelete(singleDeleteConfirm('kategori', category?.id || '', category?.name));
+            handleDeletePress();
             hideActionDrawer();
           },
         },
@@ -270,7 +313,7 @@ export default function CategoryDetail() {
           }}
         >
           <Text size="sm" className="text-typography-0 font-bold">
-            {`TAMBAHKAN PRODUK `}
+            {`SEMATKAN PRODUK `}
           </Text>
         </Pressable>
       </VStack>

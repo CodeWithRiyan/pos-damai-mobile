@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import { and, eq, isNull, ne, inArray } from 'drizzle-orm';
 
 export interface Brand {
@@ -332,7 +332,7 @@ export function useProductCountsByBrand() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
+  const fetch = useCallback(() => {
     const orgId = useAuthStore.getState().getOrganizationId();
     if (!orgId) return;
 
@@ -358,7 +358,11 @@ export function useProductCountsByBrand() {
       });
   }, []);
 
-  return { data: counts, isLoading: loading, loading, error, refetch: () => {} };
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data: counts, isLoading: loading, loading, error, refetch: fetch };
 }
 
 export function useCapitalValueByBrand() {
@@ -366,7 +370,7 @@ export function useCapitalValueByBrand() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
+  const fetch = useCallback(() => {
     const orgId = useAuthStore.getState().getOrganizationId();
     if (!orgId) return;
 
@@ -410,5 +414,9 @@ export function useCapitalValueByBrand() {
       });
   }, []);
 
-  return { data: values, loading, error };
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data: values, loading, error, refetch: fetch };
 }

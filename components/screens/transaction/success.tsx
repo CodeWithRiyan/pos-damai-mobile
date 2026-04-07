@@ -88,7 +88,7 @@ export default function TransactionSuccess() {
                 resetCart();
                 setCheckoutData(null);
                 setCustomer(null);
-                router.back();
+                router.push('/(main)/transaction');
               }}
             >
               <Icon as={ArrowLeft} size="xl" color="#ffffff" />

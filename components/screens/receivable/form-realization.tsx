@@ -23,6 +23,7 @@ import {
   VStack,
 } from '@/components/ui';
 import SelectModal from '@/components/ui/select/select-modal';
+import { DEFAULT_PAYMENT_TYPE } from '@/constants';
 import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { usePaymentTypes } from '@/hooks/use-payment-type';
 import { useCreateReceivableRealization, useReceivableDetail } from '@/hooks/use-receivable';
@@ -33,7 +34,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CalendarIcon, CheckIcon, PlusIcon } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 import { z } from 'zod';
@@ -67,7 +68,7 @@ export default function ReceivableRealizationForm() {
       ),
     payOff: z.boolean(),
     realizationDate: z.date(),
-    paymentTypeId: z.string().min(1, 'Metode pembayaran harus dipilih'),
+    paymentTypeId: z.string(),
     note: z.string(),
   });
 
@@ -89,6 +90,35 @@ export default function ReceivableRealizationForm() {
   const [showRealizationDatePicker, setShowRealizationDatePicker] = useState<boolean>(false);
 
   const { data: paymentMethods = [] } = usePaymentTypes();
+  const defaultOption = {
+    label:
+      DEFAULT_PAYMENT_TYPE.charAt(0).toUpperCase() + DEFAULT_PAYMENT_TYPE.slice(1).toLowerCase(),
+    value: DEFAULT_PAYMENT_TYPE,
+  };
+  const paymentMethodOptions =
+    paymentMethods.length > 0
+      ? [
+          defaultOption,
+          ...paymentMethods
+            .filter((pm) => pm.id !== DEFAULT_PAYMENT_TYPE)
+            .map((pm) => ({ label: pm.name, value: pm.id })),
+        ]
+      : [defaultOption];
+
+  useEffect(() => {
+    if (!form.getValues('paymentTypeId')) {
+      if (paymentMethods.length > 0) {
+        const defaultPm =
+          paymentMethods.find(
+            (pm) => pm.isDefault || pm.name.toLowerCase() === DEFAULT_PAYMENT_TYPE.toLowerCase(),
+          )?.id || paymentMethods[0].id;
+        form.setValue('paymentTypeId', defaultPm);
+      } else {
+        form.setValue('paymentTypeId', DEFAULT_PAYMENT_TYPE);
+      }
+    }
+  }, [paymentMethods]);
+
   const createMutation = useCreateReceivableRealization();
 
   const isLoading = createMutation.isPending;
@@ -98,12 +128,16 @@ export default function ReceivableRealizationForm() {
   const onSubmit: SubmitHandler<ReceivableRealizationFormValues> = async (
     data: ReceivableRealizationFormValues,
   ) => {
+    const paymentMethodName =
+      paymentMethods.find((pm) => pm.id === data.paymentTypeId)?.name || DEFAULT_PAYMENT_TYPE;
+
     if (receivableIds.length === 1) {
       createMutation.mutate(
         {
           receivableId: receivableIds[0],
           nominal: data.nominal,
           paymentMethodId: data.paymentTypeId,
+          paymentMethodName,
           realizationDate: data.realizationDate,
           note: data.note,
         },
@@ -246,10 +280,7 @@ export default function ReceivableRealizationForm() {
                   <SelectModal
                     value={value}
                     placeholder="Pilih Metode Pembayaran"
-                    options={paymentMethods.map((pm) => ({
-                      label: pm.name,
-                      value: pm.id,
-                    }))}
+                    options={paymentMethodOptions}
                     className="flex-1"
                     onChange={onChange}
                   />

@@ -1,0 +1,7 @@
+# act configuration for local CI/CD
+
+# Use AMD64 architecture for Apple Silicon compatibility
+--container-architecture linux/amd64
+
+# Use default secrets (can be customized)
+--secret-file .act.secrets

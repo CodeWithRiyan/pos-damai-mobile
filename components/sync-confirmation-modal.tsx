@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/modal';
 import { Text } from '@/components/ui/text';
 import { apiClient } from '@/db/client';
-import { useSyncQueueStore } from '@/stores/sync-queue';
+import { useSyncQueueStore } from '@/stores/system/sync-queue';
 import { useState } from 'react';
 
 interface SyncConfirmationModalProps {

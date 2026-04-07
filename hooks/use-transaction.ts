@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import { and, desc, eq, isNull, like, sql } from 'drizzle-orm';
 import {
   DateFilterType,
@@ -321,6 +321,18 @@ export async function fetchTransaction(id: string): Promise<Transaction | null> 
   } as Transaction;
 }
 
+export async function fetchTransactionByReturnId(returnId: string): Promise<Transaction | null> {
+  const result = await db
+    .select()
+    .from(schema.transactions)
+    .where(eq(schema.transactions.returnId, returnId))
+    .limit(1);
+
+  if (result.length === 0) return null;
+
+  return fetchTransaction(result[0].id);
+}
+
 export async function createTransaction(data: CreateTransactionDTO): Promise<Transaction> {
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) throw new Error('ID Organisasi tidak ditemukan');
@@ -429,6 +441,8 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
       }
 
       const purchasePrice = productData[0]?.purchasePrice || 0;
+      const netto = item.variant?.netto;
+      const adjustedPurchasePrice = netto ? purchasePrice * netto : purchasePrice;
       let sellPrice = item.tempSellPrice;
 
       if (!item.isManualPrice && product.discount) {
@@ -436,7 +450,7 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
       }
 
       const itemDiscount = item.isManualPrice ? 0 : item.tempSellPrice - sellPrice;
-      const itemProfit = (sellPrice - purchasePrice) * item.quantity;
+      const itemProfit = (sellPrice - adjustedPurchasePrice) * item.quantity;
 
       totalDiscount += itemDiscount;
       totalProfit += itemProfit;
@@ -472,10 +486,11 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
 
       if (data.status === Status.COMPLETED) {
         const absQuantity = Math.abs(item.quantity);
+        const stockQuantity = netto ? absQuantity * netto : absQuantity;
 
         await tx.insert(schema.inventoryTransactions).values({
           id: `invtx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          local_ref_id: `${finalLocalRefId}_${productId}`,
+          local_ref_id: `${finalLocalRefId}_${item.variant?.id ? `${productId}_${item.variant.id}` : product.id}`,
           productId,
           productName: item.productName || null,
           productBarcode: item.product.barcode || null,
@@ -487,7 +502,7 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
           variantCode: item.variant?.code || null,
           variantNetto: item.variant?.netto || null,
           type: item.quantity > 0 ? InventoryTxType.SALE : InventoryTxType.RETURN_SALE,
-          quantity: item.quantity > 0 ? -absQuantity : absQuantity,
+          quantity: item.quantity > 0 ? -stockQuantity : stockQuantity,
           contextName: data.customerName || null,
           organizationId: orgId,
           createdBy: userId,
@@ -510,7 +525,7 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
       const pointsResult = await calculateEarnedPoints(
         data.items.map((item) => ({
           productId: item.product.id,
-          quantity: item.quantity,
+          quantity: item.variant?.netto ? item.quantity * item.variant.netto : item.quantity,
           categoryId: item.product.categoryId,
         })),
         data.customerCategory || 'RETAIL',
@@ -608,8 +623,25 @@ export async function fetchPurchasedProducts(customerId: string): Promise<any[]>
           .limit(1);
 
         if (product[0]) {
+          const sellPrices = await db
+            .select()
+            .from(schema.productPrices)
+            .where(eq(schema.productPrices.productId, productId));
+
+          const variants = await db
+            .select()
+            .from(schema.productVariants)
+            .where(
+              and(
+                eq(schema.productVariants.productId, productId),
+                isNull(schema.productVariants.deletedAt),
+              ),
+            );
+
           productMap.set(productId, {
             ...product[0],
+            sellPrices,
+            variants,
             lastSellPrice: item.sellPrice,
           });
         }
@@ -681,6 +713,37 @@ export function useTransaction(id: string) {
       setLoading(false);
     }
   }, [id]);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data, isLoading: loading, loading: loading, error, refetch: fetch };
+}
+
+export function useTransactionByReturnId(returnId: string) {
+  const [data, setData] = useState<Transaction | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetch = useCallback(async () => {
+    if (!returnId) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchTransactionByReturnId(returnId);
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setLoading(false);
+    }
+  }, [returnId]);
 
   useEffect(() => {
     fetch();

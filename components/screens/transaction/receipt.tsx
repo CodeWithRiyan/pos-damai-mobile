@@ -7,7 +7,7 @@ import { TransactionItem, useTransaction } from '@/hooks/use-transaction';
 import { formatDisplayRefId } from '@/utils/reference';
 import { getReceiptActions } from '@/utils/receipt-actions';
 import { ProductType, Status } from '@/constants';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Check, Printer } from 'lucide-react-native';
@@ -61,7 +61,7 @@ export default function TransactionReceipt() {
   if (isLoading || !id) {
     return (
       <VStack className="flex-1 bg-primary-200">
-        <Header header="STRUK PENJUALAN BARANG" isGoBack />
+        <Header header="STRUK PENJUALAN BARANG" isGoBack onGoBack={() => router.push('/(main)/transaction')} />
         <Box className="flex-1 justify-center items-center">
           <Spinner size="large" />
         </Box>
@@ -72,7 +72,7 @@ export default function TransactionReceipt() {
   if (!transaction) {
     return (
       <VStack className="flex-1 bg-primary-200">
-        <Header header="STRUK PENJUALAN BARANG" isGoBack />
+        <Header header="STRUK PENJUALAN BARANG" isGoBack onGoBack={() => router.push('/(main)/transaction')} />
         <Box className="flex-1 justify-center items-center">
           <Text>Data transaksi tidak ditemukan</Text>
         </Box>
@@ -89,6 +89,7 @@ export default function TransactionReceipt() {
       <Header
         header={transaction?.returnId ? 'STRUK PENUKARAN BARANG' : 'STRUK PENJUALAN BARANG'}
         isGoBack
+        onGoBack={() => router.push('/(main)/transaction')}
         action={
           <Pressable
             className="p-6"
@@ -113,7 +114,7 @@ export default function TransactionReceipt() {
             <HStack space="md" className="w-full">
               <Pressable
                 className="flex-1 rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-primary-500 border border-primary-500 active:bg-primary-400"
-                onPress={() => router.back()}
+                onPress={() => router.push('/(main)/transaction')}
               >
                 <Icon as={Check} size="xl" color="#ffffff" />
                 <Text size="md" className="text-typography-0 font-bold">

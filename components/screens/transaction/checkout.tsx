@@ -79,11 +79,20 @@ export default function TransactionCheckoutForm() {
   );
 
   // Map payment types to select options
+  const defaultPaymentOption = {
+    label:
+      DEFAULT_PAYMENT_TYPE.charAt(0).toUpperCase() + DEFAULT_PAYMENT_TYPE.slice(1).toLowerCase(),
+    value: DEFAULT_PAYMENT_TYPE,
+  };
   const paymentTypes =
-    paymentTypesData?.map((pt) => ({
-      label: pt.name,
-      value: pt.id,
-    })) || [];
+    paymentTypesData && paymentTypesData.length > 0
+      ? [
+          defaultPaymentOption,
+          ...paymentTypesData
+            .filter((pt) => pt.id !== DEFAULT_PAYMENT_TYPE)
+            .map((pt) => ({ label: pt.name, value: pt.id })),
+        ]
+      : [defaultPaymentOption];
   // const createMutation = useCreateTransaction();
 
   const transactionSchema = z
@@ -181,11 +190,16 @@ export default function TransactionCheckoutForm() {
   useEffect(() => {
     if (cartTotal) {
       form.setValue('status', status);
-      if (!transaction && paymentTypesData && paymentTypesData.length > 0) {
-        const defaultPaymentType =
-          paymentTypesData?.find((pt, _i) => pt.isDefault || pt.name === DEFAULT_PAYMENT_TYPE)
-            ?.id || '';
-        form.setValue('paymentTypeId', defaultPaymentType);
+      if (!transaction) {
+        if (paymentTypesData && paymentTypesData.length > 0) {
+          const defaultPaymentType =
+            paymentTypesData.find(
+              (pt) => pt.isDefault || pt.name.toLowerCase() === DEFAULT_PAYMENT_TYPE.toLowerCase(),
+            )?.id || paymentTypesData[0].id;
+          form.setValue('paymentTypeId', defaultPaymentType);
+        } else {
+          form.setValue('paymentTypeId', DEFAULT_PAYMENT_TYPE);
+        }
       }
       if (transaction) {
         form.setValue('note', transaction.note || '');
@@ -397,6 +411,7 @@ export default function TransactionCheckoutForm() {
       <Header
         header={status === Status.DRAFT ? 'SIMPAN DRAFT' : 'CHECKOUT'}
         isGoBack
+        onGoBack={() => router.push('/(main)/transaction')}
         action={
           <HStack space="md" className="pr-4">
             <Pressable
@@ -455,49 +470,6 @@ export default function TransactionCheckoutForm() {
                     </VStack>
                   )}
                 </HStack>
-              )}
-              {showHutangOption && (
-                <HStack space="md" className="px-4 py-3 bg-warning-100 border-b border-warning-300">
-                  <Checkbox
-                    value={isHutang ? 'true' : 'false'}
-                    isChecked={isHutang}
-                    size="md"
-                    onChange={(checked) => setIsHutang(checked)}
-                  >
-                    <CheckboxIndicator>
-                      <CheckboxIcon as={CheckIcon} />
-                    </CheckboxIndicator>
-                    <CheckboxLabel className="font-bold text-warning-700 ml-2">
-                      Piutang
-                    </CheckboxLabel>
-                  </Checkbox>
-                  {isHutang && (
-                    <Pressable
-                      onPress={() => setShowDueDatePicker(true)}
-                      className="flex-1 items-end"
-                    >
-                      <HStack space="sm" className="items-center">
-                        <Icon as={CalendarIcon} size="md" color="#b45309" />
-                        <Text className="text-warning-700 font-bold">
-                          {dayjs(dueDate).format('DD/MM/YYYY')}
-                        </Text>
-                      </HStack>
-                    </Pressable>
-                  )}
-                </HStack>
-              )}
-              {showDueDatePicker && (
-                <DateTimePicker
-                  mode="date"
-                  value={dueDate}
-                  minimumDate={new Date()}
-                  onChange={(event, selectedDate) => {
-                    setShowDueDatePicker(false);
-                    if (event.type === 'set' && selectedDate) {
-                      setDueDate(selectedDate);
-                    }
-                  }}
-                />
               )}
               <HStack className="justify-center p-6 flex-col items-center">
                 <Text className="text-typography-600 mb-2 font-bold">Total Tagihan</Text>
@@ -568,6 +540,48 @@ export default function TransactionCheckoutForm() {
                       </FormControl>
                     )}
                   />
+                )}
+                {showHutangOption && (
+                  <Checkbox
+                    value={isHutang.toString()}
+                    isChecked={isHutang}
+                    size="md"
+                    onChange={(checked) => setIsHutang(checked)}
+                  >
+                    <CheckboxIndicator>
+                      <CheckboxIcon as={CheckIcon} />
+                    </CheckboxIndicator>
+                    <CheckboxLabel>Piutang</CheckboxLabel>
+                  </Checkbox>
+                )}
+                {isHutang && showHutangOption && (
+                  <FormControl className="flex-1">
+                    <Pressable
+                      onPress={() => setShowDueDatePicker(true)}
+                      className="border border-background-300 rounded px-3 py-2"
+                    >
+                      <HStack className="items-center justify-between">
+                        <Text>
+                          {dayjs(dueDate).format('DD/MM/YYYY')}
+                        </Text>
+                        <Icon as={CalendarIcon} size="md" className="mr-2" />
+                      </HStack>
+                    </Pressable>
+                    {showDueDatePicker && (
+                      <DateTimePicker
+                        mode="date"
+                        display="spinner"
+                        value={dueDate}
+                        minimumDate={new Date()}
+                        onChange={(event, selectedDate) => {
+                          setShowDueDatePicker(false);
+                          if (event.type === 'set' && selectedDate) {
+                            setDueDate(selectedDate);
+                          }
+                        }}
+                      />
+                    )}
+                  </FormControl>
                 )}
                 <Controller
                   name="note"
