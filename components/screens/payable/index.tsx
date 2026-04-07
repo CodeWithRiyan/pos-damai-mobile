@@ -29,16 +29,16 @@ import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import { getErrorMessage } from '@/db/client';
 import { PayableBySupplier, useBulkDeletePayable, usePayableList } from '@/hooks/use-payable';
-import { exportPayables } from '@/utils/excel';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { usePayableStore } from '@/stores/payable';
+import { exportPayables } from '@/utils/excel';
 import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { FlashList } from '@shopify/flash-list';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
 
 import { formatRp } from '@/utils/format';
 export default function PayableList({ isReport }: { isReport?: boolean }) {
@@ -298,7 +298,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
                   if (!!selectedItems?.length) {
                     handlePayablePress(payable);
                   } else {
-                    router.navigate(
+                    router.push(
                       `/(main)/management/payable-receivable/payable/detail/${payable.supplierId}` as any,
                     );
                     setSelectedItems(null);

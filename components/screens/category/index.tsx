@@ -1,8 +1,6 @@
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { PermissionGuard } from '@/components/permission-guard';
-import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
-import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui';
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Box } from '@/components/ui/box';
@@ -15,6 +13,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
+import { getErrorMessage } from '@/db/client';
+import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
 import {
   Category,
   useBulkDeleteCategory,
@@ -23,16 +23,16 @@ import {
   useCreateCategory,
   useProductCountsByCategory,
 } from '@/hooks/use-category';
-import { getErrorMessage } from '@/db/client';
+import { useItemSelection } from '@/hooks/use-item-selection';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useCategoryStore } from '@/stores/category';
 import { bulkDeleteConfirm } from '@/utils/delete-confirm';
 import { exportCategories, importCategories } from '@/utils/excel';
 import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
-import { useCategoryStore } from '@/stores/category';
-import { useItemSelection } from '@/hooks/use-item-selection';
+import { FlashList } from '@shopify/flash-list';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { SearchIcon } from 'lucide-react-native';
 import React, { useCallback } from 'react';
-import { FlashList } from '@shopify/flash-list';
 
 export default function CategoryList() {
   const { setOpen, setData } = useCategoryStore();
@@ -210,7 +210,7 @@ export default function CategoryList() {
                   if (hasSelection) {
                     handleItemPress(item);
                   } else {
-                    router.navigate(
+                    router.push(
                       `/(main)/management/product-category-brand/category/detail/${item.id}`,
                     );
                     clearSelection();

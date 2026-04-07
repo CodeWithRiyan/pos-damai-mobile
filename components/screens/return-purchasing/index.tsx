@@ -15,9 +15,9 @@ import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { useSuppliers } from '@/hooks/use-supplier';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
 
 export default function PurchasingSupplierList() {
   const { data: suppliers, isLoading: loadingSuppliers } = useSuppliers();
@@ -67,9 +67,7 @@ export default function PurchasingSupplierList() {
               <Pressable
                 className="px-4 py-4 border-b border-gray-200 active:bg-gray-100"
                 onPress={() => {
-                  router.navigate(
-                    `/(main)/management/return/purchasing/input/${supplier.id}` as any,
-                  );
+                  router.push(`/(main)/management/return/purchasing/input/${supplier.id}` as any);
                 }}
               >
                 <HStack className="justify-between items-center">

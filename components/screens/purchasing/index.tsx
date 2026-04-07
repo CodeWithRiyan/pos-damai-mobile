@@ -19,16 +19,16 @@ import { ShowByStock, useProducts } from '@/hooks/use-product';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useProductStore } from '@/stores/product';
 import { usePurchasingStore } from '@/stores/purchasing';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
 import ProductNotification from '../product/notification';
 import PurchasingFilter from './filter';
 import PopupAddProduct from './popup-add';
 
 import { Status } from '@/constants';
-import { formatRp, formatNumber } from '@/utils/format';
+import { formatNumber, formatRp } from '@/utils/format';
 export default function PurchasingList() {
   const [openNotification, setOpenNotification] = useState<boolean>(false);
   const [stockFilter, setStockFilter] = useState<ShowByStock>('ALL_STOCK');
@@ -59,13 +59,13 @@ export default function PurchasingList() {
           <HStack space="sm" className="pr-4">
             <Pressable
               className="size-10 items-center justify-center"
-              onPress={() => router.navigate('/(main)/purchasing/draft')}
+              onPress={() => router.push('/(main)/purchasing/draft')}
             >
               <SolarIconBold name="ClipboardList" size={20} color="#FDFBF9" />
             </Pressable>
             <Pressable
               className="size-10 items-center justify-center"
-              onPress={() => router.navigate('/(main)/purchasing/history')}
+              onPress={() => router.push('/(main)/purchasing/history')}
             >
               <SolarIconBold name="History" size={20} color="#FDFBF9" />
             </Pressable>
@@ -110,7 +110,7 @@ export default function PurchasingList() {
                 <Pressable
                   className="w-full rounded-md h-10 flex-row justify-center items-center gap-4 bg-primary-100 border border-primary-500 active:bg-primary-200"
                   onPress={() =>
-                    router.navigate('/(main)/management/product-category-brand/product/add')
+                    router.push('/(main)/management/product-category-brand/product/add')
                   }
                 >
                   <Icon as={Plus} size="sm" color="#3d2117" />
@@ -210,7 +210,7 @@ export default function PurchasingList() {
               <Pressable
                 className="flex-1 flex-row items-center justify-between h-16 px-4 rounded-lg bg-primary-500 active:bg-primary-500/90"
                 onPress={() => {
-                  router.navigate('/(main)/purchasing/checkout');
+                  router.push('/(main)/purchasing/checkout');
                   setStatus(Status.COMPLETED);
                 }}
               >
@@ -229,7 +229,7 @@ export default function PurchasingList() {
               <Pressable
                 className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                 onPress={() => {
-                  router.navigate('/(main)/purchasing/checkout');
+                  router.push('/(main)/purchasing/checkout');
                   setStatus(Status.DRAFT);
                 }}
               >

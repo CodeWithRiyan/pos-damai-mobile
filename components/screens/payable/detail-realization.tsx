@@ -9,7 +9,7 @@ import { useDeleteEntity } from '@/hooks/use-delete-entity';
 import { useDeletePayableRealization, usePayableDetail } from '@/hooks/use-payable';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import dayjs from 'dayjs';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { ScrollView } from 'react-native';
 
@@ -49,7 +49,7 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
           label: 'Edit',
           icon: 'Pen',
           onPress: () => {
-            router.navigate(
+            router.push(
               `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/edit/${realization.id}?payableIds=${payableId}` as any,
             );
             hideActionDrawer();
@@ -200,7 +200,7 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
           <Pressable
             className="w-full rounded-md h-10 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
             onPress={() => {
-              router.navigate(
+              router.push(
                 `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${payableId}` as any,
               );
             }}

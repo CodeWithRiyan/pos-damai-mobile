@@ -28,10 +28,10 @@ import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { Receivable, useBulkDeleteReceivable, useReceivableList } from '@/hooks/use-receivable';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useReceivableStore } from '@/stores/receivable';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
@@ -277,7 +277,7 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
                   if (!!selectedItems?.length) {
                     handleReceivablePress(receivable);
                   } else {
-                    router.navigate(
+                    router.push(
                       `/(main)/management/payable-receivable/receivable/detail/${receivable.userId}` as any,
                     );
                     setSelectedItems(null);

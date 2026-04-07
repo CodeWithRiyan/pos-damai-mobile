@@ -1,4 +1,3 @@
-import { useCallback, useState } from 'react';
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { usePopUpConfirm } from '@/components/pop-up-confirm';
@@ -6,19 +5,20 @@ import { Box, HStack, Text, useToast, VStack } from '@/components/ui';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import {
+  CustomerWithStats,
+  refetchCustomerById,
   useCustomers,
   useDeleteCustomer,
   useResetCustomerPoints,
-  refetchCustomerById,
-  CustomerWithStats,
 } from '@/hooks/use-customer';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
-import { helperCustomerCategory } from '@/utils/customer-category';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useCustomerStore } from '@/stores/customer';
+import { helperCustomerCategory } from '@/utils/customer-category';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ScrollView } from 'react-native';
 
 import { formatNumber } from '@/utils/format';
@@ -99,7 +99,7 @@ export default function CustomerDetail() {
           label: 'Edit',
           icon: 'Pen',
           onPress: () => {
-            router.navigate(`/(main)/management/customer-supplier/customer/edit/${customer?.id}`);
+            router.push(`/(main)/management/customer-supplier/customer/edit/${customer?.id}`);
             hideActionDrawer();
           },
         },
@@ -193,7 +193,7 @@ export default function CustomerDetail() {
         <Pressable
           className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           onPress={() => {
-            router.navigate(`/(main)/transaction/history?customerId=${customer?.id}`);
+            router.push(`/(main)/transaction/history?customerId=${customer?.id}`);
           }}
         >
           <Text size="sm" className="text-typography-0 font-bold">

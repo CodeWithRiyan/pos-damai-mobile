@@ -2,7 +2,6 @@ import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { PermissionGuard } from '@/components/permission-guard';
 import { usePopUpConfirm } from '@/components/pop-up-confirm';
-import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
 import { Box } from '@/components/ui/box';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
@@ -14,6 +13,7 @@ import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import { getErrorMessage } from '@/db/client';
+import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
 import {
   CustomerWithStats,
   useBulkDeleteCustomer,
@@ -21,15 +21,15 @@ import {
   useCreateCustomer,
   useCustomers,
 } from '@/hooks/use-customer';
-import { bulkDeleteConfirm } from '@/utils/delete-confirm';
-import { exportCustomers, importCustomers } from '@/utils/excel';
+import { useItemSelection } from '@/hooks/use-item-selection';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useCustomerStore } from '@/stores/customer';
+import { bulkDeleteConfirm } from '@/utils/delete-confirm';
+import { exportCustomers, importCustomers } from '@/utils/excel';
 import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
-import { useItemSelection } from '@/hooks/use-item-selection';
+import { FlashList } from '@shopify/flash-list';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
-import { FlashList } from '@shopify/flash-list';
 
 import { formatNumber } from '@/utils/format';
 export default function CustomerList({ isReport }: { isReport?: boolean }) {
@@ -242,7 +242,7 @@ export default function CustomerList({ isReport }: { isReport?: boolean }) {
                   if (hasSelection) {
                     handleItemPress(item);
                   } else {
-                    router.navigate(
+                    router.push(
                       `/(main)/management/customer-supplier/customer/detail/${item.id}` as any,
                     );
                     clearSelection();

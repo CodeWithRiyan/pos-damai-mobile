@@ -1,7 +1,6 @@
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { PermissionGuard } from '@/components/permission-guard';
-import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
 import { Box } from '@/components/ui/box';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
@@ -13,21 +12,22 @@ import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import { getErrorMessage } from '@/db/client';
+import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
+import { useItemSelection } from '@/hooks/use-item-selection';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import {
   Supplier,
   useBulkDeleteSupplier,
   useCreateSupplier,
   useSuppliers,
 } from '@/hooks/use-supplier';
+import { useSupplierStore } from '@/stores/supplier';
 import { bulkDeleteConfirm } from '@/utils/delete-confirm';
 import { exportSuppliers, importSuppliers } from '@/utils/excel';
 import { showSuccessToast, showToast } from '@/utils/toast';
-import { useItemSelection } from '@/hooks/use-item-selection';
-import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
-import { useSupplierStore } from '@/stores/supplier';
+import { FlashList } from '@shopify/flash-list';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
-import { FlashList } from '@shopify/flash-list';
 
 export default function SupplierList() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -182,7 +182,7 @@ export default function SupplierList() {
                   if (hasSelection) {
                     handleItemPress(supplier);
                   } else {
-                    router.navigate(
+                    router.push(
                       `/(main)/management/customer-supplier/supplier/detail/${supplier.id}`,
                     );
                     clearSelection();

@@ -8,8 +8,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
 import { useStoreSupplies } from '@/hooks/use-store-supplies';
-import { useStoreSuppliesStore } from '@/stores/store-supplies';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useStoreSuppliesStore } from '@/stores/store-supplies';
 import dayjs from 'dayjs';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
@@ -66,9 +66,7 @@ export default function StoreSuppliesList({ isReport }: { isReport?: boolean }) 
                   key={so.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100${!!cart.find((item) => item.product.id === so.id) ? ' bg-gray-100' : ''}`}
                   onPress={() => {
-                    router.navigate(
-                      `/(main)/management/stock-changes/store-supplies/detail/${so.id}`,
-                    );
+                    router.push(`/(main)/management/stock-changes/store-supplies/detail/${so.id}`);
                   }}
                 >
                   <HStack className="flex-1">
