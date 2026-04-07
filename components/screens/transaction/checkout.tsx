@@ -78,6 +78,15 @@ export default function TransactionCheckoutForm() {
     transactionId || '',
   );
 
+  // Hutang state
+  const [isHutang, setIsHutang] = useState(false);
+  const [showDueDatePicker, setShowDueDatePicker] = useState(false);
+  const [dueDate, setDueDate] = useState(() => {
+    const defaultDue = new Date();
+    defaultDue.setDate(defaultDue.getDate() + 30);
+    return defaultDue;
+  });
+
   // Map payment types to select options
   const defaultPaymentOption = {
     label:
@@ -159,12 +168,14 @@ export default function TransactionCheckoutForm() {
 
   const { grandTotal, commission, totalDiscount } = useMemo(() => {
     let comm = 0;
-    const pt = paymentTypesData?.find((p) => p.id === paymentTypeId);
-    if (pt && cartTotal) {
-      comm =
-        pt.commissionType === CalcType.PERCENTAGE
-          ? (cartTotal * pt.commission) / 100
-          : pt.commission;
+    if (!isHutang) {
+      const pt = paymentTypesData?.find((p) => p.id === paymentTypeId);
+      if (pt && cartTotal) {
+        comm =
+          pt.commissionType === CalcType.PERCENTAGE
+            ? (cartTotal * pt.commission) / 100
+            : pt.commission;
+      }
     }
 
     const discount = cart.reduce((sum, item) => {
@@ -185,7 +196,7 @@ export default function TransactionCheckoutForm() {
       grandTotal: Math.round(cartTotal + comm),
       totalDiscount: Math.round(discount),
     };
-  }, [cartTotal, paymentTypesData, paymentTypeId, cart, customer]);
+  }, [cartTotal, paymentTypesData, paymentTypeId, cart, customer, isHutang]);
 
   useEffect(() => {
     if (cartTotal) {
@@ -203,6 +214,9 @@ export default function TransactionCheckoutForm() {
       }
       if (transaction) {
         form.setValue('note', transaction.note || '');
+        if (transaction.paymentTypeName === 'PIUTANG') {
+          setIsHutang(true);
+        }
       }
     }
   }, [form, cartTotal, status, paymentTypesData, transaction]);
@@ -229,17 +243,8 @@ export default function TransactionCheckoutForm() {
   const createFinanceMutation = useCreateFinance();
   const createReceivableMutation = useCreateReceivable();
 
-  // Hutang state
-  const [isHutang, setIsHutang] = useState(false);
-  const [showDueDatePicker, setShowDueDatePicker] = useState(false);
-  const [dueDate, setDueDate] = useState(() => {
-    const defaultDue = new Date();
-    defaultDue.setDate(defaultDue.getDate() + 30);
-    return defaultDue;
-  });
-
-  // Only show hutang option when employee is selected
-  const showHutangOption = !!employee && status === Status.COMPLETED && !returnCustomerId;
+  // Show hutang option when employee is selected (both COMPLETED and DRAFT)
+  const showHutangOption = !!employee && !returnCustomerId;
 
   const isLoading =
     isLoadingTransaction ||
@@ -266,15 +271,21 @@ export default function TransactionCheckoutForm() {
         totalAmount: grandTotal,
         totalPaid: finalTotalPaid,
         commission: commission,
-        paymentTypeName:
-          paymentTypesData?.find((p) => p.id === data.paymentTypeId)?.name || DEFAULT_PAYMENT_TYPE,
-        paymentTypeCommission:
-          paymentTypesData?.find((p) => p.id === data.paymentTypeId)?.commission || 0,
-        paymentTypeCommissionType:
-          paymentTypesData?.find((p) => p.id === data.paymentTypeId)?.commissionType ||
-          'PERCENTAGE',
-        paymentTypeMinimalAmount:
-          paymentTypesData?.find((p) => p.id === data.paymentTypeId)?.minimalAmount || 0,
+        isHutang: isHutang,
+        paymentTypeName: isHutang
+          ? 'PIUTANG'
+          : paymentTypesData?.find((p) => p.id === data.paymentTypeId)?.name ||
+            DEFAULT_PAYMENT_TYPE,
+        paymentTypeCommission: isHutang
+          ? 0
+          : paymentTypesData?.find((p) => p.id === data.paymentTypeId)?.commission || 0,
+        paymentTypeCommissionType: isHutang
+          ? 'PERCENTAGE'
+          : paymentTypesData?.find((p) => p.id === data.paymentTypeId)?.commissionType ||
+            'PERCENTAGE',
+        paymentTypeMinimalAmount: isHutang
+          ? 0
+          : paymentTypesData?.find((p) => p.id === data.paymentTypeId)?.minimalAmount || 0,
         customerId: employee ? undefined : customer?.id || '',
         customerName: employee ? undefined : customer?.name || undefined,
         customerCode: employee ? undefined : (customer?.code ?? undefined),
@@ -509,7 +520,7 @@ export default function TransactionCheckoutForm() {
                     </Text>
                   </HStack>
                 )}
-                {!returnCustomerId && (
+                {!returnCustomerId && !isHutang && (
                   <Controller
                     control={form.control}
                     name="paymentTypeId"
@@ -561,9 +572,7 @@ export default function TransactionCheckoutForm() {
                       className="border border-background-300 rounded px-3 py-2"
                     >
                       <HStack className="items-center justify-between">
-                        <Text>
-                          {dayjs(dueDate).format('DD/MM/YYYY')}
-                        </Text>
+                        <Text>{dayjs(dueDate).format('DD/MM/YYYY')}</Text>
                         <Icon as={CalendarIcon} size="md" className="mr-2" />
                       </HStack>
                     </Pressable>

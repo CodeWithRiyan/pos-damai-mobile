@@ -100,7 +100,8 @@ export default function ReturnTransactionInput() {
                   <Box className="flex-1 px-1">
                     <GridProductLayout
                       name={product.name}
-                      price={product.lastSellPrice ?? product.sellPrices?.[0]?.price ?? 0}
+                      price={product.sellPrices?.[0]?.price ?? product.lastSellPrice ?? 0}
+                      stock={product.stock}
                       onPressProduct={() => setAddProduct(product)}
                     />
                   </Box>
@@ -124,7 +125,8 @@ export default function ReturnTransactionInput() {
                 return (
                   <ListProductLayout
                     name={product.name}
-                    price={product.lastSellPrice ?? product.sellPrices?.[0]?.price ?? 0}
+                    price={product.sellPrices?.[0]?.price ?? product.lastSellPrice ?? 0}
+                    stock={product.stock}
                     onPressProduct={() => setAddProduct(product)}
                   />
                 );

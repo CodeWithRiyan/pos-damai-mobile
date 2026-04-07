@@ -1110,6 +1110,7 @@ export function useUnassignProductsFromSupplier() {
       setError(null);
       try {
         await unassignProductsFromSupplier(productIds);
+        useProductStore.getState().incrementVersion();
         options?.onSuccess?.();
       } catch (err) {
         const error = err as Error;

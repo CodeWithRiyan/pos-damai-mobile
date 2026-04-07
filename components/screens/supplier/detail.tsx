@@ -72,7 +72,8 @@ export default function SupplierDetail() {
       setSupplier(freshSupplier);
     }
     refetchSuppliers();
-  }, [supplierId, refetchSuppliers]);
+    refetchProducts();
+  }, [supplierId, refetchSuppliers, refetchProducts]);
 
   useStoreVersionSync(useSupplierStore, onRefetch);
 
