@@ -1,5 +1,6 @@
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
+import { PermissionGuard } from '@/components/permission-guard';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui';
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Box } from '@/components/ui/box';
@@ -13,7 +14,10 @@ import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import { getErrorMessage } from '@/db/client';
+import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
 import { useCategories } from '@/hooks/use-category';
+import { useItemSelection } from '@/hooks/use-item-selection';
+import { usePermission } from '@/hooks/use-permission';
 import {
   Product,
   ShowByStock,
@@ -21,25 +25,21 @@ import {
   useCreateProduct,
   useProducts,
 } from '@/hooks/use-product';
-import { usePermission } from '@/hooks/use-permission';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useProductStore } from '@/stores/product';
 import { bulkDeleteConfirm } from '@/utils/delete-confirm';
 import { exportProducts, importProducts } from '@/utils/excel';
 import { showSuccessToast, showToast } from '@/utils/toast';
-import { useItemSelection } from '@/hooks/use-item-selection';
-import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
-import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
-import { useProductStore } from '@/stores/product';
+import { FlashList } from '@shopify/flash-list';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { debounce } from 'lodash';
 import { SearchIcon } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
 import { RefreshControl } from 'react-native';
 import ProductFilter from './filter';
 import ProductNotification from './notification';
-import { PermissionGuard } from '@/components/permission-guard';
 
-import { formatRp, formatNumber } from '@/utils/format';
+import { formatNumber, formatRp } from '@/utils/format';
 export default function ProductList() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
@@ -273,7 +273,7 @@ export default function ProductList() {
                   if (hasSelection) {
                     handleItemPress(product);
                   } else {
-                    router.navigate(
+                    router.push(
                       `/(main)/management/product-category-brand/product/detail/${encodeURIComponent(product.id)}` as any,
                     );
                     clearSelection();

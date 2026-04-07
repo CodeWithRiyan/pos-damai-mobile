@@ -10,8 +10,8 @@ import {
 } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import { useDeleteReceivable, useReceivableDetail } from '@/hooks/use-receivable';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView } from 'react-native';
@@ -44,7 +44,7 @@ export default function ReceivableRealizationDetail() {
           label: 'Edit',
           icon: 'Pen',
           onPress: () => {
-            router.navigate(
+            router.push(
               `/(main)/management/payable-receivable/receivable/edit/${receivable?.id}` as any,
             );
             hideActionDrawer();
@@ -179,7 +179,7 @@ export default function ReceivableRealizationDetail() {
                     <Pressable
                       className="h-8 w-8 rounded-md items-center justify-center border border-background-200"
                       onPress={() => {
-                        router.navigate(
+                        router.push(
                           `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/edit/${realization.id}?receivableIds=${receivableId}` as any,
                         );
                       }}
@@ -204,7 +204,7 @@ export default function ReceivableRealizationDetail() {
           <Pressable
             className="w-full rounded-md h-10 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
             onPress={() => {
-              router.navigate(
+              router.push(
                 `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${receivableId}` as any,
               );
             }}

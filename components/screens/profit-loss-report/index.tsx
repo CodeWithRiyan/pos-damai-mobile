@@ -237,7 +237,7 @@ export default function ProfitLossReportScreen() {
                     key={report.id}
                     className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
                     onPress={() =>
-                      router.navigate({
+                      router.push({
                         pathname: '/(main)/report/profit-loss/[id]',
                         params: { id: report.id },
                       })

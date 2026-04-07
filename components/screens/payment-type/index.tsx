@@ -1,9 +1,6 @@
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { PermissionGuard } from '@/components/permission-guard';
-import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
-import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
-import { useItemSelection } from '@/hooks/use-item-selection';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui';
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Box } from '@/components/ui/box';
@@ -16,24 +13,27 @@ import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
+import { DEFAULT_PAYMENT_TYPE } from '@/constants';
 import { getErrorMessage } from '@/db/client';
+import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
+import { useItemSelection } from '@/hooks/use-item-selection';
 import {
   PaymentType,
   useBulkDeletePaymentType,
   useCreatePaymentType,
   usePaymentTypes,
 } from '@/hooks/use-payment-type';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { usePaymentTypeStore } from '@/stores/payment-type';
 import { bulkDeleteConfirm } from '@/utils/delete-confirm';
 import { exportPaymentTypes, importPaymentTypes } from '@/utils/excel';
 import { showSuccessToast, showToast } from '@/utils/toast';
-import { usePaymentTypeStore } from '@/stores/payment-type';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { SearchIcon } from 'lucide-react-native';
-import { DEFAULT_PAYMENT_TYPE } from '@/constants';
 import React, { useCallback } from 'react';
-import { FlashList } from '@shopify/flash-list';
 
-import { formatRp, formatNumber } from '@/utils/format';
+import { formatNumber, formatRp } from '@/utils/format';
 export default function PaymentTypeList() {
   const { setOpen, setData } = usePaymentTypeStore();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -209,7 +209,7 @@ export default function PaymentTypeList() {
                     if (hasSelection) {
                       handleItemPress(item);
                     } else {
-                      router.navigate(`/(main)/management/payment-type/detail/${item.id}` as any);
+                      router.push(`/(main)/management/payment-type/detail/${item.id}` as any);
                       clearSelection();
                     }
                   }}

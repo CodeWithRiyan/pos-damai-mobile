@@ -29,16 +29,16 @@ import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import { getErrorMessage } from '@/db/client';
 import { PayableBySupplier, useBulkDeletePayable, usePayableList } from '@/hooks/use-payable';
-import { exportPayables } from '@/utils/excel';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { usePayableStore } from '@/stores/payable';
+import { exportPayables } from '@/utils/excel';
 import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { FlashList } from '@shopify/flash-list';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
 
 import { formatRp } from '@/utils/format';
 export default function PayableList({ isReport }: { isReport?: boolean }) {
@@ -241,9 +241,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
               <VStack className="flex-1">
                 <Text className="text-typography-500 text-sm">Total Belum Lunas</Text>
                 <Heading size="xl" className="text-error-500">
-                  {formatRp(
-                    payableBySupplier.reduce((acc, curr) => acc + curr.totalPayable, 0),
-                  )}
+                  {formatRp(payableBySupplier.reduce((acc, curr) => acc + curr.totalPayable, 0))}
                 </Heading>
               </VStack>
               <VStack className="flex-1 items-end">
@@ -286,9 +284,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
           </VStack>
           <FlashList
             data={payableBySupplier
-              ?.filter((r) =>
-                statuses.includes(r.totalPayable > 0 ? 'Belum Lunas' : 'Lunas'),
-              )
+              ?.filter((r) => statuses.includes(r.totalPayable > 0 ? 'Belum Lunas' : 'Lunas'))
               ?.filter((r) => r.supplierName.toLowerCase().includes(searchQuery.toLowerCase()))}
             className="flex-1"
             keyExtractor={(payable) => payable.supplierId}
@@ -303,7 +299,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
                   if (!!selectedItems?.length) {
                     handlePayablePress(payable);
                   } else {
-                    router.navigate(
+                    router.push(
                       `/(main)/management/payable-receivable/payable/detail/${payable.supplierId}` as any,
                     );
                     setSelectedItems(null);

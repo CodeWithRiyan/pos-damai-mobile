@@ -28,10 +28,10 @@ import { VStack } from '@/components/ui/vstack';
 //   useCreateReturnPurchasing,
 //   useUpdateReturnPurchasing,
 // } from "@/hooks/use-supplier-return";
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { usePurchase } from '@/hooks/use-purchasing';
 import { useCreatePurchaseReturn } from '@/hooks/use-supplier-return';
 import { useReturnPurchasingStore } from '@/stores/return-purchasing';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
@@ -93,7 +93,7 @@ export default function ReturnPurchasingConfirmForm() {
       onSuccess: (data) => {
         showSuccessToast(toast, 'Retur berhasil disimpan');
         setOpenConfirm(false);
-        router.navigate(`/(main)/management/return/purchasing/receipt/${data.id}`);
+        router.push(`/(main)/management/return/purchasing/receipt/${data.id}`);
         resetCart();
         form.reset(initialValues);
       },

@@ -25,7 +25,7 @@ import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useReceivableStore } from '@/stores/receivable';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { ScrollView } from 'react-native';
@@ -150,7 +150,7 @@ export default function ReceivableDetail() {
                 <Pressable
                   className="items-center justify-center h-10 px-10 rounded-lg bg-primary-500 active:bg-primary-500/90"
                   onPress={() => {
-                    router.navigate(
+                    router.push(
                       `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${receivableList?.map((m) => m.id).join('-')}` as any,
                     );
                   }}
@@ -243,7 +243,7 @@ export default function ReceivableDetail() {
                   if (!!selectedItems?.length) {
                     handleReceivablePress(receivable);
                   } else {
-                    router.navigate(
+                    router.push(
                       `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/detail?receivableIds=${receivable?.id}` as any,
                     );
                     setSelectedItems(null);
@@ -308,7 +308,7 @@ export default function ReceivableDetail() {
           <Pressable
             className="w-full rounded-md h-10 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
             onPress={() => {
-              router.navigate(
+              router.push(
                 `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${selectedItems?.map((m) => m.id).join('-')}` as any,
               );
             }}
@@ -323,7 +323,7 @@ export default function ReceivableDetail() {
           <Pressable
             className="w-full rounded-sm h-10 flex justify-center items-center bg-error-50 border border-error-500"
             onPress={() => {
-              router.navigate(`/(main)/management/payable-receivable/receivable/add` as any);
+              router.push(`/(main)/management/payable-receivable/receivable/add` as any);
             }}
           >
             <Text size="sm" className="text-error-500 font-bold">

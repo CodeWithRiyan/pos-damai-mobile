@@ -5,17 +5,17 @@ import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { useTransactionReturn } from '@/hooks/use-return-transaction';
 import { TransactionItem, useTransactionByReturnId } from '@/hooks/use-transaction';
-import { formatDisplayRefId } from '@/utils/reference';
 import { useAuthStore } from '@/stores/system/auth';
+import { formatDisplayRefId } from '@/utils/reference';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Check, Printer, Send } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView } from 'react-native';
 
-import { getReceiptActions } from '@/utils/receipt-actions';
 import { ProductType, ReturnType } from '@/constants';
-import { formatRp, formatNumber } from '@/utils/format';
+import { formatNumber, formatRp } from '@/utils/format';
+import { getReceiptActions } from '@/utils/receipt-actions';
 export default function ReturnTransactionReceipt() {
   const router = useRouter();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();

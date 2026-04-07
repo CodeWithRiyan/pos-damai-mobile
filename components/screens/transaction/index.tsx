@@ -22,21 +22,21 @@ import GridProductLayout from '@/components/ui/layout/grid-product-layout';
 import ListProductLayout from '@/components/ui/layout/list-product-layout';
 import SelectModal from '@/components/ui/select/select-modal';
 import { Spinner } from '@/components/ui/spinner';
+import { PriceType, ProductType, Status } from '@/constants';
 import { useCustomer, useCustomers } from '@/hooks/use-customer';
 import { useProducts } from '@/hooks/use-product';
-import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useCurrentShift } from '@/hooks/use-shift';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useLocalUsers } from '@/hooks/use-user';
-import { calculateLineItemTotal, findSellPrice } from '@/utils/price';
 import { useCustomerStore } from '@/stores/customer';
 import { useProductStore } from '@/stores/product';
 import { useTransactionStore } from '@/stores/transaction';
-import { PriceType, ProductType, Status } from '@/constants';
+import { calculateLineItemTotal, findSellPrice } from '@/utils/price';
+import { FlashList } from '@shopify/flash-list';
 import classNames from 'classnames';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AlertCircle, PlusIcon } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
 import { LayoutChangeEvent } from 'react-native';
 import PopupAddProduct from './popup-add';
 
@@ -168,13 +168,13 @@ export default function TransactionList() {
             <HStack space="sm" className="pr-4">
               <Pressable
                 className="size-10 items-center justify-center"
-                onPress={() => router.navigate('/(main)/transaction/draft')}
+                onPress={() => router.push('/(main)/transaction/draft')}
               >
                 <SolarIconBold name="ClipboardList" size={20} color="#FDFBF9" />
               </Pressable>
               <Pressable
                 className="size-10 items-center justify-center"
-                onPress={() => router.navigate('/(main)/transaction/history')}
+                onPress={() => router.push('/(main)/transaction/history')}
               >
                 <SolarIconBold name="History" size={20} color="#FDFBF9" />
               </Pressable>
@@ -526,10 +526,14 @@ export default function TransactionList() {
                 <Pressable
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                   onPress={() => {
-                    router.replace({
-                      pathname: '/(main)/transaction/checkout',
-                      params: searchParams,
-                    });
+                    if (searchParams.returnId) {
+                      router.replace({
+                        pathname: '/(main)/transaction/checkout',
+                        params: searchParams,
+                      });
+                    } else {
+                      router.push('/(main)/transaction/checkout');
+                    }
                     setStatus(Status.DRAFT);
                   }}
                 >

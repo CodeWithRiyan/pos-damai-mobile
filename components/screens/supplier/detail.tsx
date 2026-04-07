@@ -1,4 +1,3 @@
-import { useCallback, useMemo, useState } from 'react';
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { usePopUpConfirm } from '@/components/pop-up-confirm';
@@ -15,28 +14,29 @@ import {
 } from '@/components/ui';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { useDeleteEntity } from '@/hooks/use-delete-entity';
+import { useItemSelection } from '@/hooks/use-item-selection';
 import {
   Product,
   useProductsBySupplier,
   useUnassignProductsFromSupplier,
 } from '@/hooks/use-product';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import {
-  useDeleteSupplier,
-  useSuppliers,
   refetchSupplierById,
   Supplier,
+  useDeleteSupplier,
+  useSuppliers,
 } from '@/hooks/use-supplier';
-import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { singleDeleteConfirm } from '@/utils/delete-confirm';
-import { useItemSelection } from '@/hooks/use-item-selection';
-import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useSupplierStore } from '@/stores/supplier';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView } from 'react-native';
 
 import { PriceType } from '@/constants';
-import { formatRp, formatNumber } from '@/utils/format';
+import { formatNumber, formatRp } from '@/utils/format';
 export default function SupplierDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -136,7 +136,7 @@ export default function SupplierDetail() {
           label: 'Edit',
           icon: 'Pen',
           onPress: () => {
-            router.navigate(`/(main)/management/customer-supplier/supplier/edit/${supplier?.id}`);
+            router.push(`/(main)/management/customer-supplier/supplier/edit/${supplier?.id}`);
             hideActionDrawer();
           },
         },
@@ -301,7 +301,7 @@ export default function SupplierDetail() {
         <Pressable
           className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           onPress={() => {
-            router.navigate(
+            router.push(
               `/(main)/management/customer-supplier/supplier/select-product/${supplierId}`,
             );
           }}

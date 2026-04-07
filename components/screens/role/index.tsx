@@ -1,9 +1,6 @@
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { PermissionGuard } from '@/components/permission-guard';
-import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
-import { useItemSelection } from '@/hooks/use-item-selection';
-import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { Box } from '@/components/ui/box';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
@@ -15,14 +12,17 @@ import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import { getErrorMessage } from '@/db/client';
+import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
+import { useItemSelection } from '@/hooks/use-item-selection';
 import { Role, useBulkDeleteRole, useRoles } from '@/hooks/use-role';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useRoleStore } from '@/stores/role';
 import { bulkDeleteConfirm } from '@/utils/delete-confirm';
 import { exportRoles } from '@/utils/excel';
-import { useRoleStore } from '@/stores/role';
 import { showToast } from '@/utils/toast';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
-import { FlashList } from '@shopify/flash-list';
 
 export default function RoleList() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -143,7 +143,7 @@ export default function RoleList() {
                   if (hasSelection) {
                     handleItemPress(role);
                   } else {
-                    router.navigate(`/(main)/management/role-user/role/detail/${role.id}`);
+                    router.push(`/(main)/management/role-user/role/detail/${role.id}`);
                     clearSelection();
                   }
                 }}

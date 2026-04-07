@@ -16,16 +16,16 @@ import { Box } from '@/components/ui/box';
 import { Grid, GridItem } from '@/components/ui/grid';
 import { SolarIconBold, SolarIconBoldProps } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
-import { useTransactions } from '@/hooks/use-transaction';
 import { DateFilterType, Status } from '@/constants';
-import { formatDisplayRefId } from '@/utils/reference';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useTransactions } from '@/hooks/use-transaction';
 import { useTransactionStore } from '@/stores/transaction';
+import { formatDisplayRefId } from '@/utils/reference';
+import { FlashList } from '@shopify/flash-list';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
 import { ScrollView } from 'react-native';
 import TransactionFilter, {
   TransactionFilterFormValues,
@@ -346,7 +346,7 @@ export default function TransactionHistory({ isReport }: { isReport?: boolean })
                   <Pressable
                     className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
                     onPress={() =>
-                      router.navigate({
+                      router.push({
                         pathname: '/(main)/transaction/receipt/[id]',
                         params: { id: transaction.id },
                       })
