@@ -245,7 +245,7 @@ export async function createPurchase(data: CreatePurchasingDTO): Promise<Purchas
   }
 
   if (data.isPayable && data.dueDate && data.status === Status.COMPLETED) {
-    const nominal = totalAmount;
+    const nominal = totalAmount - (data.totalPaid || 0);
     await db.insert(payables).values({
       id: `pay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       local_ref_id: `PAY-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,

@@ -441,6 +441,8 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
       }
 
       const purchasePrice = productData[0]?.purchasePrice || 0;
+      const netto = item.variant?.netto;
+      const adjustedPurchasePrice = netto ? purchasePrice * netto : purchasePrice;
       let sellPrice = item.tempSellPrice;
 
       if (!item.isManualPrice && product.discount) {
@@ -448,7 +450,7 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
       }
 
       const itemDiscount = item.isManualPrice ? 0 : item.tempSellPrice - sellPrice;
-      const itemProfit = (sellPrice - purchasePrice) * item.quantity;
+      const itemProfit = (sellPrice - adjustedPurchasePrice) * item.quantity;
 
       totalDiscount += itemDiscount;
       totalProfit += itemProfit;
@@ -484,6 +486,7 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
 
       if (data.status === Status.COMPLETED) {
         const absQuantity = Math.abs(item.quantity);
+        const stockQuantity = netto ? absQuantity * netto : absQuantity;
 
         await tx.insert(schema.inventoryTransactions).values({
           id: `invtx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -499,7 +502,7 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
           variantCode: item.variant?.code || null,
           variantNetto: item.variant?.netto || null,
           type: item.quantity > 0 ? InventoryTxType.SALE : InventoryTxType.RETURN_SALE,
-          quantity: item.quantity > 0 ? -absQuantity : absQuantity,
+          quantity: item.quantity > 0 ? -stockQuantity : stockQuantity,
           contextName: data.customerName || null,
           organizationId: orgId,
           createdBy: userId,
@@ -522,7 +525,7 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
       const pointsResult = await calculateEarnedPoints(
         data.items.map((item) => ({
           productId: item.product.id,
-          quantity: item.quantity,
+          quantity: item.variant?.netto ? item.quantity * item.variant.netto : item.quantity,
           categoryId: item.product.categoryId,
         })),
         data.customerCategory || 'RETAIL',

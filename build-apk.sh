@@ -51,6 +51,17 @@ APK_NAME="pos-damai-v${VERSION}-${ENV}.apk"
 
 # Find the universal APK (works on all architectures)
 APK_SOURCE=$(find "$APK_DIR" -name "app-universal-release.apk" | head -n 1)
+
+# Fallback to app-release.apk if universal not found
+if [ -z "$APK_SOURCE" ]; then
+  APK_SOURCE=$(find "$APK_DIR" -name "app-release.apk" | head -n 1)
+fi
+
+if [ -z "$APK_SOURCE" ]; then
+  echo -e "${RED}No APK found in $APK_DIR${NC}"
+  exit 1
+fi
+
 cp "$APK_SOURCE" "$APK_NAME"
 
 echo -e "${GREEN}APK built successfully:${NC}"

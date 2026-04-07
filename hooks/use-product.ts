@@ -129,12 +129,7 @@ export async function fetchProducts(params?: ProductParams): Promise<Product[]> 
   }
 
   if (params?.supplierId) {
-    conditions.push(
-      or(
-        eq(schema.products.supplierId, params.supplierId),
-        isNull(schema.products.supplierId),
-      ) as any,
-    );
+    conditions.push(eq(schema.products.supplierId, params.supplierId) as any);
   }
 
   let productResult: any[] = [];
