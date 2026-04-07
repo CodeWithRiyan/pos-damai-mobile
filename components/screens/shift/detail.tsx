@@ -4,7 +4,7 @@ import { useShiftDetail } from '@/hooks/use-shift';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useShiftStore } from '@/stores/shift';
 import dayjs from 'dayjs';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { PlusCircle } from 'lucide-react-native';
 import { useCallback, useMemo } from 'react';
 import { ScrollView } from 'react-native';
@@ -198,7 +198,7 @@ export default function ShiftDetail() {
       <VStack space="md" className="w-full p-4">
         <Pressable
           className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
-          onPress={() => router.navigate(`/(main)/shift/detail/${id}/recap`)}
+          onPress={() => router.push(`/(main)/shift/detail/${id}/recap`)}
         >
           <Text size="sm" className="text-typography-0 font-bold">
             LIHAT REKAP

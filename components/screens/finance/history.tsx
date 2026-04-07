@@ -14,18 +14,18 @@ import {
 } from '@/components/ui';
 import { Box } from '@/components/ui/box';
 import { Spinner } from '@/components/ui/spinner';
+import { FinanceType, Status } from '@/constants';
+import { useFinances } from '@/hooks/use-finance';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useFinanceStore } from '@/stores/finance';
+import { formatNumber } from '@/utils/format';
+import { formatDisplayRefId } from '@/utils/reference';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { FlashList } from '@shopify/flash-list';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
-import { useFinances } from '@/hooks/use-finance';
-import { formatDisplayRefId } from '@/utils/reference';
-import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
-import { useFinanceStore } from '@/stores/finance';
-import { FinanceType, Status } from '@/constants';
-import { formatNumber } from '@/utils/format';
 import { useCallback, useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
 export default function FinanceHistory() {
   const router = useRouter();
   const [showTransactionDatePicker, setShowTransactionDatePicker] = useState<boolean>(false);
@@ -100,7 +100,7 @@ export default function FinanceHistory() {
             <Pressable
               className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
               onPress={() =>
-                router.navigate({
+                router.push({
                   pathname: '/(main)/finance/receipt/[id]',
                   params: { id: purchase.id },
                 })

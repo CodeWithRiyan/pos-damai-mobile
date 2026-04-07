@@ -42,7 +42,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { ArrowRight, CalendarIcon, Check, PlusIcon } from 'lucide-react-native';
 
-import { Status, DEFAULT_PAYMENT_TYPE } from '@/constants';
+import { DEFAULT_PAYMENT_TYPE, Status } from '@/constants';
 import { formatNumber, formatRp } from '@/utils/format';
 const purchasingSchema = z
   .object({
@@ -404,7 +404,7 @@ export default function PurchasingCheckoutForm() {
                         <Pressable
                           className="size-10 rounded-full bg-primary-500 items-center justify-center"
                           onPress={() =>
-                            router.navigate('/(main)/management/customer-supplier/supplier/add')
+                            router.push('/(main)/management/customer-supplier/supplier/add')
                           }
                         >
                           <Icon as={PlusIcon} color="white" />

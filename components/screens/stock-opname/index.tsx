@@ -60,9 +60,7 @@ export default function StockOpnameList({ isReport }: { isReport?: boolean }) {
                   key={so.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100${!!cart.find((item) => item.product.id === so.id) ? ' bg-gray-100' : ''}`}
                   onPress={() => {
-                    router.navigate(
-                      `/(main)/management/stock-changes/stock-opname/detail/${so.id}`,
-                    );
+                    router.push(`/(main)/management/stock-changes/stock-opname/detail/${so.id}`);
                   }}
                 >
                   <HStack className="flex-1">

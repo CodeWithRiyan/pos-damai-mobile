@@ -6,28 +6,28 @@ import { Badge, BadgeText } from '@/components/ui/badge';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import {
+  Category,
+  refetchCategoryById,
   useCategories,
   useDeleteCategory,
-  refetchCategoryById,
-  Category,
 } from '@/hooks/use-category';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useDeleteEntity } from '@/hooks/use-delete-entity';
+import { useItemSelection } from '@/hooks/use-item-selection';
 import {
   Product,
   useProductsByCategory,
   useUnassignProductsFromCategory,
 } from '@/hooks/use-product';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useCategoryStore } from '@/stores/category';
 import { useProductStore } from '@/stores/product';
-import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
-import { useItemSelection } from '@/hooks/use-item-selection';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView } from 'react-native';
 
-import { formatRp, formatNumber } from '@/utils/format';
+import { formatNumber, formatRp } from '@/utils/format';
 export default function CategoryDetail() {
   const { setOpen, setData } = useCategoryStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -306,7 +306,7 @@ export default function CategoryDetail() {
         <Pressable
           className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           onPress={() => {
-            router.navigate(
+            router.push(
               `/(main)/management/product-category-brand/category/select-product/${category?.id}`,
             );
             clearProductSelection();

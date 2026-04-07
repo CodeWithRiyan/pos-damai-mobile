@@ -16,9 +16,9 @@ import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { useCustomers } from '@/hooks/use-customer';
 import { useCustomerIdsWithTransactions } from '@/hooks/use-transaction';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
 import { RefreshControl } from 'react-native';
 
 export default function PurchasingCustomerList() {
@@ -95,9 +95,7 @@ export default function PurchasingCustomerList() {
             <Pressable
               className="px-4 py-4 border-b border-gray-200 active:bg-gray-100"
               onPress={() => {
-                router.navigate(
-                  `/(main)/management/return/transaction/input/${customer.id}` as any,
-                );
+                router.push(`/(main)/management/return/transaction/input/${customer.id}` as any);
               }}
             >
               <HStack className="justify-between items-center">

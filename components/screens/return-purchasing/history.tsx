@@ -13,9 +13,9 @@ import {
 } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
 import { usePurchaseReturns } from '@/hooks/use-supplier-return';
+import { FlashList } from '@shopify/flash-list';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { FlashList } from '@shopify/flash-list';
 
 import { formatNumber } from '@/utils/format';
 export default function ReturnPurchasingHistory({ isReport }: { isReport?: boolean }) {
@@ -54,7 +54,7 @@ export default function ReturnPurchasingHistory({ isReport }: { isReport?: boole
               <Pressable
                 className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
                 onPress={() =>
-                  router.navigate(`/(main)/management/return/purchasing/receipt/${ret.id}`)
+                  router.push(`/(main)/management/return/purchasing/receipt/${ret.id}`)
                 }
               >
                 <HStack space="xl" className="items-center">

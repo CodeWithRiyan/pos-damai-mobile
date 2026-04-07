@@ -4,14 +4,14 @@ import { HStack, Text, VStack } from '@/components/ui';
 import { Grid, GridItem } from '@/components/ui/grid';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
-import { useDeleteProduct, useProducts, refetchProductById, Product } from '@/hooks/use-product';
 import { PriceType, ProductType } from '@/constants';
-import { findSellPrice } from '@/utils/price';
-import { unitSuffixHelper } from '@/utils/unit';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { Product, refetchProductById, useDeleteProduct, useProducts } from '@/hooks/use-product';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useProductStore } from '@/stores/product';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { findSellPrice } from '@/utils/price';
+import { unitSuffixHelper } from '@/utils/unit';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { RefreshControl, ScrollView } from 'react-native';
@@ -251,9 +251,7 @@ export default function ProductDetail() {
         <Pressable
           className="w-full rounded-sm h-10 flex justify-center items-center bg-background-0 border border-brand-primary"
           onPress={() => {
-            router.navigate(
-              `/(main)/management/product-category-brand/product/edit/${product?.id}`,
-            );
+            router.push(`/(main)/management/product-category-brand/product/edit/${product?.id}`);
           }}
         >
           <Text size="sm" className="text-brand-primary font-bold">

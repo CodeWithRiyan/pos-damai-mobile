@@ -21,7 +21,7 @@ import { usePayableStore } from '@/stores/payable';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { ScrollView } from 'react-native';
@@ -130,7 +130,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
                   <Pressable
                     className="items-center justify-center h-10 px-10 rounded-lg bg-primary-500 active:bg-primary-500/90"
                     onPress={() => {
-                      router.navigate(
+                      router.push(
                         `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${payableList?.map((m) => m.id).join('-')}` as any,
                       );
                     }}
@@ -224,7 +224,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
                   if (!!selectedItems?.length) {
                     handlePayablePress(payable);
                   } else {
-                    router.navigate(
+                    router.push(
                       !isReport
                         ? `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/detail?payableIds=${payable?.id}`
                         : `/(main)/management/customer-supplier/supplier/payable/${supplierId}/realization/detail?payableIds=${payable?.id}`,
@@ -289,7 +289,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
           <Pressable
             className="w-full rounded-md h-10 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
             onPress={() => {
-              router.navigate(
+              router.push(
                 `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${selectedItems?.map((m) => m.id).join('-')}` as any,
               );
             }}

@@ -5,21 +5,21 @@ import { Box, Heading, HStack, Spinner, Text, useToast, VStack } from '@/compone
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
-import { useBrands, useDeleteBrand, refetchBrandById, Brand } from '@/hooks/use-brand';
+import { Brand, refetchBrandById, useBrands, useDeleteBrand } from '@/hooks/use-brand';
+import { useDeleteEntity } from '@/hooks/use-delete-entity';
+import { useItemSelection } from '@/hooks/use-item-selection';
 import { Product, useProductsByBrand, useUnassignProductsFromBrand } from '@/hooks/use-product';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useBrandStore } from '@/stores/brand';
 import { useProductStore } from '@/stores/product';
-import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
-import { useItemSelection } from '@/hooks/use-item-selection';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView } from 'react-native';
 
 import { PriceType } from '@/constants';
-import { formatRp, formatNumber } from '@/utils/format';
+import { formatNumber, formatRp } from '@/utils/format';
 export default function BrandDetail() {
   const { setOpen, setData } = useBrandStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -285,7 +285,7 @@ export default function BrandDetail() {
         <Pressable
           className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           onPress={() => {
-            router.navigate(
+            router.push(
               `/(main)/management/product-category-brand/brand/select-product/${brand?.id}`,
             );
             clearProductSelection();
