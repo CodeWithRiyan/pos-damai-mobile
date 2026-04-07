@@ -11,6 +11,7 @@ import {
   DEFAULT_PAYMENT_TYPE,
 } from '@/constants';
 import { calculateEarnedPoints, updateCustomerStats } from '@/utils/points';
+import { fetchProduct } from '@/hooks/use-product';
 
 export type ProductTypeEnum = 'DEFAULT' | 'MULTIUNIT' | 'VARIANTS';
 
@@ -591,6 +592,8 @@ export async function fetchCustomerIdsWithTransactions(): Promise<string[]> {
 }
 
 export async function fetchPurchasedProducts(customerId: string): Promise<any[]> {
+  const orgId = useAuthStore.getState().getOrganizationId();
+
   const transactions = await db
     .select()
     .from(schema.transactions)
@@ -615,41 +618,92 @@ export async function fetchPurchasedProducts(customerId: string): Promise<any[]>
         ? item.productId.substring(0, item.productId.indexOf('-var_'))
         : item.productId;
 
-      if (!productMap.has(productId)) {
-        const product = await db
+      if (productMap.has(productId)) continue;
+
+      // 1. Try to find real product by ID
+      let realProduct = await db
+        .select()
+        .from(schema.products)
+        .where(and(eq(schema.products.id, productId), isNull(schema.products.deletedAt)))
+        .limit(1);
+
+      // 2. If not found by ID, try by name
+      if (!realProduct[0] && item.productName && orgId) {
+        realProduct = await db
           .select()
           .from(schema.products)
-          .where(eq(schema.products.id, productId))
+          .where(
+            and(
+              eq(schema.products.name, item.productName),
+              eq(schema.products.organizationId, orgId),
+              isNull(schema.products.deletedAt),
+            ),
+          )
           .limit(1);
+      }
 
-        if (product[0]) {
-          const sellPrices = await db
-            .select()
-            .from(schema.productPrices)
-            .where(eq(schema.productPrices.productId, productId));
+      if (realProduct[0]) {
+        const resolvedId = realProduct[0].id;
 
-          const variants = await db
-            .select()
-            .from(schema.productVariants)
-            .where(
-              and(
-                eq(schema.productVariants.productId, productId),
-                isNull(schema.productVariants.deletedAt),
-              ),
-            );
+        const sellPrices = await db
+          .select()
+          .from(schema.productPrices)
+          .where(eq(schema.productPrices.productId, resolvedId));
 
-          productMap.set(productId, {
-            ...product[0],
-            sellPrices,
-            variants,
-            lastSellPrice: item.sellPrice,
-          });
-        }
+        const variants = await db
+          .select()
+          .from(schema.productVariants)
+          .where(
+            and(
+              eq(schema.productVariants.productId, resolvedId),
+              isNull(schema.productVariants.deletedAt),
+            ),
+          );
+
+        const invTxs = await db
+          .select()
+          .from(schema.inventoryTransactions)
+          .where(
+            and(
+              eq(schema.inventoryTransactions.productId, resolvedId),
+              eq(schema.inventoryTransactions.status, Status.COMPLETED),
+            ),
+          );
+        const stock = invTxs.reduce((sum, t) => sum + t.quantity, 0);
+
+        productMap.set(productId, {
+          ...realProduct[0],
+          code: realProduct[0].barcode,
+          sellPrices,
+          variants,
+          stock,
+        });
       } else {
-        const existing = productMap.get(productId);
-        if (item.sellPrice > (existing.lastSellPrice || 0)) {
-          existing.lastSellPrice = item.sellPrice;
-        }
+        // 3. Not found — use transaction item data, mark as _notFound
+        productMap.set(productId, {
+          id: productId,
+          name: item.productName || 'Unknown',
+          barcode: item.productBarcode,
+          code: item.productBarcode,
+          type: 'DEFAULT',
+          purchasePrice: item.purchasePrice || 0,
+          unit: item.productUnit,
+          categoryId: null,
+          brandId: null,
+          sellPrices: [
+            {
+              id: `temp_${productId}`,
+              label: 'Default',
+              price: item.sellPrice || 0,
+              minimumPurchase: 0,
+              type: 'RETAIL',
+            },
+          ],
+          variants: [],
+          stock: 0,
+          lastSellPrice: item.sellPrice,
+          _notFound: true,
+        });
       }
     }
   }
@@ -913,12 +967,27 @@ export function useContinueDraft() {
           .from(schema.transactionItems)
           .where(eq(schema.transactionItems.transactionId, id));
 
+        const itemsWithProducts = await Promise.all(
+          items.map(async (item) => {
+            const product = await fetchProduct(item.productId);
+            return {
+              ...item,
+              product,
+              variant: item.variantId
+                ? {
+                    id: item.variantId,
+                    name: item.variantName || '',
+                    code: item.variantCode || '',
+                    netto: item.variantNetto,
+                  }
+                : undefined,
+            };
+          }),
+        );
+
         const resultData = {
           transactionId: transaction[0].id,
-          items: items.map((item) => ({
-            ...item,
-            product: { id: item.productId },
-          })),
+          items: itemsWithProducts,
           customerId: transaction[0].customerId || undefined,
           employeeId: transaction[0].employeeId || undefined,
         };
