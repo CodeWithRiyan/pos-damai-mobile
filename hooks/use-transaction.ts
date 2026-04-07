@@ -74,6 +74,7 @@ export interface CreateTransactionDTO {
   totalAmount: number;
   totalPaid: number;
   commission?: number;
+  isHutang?: boolean;
   paymentTypeName?: string;
   paymentTypeCommission?: number;
   paymentTypeCommissionType?: string;
@@ -359,7 +360,7 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
       totalPaid: Number(data.totalPaid) || 0,
       commission: data.commission || 0,
       totalDiscount: 0,
-      totalProfit: 0,
+      totalProfit: data.isHutang ? 0 : 0,
       paymentTypeName: data.paymentTypeName || DEFAULT_PAYMENT_TYPE,
       paymentTypeCommission: data.paymentTypeCommission || 0,
       paymentTypeCommissionType: data.paymentTypeCommissionType || 'PERCENTAGE',
@@ -517,9 +518,14 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
       }
     }
 
+    const updateValues: any = { totalDiscount };
+    if (!data.isHutang) {
+      updateValues.totalProfit = totalProfit;
+    }
+
     await tx
       .update(schema.transactions)
-      .set({ totalDiscount, totalProfit })
+      .set(updateValues)
       .where(eq(schema.transactions.id, data.id || transactionId));
 
     if (data.status === Status.COMPLETED && data.customerId) {

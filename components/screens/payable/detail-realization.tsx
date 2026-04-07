@@ -24,7 +24,6 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
   const payableId = payableIds?.split('-')[0] || '';
 
   const { data: payable, isLoading, refetch } = usePayableDetail(payableId);
-  console.log('payable', payable);
   const deleteMutation = useDeletePayableRealization();
 
   const payableRealizationList = payable?.realizations || [];

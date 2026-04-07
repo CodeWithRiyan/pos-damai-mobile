@@ -271,6 +271,7 @@ export default function TransactionCheckoutForm() {
         totalAmount: grandTotal,
         totalPaid: finalTotalPaid,
         commission: commission,
+        isHutang: isHutang,
         paymentTypeName: isHutang
           ? 'PIUTANG'
           : paymentTypesData?.find((p) => p.id === data.paymentTypeId)?.name ||

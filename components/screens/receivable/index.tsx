@@ -37,13 +37,14 @@ import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
+import { FlatList } from 'react-native';
 
 import { formatRp } from '@/utils/format';
 export default function ReceivableList({ isReport }: { isReport?: boolean }) {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data: receivableByUser = [], isLoading: isLoadingFetch, refetch } = useReceivableList();
+  console.log('receivableByUser', receivableByUser);
   const deleteMutation = useBulkDeleteReceivable();
 
   const isLoading = isLoadingFetch || deleteMutation.isPending;
@@ -256,7 +257,7 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
               </Checkbox>
             </HStack>
           </VStack>
-          <FlashList
+          <FlatList
             data={receivableByUser
               ?.filter((r) =>
                 statuses.includes(
@@ -265,7 +266,8 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
               )
               ?.filter((r) => (r.userName ?? '').toLowerCase().includes(searchQuery.toLowerCase()))}
             className="flex-1"
-            keyExtractor={(receivable) => receivable.userId}
+            showsVerticalScrollIndicator={false}
+            keyExtractor={(receivable) => receivable.id}
             renderItem={({ item: receivable }) => (
               <Pressable
                 className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${

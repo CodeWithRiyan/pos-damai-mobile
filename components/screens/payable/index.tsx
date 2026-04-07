@@ -46,7 +46,6 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data: payableBySupplier = [], isLoading: isLoadingFetch, refetch } = usePayableList();
-  console.log('Fetched payableBySupplier data:', payableBySupplier);
   const deleteMutation = useBulkDeletePayable();
 
   const isLoading = isLoadingFetch || deleteMutation.isPending;
@@ -241,9 +240,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
               <VStack className="flex-1">
                 <Text className="text-typography-500 text-sm">Total Belum Lunas</Text>
                 <Heading size="xl" className="text-error-500">
-                  {formatRp(
-                    payableBySupplier.reduce((acc, curr) => acc + curr.totalPayable, 0),
-                  )}
+                  {formatRp(payableBySupplier.reduce((acc, curr) => acc + curr.totalPayable, 0))}
                 </Heading>
               </VStack>
               <VStack className="flex-1 items-end">
@@ -286,9 +283,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
           </VStack>
           <FlashList
             data={payableBySupplier
-              ?.filter((r) =>
-                statuses.includes(r.totalPayable > 0 ? 'Belum Lunas' : 'Lunas'),
-              )
+              ?.filter((r) => statuses.includes(r.totalPayable > 0 ? 'Belum Lunas' : 'Lunas'))
               ?.filter((r) => r.supplierName.toLowerCase().includes(searchQuery.toLowerCase()))}
             className="flex-1"
             keyExtractor={(payable) => payable.supplierId}

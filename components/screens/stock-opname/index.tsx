@@ -19,7 +19,6 @@ export default function StockOpnameList({ isReport }: { isReport?: boolean }) {
   const { cart } = useStockOpnameStore();
   const router = useRouter();
   const { data: stockOpname, isLoading, refetch } = useStockOpnames();
-  console.log('Stock Opname data:', stockOpname);
   useFocusEffect(
     useCallback(() => {
       refetch();

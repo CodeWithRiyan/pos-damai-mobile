@@ -230,7 +230,6 @@ export default function TransactionHistory({ isReport }: { isReport?: boolean })
   });
 
   const transactions = completedTransactions;
-  console.log('transaction', transactions);
 
   if (isLoading) {
     return (

@@ -319,6 +319,20 @@ export async function createReceivableRealization(data: {
     _dirty: true,
     _syncedAt: null,
   } as any);
+
+  const receivable = await fetchReceivableDetail(data.receivableId);
+  if (receivable?.transactionId && receivable.totalRealization >= receivable.nominal) {
+    const items = await db
+      .select()
+      .from(transactionItemsTable)
+      .where(eq(transactionItemsTable.transactionId, receivable.transactionId));
+    const correctProfit = items.reduce((sum, item) => sum + (item.profit || 0), 0);
+
+    await db
+      .update(transactions)
+      .set({ totalProfit: correctProfit, _dirty: true })
+      .where(eq(transactions.id, receivable.transactionId));
+  }
 }
 
 export function useReceivables(params?: { search?: string; status?: string }) {

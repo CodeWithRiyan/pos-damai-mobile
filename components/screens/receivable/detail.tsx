@@ -61,7 +61,6 @@ export default function ReceivableDetail() {
   const [statuses, setStatuses] = useState<string[]>(['Lunas', 'Belum Lunas']);
 
   const receivable = receivableList[0];
-  console.log('receivable', receivable);
 
   const handleReceivablePress = (receivable: Receivable) => {
     setSelectedItems((prev) => {
