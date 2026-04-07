@@ -1,8 +1,9 @@
-import { storeSupplies, storeSupplyItems } from '@/db/schema';
+import { storeSupplies, storeSupplyItems, inventoryTransactions } from '@/db/schema';
 import { db } from '@/db';
 import { useAuthStore } from '@/stores/system/auth';
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
+import { InventoryTxType, Status } from '@/constants';
 
 export interface StoreSupply {
   id: string;
@@ -109,6 +110,17 @@ export async function createStoreSupply(data: {
   await db.insert(storeSupplies).values(newSupply as any);
 
   for (const item of data.items) {
+    const transactions = await db
+      .select()
+      .from(inventoryTransactions)
+      .where(
+        and(
+          eq(inventoryTransactions.productId, item.productId),
+          eq(inventoryTransactions.status, Status.COMPLETED),
+        ),
+      );
+    const systemStock = transactions.reduce((sum, tx) => sum + tx.quantity, 0);
+
     const itemId = `ssi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     await db.insert(storeSupplyItems).values({
       id: itemId,
@@ -123,7 +135,7 @@ export async function createStoreSupply(data: {
       variantName: item.variantName || null,
       variantCode: item.variantCode || null,
       variantNetto: item.variantNetto || null,
-      quantitySystem: item.quantity,
+      quantitySystem: systemStock,
       quantityPhysical: item.quantity,
       usage: item.quantity,
       purchasePrice: item.purchasePrice,
@@ -131,6 +143,32 @@ export async function createStoreSupply(data: {
       createdAt: now,
       updatedAt: now,
       deletedAt: null,
+      _dirty: true,
+      _syncedAt: null,
+    } as any);
+
+    await db.insert(inventoryTransactions).values({
+      id: `invtx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      local_ref_id: `${id}_${item.productId}`,
+      productId: item.productId,
+      productName: item.productName || null,
+      productBarcode: item.productBarcode || null,
+      productCategory: item.productCategory || null,
+      productBrand: item.productBrand || null,
+      productUnit: item.productUnit || null,
+      variantId: item.variantId || null,
+      variantName: item.variantName || null,
+      variantCode: item.variantCode || null,
+      variantNetto: item.variantNetto || null,
+      type: InventoryTxType.STORE_SUPPLY,
+      quantity: -item.quantity,
+      contextName: 'Store Supply',
+      organizationId: orgId,
+      createdBy: userId,
+      updatedBy: userId,
+      createdAt: now,
+      updatedAt: now,
+      status: Status.COMPLETED,
       _dirty: true,
       _syncedAt: null,
     } as any);
