@@ -25,7 +25,7 @@ import { Radio, RadioGroup, RadioLabel } from '@/components/ui/radio';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { CalcType } from '@/constants';
 import {
   useCreateDiscount,
   useDiscount,
@@ -33,12 +33,12 @@ import {
   useUpdateDiscount,
 } from '@/hooks/use-discount';
 import { useDiscountStore } from '@/stores/discount';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Percent } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { CalcType } from '@/constants';
 import z from 'zod';
 
 export default function DiscountForm() {
@@ -194,7 +194,7 @@ export default function DiscountForm() {
                     <Input className="flex-1">
                       <InputField
                         value={value.toString()}
-                        keyboardType="numeric"
+                        keyboardType="numbers-and-punctuation"
                         placeholder="Masukkan nominal diskon"
                         onChangeText={(text) => {
                           const num = parseFloat(text) || 0;
