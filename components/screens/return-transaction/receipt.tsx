@@ -14,11 +14,13 @@ import { useCallback, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView } from 'react-native';
 
 import { ProductType, ReturnType } from '@/constants';
+import { useTransactionStore } from '@/stores/transaction';
 import { formatNumber, formatRp } from '@/utils/format';
 import { getReceiptActions } from '@/utils/receipt-actions';
 export default function ReturnTransactionReceipt() {
   const router = useRouter();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
+  const { resetCart } = useTransactionStore();
   const { id, isSuccess } = useLocalSearchParams<{
     id: string;
     isSuccess: string;
@@ -133,6 +135,7 @@ export default function ReturnTransactionReceipt() {
             <Pressable
               className="flex-1 rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-primary-500 border border-primary-500 active:bg-primary-400"
               onPress={() => {
+                resetCart();
                 router.replace({
                   pathname: '/(main)/transaction',
                   params: {

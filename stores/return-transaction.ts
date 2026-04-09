@@ -35,8 +35,8 @@ export const useReturnTransactionStore = create<ReturnTransactionState>((set) =>
     set({ addProduct: state, addProductVariantId: variantId || null }),
   addCartItem: (item) =>
     set((state) => {
-      const existingItemIndex = state.cart?.findIndex(
-        (cartItem) => cartItem.product.id === item.product.id,
+      const existingItemIndex = state.cart.findIndex(
+        (i) => i.product.id === item.product.id && i.variant?.id === item.variant?.id,
       );
 
       let updatedCart: CartItem[];
