@@ -46,7 +46,6 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data: payableBySupplier = [], isLoading: isLoadingFetch, refetch } = usePayableList();
-  console.log('Fetched payableBySupplier data:', payableBySupplier);
   const deleteMutation = useBulkDeletePayable();
 
   const isLoading = isLoadingFetch || deleteMutation.isPending;

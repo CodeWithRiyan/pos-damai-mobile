@@ -30,7 +30,7 @@ import { CalendarIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { ScrollView } from 'react-native';
 
-import { formatRp } from '@/utils/format';
+import { formatRp, formatNumber } from '@/utils/format';
 export default function ReceivableDetail() {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
@@ -275,6 +275,11 @@ export default function ReceivableDetail() {
                       <Text size="xs" className="text-slate-500">
                         {`JT: ${dayjs(receivable.dueDate).format('DD/MM/YYYY')}`}
                       </Text>
+                      {receivable.transactionItems && receivable.transactionItems.length > 0 && (
+                        <Text size="xs" className="text-primary-500">
+                          {`${receivable.transactionItems.length} produk`}
+                        </Text>
+                      )}
                     </VStack>
                   </HStack>
                   <VStack className="items-end">

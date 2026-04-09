@@ -61,7 +61,11 @@ export default function TransactionReceipt() {
   if (isLoading || !id) {
     return (
       <VStack className="flex-1 bg-primary-200">
-        <Header header="STRUK PENJUALAN BARANG" isGoBack onGoBack={() => router.push('/(main)/transaction')} />
+        <Header
+          header="STRUK PENJUALAN BARANG"
+          isGoBack
+          onGoBack={() => router.push('/(main)/transaction')}
+        />
         <Box className="flex-1 justify-center items-center">
           <Spinner size="large" />
         </Box>
@@ -72,7 +76,11 @@ export default function TransactionReceipt() {
   if (!transaction) {
     return (
       <VStack className="flex-1 bg-primary-200">
-        <Header header="STRUK PENJUALAN BARANG" isGoBack onGoBack={() => router.push('/(main)/transaction')} />
+        <Header
+          header="STRUK PENJUALAN BARANG"
+          isGoBack
+          onGoBack={() => router.push('/(main)/transaction')}
+        />
         <Box className="flex-1 justify-center items-center">
           <Text>Data transaksi tidak ditemukan</Text>
         </Box>
@@ -171,7 +179,11 @@ export default function TransactionReceipt() {
               </HStack>
 
               <HStack className="justify-between items-center">
-                <Text className="text-typography-500">Metode Pembayaran</Text>
+                <Text className="text-typography-500">
+                  {transaction.paymentTypeName === 'PIUTANG'
+                    ? 'Jenis Transaksi'
+                    : 'Metode Pembayaran'}
+                </Text>
                 <Text className="text-typography-500">{transaction.paymentTypeName}</Text>
               </HStack>
             </VStack>
@@ -240,16 +252,20 @@ export default function TransactionReceipt() {
                 <Text className="font-bold">Total Tagihan</Text>
                 <Text className="font-bold">Rp {formatNumber(transaction.totalAmount ?? 0)}</Text>
               </HStack>
-              <HStack className="justify-between items-center">
-                <Text className="font-bold">Uang Dibayarkan</Text>
-                <Text className="font-bold">Rp {formatNumber(transaction.totalPaid ?? 0)}</Text>
-              </HStack>
-              <HStack className="justify-between items-center">
-                <Text className="font-bold">Kembalian</Text>
-                <Text className="font-bold">
-                  {formatRp((transaction.totalPaid ?? 0) - (transaction.totalAmount ?? 0))}
-                </Text>
-              </HStack>
+              {transaction.paymentTypeName !== 'PIUTANG' && (
+                <>
+                  <HStack className="justify-between items-center">
+                    <Text className="font-bold">Uang Dibayarkan</Text>
+                    <Text className="font-bold">Rp {formatNumber(transaction.totalPaid ?? 0)}</Text>
+                  </HStack>
+                  <HStack className="justify-between items-center">
+                    <Text className="font-bold">Kembalian</Text>
+                    <Text className="font-bold">
+                      {formatRp((transaction.totalPaid ?? 0) - (transaction.totalAmount ?? 0))}
+                    </Text>
+                  </HStack>
+                </>
+              )}
             </VStack>
             <Box className="my-4 w-full h-0 border-b border-background-300 border-dashed" />
             <VStack className="items-center py-2">

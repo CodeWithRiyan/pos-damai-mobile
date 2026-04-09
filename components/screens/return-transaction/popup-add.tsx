@@ -66,6 +66,8 @@ export default function PopupAddProduct() {
       value: item.id,
     })) || [];
 
+  const isNotFound = !!(addProduct as any)?._notFound;
+
   const addProductSchema = z.object({
     variantUnitId: z.string().nullable(),
     quantity: z.number().min(1, 'Jumlah harus minimal 1'),
@@ -121,6 +123,9 @@ export default function PopupAddProduct() {
       showToast(toast, { action: 'error', message: 'Unit belum dipilih' });
       return;
     }
+    // Force quantity to 1 for products not found in real product data
+    const finalQuantity = isNotFound ? 1 : data.quantity;
+    const basePrice = addProduct?.sellPrices?.[0]?.price ?? (addProduct as any)?.lastSellPrice ?? 0;
 
     if (addProduct?.type === ProductType.MULTIUNIT) {
       const selectedVariant = addProduct.variants.find((item) => item.id === data.variantUnitId);
@@ -132,10 +137,8 @@ export default function PopupAddProduct() {
       if (!selectedNetto) {
         addCartItem({
           product: addProduct,
-          quantity: data.quantity,
-          sellPrice: addProduct.lastSellPrice
-            ? addProduct.lastSellPrice * selectedNetto
-            : addProduct.sellPrices?.[0]?.price * selectedNetto,
+          quantity: finalQuantity,
+          sellPrice: basePrice * selectedNetto,
           note: data.addNote ? data.note : undefined,
           variant: selectedVariant,
         });
@@ -175,7 +178,7 @@ export default function PopupAddProduct() {
         return result;
       };
 
-      const totalNetto = parseFloat((selectedNetto * data.quantity).toFixed(10));
+      const totalNetto = parseFloat((selectedNetto * finalQuantity).toFixed(10));
       const decomposed = decompose(totalNetto, sortedVariants);
 
       // Remove the variant being edited from cart first
@@ -194,9 +197,7 @@ export default function PopupAddProduct() {
         addCartItem({
           product: addProduct,
           quantity: finalQty,
-          sellPrice: addProduct.lastSellPrice
-            ? addProduct.lastSellPrice * (variant.netto || 0)
-            : addProduct.sellPrices?.[0]?.price * (variant.netto || 0) || 0,
+          sellPrice: basePrice * (variant.netto || 0),
           note: data.addNote ? data.note : undefined,
           variant,
         });
@@ -209,8 +210,8 @@ export default function PopupAddProduct() {
     if (addProduct) {
       addCartItem({
         product: addProduct,
-        quantity: data.quantity,
-        sellPrice: addProduct.lastSellPrice ?? addProduct.sellPrices?.[0]?.price ?? 0,
+        quantity: finalQuantity,
+        sellPrice: basePrice,
         note: data.addNote ? data.note : undefined,
       });
     }
@@ -244,7 +245,7 @@ export default function PopupAddProduct() {
                   <Heading size="md">
                     Rp{' '}
                     {formatNumber(
-                      addProduct?.lastSellPrice ?? addProduct?.sellPrices?.[0]?.price ?? 0,
+                      addProduct?.sellPrices?.[0]?.price ?? (addProduct as any)?.lastSellPrice ?? 0,
                     )}
                   </Heading>
                 </HStack>
@@ -321,7 +322,9 @@ export default function PopupAddProduct() {
                 />
                 <Pressable
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
+                  disabled={isNotFound && quantity >= 1}
                   onPress={() => {
+                    if (isNotFound && quantity >= 1) return;
                     const currentQuantity = quantity;
                     form.setValue('quantity', currentQuantity + 1);
                   }}
