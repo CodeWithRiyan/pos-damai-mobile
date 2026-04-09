@@ -10,8 +10,8 @@ import {
 } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import { useDeleteReceivable, useReceivableDetail } from '@/hooks/use-receivable';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView } from 'react-native';
@@ -44,7 +44,7 @@ export default function ReceivableRealizationDetail() {
           label: 'Edit',
           icon: 'Pen',
           onPress: () => {
-            router.navigate(
+            router.push(
               `/(main)/management/payable-receivable/receivable/edit/${receivable?.id}` as any,
             );
             hideActionDrawer();
@@ -136,6 +136,35 @@ export default function ReceivableRealizationDetail() {
           </VStack>
         </VStack>
 
+        {receivable?.transactionItems && receivable.transactionItems.length > 0 && (
+          <VStack className="px-4 py-2 bg-gray-50 border-y border-gray-200">
+            <Text className="font-bold text-sm text-gray-500 mb-2">Daftar Produk:</Text>
+            {receivable.transactionItems.map((item, idx) => (
+              <HStack key={idx} className="justify-between py-1">
+                <Text size="xs" className="flex-1">
+                  {item.productName}
+                </Text>
+                <Text size="xs" className="text-gray-500">
+                  {item.quantity} x {formatRp(item.unitPrice)}
+                </Text>
+                <Text size="xs" className="font-bold ml-2">
+                  {formatRp(item.totalPrice)}
+                </Text>
+              </HStack>
+            ))}
+            <HStack className="justify-between mt-1 pt-1 border-t border-gray-200">
+              <Text size="xs" className="font-bold">
+                Total
+              </Text>
+              <Text size="xs" className="font-bold text-primary-500">
+                {formatRp(
+                  receivable.transactionItems.reduce((sum, item) => sum + item.totalPrice, 0),
+                )}
+              </Text>
+            </HStack>
+          </VStack>
+        )}
+
         <VStack>
           {receivableRealizationList?.map((realization, index) => (
             <HStack key={realization.id} className="p-4">
@@ -179,7 +208,7 @@ export default function ReceivableRealizationDetail() {
                     <Pressable
                       className="h-8 w-8 rounded-md items-center justify-center border border-background-200"
                       onPress={() => {
-                        router.navigate(
+                        router.push(
                           `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/edit/${realization.id}?receivableIds=${receivableId}` as any,
                         );
                       }}
@@ -204,7 +233,7 @@ export default function ReceivableRealizationDetail() {
           <Pressable
             className="w-full rounded-md h-10 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
             onPress={() => {
-              router.navigate(
+              router.push(
                 `/(main)/management/payable-receivable/receivable/detail/${userId}/realization/add?receivableIds=${receivableId}` as any,
               );
             }}

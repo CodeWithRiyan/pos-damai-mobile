@@ -23,7 +23,7 @@ import {
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import { useCreateStockOpname } from '@/hooks/use-stock-opname';
-import { Status } from '@/constants';
+import { ProductType, Status } from '@/constants';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
 import { formatMoney } from '@/utils/format';
@@ -69,19 +69,59 @@ export default function StockOpnameConfirmForm({ date }: StockOpnameConfirmFormP
       let gain = 0;
       let loss = 0;
 
+      const cartByProduct = new Map<
+        string,
+        (typeof cart)[0] & { physicalStockByVariant: Map<string, number> }
+      >();
+
       for (const item of cart) {
+        const key = item.product.id;
+        if (!cartByProduct.has(key)) {
+          cartByProduct.set(key, {
+            ...item,
+            physicalStockByVariant: new Map(),
+          });
+        }
+        const existing = cartByProduct.get(key)!;
+        const variantKey = item.variant?.id || 'default';
+        existing.physicalStockByVariant.set(
+          variantKey,
+          (existing.physicalStockByVariant.get(variantKey) || 0) + item.physicalStock,
+        );
+      }
+
+      for (const [productId, item] of cartByProduct) {
+        const isMultiunit = item.product.type === ProductType.MULTIUNIT;
+
         const transactions = await db
           .select()
           .from(schema.inventoryTransactions)
           .where(
             and(
-              eq(schema.inventoryTransactions.productId, item.product.id),
+              eq(schema.inventoryTransactions.productId, productId),
               eq(schema.inventoryTransactions.status, Status.COMPLETED),
             ),
           );
 
+        let physicalStockInBaseUnit: number;
+
         const currentStock = transactions.reduce((sum, t) => sum + t.quantity, 0);
-        const difference = item.physicalStock - currentStock;
+
+        if (isMultiunit) {
+          physicalStockInBaseUnit = 0;
+          for (const [variantId, qty] of item.physicalStockByVariant) {
+            if (variantId === 'default') {
+              physicalStockInBaseUnit += qty;
+            } else {
+              const variant = item.product.variants.find((v) => v.id === variantId);
+              physicalStockInBaseUnit += qty * (variant?.netto || 1);
+            }
+          }
+        } else {
+          physicalStockInBaseUnit = item.physicalStock;
+        }
+
+        const difference = physicalStockInBaseUnit - currentStock;
         const purchasePrice = item.product.purchasePrice || 0;
         const impact = difference * purchasePrice;
 
@@ -97,15 +137,76 @@ export default function StockOpnameConfirmForm({ date }: StockOpnameConfirmFormP
     }
   }, [openConfirm, cart]);
 
-  const onSubmit: SubmitHandler<StockOpnameFormValues> = (data: StockOpnameFormValues) => {
+  const onSubmit: SubmitHandler<StockOpnameFormValues> = async (data: StockOpnameFormValues) => {
+    const cartByProduct = new Map<
+      string,
+      (typeof cart)[0] & { physicalStockByVariant: Map<string, number> }
+    >();
+
+    for (const item of cart) {
+      const key = item.product.id;
+      if (!cartByProduct.has(key)) {
+        cartByProduct.set(key, {
+          ...item,
+          physicalStockByVariant: new Map(),
+        });
+      }
+      const existing = cartByProduct.get(key)!;
+      const variantKey = item.variant?.id || 'default';
+      existing.physicalStockByVariant.set(
+        variantKey,
+        (existing.physicalStockByVariant.get(variantKey) || 0) + item.physicalStock,
+      );
+    }
+
+    const itemsWithSystemQuantity = await Promise.all(
+      Array.from(cartByProduct.values()).map(async (item) => {
+        const isMultiunit = item.product.type === ProductType.MULTIUNIT;
+
+        const transactions = await db
+          .select()
+          .from(schema.inventoryTransactions)
+          .where(
+            and(
+              eq(schema.inventoryTransactions.productId, item.product.id),
+              eq(schema.inventoryTransactions.status, Status.COMPLETED),
+            ),
+          );
+
+        const systemQuantity = transactions.reduce((sum, t) => sum + t.quantity, 0);
+
+        let physicalQuantity: number;
+        if (isMultiunit) {
+          physicalQuantity = 0;
+          for (const [variantId, qty] of item.physicalStockByVariant) {
+            if (variantId === 'default') {
+              physicalQuantity += qty;
+            } else {
+              const variant = item.product.variants.find((v) => v.id === variantId);
+              physicalQuantity += qty * (variant?.netto || 1);
+            }
+          }
+        } else {
+          physicalQuantity = item.physicalStock;
+        }
+
+        return {
+          productId: item.product.id,
+          systemQuantity,
+          physicalQuantity,
+          variantId: isMultiunit ? undefined : item.variant?.id,
+          variantNetto: isMultiunit ? undefined : item.variant?.netto,
+          variantName: isMultiunit ? undefined : item.variant?.name,
+          variantCode: isMultiunit ? undefined : item.variant?.code,
+          purchasePrice: item.product.purchasePrice || 0,
+        };
+      }),
+    );
+
     const submissionData = {
       date: date,
       note: data.note,
-      items: (cart || []).map((item) => ({
-        productId: item.product.id,
-        systemQuantity: item.product.stock || 0,
-        physicalQuantity: item.physicalStock,
-      })),
+      items: itemsWithSystemQuantity,
     };
 
     createMutation.mutate(submissionData, {

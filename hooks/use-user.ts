@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
-import { useAuthStore } from '@/stores/auth';
-import { and, eq } from 'drizzle-orm';
+import { useAuthStore } from '@/stores/system/auth';
+import { and, eq, isNull, notLike } from 'drizzle-orm';
 import { apiClient } from '@/db/client';
 
 export interface User {
@@ -199,7 +199,40 @@ export function useUser(id: string) {
 }
 
 export function useLocalUsers() {
-  return useUsers();
+  const [data, setData] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetch = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const orgId = useAuthStore.getState().getOrganizationId();
+      if (!orgId) {
+        setData([]);
+        return;
+      }
+      const result = await db
+        .select()
+        .from(schema.users)
+        .where(and(
+          eq(schema.users.organizationId, orgId),
+          isNull(schema.users.deletedAt),
+          notLike(schema.users.username, '%_deleted_%'),
+        ));
+      setData(result as unknown as User[]);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data, isLoading: loading, loading, error, refetch: fetch };
 }
 
 export function useCurrentUser() {

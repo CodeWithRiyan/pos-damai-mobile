@@ -17,7 +17,11 @@
     "lint": "expo lint",
     "build:check": "pnpm tsc --noEmit && npx expo export --platform android",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "build:apk:dev": "./build-apk.sh dev",
+    "build:apk:sit": "./build-apk.sh sit",
+    "build:apk:demo": "./build-apk.sh demo",
+    "build:apk:prod": "./build-apk.sh prod"
   },
   "dependencies": {
     "@expo/html-elements": "^0.12.5",

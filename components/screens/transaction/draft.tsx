@@ -11,7 +11,8 @@ import {
   VStack,
 } from '@/components/ui';
 import { useContinueDraft, useDeleteTransaction, useTransactions } from '@/hooks/use-transaction';
-import { Status } from '@/constants';
+import { PriceType, Status } from '@/constants';
+import { findSellPrice } from '@/utils/price';
 import { useTransactionStore } from '@/stores/transaction';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { showErrorToast, showSuccessToast } from '@/utils/toast';
@@ -61,23 +62,12 @@ export default function TransactionDraft() {
 
     useTransactionStore.getState().incrementVersion();
     resetCart();
-    for (const item of result.items) {
-      if (item.product) {
-        addCartItem({
-          product: {
-            ...item.product,
-          } as any,
-          tempSellPrice: item.sellPrice,
-          quantity: item.quantity,
-          note: item.note ?? undefined,
-        });
-      }
-    }
-    setStatus(Status.DRAFT);
-    setTransactionId(result.transactionId);
-    if (result.customerId) {
-      setCustomer(customers?.find((c) => c.id === result.customerId) || null);
-    }
+
+    // Set customer/employee BEFORE adding items so prices calculate in the correct context
+    const draftCustomer = result.customerId
+      ? customers?.find((c) => c.id === result.customerId) || null
+      : null;
+
     if (result.employeeId) {
       const user = users?.find((u) => u.id === result.employeeId);
       setEmployee({
@@ -85,7 +75,39 @@ export default function TransactionDraft() {
         name: user?.firstName || '',
         username: user?.username || '',
       });
+    } else if (draftCustomer) {
+      setCustomer(draftCustomer);
     }
+
+    for (const item of result.items) {
+      if (item.product) {
+        // Only set tempSellPrice for wholesale multiunit (matching popup-add logic)
+        let tempSellPrice: number | undefined;
+        if (
+          draftCustomer?.category === PriceType.WHOLESALE &&
+          item.variant?.netto != null &&
+          item.variant.netto !== 1
+        ) {
+          tempSellPrice =
+            findSellPrice({
+              sellPrices: item.product.sellPrices || [],
+              type: PriceType.WHOLESALE,
+              quantity: item.quantity,
+            }) * item.variant.netto;
+        }
+
+        addCartItem({
+          product: item.product as any,
+          variant: item.variant,
+          quantity: item.quantity,
+          tempSellPrice,
+          note: item.note ?? undefined,
+        });
+      }
+    }
+
+    setStatus(Status.DRAFT);
+    setTransactionId(result.transactionId);
     router.replace('/(main)/transaction');
   };
 
@@ -96,7 +118,7 @@ export default function TransactionDraft() {
   if (isLoading) {
     return (
       <VStack className="flex-1 bg-white">
-        <Header header="DRAFT TRANSAKSI" isGoBack />
+        <Header header="DRAFT TRANSAKSI" isGoBack onGoBack={() => router.push('/(main)/transaction')} />
         <Box className="flex-1 justify-center items-center">
           <Spinner size="large" />
         </Box>
@@ -106,7 +128,7 @@ export default function TransactionDraft() {
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header="DRAFT TRANSAKSI" isGoBack />
+      <Header header="DRAFT TRANSAKSI" isGoBack onGoBack={() => router.push('/(main)/transaction')} />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {drafts.length === 0 ? (
           <Box className="flex-1 justify-center items-center py-10">

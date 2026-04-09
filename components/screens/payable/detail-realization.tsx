@@ -3,17 +3,14 @@ import Header from '@/components/header';
 import { Box, HStack, Text, VStack } from '@/components/ui';
 import { Grid, GridItem } from '@/components/ui/grid';
 import { Pressable } from '@/components/ui/pressable';
-import {
-  SolarIconBold,
-  SolarIconBoldDuotone,
-  SolarIconLinear,
-} from '@/components/ui/solar-icon-wrapper';
+import { SolarIconBold, SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { useDeletePayable, usePayableDetail } from '@/hooks/use-payable';
+import { useDeletePayableRealization, usePayableDetail } from '@/hooks/use-payable';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import dayjs from 'dayjs';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback } from 'react';
 import { ScrollView } from 'react-native';
 
 import { formatRp } from '@/utils/format';
@@ -26,26 +23,34 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
   const supplierId = params.supplierId as string;
   const payableId = payableIds?.split('-')[0] || '';
 
-  const { data: payable, isLoading } = usePayableDetail(payableId);
-  const deleteMutation = useDeletePayable();
+  const { data: payable, isLoading, refetch } = usePayableDetail(payableId);
+  const deleteMutation = useDeletePayableRealization();
 
   const payableRealizationList = payable?.realizations || [];
   const isPayedOff = (payable?.totalRealization || 0) === (payable?.nominal || 0);
 
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
+
   const { triggerDelete } = useDeleteEntity({
-    successMessage: 'Hutang berhasil dihapus',
+    successMessage: 'Pembayaran berhasil dihapus',
     deleteMutation,
+    onSuccess: () => refetch(),
+    goBack: false,
   });
 
-  const handleAction = () => {
+  const handleRealizationAction = (realization: { id: string; nominal: number }) => {
     showActionDrawer({
       actions: [
         {
           label: 'Edit',
           icon: 'Pen',
           onPress: () => {
-            router.navigate(
-              `/(main)/management/payable-receivable/payable/edit?payableId=${payable?.id}` as any,
+            router.push(
+              `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/edit/${realization.id}?payableIds=${payableId}` as any,
             );
             hideActionDrawer();
           },
@@ -55,8 +60,10 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
           icon: 'TrashBin2',
           theme: 'red',
           onPress: () => {
-            triggerDelete(singleDeleteConfirm('hutang', payableId));
             hideActionDrawer();
+            setTimeout(() => {
+              triggerDelete(singleDeleteConfirm('pembayaran', realization.id));
+            }, 300);
           },
         },
       ],
@@ -73,24 +80,7 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header
-        header="DETAIL REALISASI HUTANG"
-        action={
-          !isReport && (
-            <HStack space="sm">
-              <Pressable className="p-6" onPress={handleAction}>
-                <SolarIconBold
-                  name="MenuDots"
-                  size={20}
-                  color="#FDFBF9"
-                  style={{ transform: [{ rotate: '90deg' }] }}
-                />
-              </Pressable>
-            </HStack>
-          )
-        }
-        isGoBack
-      />
+      <Header header="DETAIL REALISASI HUTANG" isGoBack />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="md" className="flex-1">
@@ -98,7 +88,7 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
             <HStack space="sm" className="items-center">
               <SolarIconBoldDuotone name="UserCircle" size={24} color="#3b82f6" />
               <Text className="text-primary-500 font-bold">
-                {payable?.supplier?.name || 'Unknown Supplier'}
+                {payable?.supplierName || 'Unknown Supplier'}
               </Text>
             </HStack>
             <HStack space="xs" className="items-center">
@@ -140,60 +130,62 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
 
         <VStack>
           {payableRealizationList?.map((realization, index) => (
-            <HStack key={realization.id} className="p-4">
-              <HStack space="md" className="items-center w-full">
-                <Grid
-                  _extra={{ className: 'grid-cols-2' }}
-                  className="relative border border-background-200 rounded-md bg-background-0 p-4 pt-10 gap-2 w-full"
+            <Box key={realization.id} className="relative px-4 py-2">
+              <Grid
+                _extra={{ className: 'grid-cols-2' }}
+                className="relative border border-background-200 rounded-md bg-background-0 p-4 pt-10 gap-2 w-full"
+              >
+                <GridItem _extra={{ className: 'col-span-3' }} className="absolute top-0 left-0">
+                  <Box className="absolute top-0 left-0 py-1 px-4 rounded-br-md bg-info-50">
+                    <Text className="text-info-400 text-sm font-bold">{`Tgl Pembayaran: ${dayjs(realization.realizationDate).format('DD/MM/YYYY HH:mm')}`}</Text>
+                  </Box>
+                </GridItem>
+                <GridItem
+                  _extra={{
+                    className: 'col-span-1',
+                  }}
                 >
-                  <GridItem _extra={{ className: 'col-span-3' }} className="absolute top-0 left-0">
-                    <Box className="absolute top-0 left-0 py-1 px-4 rounded-br-md bg-info-50">
-                      <Text className="text-info-400 text-sm font-bold">{`Tgl Pembayaran: ${dayjs(realization.realizationDate).format('DD/MM/YYYY HH:mm')}`}</Text>
-                    </Box>
-                  </GridItem>
-                  <GridItem
-                    _extra={{
-                      className: 'col-span-1',
-                    }}
-                  >
-                    <Text className="text-gray-500 text-sm">No.</Text>
-                    <Text className="text-sm font-bold">{index + 1}</Text>
-                  </GridItem>
-                  <GridItem
-                    _extra={{
-                      className: 'col-span-1',
-                    }}
-                  >
-                    <Text className="text-gray-500 text-sm">Nominal</Text>
-                    <Text className="text-sm font-bold">{formatRp(realization.nominal)}</Text>
-                  </GridItem>
-                  <GridItem
-                    _extra={{
-                      className: 'col-span-2',
-                    }}
-                  >
-                    <HStack space="sm">
-                      <Text className="text-gray-500 text-sm">Catatan:</Text>
-                      <Text className="text-sm font-bold">{realization.note || '-'}</Text>
-                    </HStack>
-                  </GridItem>
-                  {!isReport && (
-                    <GridItem _extra={{ className: 'col-span-3' }}>
-                      <Pressable
-                        className="h-8 w-8 rounded-md items-center justify-center border border-background-200"
-                        onPress={() => {
-                          router.navigate(
-                            `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/edit/${realization.id}?payableIds=${payableId}` as any,
-                          );
-                        }}
-                      >
-                        <SolarIconLinear name="Pen" size={16} color="#3d2117" />
-                      </Pressable>
-                    </GridItem>
-                  )}
-                </Grid>
-              </HStack>
-            </HStack>
+                  <Text className="text-gray-500 text-sm">No.</Text>
+                  <Text className="text-sm font-bold">{index + 1}</Text>
+                </GridItem>
+                <GridItem
+                  _extra={{
+                    className: 'col-span-1',
+                  }}
+                >
+                  <Text className="text-gray-500 text-sm">Nominal</Text>
+                  <Text className="text-sm font-bold">{formatRp(realization.nominal)}</Text>
+                </GridItem>
+                <GridItem
+                  _extra={{
+                    className: 'col-span-2',
+                  }}
+                >
+                  <HStack space="sm">
+                    <Text className="text-gray-500 text-sm">Catatan:</Text>
+                    <Text className="text-sm font-bold">{realization.note || '-'}</Text>
+                  </HStack>
+                </GridItem>
+              </Grid>
+              {!isReport && (
+                <Pressable
+                  className="absolute top-4 right-6 h-8 w-8 rounded-md items-center justify-center"
+                  onPress={() =>
+                    handleRealizationAction({
+                      id: realization.id as string,
+                      nominal: realization.nominal,
+                    })
+                  }
+                >
+                  <SolarIconBold
+                    name="MenuDots"
+                    size={16}
+                    color="#3d2117"
+                    style={{ transform: [{ rotate: '90deg' }] }}
+                  />
+                </Pressable>
+              )}
+            </Box>
           ))}
           {payableRealizationList?.length === 0 && (
             <Box className="p-8 items-center">
@@ -208,7 +200,7 @@ export default function PayableRealizationDetail({ isReport }: { isReport?: bool
           <Pressable
             className="w-full rounded-md h-10 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
             onPress={() => {
-              router.navigate(
+              router.push(
                 `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${payableId}` as any,
               );
             }}

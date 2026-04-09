@@ -19,7 +19,6 @@ export default function StockOpnameList({ isReport }: { isReport?: boolean }) {
   const { cart } = useStockOpnameStore();
   const router = useRouter();
   const { data: stockOpname, isLoading, refetch } = useStockOpnames();
-  console.log('Stock Opname data:', stockOpname);
   useFocusEffect(
     useCallback(() => {
       refetch();
@@ -60,9 +59,7 @@ export default function StockOpnameList({ isReport }: { isReport?: boolean }) {
                   key={so.id}
                   className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100${!!cart.find((item) => item.product.id === so.id) ? ' bg-gray-100' : ''}`}
                   onPress={() => {
-                    router.navigate(
-                      `/(main)/management/stock-changes/stock-opname/detail/${so.id}`,
-                    );
+                    router.push(`/(main)/management/stock-changes/stock-opname/detail/${so.id}`);
                   }}
                 >
                   <HStack className="flex-1">
@@ -76,17 +73,21 @@ export default function StockOpnameList({ isReport }: { isReport?: boolean }) {
                     </VStack>
                     <HStack className="absolute right-0 top-0 h-full">
                       <HStack className="h-full items-center justify-center">
-                        {so.totalLoss === 0 ? (
+                        {so.totalGain > so.totalLoss ? (
                           <Heading size="sm" className="text-success-600">
-                            Sesuai
+                            Lebih
                           </Heading>
-                        ) : (
+                        ) : so.totalLoss > so.totalGain ? (
                           <VStack className="items-center">
                             <Icon as={CircleAlert} size="md" color="#ef4444" />
                             <Text size="xs" className="text-error-500 font-bold">
-                              Selisih
+                              Kurang
                             </Text>
                           </VStack>
+                        ) : (
+                          <Heading size="sm" className="text-success-600">
+                            Sesuai
+                          </Heading>
                         )}
                       </HStack>
                       <HStack className="h-full ml-4 items-center justify-center">

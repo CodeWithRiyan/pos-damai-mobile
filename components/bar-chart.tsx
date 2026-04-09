@@ -37,6 +37,8 @@ export default function BarChart({ data, spacing }: { data: barDataItem[]; spaci
       {(containerWidth || 0) > 0 && (
         <GiftedBarChart
           color="#3d2117"
+          frontColor="#3d2117"
+          barBorderRadius={4}
           noOfSections={6}
           yAxisLabelWidth={60}
           yAxisTextStyle={{
@@ -65,7 +67,7 @@ export default function BarChart({ data, spacing }: { data: barDataItem[]; spaci
           xAxisColor="lightgray"
           pointerConfig={{
             activatePointersOnLongPress: true,
-            pointerColor: 'blue',
+            pointerColor: 'transparent',
             pointerLabelComponent: (
               items: {
                 index: number;

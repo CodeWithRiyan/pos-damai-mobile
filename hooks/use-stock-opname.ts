@@ -5,11 +5,13 @@ import {
   categories,
   brands,
   productVariants,
+  inventoryTransactions,
 } from '@/db/schema';
 import { db } from '@/db';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { useCallback, useEffect, useState } from 'react';
+import { InventoryTxType, Status } from '@/constants';
 
 export interface StockOpname {
   id: string;
@@ -106,8 +108,11 @@ export async function createStockOpname(data: {
 
   for (const item of data.items) {
     const diff = item.physicalQuantity - item.systemQuantity;
-    if (diff > 0) totalGain += diff;
-    if (diff < 0) totalLoss += Math.abs(diff);
+    const purchasePrice = item.purchasePrice ?? 0;
+    const financialImpact = diff * purchasePrice;
+
+    if (financialImpact > 0) totalGain += financialImpact;
+    if (financialImpact < 0) totalLoss += Math.abs(financialImpact);
   }
 
   const newOpname = {
@@ -211,6 +216,34 @@ export async function createStockOpname(data: {
       _dirty: true,
       _syncedAt: null,
     } as any);
+
+    if (difference !== 0) {
+      await db.insert(inventoryTransactions).values({
+        id: `invtx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        local_ref_id: `${id}_${item.productId}`,
+        productId: item.productId,
+        productName: productName || null,
+        productBarcode: productBarcode || null,
+        productCategory: productCategory || null,
+        productBrand: productBrand || null,
+        productUnit: productUnit || null,
+        variantId: variantId || null,
+        variantName: variantName || null,
+        variantCode: variantCode || null,
+        variantNetto: variantNetto || null,
+        type: InventoryTxType.STOCK_OPNAME,
+        quantity: difference,
+        contextName: 'Stock Opname',
+        organizationId: orgId,
+        createdBy: userId,
+        updatedBy: userId,
+        createdAt: now,
+        updatedAt: now,
+        status: Status.COMPLETED,
+        _dirty: true,
+        _syncedAt: null,
+      } as any);
+    }
   }
 
   return newOpname as unknown as StockOpname;

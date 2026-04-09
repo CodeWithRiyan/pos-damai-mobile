@@ -28,22 +28,23 @@ import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { Receivable, useBulkDeleteReceivable, useReceivableList } from '@/hooks/use-receivable';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useReceivableStore } from '@/stores/receivable';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
+import { FlatList } from 'react-native';
 
 import { formatRp } from '@/utils/format';
 export default function ReceivableList({ isReport }: { isReport?: boolean }) {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data: receivableByUser = [], isLoading: isLoadingFetch, refetch } = useReceivableList();
+  console.log('receivableByUser', receivableByUser);
   const deleteMutation = useBulkDeleteReceivable();
 
   const isLoading = isLoadingFetch || deleteMutation.isPending;
@@ -256,7 +257,7 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
               </Checkbox>
             </HStack>
           </VStack>
-          <FlashList
+          <FlatList
             data={receivableByUser
               ?.filter((r) =>
                 statuses.includes(
@@ -265,7 +266,8 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
               )
               ?.filter((r) => (r.userName ?? '').toLowerCase().includes(searchQuery.toLowerCase()))}
             className="flex-1"
-            keyExtractor={(receivable) => receivable.userId}
+            showsVerticalScrollIndicator={false}
+            keyExtractor={(receivable) => receivable.id}
             renderItem={({ item: receivable }) => (
               <Pressable
                 className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
@@ -275,7 +277,7 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
                   if (!!selectedItems?.length) {
                     handleReceivablePress(receivable);
                   } else {
-                    router.navigate(
+                    router.push(
                       `/(main)/management/payable-receivable/receivable/detail/${receivable.userId}` as any,
                     );
                     setSelectedItems(null);

@@ -4,21 +4,23 @@ import { Box, Heading, HStack, Icon, Pressable, Text, VStack } from '@/component
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { useTransactionReturn } from '@/hooks/use-return-transaction';
-import { TransactionItem, useTransaction } from '@/hooks/use-transaction';
+import { TransactionItem, useTransactionByReturnId } from '@/hooks/use-transaction';
+import { useAuthStore } from '@/stores/system/auth';
 import { formatDisplayRefId } from '@/utils/reference';
-import { useAuthStore } from '@/stores/auth';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Check, Printer, Send } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView } from 'react-native';
 
-import { getReceiptActions } from '@/utils/receipt-actions';
 import { ProductType, ReturnType } from '@/constants';
-import { formatRp, formatNumber } from '@/utils/format';
+import { useTransactionStore } from '@/stores/transaction';
+import { formatNumber, formatRp } from '@/utils/format';
+import { getReceiptActions } from '@/utils/receipt-actions';
 export default function ReturnTransactionReceipt() {
   const router = useRouter();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
+  const { resetCart } = useTransactionStore();
   const { id, isSuccess } = useLocalSearchParams<{
     id: string;
     isSuccess: string;
@@ -32,7 +34,7 @@ export default function ReturnTransactionReceipt() {
     data: transaction,
     isLoading: isLoadingTransaction,
     refetch: refetchTransaction,
-  } = useTransaction(id || '');
+  } = useTransactionByReturnId(id || '');
   const profile = useAuthStore((state) => state.profile);
   const isLoading = isLoadingReturnData || isLoadingTransaction;
   const [refreshing, setRefreshing] = useState(false);
@@ -133,6 +135,7 @@ export default function ReturnTransactionReceipt() {
             <Pressable
               className="flex-1 rounded-lg h-12 px-4 flex-row gap-4 items-center justify-center bg-primary-500 border border-primary-500 active:bg-primary-400"
               onPress={() => {
+                resetCart();
                 router.replace({
                   pathname: '/(main)/transaction',
                   params: {

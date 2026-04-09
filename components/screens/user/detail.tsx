@@ -1,16 +1,16 @@
-import { useCallback, useState } from 'react';
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { Box, HStack, Text, VStack } from '@/components/ui';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { singleDeleteConfirm } from '@/utils/delete-confirm';
-import { useDeleteUser, useUsers, refetchUserById, User } from '@/hooks/use-user';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { refetchUserById, useDeleteUser, User, useUsers } from '@/hooks/use-user';
 import { useUserStore } from '@/stores/user';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ScrollView } from 'react-native';
 
 export default function UserDetail() {
@@ -50,7 +50,7 @@ export default function UserDetail() {
           label: 'Edit',
           icon: 'Pen',
           onPress: () => {
-            router.navigate(`/(main)/management/role-user/user/edit/${user?.id}`);
+            router.push(`/(main)/management/role-user/user/edit/${user?.id}`);
             hideActionDrawer();
           },
         },

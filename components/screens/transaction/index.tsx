@@ -22,20 +22,21 @@ import GridProductLayout from '@/components/ui/layout/grid-product-layout';
 import ListProductLayout from '@/components/ui/layout/list-product-layout';
 import SelectModal from '@/components/ui/select/select-modal';
 import { Spinner } from '@/components/ui/spinner';
+import { PriceType, ProductType, Status } from '@/constants';
 import { useCustomer, useCustomers } from '@/hooks/use-customer';
 import { useProducts } from '@/hooks/use-product';
-import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useCurrentShift } from '@/hooks/use-shift';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useLocalUsers } from '@/hooks/use-user';
-import { calculateLineItemTotal, findSellPrice } from '@/utils/price';
+import { useCustomerStore } from '@/stores/customer';
 import { useProductStore } from '@/stores/product';
 import { useTransactionStore } from '@/stores/transaction';
-import { PriceType, ProductType, Status } from '@/constants';
+import { calculateLineItemTotal, findSellPrice } from '@/utils/price';
+import { FlashList } from '@shopify/flash-list';
 import classNames from 'classnames';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AlertCircle, PlusIcon } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
 import { LayoutChangeEvent } from 'react-native';
 import PopupAddProduct from './popup-add';
 
@@ -58,7 +59,7 @@ export default function TransactionList() {
     removeCartItem,
     resetCart,
   } = useTransactionStore();
-  const { data: customers } = useCustomers();
+  const { data: customers, refetch: refetchCustomers } = useCustomers();
   const { data: localUsers } = useLocalUsers();
   const { data: returnCustomer } = useCustomer(searchParams.returnCustomerId);
   const { data: products, refetch } = useProducts({ forceParent: true });
@@ -69,11 +70,16 @@ export default function TransactionList() {
   const [layout, setLayout] = useState<'list' | 'grid'>('list');
   const [buyerType, setBuyerType] = useState<'customer' | 'employee'>('customer');
 
-  const handleVersionChange = React.useCallback(() => {
+  const handleProductVersionChange = React.useCallback(() => {
     refetch();
   }, [refetch]);
 
-  useStoreVersionSync(useProductStore, handleVersionChange);
+  const handleCustomerVersionChange = React.useCallback(() => {
+    refetchCustomers();
+  }, [refetchCustomers]);
+
+  useStoreVersionSync(useProductStore, handleProductVersionChange);
+  useStoreVersionSync(useCustomerStore, handleCustomerVersionChange);
 
   const isDirty = !!cart.length || customer || employee;
 
@@ -162,13 +168,13 @@ export default function TransactionList() {
             <HStack space="sm" className="pr-4">
               <Pressable
                 className="size-10 items-center justify-center"
-                onPress={() => router.navigate('/(main)/transaction/draft')}
+                onPress={() => router.push('/(main)/transaction/draft')}
               >
                 <SolarIconBold name="ClipboardList" size={20} color="#FDFBF9" />
               </Pressable>
               <Pressable
                 className="size-10 items-center justify-center"
-                onPress={() => router.navigate('/(main)/transaction/history')}
+                onPress={() => router.push('/(main)/transaction/history')}
               >
                 <SolarIconBold name="History" size={20} color="#FDFBF9" />
               </Pressable>
@@ -242,9 +248,12 @@ export default function TransactionList() {
                   <>
                     <Pressable
                       className="size-10 rounded-full bg-primary-500 items-center justify-center"
-                      onPress={() =>
-                        router.push('/(main)/management/customer-supplier/customer/add')
-                      }
+                      onPress={() => {
+                        useCustomerStore.getState().setData(null);
+                        useCustomerStore.getState().setOpen(true, (newCustomer) => {
+                          setCustomer(newCustomer as any);
+                        });
+                      }}
                     >
                       <Icon as={PlusIcon} color="white" />
                     </Pressable>
@@ -517,10 +526,14 @@ export default function TransactionList() {
                 <Pressable
                   className="items-center justify-center size-16 rounded-lg border border-primary-500 bg-background-0 active:bg-primary-300"
                   onPress={() => {
-                    router.replace({
-                      pathname: '/(main)/transaction/checkout',
-                      params: searchParams,
-                    });
+                    if (searchParams.returnId) {
+                      router.replace({
+                        pathname: '/(main)/transaction/checkout',
+                        params: searchParams,
+                      });
+                    } else {
+                      router.push('/(main)/transaction/checkout');
+                    }
                     setStatus(Status.DRAFT);
                   }}
                 >

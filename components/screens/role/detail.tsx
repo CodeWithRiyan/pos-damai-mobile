@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { Box, HStack, Text, VStack } from '@/components/ui';
@@ -6,11 +5,12 @@ import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import useBreakpoint from '@/hooks/use-breakpoint';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { singleDeleteConfirm } from '@/utils/delete-confirm';
 import { useDeleteRole, useRole, useRoles } from '@/hooks/use-role';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useRoleStore } from '@/stores/role';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback } from 'react';
 import { ScrollView } from 'react-native';
 
 export default function RoleDetail() {
@@ -54,7 +54,7 @@ export default function RoleDetail() {
           label: 'Edit',
           icon: 'Pen',
           onPress: () => {
-            router.navigate(`/(main)/management/role-user/role/edit/${role?.id}`);
+            router.push(`/(main)/management/role-user/role/edit/${role?.id}`);
             hideActionDrawer();
           },
         },

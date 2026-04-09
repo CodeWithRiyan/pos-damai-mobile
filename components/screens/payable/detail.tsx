@@ -1,4 +1,3 @@
-import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import {
   Box,
@@ -14,11 +13,7 @@ import {
   VStack,
 } from '@/components/ui';
 import { Pressable } from '@/components/ui/pressable';
-import {
-  SolarIconBold,
-  SolarIconBoldDuotone,
-  SolarIconLinear,
-} from '@/components/ui/solar-icon-wrapper';
+import { SolarIconBoldDuotone, SolarIconLinear } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { Payable, usePayableBySupplier } from '@/hooks/use-payable';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
@@ -26,7 +21,7 @@ import { usePayableStore } from '@/stores/payable';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { ScrollView } from 'react-native';
@@ -34,7 +29,6 @@ import { ScrollView } from 'react-native';
 import { useSupplier } from '@/hooks/use-supplier';
 import { formatRp } from '@/utils/format';
 export default function PayableDetail({ isReport }: { isReport?: boolean }) {
-  const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const params = useLocalSearchParams();
   const supplierId = params.supplierId as string;
@@ -77,22 +71,6 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
     });
   };
 
-  const handleAction = () => {
-    showActionDrawer({
-      actions: [
-        {
-          label: 'Delete All',
-          icon: 'TrashBin2',
-          theme: 'red',
-          onPress: () => {
-            // Bulk delete logic could go here if needed
-            hideActionDrawer();
-          },
-        },
-      ],
-    });
-  };
-
   if (isLoading) {
     return (
       <Box className="flex-1 justify-center items-center">
@@ -109,20 +87,6 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
         selectedItemsSuffixLabel="Hutang terpilih"
         selectedItemsPosition="right"
         onCancelSelectedItems={() => setSelectedItems([])}
-        action={
-          !isReport && (
-            <HStack space="sm">
-              <Pressable className="p-6" onPress={handleAction}>
-                <SolarIconBold
-                  name="MenuDots"
-                  size={20}
-                  color="#FDFBF9"
-                  style={{ transform: [{ rotate: '90deg' }] }}
-                />
-              </Pressable>
-            </HStack>
-          )
-        }
         isGoBack
       />
 
@@ -166,7 +130,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
                   <Pressable
                     className="items-center justify-center h-10 px-10 rounded-lg bg-primary-500 active:bg-primary-500/90"
                     onPress={() => {
-                      router.navigate(
+                      router.push(
                         `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${payableList?.map((m) => m.id).join('-')}` as any,
                       );
                     }}
@@ -260,7 +224,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
                   if (!!selectedItems?.length) {
                     handlePayablePress(payable);
                   } else {
-                    router.navigate(
+                    router.push(
                       !isReport
                         ? `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/detail?payableIds=${payable?.id}`
                         : `/(main)/management/customer-supplier/supplier/payable/${supplierId}/realization/detail?payableIds=${payable?.id}`,
@@ -325,7 +289,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
           <Pressable
             className="w-full rounded-md h-10 flex justify-center items-center bg-primary-500 active:bg-primary-500/90"
             onPress={() => {
-              router.navigate(
+              router.push(
                 `/(main)/management/payable-receivable/payable/detail/${supplierId}/realization/add?payableIds=${selectedItems?.map((m) => m.id).join('-')}` as any,
               );
             }}

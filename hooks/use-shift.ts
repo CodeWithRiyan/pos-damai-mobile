@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
-import { useAuthStore } from '@/stores/auth';
-import { and, eq, isNull, desc } from 'drizzle-orm';
+import { useAuthStore } from '@/stores/system/auth';
+import { and, eq, gte, lte, isNull, desc, or } from 'drizzle-orm';
 import { ShiftStatus } from '@/constants';
 
 export interface Shift {
@@ -139,7 +139,123 @@ export async function fetchShift(id: string): Promise<Shift | null> {
   const result = await db.select().from(schema.shifts).where(eq(schema.shifts.id, id)).limit(1);
 
   if (result.length === 0) return null;
-  return result[0] as unknown as Shift;
+
+  const shift = result[0];
+  const orgId = shift.organizationId;
+
+  const startTime = shift.startTime;
+  const endTime = shift.endTime || new Date();
+
+  const transactionHistory: ShiftTransactionHistory[] = [];
+
+  // Add INITIAL entry for opening balance
+  transactionHistory.push({
+    id: `${shift.id}_initial`,
+    transactionId: null,
+    ref: shift.local_ref_id,
+    transactionDate: startTime,
+    type: 'INITIAL',
+    nominal: shift.initialBalance,
+    note: `Saldo Awal: ${shift.initialBalance}`,
+  });
+
+  // Query transactions within shift time
+  const salesTransactions = await db
+    .select({
+      id: schema.transactions.id,
+      local_ref_id: schema.transactions.local_ref_id,
+      transactionDate: schema.transactions.transactionDate,
+      totalAmount: schema.transactions.totalAmount,
+      paymentTypeName: schema.transactions.paymentTypeName,
+    })
+    .from(schema.transactions)
+    .where(
+      and(
+        eq(schema.transactions.organizationId, orgId),
+        gte(schema.transactions.transactionDate, startTime),
+        lte(schema.transactions.transactionDate, endTime),
+        eq(schema.transactions.status, 'COMPLETED'),
+      ),
+    );
+
+  for (const trx of salesTransactions) {
+    transactionHistory.push({
+      id: trx.id,
+      transactionId: trx.id,
+      ref: trx.local_ref_id,
+      transactionDate: trx.transactionDate,
+      type: 'SALES',
+      nominal: trx.totalAmount,
+      note: `Penjualan (${trx.paymentTypeName || 'Tunai'})`,
+    });
+  }
+
+  // Query finances within shift time
+  const financeRecords = await db
+    .select({
+      id: schema.finances.id,
+      local_ref_id: schema.finances.local_ref_id,
+      transactionDate: schema.finances.transactionDate,
+      nominal: schema.finances.nominal,
+      type: schema.finances.type,
+      expensesType: schema.finances.expensesType,
+      note: schema.finances.note,
+    })
+    .from(schema.finances)
+    .where(
+      and(
+        eq(schema.finances.organizationId, orgId),
+        gte(schema.finances.transactionDate, startTime),
+        lte(schema.finances.transactionDate, endTime),
+        eq(schema.finances.status, 'COMPLETED'),
+        eq(schema.finances.inputToCashdrawer, true),
+      ),
+    );
+
+  for (const fin of financeRecords) {
+    let type: ShiftTransactionHistory['type'];
+    let note: string;
+
+    if (fin.type === 'INCOME') {
+      type = 'INCOME';
+      note = fin.note || 'Pemasukkan';
+    } else if (fin.expensesType === 'SUPPLIES') {
+      type = 'SUPPLIES';
+      note = `Beli Barang: ${fin.note || ''}`;
+    } else if (fin.expensesType === 'EQUIPMENT') {
+      type = 'EQUIPMENT';
+      const isPerlengkapan = (fin.note || '').includes('Perlengkapan');
+      note = isPerlengkapan ? `Perlengkapan: ${fin.note || ''}` : `Peralatan: ${fin.note || ''}`;
+    } else if (fin.type === 'EXPENSES') {
+      type = 'OTHER_EXPENSES';
+      note = `Pengeluaran Lainnya: ${fin.note || ''}`;
+    } else {
+      type = 'OTHER_EXPENSES';
+      note = fin.note || 'Pengeluaran';
+    }
+
+    transactionHistory.push({
+      id: fin.id,
+      transactionId: fin.id,
+      ref: fin.local_ref_id,
+      transactionDate: fin.transactionDate,
+      type,
+      nominal: fin.nominal,
+      note,
+    });
+  }
+
+  // Sort by transaction date
+  transactionHistory.sort((a, b) => {
+    const dateA = a.transactionDate instanceof Date ? a.transactionDate : new Date(a.transactionDate);
+    const dateB = b.transactionDate instanceof Date ? b.transactionDate : new Date(b.transactionDate);
+    return dateA.getTime() - dateB.getTime();
+  });
+
+  return {
+    ...shift,
+    transactionHistory,
+  } as Shift;
 }
 
 export async function createShift(data: StartShiftDTO): Promise<Shift> {

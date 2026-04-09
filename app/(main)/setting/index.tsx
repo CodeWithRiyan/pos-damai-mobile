@@ -10,7 +10,7 @@ import { resetDb, initializeDb } from '@/db';
 import { showErrorToast } from '@/utils/toast';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import { Pressable, ScrollView } from 'react-native';
 import { authStorageAdapter, storageAdapter } from '@/utils/storage';
 

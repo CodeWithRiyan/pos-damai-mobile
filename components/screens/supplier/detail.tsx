@@ -1,4 +1,3 @@
-import { useCallback, useState } from 'react';
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { usePopUpConfirm } from '@/components/pop-up-confirm';
@@ -15,27 +14,29 @@ import {
 } from '@/components/ui';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { useDeleteEntity } from '@/hooks/use-delete-entity';
+import { useItemSelection } from '@/hooks/use-item-selection';
 import {
   Product,
   useProductsBySupplier,
   useUnassignProductsFromSupplier,
 } from '@/hooks/use-product';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import {
-  useDeleteSupplier,
-  useSuppliers,
   refetchSupplierById,
   Supplier,
+  useDeleteSupplier,
+  useSuppliers,
 } from '@/hooks/use-supplier';
-import { useDeleteEntity } from '@/hooks/use-delete-entity';
-import { singleDeleteConfirm } from '@/utils/delete-confirm';
-import { useItemSelection } from '@/hooks/use-item-selection';
-import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { useSupplierStore } from '@/stores/supplier';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView } from 'react-native';
 
-import { formatRp } from '@/utils/format';
+import { PriceType } from '@/constants';
+import { formatNumber, formatRp } from '@/utils/format';
 export default function SupplierDetail() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -54,10 +55,16 @@ export default function SupplierDetail() {
   } = useItemSelection<Product>();
 
   const { refetch: refetchSuppliers } = useSuppliers();
-  const { data: products = [] } = useProductsBySupplier(supplierId || '');
+  const { data: products = [], refetch: refetchProducts } = useProductsBySupplier(supplierId || '');
   const deleteMutation = useDeleteSupplier();
   const unassignProductMutation = useUnassignProductsFromSupplier();
   const toast = useToast();
+
+  const totalCapital = useMemo(() => {
+    return products.reduce((acc, curr) => {
+      return acc + (curr.purchasePrice || 0) * (curr.stock || 0);
+    }, 0);
+  }, [products]);
 
   const onRefetch = useCallback(async () => {
     if (supplierId) {
@@ -65,9 +72,19 @@ export default function SupplierDetail() {
       setSupplier(freshSupplier);
     }
     refetchSuppliers();
-  }, [supplierId, refetchSuppliers]);
+    refetchProducts();
+  }, [supplierId, refetchSuppliers, refetchProducts]);
 
   useStoreVersionSync(useSupplierStore, onRefetch);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchProducts();
+      if (supplierId) {
+        refetchSupplierById(supplierId).then(setSupplier);
+      }
+    }, [supplierId, refetchProducts]),
+  );
 
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Supplier berhasil dihapus',
@@ -120,7 +137,7 @@ export default function SupplierDetail() {
           label: 'Edit',
           icon: 'Pen',
           onPress: () => {
-            router.navigate(`/(main)/management/customer-supplier/supplier/edit/${supplier?.id}`);
+            router.push(`/(main)/management/customer-supplier/supplier/edit/${supplier?.id}`);
             hideActionDrawer();
           },
         },
@@ -141,6 +158,9 @@ export default function SupplierDetail() {
     <VStack className="flex-1 bg-white">
       <Header
         header="DETAIL SUPPLIER"
+        selectedItemsLength={selectedProducts?.length}
+        selectedItemsSuffixLabel="Produk terpilih"
+        onCancelSelectedItems={() => clearProductSelection()}
         action={
           hasProductSelection ? (
             unassignProductMutation.isPending ? (
@@ -169,18 +189,26 @@ export default function SupplierDetail() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack>
           <Box className="w-full flex-row flex-wrap gap-y-4 p-4 border-b border-background-300">
-            <VStack className="w-1/2 pr-4">
-              <Text className="text-gray-500">Name</Text>
+            <HStack className="w-full flex-row justify-between">
+              <Text className="font-bold text-gray-500">Nama Supplier</Text>
               <Text className="font-bold">{supplier?.name || '-'}</Text>
-            </VStack>
-            <VStack className="w-1/2 pr-4">
-              <Text className="text-gray-500">No. Handphone</Text>
+            </HStack>
+            <HStack className="w-full flex-row justify-between">
+              <Text className="font-bold text-gray-500">No. Handphone</Text>
               <Text className="font-bold">{supplier?.phone || '-'}</Text>
-            </VStack>
-            <VStack className="w-1/2 pr-4">
-              <Text className="text-gray-500">Alamat</Text>
+            </HStack>
+            <HStack className="w-full flex-row justify-between">
+              <Text className="font-bold text-gray-500">Alamat</Text>
               <Text className="font-bold">{supplier?.address || '-'}</Text>
-            </VStack>
+            </HStack>
+            <HStack className="w-full flex-row justify-between">
+              <Text className="font-bold text-gray-500">Total Produk</Text>
+              <Text className="font-bold">{products.length}</Text>
+            </HStack>
+            <HStack className="w-full flex-row justify-between">
+              <Text className="font-bold text-gray-500">Nilai Modal</Text>
+              <Text className="font-bold">Rp {formatNumber(totalCapital)}</Text>
+            </HStack>
           </Box>
           <Box className="pr-4">
             <VStack>
@@ -210,35 +238,36 @@ export default function SupplierDetail() {
                           {product.code}
                         </Text>
                         <Badge size="sm" variant="solid" action="muted">
-                          <BadgeText className="text-xs">{`Harga Beli: Rp ${product.purchasePrice.toLocaleString(
-                            'id-ID',
-                          )}`}</BadgeText>
+                          <BadgeText className="text-xs">{`Harga Beli: ${formatRp(product.purchasePrice ?? 0)}`}</BadgeText>
                         </Badge>
                       </VStack>
                     </HStack>
                     <VStack className="items-end">
-                      <Text className="text-primary-500 text-sm font-bold">{product.stock}</Text>
+                      <Text className="text-brand-primary text-sm font-bold">
+                        Stok: {product.stock ?? 0}
+                      </Text>
                       <Text className="text-xs">
                         Retail:{' '}
                         {`${
-                          product.sellPrices?.filter((r) => r.type === 'RETAIL')?.[0]
-                            ?.minimumPurchase
-                        }@ ${formatRp(
-                          product.sellPrices?.filter((r) => r.type === 'RETAIL')?.[0]?.price ?? 0,
+                          product.sellPrices?.filter((r) => r.type === PriceType.RETAIL)?.[0]
+                            ?.minimumPurchase ?? 0
+                        }@ Rp ${formatNumber(
+                          product.sellPrices?.filter((r) => r.type === PriceType.RETAIL)?.[0]
+                            ?.price ?? 0,
                         )}`}
                       </Text>
-                      {product.sellPrices?.filter((r) => r.type === 'WHOLESALE').length ? (
+                      {!!product.sellPrices?.filter((r) => r.type === 'WHOLESALE').length && (
                         <Text className="text-xs">
                           Grosir:{' '}
                           {`${
                             product.sellPrices?.filter((r) => r.type === 'WHOLESALE')?.[0]
-                              ?.minimumPurchase
-                          }@ ${formatRp(
+                              ?.minimumPurchase ?? 0
+                          }@ Rp ${formatNumber(
                             product.sellPrices?.filter((r) => r.type === 'WHOLESALE')?.[0]?.price ??
                               0,
                           )}`}
                         </Text>
-                      ) : null}
+                      )}
                     </VStack>
                   </HStack>
                 </Pressable>
@@ -273,13 +302,13 @@ export default function SupplierDetail() {
         <Pressable
           className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           onPress={() => {
-            router.navigate(
+            router.push(
               `/(main)/management/customer-supplier/supplier/select-product/${supplierId}`,
             );
           }}
         >
           <Text size="sm" className="text-typography-0 font-bold">
-            {`TAMBAHKAN PRODUK `}
+            {`SEMATKAN PRODUK `}
           </Text>
         </Pressable>
       </VStack>

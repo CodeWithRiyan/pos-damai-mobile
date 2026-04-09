@@ -74,7 +74,7 @@ export default function AreaChart({ data, spacing }: { data: lineDataItem[]; spa
           dataPointsWidth={8}
           pointerConfig={{
             activatePointersOnLongPress: true,
-            pointerColor: 'blue',
+            pointerColor: 'dodgerblue',
             pointerLabelComponent: (
               items: {
                 index: number;

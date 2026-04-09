@@ -6,27 +6,28 @@ import { Badge, BadgeText } from '@/components/ui/badge';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import {
+  Category,
+  refetchCategoryById,
   useCategories,
   useDeleteCategory,
-  refetchCategoryById,
-  Category,
 } from '@/hooks/use-category';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useDeleteEntity } from '@/hooks/use-delete-entity';
+import { useItemSelection } from '@/hooks/use-item-selection';
 import {
   Product,
   useProductsByCategory,
   useUnassignProductsFromCategory,
 } from '@/hooks/use-product';
-import { useCategoryStore } from '@/stores/category';
-import { useDeleteEntity } from '@/hooks/use-delete-entity';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useCategoryStore } from '@/stores/category';
+import { useProductStore } from '@/stores/product';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
-import { useItemSelection } from '@/hooks/use-item-selection';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView } from 'react-native';
 
-import { formatRp, formatNumber } from '@/utils/format';
+import { formatNumber, formatRp } from '@/utils/format';
 export default function CategoryDetail() {
   const { setOpen, setData } = useCategoryStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -46,7 +47,11 @@ export default function CategoryDetail() {
   } = useItemSelection<Product>();
 
   const { refetch: refetchCategories } = useCategories();
-  const { data: products = [] } = useProductsByCategory(categoryId || '');
+  const {
+    data: products = [],
+    isLoading,
+    refetch: refetchProducts,
+  } = useProductsByCategory(categoryId || '');
   const deleteMutation = useDeleteCategory();
   const unassignProductMutation = useUnassignProductsFromCategory();
   const toast = useToast();
@@ -65,7 +70,22 @@ export default function CategoryDetail() {
     refetchCategories();
   }, [categoryId, refetchCategories]);
 
+  const onProductRefetch = useCallback(() => {
+    refetchProducts();
+    refetchCategories();
+  }, [refetchProducts, refetchCategories]);
+
   useStoreVersionSync(useCategoryStore, onRefetch);
+  useStoreVersionSync(useProductStore, onProductRefetch);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchProducts();
+      if (categoryId) {
+        refetchCategoryById(categoryId).then(setCategory);
+      }
+    }, [categoryId, refetchProducts]),
+  );
 
   const { triggerDelete } = useDeleteEntity({
     successMessage: 'Kategori berhasil dihapus',
@@ -75,6 +95,29 @@ export default function CategoryDetail() {
       onRefetch();
     },
   });
+
+  const handleDeletePress = () => {
+    const productCount = products.length;
+    if (productCount > 0) {
+      showErrorToast(
+        toast,
+        `Tidak dapat menghapus. ${productCount} produk menggunakan kategori ini.`,
+      );
+      return;
+    }
+    triggerDelete(singleDeleteConfirm('kategori', category?.id || '', category?.name));
+  };
+
+  if (isLoading) {
+    return (
+      <VStack className="flex-1 bg-white">
+        <Header header="DETAIL KATEGORI" isGoBack />
+        <Box className="flex-1 justify-center items-center">
+          <Spinner size="large" />
+        </Box>
+      </VStack>
+    );
+  }
 
   const handleDeleteProductPress = () => {
     const productIds = selectedProducts?.map((m) => m.id) || [];
@@ -129,7 +172,7 @@ export default function CategoryDetail() {
           icon: 'TrashBin2',
           theme: 'red',
           onPress: () => {
-            triggerDelete(singleDeleteConfirm('kategori', category?.id || '', category?.name));
+            handleDeletePress();
             hideActionDrawer();
           },
         },
@@ -263,14 +306,14 @@ export default function CategoryDetail() {
         <Pressable
           className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           onPress={() => {
-            router.navigate(
+            router.push(
               `/(main)/management/product-category-brand/category/select-product/${category?.id}`,
             );
             clearProductSelection();
           }}
         >
           <Text size="sm" className="text-typography-0 font-bold">
-            {`TAMBAHKAN PRODUK `}
+            {`SEMATKAN PRODUK `}
           </Text>
         </Pressable>
       </VStack>

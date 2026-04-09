@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import { and, desc, eq, isNull, like, sql } from 'drizzle-orm';
 import {
   DateFilterType,
@@ -11,6 +11,7 @@ import {
   DEFAULT_PAYMENT_TYPE,
 } from '@/constants';
 import { calculateEarnedPoints, updateCustomerStats } from '@/utils/points';
+import { fetchProduct } from '@/hooks/use-product';
 
 export type ProductTypeEnum = 'DEFAULT' | 'MULTIUNIT' | 'VARIANTS';
 
@@ -73,6 +74,7 @@ export interface CreateTransactionDTO {
   totalAmount: number;
   totalPaid: number;
   commission?: number;
+  isHutang?: boolean;
   paymentTypeName?: string;
   paymentTypeCommission?: number;
   paymentTypeCommissionType?: string;
@@ -321,6 +323,18 @@ export async function fetchTransaction(id: string): Promise<Transaction | null> 
   } as Transaction;
 }
 
+export async function fetchTransactionByReturnId(returnId: string): Promise<Transaction | null> {
+  const result = await db
+    .select()
+    .from(schema.transactions)
+    .where(eq(schema.transactions.returnId, returnId))
+    .limit(1);
+
+  if (result.length === 0) return null;
+
+  return fetchTransaction(result[0].id);
+}
+
 export async function createTransaction(data: CreateTransactionDTO): Promise<Transaction> {
   const orgId = useAuthStore.getState().getOrganizationId();
   if (!orgId) throw new Error('ID Organisasi tidak ditemukan');
@@ -346,7 +360,7 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
       totalPaid: Number(data.totalPaid) || 0,
       commission: data.commission || 0,
       totalDiscount: 0,
-      totalProfit: 0,
+      totalProfit: data.isHutang ? 0 : 0,
       paymentTypeName: data.paymentTypeName || DEFAULT_PAYMENT_TYPE,
       paymentTypeCommission: data.paymentTypeCommission || 0,
       paymentTypeCommissionType: data.paymentTypeCommissionType || 'PERCENTAGE',
@@ -429,6 +443,8 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
       }
 
       const purchasePrice = productData[0]?.purchasePrice || 0;
+      const netto = item.variant?.netto;
+      const adjustedPurchasePrice = netto ? purchasePrice * netto : purchasePrice;
       let sellPrice = item.tempSellPrice;
 
       if (!item.isManualPrice && product.discount) {
@@ -436,7 +452,7 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
       }
 
       const itemDiscount = item.isManualPrice ? 0 : item.tempSellPrice - sellPrice;
-      const itemProfit = (sellPrice - purchasePrice) * item.quantity;
+      const itemProfit = (sellPrice - adjustedPurchasePrice) * item.quantity;
 
       totalDiscount += itemDiscount;
       totalProfit += itemProfit;
@@ -472,10 +488,11 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
 
       if (data.status === Status.COMPLETED) {
         const absQuantity = Math.abs(item.quantity);
+        const stockQuantity = netto ? absQuantity * netto : absQuantity;
 
         await tx.insert(schema.inventoryTransactions).values({
           id: `invtx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          local_ref_id: `${finalLocalRefId}_${productId}`,
+          local_ref_id: `${finalLocalRefId}_${item.variant?.id ? `${productId}_${item.variant.id}` : product.id}`,
           productId,
           productName: item.productName || null,
           productBarcode: item.product.barcode || null,
@@ -487,7 +504,7 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
           variantCode: item.variant?.code || null,
           variantNetto: item.variant?.netto || null,
           type: item.quantity > 0 ? InventoryTxType.SALE : InventoryTxType.RETURN_SALE,
-          quantity: item.quantity > 0 ? -absQuantity : absQuantity,
+          quantity: item.quantity > 0 ? -stockQuantity : stockQuantity,
           contextName: data.customerName || null,
           organizationId: orgId,
           createdBy: userId,
@@ -501,16 +518,21 @@ export async function createTransaction(data: CreateTransactionDTO): Promise<Tra
       }
     }
 
+    const updateValues: any = { totalDiscount };
+    if (!data.isHutang) {
+      updateValues.totalProfit = totalProfit;
+    }
+
     await tx
       .update(schema.transactions)
-      .set({ totalDiscount, totalProfit })
+      .set(updateValues)
       .where(eq(schema.transactions.id, data.id || transactionId));
 
     if (data.status === Status.COMPLETED && data.customerId) {
       const pointsResult = await calculateEarnedPoints(
         data.items.map((item) => ({
           productId: item.product.id,
-          quantity: item.quantity,
+          quantity: item.variant?.netto ? item.quantity * item.variant.netto : item.quantity,
           categoryId: item.product.categoryId,
         })),
         data.customerCategory || 'RETAIL',
@@ -576,6 +598,8 @@ export async function fetchCustomerIdsWithTransactions(): Promise<string[]> {
 }
 
 export async function fetchPurchasedProducts(customerId: string): Promise<any[]> {
+  const orgId = useAuthStore.getState().getOrganizationId();
+
   const transactions = await db
     .select()
     .from(schema.transactions)
@@ -600,24 +624,92 @@ export async function fetchPurchasedProducts(customerId: string): Promise<any[]>
         ? item.productId.substring(0, item.productId.indexOf('-var_'))
         : item.productId;
 
-      if (!productMap.has(productId)) {
-        const product = await db
+      if (productMap.has(productId)) continue;
+
+      // 1. Try to find real product by ID
+      let realProduct = await db
+        .select()
+        .from(schema.products)
+        .where(and(eq(schema.products.id, productId), isNull(schema.products.deletedAt)))
+        .limit(1);
+
+      // 2. If not found by ID, try by name
+      if (!realProduct[0] && item.productName && orgId) {
+        realProduct = await db
           .select()
           .from(schema.products)
-          .where(eq(schema.products.id, productId))
+          .where(
+            and(
+              eq(schema.products.name, item.productName),
+              eq(schema.products.organizationId, orgId),
+              isNull(schema.products.deletedAt),
+            ),
+          )
           .limit(1);
+      }
 
-        if (product[0]) {
-          productMap.set(productId, {
-            ...product[0],
-            lastSellPrice: item.sellPrice,
-          });
-        }
+      if (realProduct[0]) {
+        const resolvedId = realProduct[0].id;
+
+        const sellPrices = await db
+          .select()
+          .from(schema.productPrices)
+          .where(eq(schema.productPrices.productId, resolvedId));
+
+        const variants = await db
+          .select()
+          .from(schema.productVariants)
+          .where(
+            and(
+              eq(schema.productVariants.productId, resolvedId),
+              isNull(schema.productVariants.deletedAt),
+            ),
+          );
+
+        const invTxs = await db
+          .select()
+          .from(schema.inventoryTransactions)
+          .where(
+            and(
+              eq(schema.inventoryTransactions.productId, resolvedId),
+              eq(schema.inventoryTransactions.status, Status.COMPLETED),
+            ),
+          );
+        const stock = invTxs.reduce((sum, t) => sum + t.quantity, 0);
+
+        productMap.set(productId, {
+          ...realProduct[0],
+          code: realProduct[0].barcode,
+          sellPrices,
+          variants,
+          stock,
+        });
       } else {
-        const existing = productMap.get(productId);
-        if (item.sellPrice > (existing.lastSellPrice || 0)) {
-          existing.lastSellPrice = item.sellPrice;
-        }
+        // 3. Not found — use transaction item data, mark as _notFound
+        productMap.set(productId, {
+          id: productId,
+          name: item.productName || 'Unknown',
+          barcode: item.productBarcode,
+          code: item.productBarcode,
+          type: 'DEFAULT',
+          purchasePrice: item.purchasePrice || 0,
+          unit: item.productUnit,
+          categoryId: null,
+          brandId: null,
+          sellPrices: [
+            {
+              id: `temp_${productId}`,
+              label: 'Default',
+              price: item.sellPrice || 0,
+              minimumPurchase: 0,
+              type: 'RETAIL',
+            },
+          ],
+          variants: [],
+          stock: 0,
+          lastSellPrice: item.sellPrice,
+          _notFound: true,
+        });
       }
     }
   }
@@ -681,6 +773,37 @@ export function useTransaction(id: string) {
       setLoading(false);
     }
   }, [id]);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  return { data, isLoading: loading, loading: loading, error, refetch: fetch };
+}
+
+export function useTransactionByReturnId(returnId: string) {
+  const [data, setData] = useState<Transaction | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const fetch = useCallback(async () => {
+    if (!returnId) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchTransactionByReturnId(returnId);
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setLoading(false);
+    }
+  }, [returnId]);
 
   useEffect(() => {
     fetch();
@@ -850,12 +973,27 @@ export function useContinueDraft() {
           .from(schema.transactionItems)
           .where(eq(schema.transactionItems.transactionId, id));
 
+        const itemsWithProducts = await Promise.all(
+          items.map(async (item) => {
+            const product = await fetchProduct(item.productId);
+            return {
+              ...item,
+              product,
+              variant: item.variantId
+                ? {
+                    id: item.variantId,
+                    name: item.variantName || '',
+                    code: item.variantCode || '',
+                    netto: item.variantNetto,
+                  }
+                : undefined,
+            };
+          }),
+        );
+
         const resultData = {
           transactionId: transaction[0].id,
-          items: items.map((item) => ({
-            ...item,
-            product: { id: item.productId },
-          })),
+          items: itemsWithProducts,
           customerId: transaction[0].customerId || undefined,
           employeeId: transaction[0].employeeId || undefined,
         };

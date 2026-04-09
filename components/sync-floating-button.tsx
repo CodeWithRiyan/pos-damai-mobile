@@ -4,7 +4,7 @@ import { Text } from './ui/text';
 import { Button, ButtonText } from './ui/button';
 import { Icon, CloseIcon, RepeatIcon, ArrowUpIcon, DownloadIcon } from './ui/icon';
 import { useDirtyCount } from '@/hooks/use-dirty-count';
-import { useSyncQueueStore } from '@/stores/sync-queue';
+import { useSyncQueueStore } from '@/stores/system/sync-queue';
 import { useRouter } from 'expo-router';
 import dayjs from 'dayjs';
 

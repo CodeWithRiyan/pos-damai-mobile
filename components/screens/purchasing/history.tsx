@@ -11,14 +11,14 @@ import {
 } from '@/components/ui';
 import { Box } from '@/components/ui/box';
 import { Spinner } from '@/components/ui/spinner';
+import { DateFilterType, DEFAULT_PAYMENT_TYPE, Status } from '@/constants';
 import { usePurchases } from '@/hooks/use-purchasing';
-import { DateFilterType, Status, DEFAULT_PAYMENT_TYPE } from '@/constants';
-import { formatDisplayRefId } from '@/utils/reference';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { usePurchasingStore } from '@/stores/purchasing';
+import { formatDisplayRefId } from '@/utils/reference';
+import { FlashList } from '@shopify/flash-list';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
-import { FlashList } from '@shopify/flash-list';
 import { ScrollView } from 'react-native';
 
 import AreaChart from '@/components/area-chart';
@@ -28,7 +28,7 @@ import { Grid, GridItem } from '@/components/ui/grid';
 import { SolarIconBold, SolarIconBoldProps } from '@/components/ui/solar-icon-wrapper';
 import { formatNumber, formatRp } from '@/utils/format';
 import classNames from 'classnames';
-import { useMemo, useState, useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import PurchasingFilterHistory, {
   PurchasingFilterFormValues,
   purchasingFilterInitialValues,
@@ -335,7 +335,7 @@ export default function PurchasingHistory({
                 return (
                   <Pressable
                     className="flex-row items-center gap-4 py-4 px-10 bg-background-0 active:bg-background-50 border-b border-background-300"
-                    onPress={() => router.navigate(`/(main)/purchasing/receipt/${purchase.id}`)}
+                    onPress={() => router.push(`/(main)/purchasing/receipt/${purchase.id}`)}
                   >
                     <HStack space="xl" className="items-center">
                       <VStack>

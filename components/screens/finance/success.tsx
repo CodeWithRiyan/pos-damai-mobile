@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Printer } from 'lucide-react-native';
 import { ScrollView } from 'react-native';
 import { useFinance } from '@/hooks/use-finance';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 
 import { formatRp } from '@/utils/format';
 export default function FinanceTransactionSuccess() {

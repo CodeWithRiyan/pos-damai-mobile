@@ -24,7 +24,13 @@ import {
 } from '@/components/ui';
 import SelectModal from '@/components/ui/select/select-modal';
 import { SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
-import { useCreatePayableRealization, usePayableBySupplier } from '@/hooks/use-payable';
+import {
+  useCreatePayableRealization,
+  useUpdatePayableRealization,
+  usePayableBySupplier,
+  usePayableRealizationDetail,
+} from '@/hooks/use-payable';
+import { DEFAULT_PAYMENT_TYPE } from '@/constants';
 import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { usePaymentTypes } from '@/hooks/use-payment-type';
 import { usePaymentTypeStore } from '@/stores/payment-type';
@@ -34,7 +40,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CalendarIcon, CheckIcon, PlusIcon } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 import { z } from 'zod';
@@ -48,14 +54,17 @@ export default function PayableRealizationForm() {
 
   const supplierId = params.supplierId as string;
   const action = params.actionRealization as string;
+  const realizationId = params.realizationId as string;
   const isAdd = action === 'add';
   const payableIds = (params.payableIds as string)?.split('-') || [];
+
+  const { data: realizationDetail } = usePayableRealizationDetail(isAdd ? '' : realizationId);
 
   const payableRealizationSchema = z.object({
     nominal: z.number().min(1, 'Nominal wajib diisi.'),
     payOff: z.boolean(),
     realizationDate: z.date(),
-    paymentTypeId: z.string().min(1, 'Metode pembayaran harus dipilih'),
+    paymentTypeId: z.string(),
     note: z.string(),
   });
 
@@ -95,22 +104,91 @@ export default function PayableRealizationForm() {
   const remainingTotal = totalPayable - totalRealization;
 
   const { data: paymentMethods = [] } = usePaymentTypes();
-  const createMutation = useCreatePayableRealization();
+  const defaultOption = {
+    label:
+      DEFAULT_PAYMENT_TYPE.charAt(0).toUpperCase() + DEFAULT_PAYMENT_TYPE.slice(1).toLowerCase(),
+    value: DEFAULT_PAYMENT_TYPE,
+  };
+  const paymentMethodOptions =
+    paymentMethods.length > 0
+      ? [
+          defaultOption,
+          ...paymentMethods
+            .filter((pm) => pm.id !== DEFAULT_PAYMENT_TYPE)
+            .map((pm) => ({ label: pm.name, value: pm.id })),
+        ]
+      : [defaultOption];
 
-  const isLoading = createMutation.isPending;
+  useEffect(() => {
+    if (!form.getValues('paymentTypeId')) {
+      if (paymentMethods.length > 0) {
+        const defaultPm =
+          paymentMethods.find(
+            (pm) => pm.isDefault || pm.name.toLowerCase() === DEFAULT_PAYMENT_TYPE.toLowerCase(),
+          )?.id || paymentMethods[0].id;
+        form.setValue('paymentTypeId', defaultPm);
+      } else {
+        form.setValue('paymentTypeId', DEFAULT_PAYMENT_TYPE);
+      }
+    }
+  }, [paymentMethods]);
+
+  useEffect(() => {
+    if (!isAdd && realizationDetail) {
+      form.reset({
+        nominal: realizationDetail.nominal,
+        payOff: false,
+        realizationDate: realizationDetail.realizationDate
+          ? new Date(realizationDetail.realizationDate)
+          : new Date(),
+        paymentTypeId: realizationDetail.paymentMethodId || '',
+        note: realizationDetail.note || '',
+      });
+    }
+  }, [realizationDetail, isAdd]);
+
+  const createMutation = useCreatePayableRealization();
+  const updateMutation = useUpdatePayableRealization();
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   const toast = useToast();
 
   const onSubmit: SubmitHandler<PayableRealizationFormValues> = async (
     data: PayableRealizationFormValues,
   ) => {
-    // For now, let's just implement single realization if it's one ID
+    const paymentMethodName =
+      paymentMethods.find((pm) => pm.id === data.paymentTypeId)?.name || DEFAULT_PAYMENT_TYPE;
+
+    if (!isAdd && realizationId) {
+      updateMutation.mutate(
+        {
+          id: realizationId,
+          nominal: data.nominal,
+          realizationDate: data.realizationDate,
+          paymentMethodId: data.paymentTypeId,
+          paymentMethodName,
+          note: data.note,
+        },
+        {
+          onSuccess: () => {
+            usePayableStore.getState().incrementVersion();
+            showSuccessToast(toast, 'Pembayaran berhasil diperbarui');
+            router.back();
+          },
+          onError: (error) => showErrorToast(toast, error),
+        },
+      );
+      return;
+    }
+
     if (payableIds.length === 1) {
       createMutation.mutate(
         {
           payableId: payableIds[0],
           nominal: data.nominal,
           paymentMethodId: data.paymentTypeId,
+          paymentMethodName,
           realizationDate: data.realizationDate,
           note: data.note,
         },
@@ -178,7 +256,6 @@ export default function PayableRealizationForm() {
           <Controller
             name="nominal"
             control={form.control}
-            disabled={!isAdd}
             render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
               <FormControl isRequired isDisabled={payOff} isInvalid={!!error}>
                 <FormControlLabel>
@@ -292,10 +369,7 @@ export default function PayableRealizationForm() {
                   <SelectModal
                     value={value}
                     placeholder="Pilih Metode Pembayaran"
-                    options={paymentMethods.map((pm) => ({
-                      label: pm.name,
-                      value: pm.id,
-                    }))}
+                    options={paymentMethodOptions}
                     className="flex-1"
                     onChange={onChange}
                   />

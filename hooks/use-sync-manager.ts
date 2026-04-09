@@ -1,5 +1,5 @@
-import { useNetworkStore } from '@/stores/network';
-import { useSyncQueueStore } from '@/stores/sync-queue';
+import { useNetworkStore } from '@/stores/system/network';
+import { useSyncQueueStore } from '@/stores/system/sync-queue';
 import { useEffect, useState } from 'react';
 
 export function useSyncManager() {

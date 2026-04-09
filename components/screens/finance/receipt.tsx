@@ -1,7 +1,7 @@
 import Header from '@/components/header';
 import { Box, Heading, HStack, Text, VStack } from '@/components/ui';
 import { Spinner } from '@/components/ui/spinner';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '@/stores/system/auth';
 import { useFinance } from '@/hooks/use-finance';
 import { formatDisplayRefId } from '@/utils/reference';
 import dayjs from 'dayjs';

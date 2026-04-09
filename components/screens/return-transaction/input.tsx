@@ -14,9 +14,9 @@ import { HStack } from '@/components/ui/hstack';
 import { Pressable } from '@/components/ui/pressable';
 import { usePurchasedProducts } from '@/hooks/use-transaction';
 import { useReturnTransactionStore } from '@/stores/return-transaction';
+import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
 import ReturnTransactionConfirmForm from './form';
 import PopupAddProduct from './popup-add';
 
@@ -29,8 +29,14 @@ import classNames from 'classnames';
 import { LayoutChangeEvent } from 'react-native';
 export default function ReturnTransactionInput() {
   const { customerId } = useLocalSearchParams<{ customerId: string }>();
-  const { cart, setAddProduct, setOpenConfirm, removeCartItem, resetCart } =
-    useReturnTransactionStore();
+  const {
+    cart: _cart,
+    setAddProduct,
+    setOpenConfirm,
+    removeCartItem,
+    resetCart,
+  } = useReturnTransactionStore();
+  const cart = _cart ?? [];
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_search, setSearch] = useState<string>('');
   const { data: products = [] } = usePurchasedProducts(customerId!);
@@ -99,7 +105,8 @@ export default function ReturnTransactionInput() {
                   <Box className="flex-1 px-1">
                     <GridProductLayout
                       name={product.name}
-                      price={product.lastSellPrice ?? product.sellPrices?.[0]?.price ?? 0}
+                      price={product.sellPrices?.[0]?.price ?? product.lastSellPrice ?? 0}
+                      stock={product.stock}
                       onPressProduct={() => setAddProduct(product)}
                     />
                   </Box>
@@ -123,7 +130,8 @@ export default function ReturnTransactionInput() {
                 return (
                   <ListProductLayout
                     name={product.name}
-                    price={product.lastSellPrice ?? product.sellPrices?.[0]?.price ?? 0}
+                    price={product.sellPrices?.[0]?.price ?? product.lastSellPrice ?? 0}
+                    stock={product.stock}
                     onPressProduct={() => setAddProduct(product)}
                   />
                 );
@@ -144,10 +152,7 @@ export default function ReturnTransactionInput() {
             className="flex-1"
             keyExtractor={(item, index) => `${item.product.id}-${item.variant?.id || ''}-${index}`}
             renderItem={({ item, index }) => {
-              const sellPrice =
-                item.variant && item.product.type === ProductType.MULTIUNIT
-                  ? item.sellPrice * (item.variant.netto || 0)
-                  : item.sellPrice;
+              const sellPrice = item.sellPrice;
 
               return (
                 <Pressable

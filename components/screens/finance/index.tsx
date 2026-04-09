@@ -22,8 +22,10 @@ import SelectModal from '@/components/ui/select/select-modal';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
+import { FinanceType, Status } from '@/constants';
 import { useCreateFinance, useFinance } from '@/hooks/use-finance';
 import { useFinanceStore } from '@/stores/finance';
+import { showToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
@@ -32,9 +34,7 @@ import { CalendarIcon } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
-import { FinanceType, Status } from '@/constants';
 import z from 'zod';
-import { showToast } from '@/utils/toast';
 
 // Dummy data removed
 
@@ -158,7 +158,7 @@ export default function FinanceTransaction() {
           if (status === Status.COMPLETED) {
             router.replace(`/(main)/finance/receipt/${responseData.id}`);
           } else {
-            router.navigate('/(main)/finance/draft');
+            router.push('/(main)/finance/draft');
           }
           form.reset(initialValues);
         },
@@ -181,13 +181,13 @@ export default function FinanceTransaction() {
           <HStack space="sm" className="pr-4">
             <Pressable
               className="size-10 items-center justify-center"
-              onPress={() => router.navigate('/(main)/finance/draft')}
+              onPress={() => router.push('/(main)/finance/draft')}
             >
               <SolarIconBold name="ClipboardList" size={20} color="#FDFBF9" />
             </Pressable>
             <Pressable
               className="size-10 items-center justify-center"
-              onPress={() => router.navigate('/(main)/finance/history')}
+              onPress={() => router.push('/(main)/finance/history')}
             >
               <SolarIconBold name="History" size={20} color="#FDFBF9" />
             </Pressable>

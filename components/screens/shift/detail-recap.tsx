@@ -147,7 +147,7 @@ export default function ShiftDetailRecap() {
                   onPress={() => {
                     if (trx.type === 'INITIAL') return;
 
-                    router.navigate({
+                    router.push({
                       pathname: (trx.type === 'SALES' || trx.type === 'PURCHASES'
                         ? `/transaction/receipt/${trx.transactionId}`
                         : `/finance/receipt/${trx.transactionId}`) as any,

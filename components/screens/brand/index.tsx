@@ -1,8 +1,6 @@
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { PermissionGuard } from '@/components/permission-guard';
-import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
-import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { Input, InputField, InputIcon, InputSlot } from '@/components/ui';
 import { Badge, BadgeText } from '@/components/ui/badge';
 import { Box } from '@/components/ui/box';
@@ -15,6 +13,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
+import { getErrorMessage } from '@/db/client';
 import {
   Brand,
   useBrands,
@@ -23,16 +22,17 @@ import {
   useCreateBrand,
   useProductCountsByBrand,
 } from '@/hooks/use-brand';
-import { getErrorMessage } from '@/db/client';
-import { bulkDeleteConfirm } from '@/utils/delete-confirm';
-import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
-import { exportBrands, importBrands } from '@/utils/excel';
-import { useBrandStore } from '@/stores/brand';
+import { useBulkDeleteEntity } from '@/hooks/use-bulk-delete-entity';
 import { useItemSelection } from '@/hooks/use-item-selection';
-import { useRouter } from 'expo-router';
+import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
+import { useBrandStore } from '@/stores/brand';
+import { bulkDeleteConfirm } from '@/utils/delete-confirm';
+import { exportBrands, importBrands } from '@/utils/excel';
+import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
+import { FlashList } from '@shopify/flash-list';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { SearchIcon } from 'lucide-react-native';
 import React, { useCallback } from 'react';
-import { FlashList } from '@shopify/flash-list';
 
 export default function BrandList() {
   const { setOpen, setData } = useBrandStore();
@@ -40,7 +40,7 @@ export default function BrandList() {
   const router = useRouter();
   const { data, isLoading, refetch } = useBrands();
   const { data: productCounts, refetch: refetchCounts } = useProductCountsByBrand();
-  const { data: capitalValues } = useCapitalValueByBrand();
+  const { data: capitalValues, refetch: refetchCapital } = useCapitalValueByBrand();
   const { selectedItems, handleItemPress, clearSelection, isSelected, hasSelection } =
     useItemSelection<Brand>();
 
@@ -49,9 +49,18 @@ export default function BrandList() {
   const handleVersionChange = useCallback(() => {
     refetch();
     refetchCounts();
-  }, [refetch, refetchCounts]);
+    refetchCapital();
+  }, [refetch, refetchCounts, refetchCapital]);
 
   useStoreVersionSync(useBrandStore, handleVersionChange);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+      refetchCounts();
+      refetchCapital();
+    }, [refetch, refetchCounts, refetchCapital]),
+  );
 
   const deleteMutation = useBulkDeleteBrand();
   const { triggerBulkDelete, isBulkDeleting } = useBulkDeleteEntity({
@@ -60,6 +69,19 @@ export default function BrandList() {
     onSuccess: () => refetch(),
     clearSelection,
   });
+
+  const handleBulkDeleteWithCheck = (items: Brand[] | null) => {
+    const idsWithProducts = items?.filter((item) => (productCounts?.[item.id] || 0) > 0);
+    if (idsWithProducts && idsWithProducts.length > 0) {
+      const names = idsWithProducts.map((i) => i.name).join(', ');
+      showToast(toast, {
+        action: 'error',
+        message: `Tidak dapat menghapus. Brand "${names}"sedang digunakan oleh produk.`,
+      });
+      return;
+    }
+    triggerBulkDelete(bulkDeleteConfirm('brand', items));
+  };
   const createMutation = useCreateBrand();
   const toast = useToast();
 
@@ -128,7 +150,7 @@ export default function BrandList() {
                 <PermissionGuard permissions="products:brands-delete">
                   <Pressable
                     className="p-6"
-                    onPress={() => triggerBulkDelete(bulkDeleteConfirm('brand', selectedItems))}
+                    onPress={() => handleBulkDeleteWithCheck(selectedItems)}
                   >
                     <SolarIconBold name="TrashBin2" size={20} color="#FDFBF9" />
                   </Pressable>
@@ -188,7 +210,7 @@ export default function BrandList() {
                   if (hasSelection) {
                     handleItemPress(item);
                   } else {
-                    router.navigate(
+                    router.push(
                       `/(main)/management/product-category-brand/brand/detail/${item.id}` as any,
                     );
                     clearSelection();

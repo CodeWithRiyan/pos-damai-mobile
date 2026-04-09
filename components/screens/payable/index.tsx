@@ -29,16 +29,16 @@ import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import { getErrorMessage } from '@/db/client';
 import { PayableBySupplier, useBulkDeletePayable, usePayableList } from '@/hooks/use-payable';
-import { exportPayables } from '@/utils/excel';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { usePayableStore } from '@/stores/payable';
+import { exportPayables } from '@/utils/excel';
 import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { FlashList } from '@shopify/flash-list';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
 
 import { formatRp } from '@/utils/format';
 export default function PayableList({ isReport }: { isReport?: boolean }) {
@@ -46,7 +46,6 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const { data: payableBySupplier = [], isLoading: isLoadingFetch, refetch } = usePayableList();
-  console.log('Fetched payableBySupplier data:', payableBySupplier);
   const deleteMutation = useBulkDeletePayable();
 
   const isLoading = isLoadingFetch || deleteMutation.isPending;
@@ -241,18 +240,13 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
               <VStack className="flex-1">
                 <Text className="text-typography-500 text-sm">Total Belum Lunas</Text>
                 <Heading size="xl" className="text-error-500">
-                  {formatRp(
-                    payableBySupplier.reduce(
-                      (acc, curr) => acc + (curr.totalPayable - curr.totalRealization),
-                      0,
-                    ),
-                  )}
+                  {formatRp(payableBySupplier.reduce((acc, curr) => acc + curr.totalPayable, 0))}
                 </Heading>
               </VStack>
               <VStack className="flex-1 items-end">
                 <Text className="text-typography-500 text-sm">Jumlah Transaksi Belum Lunas</Text>
                 <Text className="text-error-500 font-bold">
-                  {payableBySupplier.filter((f) => f.totalRealization !== f.totalPayable).length}
+                  {payableBySupplier.filter((f) => f.totalPayable > 0).length}
                 </Text>
               </VStack>
             </HStack>
@@ -289,11 +283,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
           </VStack>
           <FlashList
             data={payableBySupplier
-              ?.filter((r) =>
-                statuses.includes(
-                  r.totalPayable - r.totalRealization > 0 ? 'Belum Lunas' : 'Lunas',
-                ),
-              )
+              ?.filter((r) => statuses.includes(r.totalPayable > 0 ? 'Belum Lunas' : 'Lunas'))
               ?.filter((r) => r.supplierName.toLowerCase().includes(searchQuery.toLowerCase()))}
             className="flex-1"
             keyExtractor={(payable) => payable.supplierId}
@@ -308,7 +298,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
                   if (!!selectedItems?.length) {
                     handlePayablePress(payable);
                   } else {
-                    router.navigate(
+                    router.push(
                       `/(main)/management/payable-receivable/payable/detail/${payable.supplierId}` as any,
                     );
                     setSelectedItems(null);
@@ -329,22 +319,22 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
                         {dayjs(payable.nearestDueDate).format('DD/MM/YYYY')}
                       </Text>
                       <Text size="xs" className="text-blue-500">
-                        {formatRp(payable.totalPayable)}
+                        {formatRp(payable.totalNominal)}
                       </Text>
                     </VStack>
                   </HStack>
                   <VStack className="items-end">
                     <HStack space="xs" className="items-center">
                       <Box
-                        className={`w-2 h-2 rounded-full${payable.totalRealization < payable.totalPayable ? ' bg-red-500' : ' bg-green-500'}`}
+                        className={`w-2 h-2 rounded-full${payable.totalPayable > 0 ? ' bg-red-500' : ' bg-green-500'}`}
                       />
                       <Text size="xs" className="text-brand-primary text-sm font-bold">
-                        {payable.totalRealization < payable.totalPayable ? 'Belum Lunas' : 'Lunas'}
+                        {payable.totalPayable > 0 ? 'Belum Lunas' : 'Lunas'}
                       </Text>
                     </HStack>
-                    {payable.totalRealization < payable.totalPayable && (
+                    {payable.totalPayable > 0 && (
                       <Text size="xs" className="font-bold text-error-500">
-                        {formatRp(payable.totalPayable - payable.totalRealization)}
+                        {formatRp(payable.totalPayable)}
                       </Text>
                     )}
                   </VStack>
