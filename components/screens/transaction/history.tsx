@@ -234,7 +234,7 @@ export default function TransactionHistory({ isReport }: { isReport?: boolean })
   if (isLoading) {
     return (
       <VStack className="flex-1 bg-white">
-        <Header header={header} isGoBack onGoBack={() => router.push('/(main)/transaction')} />
+        <Header header={header} isGoBack />
         <Box className="flex-1 justify-center items-center">
           <Spinner size="large" />
         </Box>
@@ -244,7 +244,7 @@ export default function TransactionHistory({ isReport }: { isReport?: boolean })
 
   return (
     <VStack className="flex-1 bg-white">
-      <Header header={header} isGoBack onGoBack={() => router.push('/(main)/transaction')} />
+      <Header header={header} isGoBack />
       <ScrollView
         className="bg-background-0 shadow-lg flex-none"
         showsVerticalScrollIndicator={false}

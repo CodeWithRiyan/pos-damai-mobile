@@ -42,8 +42,14 @@ import { ProductType } from '@/constants';
 import { formatNumber } from '@/utils/format';
 export default function PopupAddProduct() {
   const toast = useToast();
-  const { addProduct, addProductVariantId, cart: _cart, setAddProduct, addCartItem, removeCartItem } =
-    useReturnTransactionStore();
+  const {
+    addProduct,
+    addProductVariantId,
+    cart: _cart,
+    setAddProduct,
+    addCartItem,
+    removeCartItem,
+  } = useReturnTransactionStore();
   const cart = _cart ?? [];
 
   const currentProductInCart = addProductVariantId
@@ -111,6 +117,11 @@ export default function PopupAddProduct() {
   }, [form, addProduct, addProductVariantId, currentProductInCart]);
 
   const onSubmit: SubmitHandler<AddProductFormValues> = (data: AddProductFormValues) => {
+    if (addProduct?.type === ProductType.MULTIUNIT && !data.variantUnitId) {
+      showToast(toast, { action: 'error', message: 'Unit belum dipilih' });
+      return;
+    }
+
     if (addProduct?.type === ProductType.MULTIUNIT) {
       const selectedVariant = addProduct.variants.find((item) => item.id === data.variantUnitId);
 
