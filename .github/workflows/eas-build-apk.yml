@@ -1,7 +1,10 @@
 name: Build & Release Android APK
 
 permissions:
-  contents: write # Required for GitHub Release
+  contents: write
+
+env:
+  FORGEJO_SERVER_URL: https://git.sakaloka.id
 
 on:
   # Manual trigger only to prevent quota waste
@@ -154,8 +157,8 @@ jobs:
       # ------------------------------------------------------------
       - name: 💾 Commit version bump
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          git config user.name "forgejo-actions"
+          git config user.email "forgejo-actions@sakaloka.id"
 
           git add .version app.json
           git commit -m "chore(release): v$(cat .version)" || echo "No changes to commit"
@@ -264,21 +267,24 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       # ------------------------------------------------------------
-      # 1️⃣4️⃣ Create GitHub Release
+      # 1️⃣4️⃣ Create ForgeJo Release
       # ------------------------------------------------------------
-      - name: 📦 Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: 📦 Create ForgeJo Release
+        uses: https://code.forgejo.org/actions/forgejo-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: POS Damai v${{ steps.version.outputs.version }}
-          body: |
+          direction: upload
+          url: https://git.sakaloka.id
+          repo: ${{ github.repository }}
+          token: ${{ secrets.FORGEJO_TOKEN }}
+          tag: v${{ steps.version.outputs.version }}
+          release-dir: .
+          release-notes: |
             🚀 **POS Damai – Android APK**
 
             - Version: `v${{ steps.version.outputs.version }}`
             - Branch: `${{ github.ref_name }}`
             - Commit: `${{ github.sha }}`
             - Android versionCode: auto-generated
-            - Build: Local Gradle (GitHub Actions)
+            - Build: Local Gradle (ForgeJo Actions)
 
             📥 Download APK below and install manually (sideload).
-          files: ${{ env.APK_NAME }}
