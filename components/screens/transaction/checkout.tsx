@@ -18,30 +18,30 @@ import {
   useToast,
   VStack,
 } from '@/components/ui';
+import InputVirtualKeyboard from '@/components/ui/input-virtual-keyboard';
+import SelectModal from '@/components/ui/select/select-modal';
+import { useCurrentUser } from '@/hooks/use-auth';
 import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import dayjs from 'dayjs';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 import { z } from 'zod';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import dayjs from 'dayjs';
-import InputVirtualKeyboard from '@/components/ui/input-virtual-keyboard';
-import SelectModal from '@/components/ui/select/select-modal';
-import { useCurrentUser } from '@/hooks/use-auth';
 
 import { SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
+import { CalcType, DEFAULT_PAYMENT_TYPE, FinanceType, Status } from '@/constants';
 import { useCustomer } from '@/hooks/use-customer';
 import { useCreateFinance } from '@/hooks/use-finance';
 import { usePaymentTypes } from '@/hooks/use-payment-type';
+import { useCreateReceivable } from '@/hooks/use-receivable';
 import { useTransactionReturn } from '@/hooks/use-return-transaction';
 import { useCreateTransaction, useTransaction } from '@/hooks/use-transaction';
-import { useCreateReceivable } from '@/hooks/use-receivable';
-import { CalcType, FinanceType, Status, DEFAULT_PAYMENT_TYPE } from '@/constants';
-import { findSellPrice, getDiscountedPrice, isDiscountActive } from '@/utils/price';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import { useProductStore } from '@/stores/product';
 import { useTransactionStore } from '@/stores/transaction';
+import { findSellPrice, getDiscountedPrice, isDiscountActive } from '@/utils/price';
 import classNames from 'classnames';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CalendarIcon, Check, CheckIcon, PlusIcon } from 'lucide-react-native';
@@ -173,7 +173,7 @@ export default function TransactionCheckoutForm() {
       if (pt && cartTotal) {
         comm =
           pt.commissionType === CalcType.PERCENTAGE
-            ? (cartTotal * pt.commission) / 100
+            ? cartTotal / (1 - pt.commission / 100) - cartTotal
             : pt.commission;
       }
     }
@@ -276,9 +276,7 @@ export default function TransactionCheckoutForm() {
           ? 'PIUTANG'
           : paymentTypesData?.find((p) => p.id === data.paymentTypeId)?.name ||
             DEFAULT_PAYMENT_TYPE,
-        paymentTypeCommission: isHutang
-          ? 0
-          : paymentTypesData?.find((p) => p.id === data.paymentTypeId)?.commission || 0,
+        paymentTypeCommission: isHutang ? 0 : commission,
         paymentTypeCommissionType: isHutang
           ? 'PERCENTAGE'
           : paymentTypesData?.find((p) => p.id === data.paymentTypeId)?.commissionType ||
