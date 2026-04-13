@@ -3,7 +3,7 @@
     "name": "POS Damai",
     "slug": "pos-damai",
     "version": "0.44.0",
-    "orientation": "landscape",
+    "orientation": "default",
     "icon": "./assets/images/adaptive-icon.png",
     "scheme": "posdamai",
     "userInterfaceStyle": "automatic",
@@ -22,7 +22,6 @@
         "backgroundImage": "./assets/images/adaptive-icon.png",
         "monochromeImage": "./assets/images/adaptive-icon.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -31,6 +30,13 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-navigation-bar",
+        {
+          "visible": false,
+          "behavior": "sticky-immersive"
+        }
+      ],
       [
         "expo-splash-screen",
         {

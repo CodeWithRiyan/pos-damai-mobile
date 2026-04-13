@@ -9,12 +9,13 @@ import '../global.css';
 import { ActionDrawerProvider } from '@/components/action-drawer';
 import { PopUpConfirmProvider } from '@/components/pop-up-confirm';
 import { SyncConfirmationModal } from '@/components/sync-confirmation-modal';
-import { useSyncManager } from '@/hooks/use-sync-manager';
-import { checkAndResetDbOnUpdate, initializeDb } from '@/db';
-import { authStorageAdapter, initializeStorage } from '@/utils/storage';
 import { SyncFloatingButton } from '@/components/sync-floating-button';
+import { checkAndResetDbOnUpdate, initializeDb } from '@/db';
+import { useSyncManager } from '@/hooks/use-sync-manager';
 import { useNetworkMonitoring } from '@/stores/system/network';
+import { authStorageAdapter, initializeStorage } from '@/utils/storage';
 import * as NavigationBar from 'expo-navigation-bar';
+import { AppState, AppStateStatus } from 'react-native';
 
 export const unstable_settings = {
   anchor: '(main)',
@@ -25,9 +26,22 @@ export default function RootLayout() {
   const router = useRouter();
 
   useEffect(() => {
-    // Hide navigation bar on Android
-    NavigationBar.setVisibilityAsync('hidden');
-    NavigationBar.setBehaviorAsync('overlay-swipe');
+    const handleSystemUI = async () => {
+      await NavigationBar.setVisibilityAsync('hidden');
+      await NavigationBar.setBehaviorAsync('overlay-swipe');
+    };
+
+    handleSystemUI();
+
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        handleSystemUI();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   // Initialize network monitoring
