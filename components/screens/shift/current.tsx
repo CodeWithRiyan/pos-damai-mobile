@@ -1,5 +1,6 @@
 import { HStack, Icon, Pressable, Text, VStack } from '@/components/ui';
 import { useCurrentShift } from '@/hooks/use-shift';
+import { useBreakpointStore } from '@/stores/breakpoint';
 import { formatRp } from '@/utils/format';
 import dayjs from 'dayjs';
 import { useRouter } from 'expo-router';
@@ -10,17 +11,14 @@ import CashDepositForm from './form-cash-deposit';
 import EndShiftForm from './form-end-shift';
 
 export default function CurrentShift() {
-  const [containerWidth, setContainerWidth] = useState(0);
+  const { deviceWidth } = useBreakpointStore();
   const router = useRouter();
   const { data: currentShift } = useCurrentShift();
   const [openEndShift, setOpenEndShift] = useState(false);
   const [openCashDeposit, setOpenCashDeposit] = useState(false);
 
   return (
-    <VStack
-      className="flex-1 bg-white"
-      onLayout={(event) => setContainerWidth(event.nativeEvent.layout.width)}
-    >
+    <VStack className="flex-1 bg-white">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="sm" className="p-4 border-b border-background-300">
           <HStack className="w-full flex-row justify-between">
@@ -91,7 +89,7 @@ export default function CurrentShift() {
             onPress={() => router.push('/(main)/transaction')}
           >
             <Text size="sm" className="text-typography-0 font-bold text-center">
-              {containerWidth > 760 ? 'MASUK KE MENU TRANSAKSI' : 'TRANSAKSI'}
+              {deviceWidth > 760 ? 'MASUK KE MENU TRANSAKSI' : 'TRANSAKSI'}
             </Text>
           </Pressable>
           <Pressable

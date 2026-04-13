@@ -1,9 +1,9 @@
-import { useState } from 'react';
 import { LineChart, lineDataItem } from 'react-native-gifted-charts';
+import { useBreakpointStore } from '../stores/breakpoint';
 import { Box, HStack, Text, VStack } from './ui';
 
 export default function AreaChart({ data, spacing }: { data: lineDataItem[]; spacing?: number }) {
-  const [containerWidth, setContainerWidth] = useState(0);
+  const { deviceWidth } = useBreakpointStore();
   const customDataPoint = () => {
     return <Box className="w-2 h-2 rounded-full bg-primary-500" />;
   };
@@ -22,19 +22,15 @@ export default function AreaChart({ data, spacing }: { data: lineDataItem[]; spa
     );
   }
 
-  const dynamicSpacing =
-    data.length > 1 ? Math.max(0, (containerWidth - 100) / (data.length - 1)) : 0;
+  const dynamicSpacing = data.length > 1 ? Math.max(0, (deviceWidth - 100) / (data.length - 1)) : 0;
 
   const maxValue = Math.max(...data.map((d) => Number(d.value) || 0));
   const useMillions = maxValue >= 1000000;
   const useThousands = maxValue >= 1000;
 
   return (
-    <Box
-      className="flex-1 px-2 bg-white min-h-[200px]"
-      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width || 0)}
-    >
-      {containerWidth > 0 && (
+    <Box className="flex-1 px-2 bg-white min-h-[200px]">
+      {deviceWidth > 0 && (
         <LineChart
           thickness={2}
           color="#3d2117"

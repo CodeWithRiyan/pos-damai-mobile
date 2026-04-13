@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/system/auth';
 import { useSidebarStore } from '@/stores/ui/sidebar';
 import { Link, LinkProps, usePathname, useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
+import { useBreakpointStore } from '../stores/breakpoint';
 import { CloseIcon, Icon } from './ui';
 import {
   Drawer,
@@ -22,7 +23,8 @@ import {
 import { Pressable } from './ui/pressable';
 import { SolarIconBoldDuotone, SolarIconBoldDuotoneProps } from './ui/solar-icon-wrapper';
 
-export function Sidebar({ deviceWidth }: { deviceWidth: number }) {
+export function Sidebar() {
+  const { deviceWidth } = useBreakpointStore();
   const router = useRouter();
   const pathname = usePathname();
   const { profile } = useAuthStore(); // Assuming useAuthStore is where profile is

@@ -27,9 +27,10 @@ import { useCallback, useState } from 'react';
 import { ScrollView } from 'react-native';
 
 import { useSupplier } from '@/hooks/use-supplier';
+import { useBreakpointStore } from '@/stores/breakpoint';
 import { formatRp } from '@/utils/format';
 export default function PayableDetail({ isReport }: { isReport?: boolean }) {
-  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const { deviceWidth } = useBreakpointStore();
   const router = useRouter();
   const params = useLocalSearchParams();
   const supplierId = params.supplierId as string;
@@ -81,10 +82,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
   }
 
   return (
-    <VStack
-      className="flex-1 bg-white"
-      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width || 0)}
-    >
+    <VStack className="flex-1 bg-white">
       <Header
         header="DETAIL HUTANG"
         selectedItemsLength={selectedItems?.length}
@@ -125,7 +123,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
               </VStack>
               <VStack className="flex-1 items-end">
                 <Text className="text-typography-500 text-sm">
-                  {containerWidth > 768 ? 'Jumlah Transaksi Belum Lunas' : 'Jumlah Transaksi'}
+                  {deviceWidth > 768 ? 'Jumlah Transaksi Belum Lunas' : 'Jumlah Transaksi'}
                 </Text>
                 <Text className="text-error-500 font-bold">
                   {payableList?.filter((f) => f.totalRealization !== f.nominal).length}

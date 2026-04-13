@@ -30,9 +30,10 @@ import { CalendarIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { ScrollView } from 'react-native';
 
+import { useBreakpointStore } from '@/stores/breakpoint';
 import { formatRp } from '@/utils/format';
 export default function ReceivableDetail() {
-  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const { deviceWidth } = useBreakpointStore();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -96,10 +97,7 @@ export default function ReceivableDetail() {
   }
 
   return (
-    <VStack
-      className="flex-1 bg-white"
-      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width || 0)}
-    >
+    <VStack className="flex-1 bg-white">
       <Header
         header="DETAIL PIUTANG"
         selectedItemsLength={selectedItems?.length}
@@ -146,7 +144,7 @@ export default function ReceivableDetail() {
               </VStack>
               <VStack className="flex-1 items-end">
                 <Text className="text-typography-500 text-sm">
-                  {containerWidth > 768 ? 'Jumlah Transaksi Belum Lunas' : 'Jumlah Transaksi'}
+                  {deviceWidth > 768 ? 'Jumlah Transaksi Belum Lunas' : 'Jumlah Transaksi'}
                 </Text>
                 <Text className="text-error-500 font-bold">
                   {receivableList?.filter((f) => f.totalRealization !== f.nominal).length}

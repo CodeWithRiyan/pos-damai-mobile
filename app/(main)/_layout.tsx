@@ -6,18 +6,20 @@ import DiscountForm from '@/components/screens/discount/form';
 import PaymentTypeForm from '@/components/screens/payment-type/form';
 import { Sidebar } from '@/components/sidebar';
 import { Stack } from 'expo-router';
-import { useState } from 'react';
 import { View } from 'react-native';
+import { useBreakpointStore } from '../../stores/breakpoint';
 
 export default function MainLayout() {
-  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const { setDeviceWidth } = useBreakpointStore();
 
   return (
     <View
       className="flex-1 flex-row bg-white"
-      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width || 0)}
+      onLayout={(event) => {
+        setDeviceWidth(event.nativeEvent.layout.width);
+      }}
     >
-      <Sidebar deviceWidth={containerWidth} />
+      <Sidebar />
       <View className="flex-1">
         <Stack
           screenOptions={{

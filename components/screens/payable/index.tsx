@@ -36,10 +36,11 @@ import { useRouter } from 'expo-router';
 import { CalendarIcon } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 
+import { useBreakpointStore } from '@/stores/breakpoint';
 import { formatRp } from '@/utils/format';
 import { Grid, GridItem } from '../../ui/grid';
 export default function PayableList({ isReport }: { isReport?: boolean }) {
-  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const { deviceWidth } = useBreakpointStore();
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
@@ -131,10 +132,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
   }
 
   return (
-    <Box
-      className="flex-1 bg-white"
-      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width || 0)}
-    >
+    <Box className="flex-1 bg-white">
       <Header
         header={isReport ? 'LAPORAN HUTANG' : 'HUTANG'}
         isGoBack
@@ -195,7 +193,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
             className="p-4 shadow-lg bg-background-0 border-b border-background-200"
           >
             <Grid _extra={{ className: 'grid-cols-2' }} className="gap-2">
-              <GridItem _extra={{ className: containerWidth > 768 ? 'col-span-1' : 'col-span-2' }}>
+              <GridItem _extra={{ className: deviceWidth > 768 ? 'col-span-1' : 'col-span-2' }}>
                 <Input className="border border-background-300 rounded-lg h-10">
                   <InputSlot className="pl-3">
                     <InputIcon as={SearchIcon} />
@@ -207,7 +205,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
                   />
                 </Input>
               </GridItem>
-              <GridItem _extra={{ className: containerWidth > 768 ? 'col-span-1' : 'col-span-2' }}>
+              <GridItem _extra={{ className: deviceWidth > 768 ? 'col-span-1' : 'col-span-2' }}>
                 <Pressable
                   onPress={() => setShowDueDatePicker(true)}
                   className={`border border-background-300 px-3 h-10 rounded-lg justify-center`}
@@ -245,7 +243,7 @@ export default function PayableList({ isReport }: { isReport?: boolean }) {
               </VStack>
               <VStack className="flex-1 items-end">
                 <Text className="text-typography-500 text-sm">
-                  {containerWidth > 768 ? 'Jumlah Transaksi Belum Lunas' : 'Jumlah Transaksi'}
+                  {deviceWidth > 768 ? 'Jumlah Transaksi Belum Lunas' : 'Jumlah Transaksi'}
                 </Text>
                 <Text className="text-error-500 font-bold">
                   {payableBySupplier.filter((f) => f.totalPayable > 0).length}
