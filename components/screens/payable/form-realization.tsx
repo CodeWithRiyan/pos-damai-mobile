@@ -24,17 +24,17 @@ import {
 } from '@/components/ui';
 import SelectModal from '@/components/ui/select/select-modal';
 import { SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
+import { DEFAULT_PAYMENT_TYPE } from '@/constants';
 import {
   useCreatePayableRealization,
-  useUpdatePayableRealization,
   usePayableBySupplier,
   usePayableRealizationDetail,
+  useUpdatePayableRealization,
 } from '@/hooks/use-payable';
-import { DEFAULT_PAYMENT_TYPE } from '@/constants';
-import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { usePaymentTypes } from '@/hooks/use-payment-type';
-import { usePaymentTypeStore } from '@/stores/payment-type';
 import { usePayableStore } from '@/stores/payable';
+import { usePaymentTypeStore } from '@/stores/payment-type';
+import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
@@ -417,7 +417,7 @@ export default function PayableRealizationForm() {
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
-          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-lg h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
         >

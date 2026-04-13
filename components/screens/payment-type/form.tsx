@@ -25,19 +25,19 @@ import { Input, InputField } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
+import { CalcType, DEFAULT_PAYMENT_TYPE } from '@/constants';
 import {
+  refetchPaymentTypeById,
   useCreatePaymentType,
   usePaymentTypes,
   useUpdatePaymentType,
-  refetchPaymentTypeById,
 } from '@/hooks/use-payment-type';
 import { usePaymentTypeStore } from '@/stores/payment-type';
+import { showErrorToast, showSuccessToast, showToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Percent } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { CalcType, DEFAULT_PAYMENT_TYPE } from '@/constants';
 import z from 'zod';
 
 export default function PaymentTypeForm() {
@@ -242,7 +242,7 @@ export default function PaymentTypeForm() {
                               size="md"
                               isInvalid={false}
                               isDisabled={false}
-                              className={`size-10 border rounded-sm flex items-center justify-center${
+                              className={`size-10 border rounded-lg flex items-center justify-center${
                                 value === 'PERCENTAGE'
                                   ? ' bg-primary-200 text-primary-500 border-primary-500'
                                   : ' bg-background-100 border-background-300'
@@ -257,7 +257,7 @@ export default function PaymentTypeForm() {
                               size="md"
                               isInvalid={false}
                               isDisabled={false}
-                              className={`size-10 border rounded-sm flex items-center justify-center${
+                              className={`size-10 border rounded-lg flex items-center justify-center${
                                 value === 'FLAT'
                                   ? ' bg-primary-200 text-primary-500 border-primary-500'
                                   : ' bg-background-100 border-background-300'
@@ -311,7 +311,7 @@ export default function PaymentTypeForm() {
         <ModalFooter className="p-4 pt-0">
           <HStack space="md">
             <Pressable
-              className="w-full flex px-4 h-10 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
+              className="w-full flex px-4 h-10 items-center justify-center rounded-lg bg-primary-500 active:bg-primary-500/90"
               onPress={form.handleSubmit(onSubmit)}
               disabled={isLoading}
             >

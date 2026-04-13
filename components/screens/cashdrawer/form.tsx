@@ -27,8 +27,8 @@ import {
   useCreateCashDrawer,
   useUpdateCashDrawer,
 } from '@/hooks/use-cashdrawer';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useCashDrawerStore } from '@/stores/cashdrawer';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
@@ -157,7 +157,7 @@ export default function CashDrawerForm() {
         <ModalFooter className="p-4 pt-0">
           <HStack space="md">
             <Pressable
-              className="w-full flex px-4 h-10 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
+              className="w-full flex px-4 h-10 items-center justify-center rounded-lg bg-primary-500 active:bg-primary-500/90"
               onPress={form.handleSubmit(onSubmit)}
               disabled={isLoading}
             >

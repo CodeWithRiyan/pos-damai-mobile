@@ -215,7 +215,7 @@ export default function CurrentFormShift() {
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
-          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-lg h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
         >

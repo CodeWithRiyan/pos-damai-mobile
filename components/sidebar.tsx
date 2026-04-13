@@ -1,16 +1,15 @@
-import { useAuthStore } from '@/stores/system/auth';
 import { Box } from '@/components/ui/box';
 import { Heading } from '@/components/ui/heading';
 import { HStack } from '@/components/ui/hstack';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
-import useBreakpoint from '@/hooks/use-breakpoint';
 import { useLogout } from '@/hooks/use-auth';
+import { usePermission } from '@/hooks/use-permission';
+import { useAuthStore } from '@/stores/system/auth';
 import { useSidebarStore } from '@/stores/ui/sidebar';
 import { Link, LinkProps, usePathname, useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
-import { usePermission } from '@/hooks/use-permission';
 import { CloseIcon, Icon } from './ui';
 import {
   Drawer,
@@ -23,14 +22,13 @@ import {
 import { Pressable } from './ui/pressable';
 import { SolarIconBoldDuotone, SolarIconBoldDuotoneProps } from './ui/solar-icon-wrapper';
 
-export function Sidebar() {
+export function Sidebar({ deviceWidth }: { deviceWidth: number }) {
   const router = useRouter();
   const pathname = usePathname();
   const { profile } = useAuthStore(); // Assuming useAuthStore is where profile is
   const role = profile?.roles?.[0];
   const { mutate: logout } = useLogout();
   const { showDrawer, setShowDrawer } = useSidebarStore((state) => state);
-  const { sm } = useBreakpoint();
   const { hasPermission, hasAnyPermission } = usePermission();
 
   const handleLogout = () => {
@@ -123,7 +121,7 @@ export function Sidebar() {
     <>
       <Drawer
         isOpen={showDrawer}
-        size={sm ? 'md' : 'full'}
+        size={deviceWidth > 768 ? 'md' : 'full'}
         anchor="left"
         onClose={() => {
           setShowDrawer(false);

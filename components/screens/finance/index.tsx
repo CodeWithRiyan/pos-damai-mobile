@@ -216,7 +216,7 @@ export default function FinanceTransaction() {
                         value="INCOME"
                         isInvalid={false}
                         isDisabled={false}
-                        className={`flex-1 h-16 border rounded-sm flex items-center justify-center${
+                        className={`flex-1 h-16 border rounded-lg flex items-center justify-center${
                           value === 'INCOME'
                             ? ' bg-success-100 border-success-500'
                             : ' bg-background-100 border-background-300'
@@ -234,7 +234,7 @@ export default function FinanceTransaction() {
                         value="EXPENSES"
                         isInvalid={false}
                         isDisabled={false}
-                        className={`flex-1 h-16 border rounded-sm flex items-center justify-center${
+                        className={`flex-1 h-16 border rounded-lg flex items-center justify-center${
                           value === 'EXPENSES'
                             ? ' bg-error-100 border-error-500'
                             : ' bg-background-100 border-background-300'

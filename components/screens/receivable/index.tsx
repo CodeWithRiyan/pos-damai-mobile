@@ -19,11 +19,7 @@ import { Box } from '@/components/ui/box';
 import { Heading } from '@/components/ui/heading';
 import { HStack } from '@/components/ui/hstack';
 import { Pressable } from '@/components/ui/pressable';
-import {
-  SolarIconBold,
-  SolarIconBoldDuotone,
-  SolarIconLinear,
-} from '@/components/ui/solar-icon-wrapper';
+import { SolarIconBold, SolarIconBoldDuotone } from '@/components/ui/solar-icon-wrapper';
 import { Spinner } from '@/components/ui/spinner';
 import { Text } from '@/components/ui/text';
 import { useToast } from '@/components/ui/toast';
@@ -40,7 +36,9 @@ import React, { useCallback, useState } from 'react';
 import { FlatList } from 'react-native';
 
 import { formatRp } from '@/utils/format';
+import { Grid, GridItem } from '../../ui/grid';
 export default function ReceivableList({ isReport }: { isReport?: boolean }) {
+  const [containerWidth, setContainerWidth] = useState<number>(0);
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
   const router = useRouter();
   const { data: receivableByUser = [], isLoading: isLoadingFetch, refetch } = useReceivableList();
@@ -123,7 +121,10 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
   }
 
   return (
-    <Box className="flex-1 bg-white">
+    <Box
+      className="flex-1 bg-white"
+      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width || 0)}
+    >
       <Header
         header={isReport ? 'LAPORAN PIUTANG' : 'PIUTANG'}
         isGoBack
@@ -163,24 +164,23 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
             space="md"
             className="p-4 shadow-lg bg-background-0 border-b border-background-200"
           >
-            <HStack space="sm" className="items-center">
-              <Pressable className="size-10 items-center justify-center" onPress={() => {}}>
-                <SolarIconLinear name="Filter" size={20} color="#3d2117" />
-              </Pressable>
-              <Input className="flex-1 border border-background-300 rounded-lg h-10">
-                <InputSlot className="pl-3">
-                  <InputIcon as={SearchIcon} />
-                </InputSlot>
-                <InputField
-                  placeholder="Cari nama user"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-              </Input>
-              <>
+            <Grid _extra={{ className: 'grid-cols-2' }} className="gap-2">
+              <GridItem _extra={{ className: containerWidth > 768 ? 'col-span-1' : 'col-span-2' }}>
+                <Input className="border border-background-300 rounded-lg h-10">
+                  <InputSlot className="pl-3">
+                    <InputIcon as={SearchIcon} />
+                  </InputSlot>
+                  <InputField
+                    placeholder="Cari nama user"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                  />
+                </Input>
+              </GridItem>
+              <GridItem _extra={{ className: containerWidth > 768 ? 'col-span-1' : 'col-span-2' }}>
                 <Pressable
                   onPress={() => setShowDueDatePicker(true)}
-                  className={`flex-1 border border-background-300 px-3 h-10 rounded-lg justify-center`}
+                  className={`border border-background-300 px-3 h-10 rounded-lg justify-center`}
                 >
                   <HStack className="items-center justify-between">
                     <Text>
@@ -204,8 +204,8 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
                     }}
                   />
                 )}
-              </>
-            </HStack>
+              </GridItem>
+            </Grid>
             <HStack space="lg" className="rounded-lg bg-error-100 p-4">
               <SolarIconBoldDuotone name="Card" size={40} color="#ef4444" />
               <VStack className="flex-1">
@@ -220,7 +220,9 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
                 </Heading>
               </VStack>
               <VStack className="flex-1 items-end">
-                <Text className="text-typography-500 text-sm">Jumlah Transaksi Belum Lunas</Text>
+                <Text className="text-typography-500 text-sm">
+                  {containerWidth > 768 ? 'Jumlah Transaksi Belum Lunas' : 'Jumlah Transaksi'}
+                </Text>
                 <Text className="text-error-500 font-bold">
                   {receivableByUser.filter((f) => f.totalRealization !== f.totalReceivable).length}
                 </Text>
@@ -270,7 +272,7 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
             keyExtractor={(receivable) => receivable.id}
             renderItem={({ item: receivable }) => (
               <Pressable
-                className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                className={`p-4 rounded-lg border-b border-gray-300 active:bg-gray-100 ${
                   selectedItems?.some((r) => r.userId === receivable.userId) ? 'bg-gray-100' : ''
                 }`}
                 onPress={() => {
@@ -334,7 +336,7 @@ export default function ReceivableList({ isReport }: { isReport?: boolean }) {
             <HStack className="w-full p-4">
               <Button
                 size="sm"
-                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                className="w-full rounded-lg bg-brand-primary active:bg-brand-primary/90"
                 onPress={handleAdd}
               >
                 <ButtonText className="text-white">TAMBAH PIUTANG</ButtonText>

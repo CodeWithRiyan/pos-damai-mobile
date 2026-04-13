@@ -22,14 +22,14 @@ import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
 import {
+  fetchCategories,
+  refetchCategoryById,
   useCategories,
   useCreateCategory,
   useUpdateCategory,
-  refetchCategoryById,
-  fetchCategories,
 } from '@/hooks/use-category';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useCategoryStore } from '@/stores/category';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useCallback, useEffect } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
@@ -254,7 +254,7 @@ export default function CategoryForm() {
         <ModalFooter className="p-4 pt-0">
           <HStack space="md">
             <Pressable
-              className="w-full flex px-4 h-10 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
+              className="w-full flex px-4 h-10 items-center justify-center rounded-lg bg-primary-500 active:bg-primary-500/90"
               onPress={form.handleSubmit(onSubmit)}
               disabled={isLoading}
             >

@@ -14,9 +14,9 @@ import { HStack } from '@/components/ui/hstack';
 import { Pressable } from '@/components/ui/pressable';
 import { useProducts } from '@/hooks/use-product';
 import { useReturnPurchasingStore } from '@/stores/return-purchasing';
-import { useLocalSearchParams } from 'expo-router';
-import React, { useState, useCallback } from 'react';
 import { FlashList } from '@shopify/flash-list';
+import { useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import { LayoutChangeEvent, ScrollView } from 'react-native';
 import ReturnPurchasingConfirmForm from './form';
 import PopupAddProduct from './popup-add';
@@ -159,7 +159,7 @@ export default function ReturnPurchasingInput() {
               {cart?.map((item, index) => (
                 <Pressable
                   key={item.product.id}
-                  className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
+                  className="px-4 py-2 rounded-lg border-b border-gray-300 active:bg-gray-100"
                   onPress={() => {
                     setAddProduct(item.product);
                     setDeleteItem(null);

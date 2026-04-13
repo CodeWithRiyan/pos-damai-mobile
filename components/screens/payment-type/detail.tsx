@@ -1,26 +1,26 @@
-import { useCallback, useState } from 'react';
 import { useActionDrawer } from '@/components/action-drawer';
 import Header from '@/components/header';
 import { Box, Spinner, Text, useToast, VStack } from '@/components/ui';
 import { Pressable } from '@/components/ui/pressable';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
 import {
+  PaymentType,
+  refetchPaymentTypeById,
   useDeletePaymentType,
   usePaymentTypes,
   useSetDefaultPaymentType,
-  refetchPaymentTypeById,
-  PaymentType,
 } from '@/hooks/use-payment-type';
 import { usePaymentTypeStore } from '@/stores/payment-type';
 import classNames from 'classnames';
 import { useLocalSearchParams } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ScrollView } from 'react-native';
 
-import { formatNumber } from '@/utils/format';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useDeleteEntity } from '@/hooks/use-delete-entity';
 import { useStoreVersionSync } from '@/hooks/use-store-version-sync';
 import { singleDeleteConfirm } from '@/utils/delete-confirm';
+import { formatNumber } from '@/utils/format';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 export default function PaymentTypeDetail() {
   const { setOpen, setData } = usePaymentTypeStore();
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
@@ -130,7 +130,7 @@ export default function PaymentTypeDetail() {
       <VStack space="md" className="w-full p-4">
         <Pressable
           className={classNames(
-            'w-full rounded-sm h-10 flex justify-center items-center bg-background-0 border border-brand-primary',
+            'w-full rounded-lg h-10 flex justify-center items-center bg-background-0 border border-brand-primary',
             !paymentType?.isDefault && 'bg-brand-primary',
           )}
           disabled={paymentType?.isDefault || setDefaultMutation.isPending}

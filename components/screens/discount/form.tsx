@@ -219,7 +219,7 @@ export default function DiscountForm() {
                               size="md"
                               isInvalid={false}
                               isDisabled={false}
-                              className={`size-10 border rounded-sm flex items-center justify-center${
+                              className={`size-10 border rounded-lg flex items-center justify-center${
                                 value === 'PERCENTAGE'
                                   ? ' bg-primary-200 text-primary-500 border-primary-500'
                                   : ' bg-background-100 border-background-300'
@@ -234,7 +234,7 @@ export default function DiscountForm() {
                               size="md"
                               isInvalid={false}
                               isDisabled={false}
-                              className={`size-10 border rounded-sm flex items-center justify-center${
+                              className={`size-10 border rounded-lg flex items-center justify-center${
                                 value === 'FLAT'
                                   ? ' bg-primary-200 text-primary-500 border-primary-500'
                                   : ' bg-background-100 border-background-300'
@@ -338,7 +338,7 @@ export default function DiscountForm() {
         <ModalFooter>
           <HStack space="md">
             <Pressable
-              className="w-full flex px-4 h-10 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
+              className="w-full flex px-4 h-10 items-center justify-center rounded-lg bg-primary-500 active:bg-primary-500/90"
               onPress={form.handleSubmit(onSubmit)}
               disabled={isLoading}
             >

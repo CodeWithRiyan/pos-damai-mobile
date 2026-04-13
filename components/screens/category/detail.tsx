@@ -241,7 +241,7 @@ export default function CategoryDetail() {
               {products?.map((product) => (
                 <Pressable
                   key={product.id}
-                  className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                  className={`p-4 rounded-lg border-b border-gray-300 active:bg-gray-100 ${
                     isProductSelected(product) ? 'bg-gray-100' : ''
                   }`}
                   onPress={() => {
@@ -304,7 +304,7 @@ export default function CategoryDetail() {
 
       <VStack space="md" className="w-full p-4">
         <Pressable
-          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-lg h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           onPress={() => {
             router.push(
               `/(main)/management/product-category-brand/category/select-product/${category?.id}`,

@@ -15,6 +15,7 @@ import {
   useToast,
   VStack,
 } from '@/components/ui';
+import { usePermission } from '@/hooks/use-permission';
 import {
   Permission,
   useCreateRole,
@@ -23,15 +24,14 @@ import {
   useRoles,
   useUpdateRole,
 } from '@/hooks/use-role';
+import { useRoleStore } from '@/stores/role';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { usePermission } from '@/hooks/use-permission';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 import z from 'zod';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
-import { useRoleStore } from '@/stores/role';
 
 const roleSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi.'),
@@ -232,9 +232,11 @@ export default function RoleForm() {
                             return (
                               <HStack
                                 key={permission.id}
-                                className="items-center justify-between h-12"
+                                className="items-center justify-between h-12 gap-4"
                               >
-                                <Text className="flex-1 text-base">{permission.description}</Text>
+                                <Text className="flex-1 text-base capitalize">
+                                  {permission.description}
+                                </Text>
                                 <Switch
                                   size="md"
                                   value={isChecked}
@@ -267,7 +269,7 @@ export default function RoleForm() {
 
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
-          className={`w-full rounded-sm h-10 flex justify-center items-center ${
+          className={`w-full rounded-lg h-10 flex justify-center items-center ${
             !canSave || isLoading
               ? 'bg-slate-300 border-slate-300'
               : 'bg-primary-500 border-primary-500'

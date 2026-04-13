@@ -103,7 +103,7 @@ export default function RootLayout() {
               <Stack.Screen name="login" options={{ headerShown: false }} />
               <Stack.Screen name="(main)" options={{ headerShown: false }} />
             </Stack>
-            <StatusBar style="dark" hidden />
+            <StatusBar style="dark" hidden translucent />
             <SyncConfirmationModal isOpen={showSyncModal} onClose={handleCloseSyncModal} />
             <SyncFloatingButton />
           </PopUpConfirmProvider>

@@ -158,7 +158,7 @@ export default function UserList() {
             keyExtractor={(user) => user.id}
             renderItem={({ item: user }) => (
               <Pressable
-                className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                className={`p-4 rounded-lg border-b border-gray-300 active:bg-gray-100 ${
                   isSelected(user) ? 'bg-gray-100' : ''
                 }`}
                 onPress={() => {
@@ -206,7 +206,7 @@ export default function UserList() {
             <PermissionGuard permissions="users:create">
               <Button
                 size="sm"
-                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                className="w-full rounded-lg bg-brand-primary active:bg-brand-primary/90"
                 onPress={handleAddUser}
               >
                 <ButtonText className="text-white">TAMBAH KARYAWAN</ButtonText>

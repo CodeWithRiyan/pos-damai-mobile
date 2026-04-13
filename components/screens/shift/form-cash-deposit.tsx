@@ -141,7 +141,7 @@ export default function CashDepositForm({
         <ModalFooter className="p-4 pt-0">
           <HStack space="md">
             <Pressable
-              className="flex-1 flex px-4 h-10 items-center justify-center rounded-sm bg-background-100 active:bg-background-200"
+              className="flex-1 flex px-4 h-10 items-center justify-center rounded-lg bg-background-100 active:bg-background-200"
               onPress={() => setOpen(false)}
               disabled={isLoading}
             >
@@ -154,7 +154,7 @@ export default function CashDepositForm({
               )}
             </Pressable>
             <Pressable
-              className="flex-1 flex px-4 h-10 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
+              className="flex-1 flex px-4 h-10 items-center justify-center rounded-lg bg-primary-500 active:bg-primary-500/90"
               onPress={form.handleSubmit(onSubmit)}
               disabled={isLoading}
             >

@@ -16,7 +16,7 @@ export default function ListProductLayout({
 }) {
   return (
     <Pressable
-      className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
+      className="px-4 py-2 rounded-lg border-b border-gray-300 active:bg-gray-100"
       onPress={onPressProduct}
     >
       <HStack className="justify-between items-center">

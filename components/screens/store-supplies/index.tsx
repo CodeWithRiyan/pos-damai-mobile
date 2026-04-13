@@ -64,7 +64,7 @@ export default function StoreSuppliesList({ isReport }: { isReport?: boolean }) 
               {storeSupplies?.map((so) => (
                 <Pressable
                   key={so.id}
-                  className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100${!!cart.find((item) => item.product.id === so.id) ? ' bg-gray-100' : ''}`}
+                  className={`p-4 rounded-lg border-b border-gray-300 active:bg-gray-100${!!cart.find((item) => item.product.id === so.id) ? ' bg-gray-100' : ''}`}
                   onPress={() => {
                     router.push(`/(main)/management/stock-changes/store-supplies/detail/${so.id}`);
                   }}
@@ -99,7 +99,7 @@ export default function StoreSuppliesList({ isReport }: { isReport?: boolean }) 
             <HStack className="w-full p-4">
               <Button
                 size="sm"
-                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                className="w-full rounded-lg bg-brand-primary active:bg-brand-primary/90"
                 onPress={handleAddStoreSupplies}
               >
                 <ButtonText className="text-white">TAMBAH KEBUTUHAN TOKO</ButtonText>

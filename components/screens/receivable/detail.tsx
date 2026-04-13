@@ -30,8 +30,9 @@ import { CalendarIcon } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { ScrollView } from 'react-native';
 
-import { formatRp, formatNumber } from '@/utils/format';
+import { formatRp } from '@/utils/format';
 export default function ReceivableDetail() {
+  const [containerWidth, setContainerWidth] = useState<number>(0);
   const { showActionDrawer, hideActionDrawer } = useActionDrawer();
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -95,7 +96,10 @@ export default function ReceivableDetail() {
   }
 
   return (
-    <VStack className="flex-1 bg-white">
+    <VStack
+      className="flex-1 bg-white"
+      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width || 0)}
+    >
       <Header
         header="DETAIL PIUTANG"
         selectedItemsLength={selectedItems?.length}
@@ -141,7 +145,9 @@ export default function ReceivableDetail() {
                 </VStack>
               </VStack>
               <VStack className="flex-1 items-end">
-                <Text className="text-typography-500 text-sm">Jumlah Transaksi Belum Lunas</Text>
+                <Text className="text-typography-500 text-sm">
+                  {containerWidth > 768 ? 'Jumlah Transaksi Belum Lunas' : 'Jumlah Transaksi'}
+                </Text>
                 <Text className="text-error-500 font-bold">
                   {receivableList?.filter((f) => f.totalRealization !== f.nominal).length}
                 </Text>
@@ -236,7 +242,7 @@ export default function ReceivableDetail() {
             ?.map((receivable) => (
               <Pressable
                 key={receivable.id}
-                className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                className={`p-4 rounded-lg border-b border-gray-300 active:bg-gray-100 ${
                   selectedItems?.some((r) => r.id === receivable.id) ? 'bg-gray-100' : ''
                 }`}
                 onPress={() => {
@@ -326,7 +332,7 @@ export default function ReceivableDetail() {
           </Pressable>
         ) : (
           <Pressable
-            className="w-full rounded-sm h-10 flex justify-center items-center bg-error-50 border border-error-500"
+            className="w-full rounded-lg h-10 flex justify-center items-center bg-error-50 border border-error-500"
             onPress={() => {
               router.push(`/(main)/management/payable-receivable/receivable/add` as any);
             }}

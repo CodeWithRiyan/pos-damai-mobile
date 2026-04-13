@@ -15,10 +15,10 @@ import {
   VStack,
 } from '@/components/ui';
 import SelectModal from '@/components/ui/select/select-modal';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
-import { useUserStore } from '@/stores/user';
 import { useRoles } from '@/hooks/use-role';
 import { UpdateUserDTO, useCreateUser, useUpdateUser, useUser, useUsers } from '@/hooks/use-user';
+import { useUserStore } from '@/stores/user';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
@@ -239,7 +239,7 @@ export default function UserForm() {
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
-          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-lg h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
         >

@@ -23,24 +23,25 @@ import {
 import { Grid, GridItem } from '@/components/ui/grid';
 import SelectModal from '@/components/ui/select/select-modal';
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
+import { PriceType, ProductType } from '@/constants';
 import { useBrands } from '@/hooks/use-brand';
 import { useCategories } from '@/hooks/use-category';
-import { useDiscounts, useDeleteDiscount, Discount } from '@/hooks/use-discount';
-import { showErrorToast, showToast } from '@/utils/toast';
+import { Discount, useDeleteDiscount, useDiscounts } from '@/hooks/use-discount';
 import {
   CreateProductDTO,
+  Product,
+  refetchProductById,
   UpdateProductDTO,
   useCreateProduct,
   useProducts,
   useUpdateProduct,
-  refetchProductById,
-  Product,
 } from '@/hooks/use-product';
-import { unitSuffixHelper } from '@/utils/unit';
 import { useBrandStore } from '@/stores/brand';
 import { useCategoryStore } from '@/stores/category';
 import { useDiscountStore } from '@/stores/discount';
 import { useProductStore } from '@/stores/product';
+import { showErrorToast, showToast } from '@/utils/toast';
+import { unitSuffixHelper } from '@/utils/unit';
 import { zodResolver } from '@hookform/resolvers/zod';
 import classNames from 'classnames';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -49,7 +50,6 @@ import { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
 import { z } from 'zod';
-import { PriceType, ProductType } from '@/constants';
 
 export default function ProductForm() {
   const { showPopUpConfirm, hidePopUpConfirm } = usePopUpConfirm();
@@ -1493,7 +1493,7 @@ export default function ProductForm() {
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
-          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-lg h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
           onPress={form.handleSubmit(onSubmit, () => {
             // const findFirstMessage = (obj: any): string | undefined => {

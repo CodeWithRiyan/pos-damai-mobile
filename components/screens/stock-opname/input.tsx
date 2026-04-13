@@ -14,15 +14,15 @@ import { Pressable } from '@/components/ui/pressable';
 import { VStack } from '@/components/ui/vstack';
 // import { useBulkDeleteStockOpname, StockOpname, useStockOpname } from "@/hooks/use-purchasing";
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
-import { useProducts } from '@/hooks/use-product';
 import { ProductType } from '@/constants';
+import { useProducts } from '@/hooks/use-product';
 import { useStockOpnameStore } from '@/stores/stock-opname';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { FlashList } from '@shopify/flash-list';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
 import { Calendar } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
 import { ScrollView } from 'react-native';
 import StockOpnameConfirmForm from './form';
 import PopupAddStockOpname from './popup-add';
@@ -38,11 +38,14 @@ export default function StockOpnameInput() {
   const isDirty = !!cart.length;
 
   const unifiedCart = React.useMemo(() => {
-    const grouped = new Map<string, {
-      product: typeof cart[0]['product'];
-      physicalStockByVariant: Map<string, number>;
-      totalPhysicalStock: number;
-    }>();
+    const grouped = new Map<
+      string,
+      {
+        product: (typeof cart)[0]['product'];
+        physicalStockByVariant: Map<string, number>;
+        totalPhysicalStock: number;
+      }
+    >();
 
     for (const item of cart) {
       const key = item.product.id;
@@ -120,7 +123,7 @@ export default function StockOpnameInput() {
               {products?.map((product, index) => (
                 <Pressable
                   key={index}
-                  className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
+                  className="px-4 py-2 rounded-lg border-b border-gray-300 active:bg-gray-100"
                   onPress={() => setAddProduct(product)}
                 >
                   <HStack className="justify-between items-center">
@@ -152,7 +155,7 @@ export default function StockOpnameInput() {
             keyExtractor={(item) => item.product.id}
             renderItem={({ item, index }) => (
               <Pressable
-                className="relative px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
+                className="relative px-4 py-2 rounded-lg border-b border-gray-300 active:bg-gray-100"
                 onPress={() => {
                   setAddProduct(item.product);
                   setDeleteItem(null);

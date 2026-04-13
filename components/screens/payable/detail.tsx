@@ -29,6 +29,7 @@ import { ScrollView } from 'react-native';
 import { useSupplier } from '@/hooks/use-supplier';
 import { formatRp } from '@/utils/format';
 export default function PayableDetail({ isReport }: { isReport?: boolean }) {
+  const [containerWidth, setContainerWidth] = useState<number>(0);
   const router = useRouter();
   const params = useLocalSearchParams();
   const supplierId = params.supplierId as string;
@@ -80,7 +81,10 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
   }
 
   return (
-    <VStack className="flex-1 bg-white">
+    <VStack
+      className="flex-1 bg-white"
+      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width || 0)}
+    >
       <Header
         header="DETAIL HUTANG"
         selectedItemsLength={selectedItems?.length}
@@ -120,7 +124,9 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
                 </VStack>
               </VStack>
               <VStack className="flex-1 items-end">
-                <Text className="text-typography-500 text-sm">Jumlah Transaksi Belum Lunas</Text>
+                <Text className="text-typography-500 text-sm">
+                  {containerWidth > 768 ? 'Jumlah Transaksi Belum Lunas' : 'Jumlah Transaksi'}
+                </Text>
                 <Text className="text-error-500 font-bold">
                   {payableList?.filter((f) => f.totalRealization !== f.nominal).length}
                 </Text>
@@ -217,7 +223,7 @@ export default function PayableDetail({ isReport }: { isReport?: boolean }) {
             ?.map((payable) => (
               <Pressable
                 key={payable.id}
-                className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                className={`p-4 rounded-lg border-b border-gray-300 active:bg-gray-100 ${
                   selectedItems?.some((r) => r.id === payable.id) ? 'bg-gray-100' : ''
                 }`}
                 onPress={() => {

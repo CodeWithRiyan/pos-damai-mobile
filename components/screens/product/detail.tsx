@@ -249,7 +249,7 @@ export default function ProductDetail() {
 
       <VStack space="md" className="w-full p-4">
         <Pressable
-          className="w-full rounded-sm h-10 flex justify-center items-center bg-background-0 border border-brand-primary"
+          className="w-full rounded-lg h-10 flex justify-center items-center bg-background-0 border border-brand-primary"
           onPress={() => {
             router.push(`/(main)/management/product-category-brand/product/edit/${product?.id}`);
           }}

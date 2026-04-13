@@ -25,9 +25,9 @@ import { Input, InputField, InputSlot } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { useCurrentShift, useEndShift } from '@/hooks/use-shift';
 import { useShiftStore } from '@/stores/shift';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -173,7 +173,7 @@ export default function EndShiftForm({
         <ModalFooter className="p-4 pt-0">
           <HStack space="md">
             <Pressable
-              className="flex-1 flex px-4 h-10 items-center justify-center rounded-sm bg-background-100 active:bg-background-200"
+              className="flex-1 flex px-4 h-10 items-center justify-center rounded-lg bg-background-100 active:bg-background-200"
               onPress={() => setOpen(false)}
               disabled={isLoading}
             >
@@ -186,7 +186,7 @@ export default function EndShiftForm({
               )}
             </Pressable>
             <Pressable
-              className="flex-1 flex px-4 h-10 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
+              className="flex-1 flex px-4 h-10 items-center justify-center rounded-lg bg-primary-500 active:bg-primary-500/90"
               onPress={form.handleSubmit(onSubmit)}
               disabled={isLoading}
             >

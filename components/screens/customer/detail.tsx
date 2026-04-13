@@ -191,7 +191,7 @@ export default function CustomerDetail() {
 
       <VStack space="md" className="w-full p-4">
         <Pressable
-          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-lg h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           onPress={() => {
             router.push(`/(main)/transaction/history?customerId=${customer?.id}`);
           }}

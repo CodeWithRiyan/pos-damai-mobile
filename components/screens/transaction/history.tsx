@@ -46,6 +46,7 @@ const chartCategoryDefinitions: ChartCategory[] = [
 ];
 
 export default function TransactionHistory({ isReport }: { isReport?: boolean }) {
+  const [containerWidth, setContainerWidth] = useState(0);
   const { customerId } = useLocalSearchParams<{ customerId: string }>();
   const header = isReport && !customerId ? 'LAPORAN PENJUALAN' : 'RIWAYAT TRANSAKSI';
   const router = useRouter();
@@ -243,7 +244,10 @@ export default function TransactionHistory({ isReport }: { isReport?: boolean })
   }
 
   return (
-    <VStack className="flex-1 bg-white">
+    <VStack
+      className="flex-1 bg-white"
+      onLayout={(event) => setContainerWidth(event.nativeEvent.layout.width)}
+    >
       <Header header={header} isGoBack />
       <ScrollView
         className="bg-background-0 shadow-lg flex-none"
@@ -267,7 +271,7 @@ export default function TransactionHistory({ isReport }: { isReport?: boolean })
       </ScrollView>
       <Grid _extra={{ className: 'grid-cols-2' }} className="flex-1">
         {isReport ? (
-          <GridItem _extra={{ className: 'col-span-1' }}>
+          <GridItem _extra={{ className: containerWidth > 768 ? 'col-span-1' : 'col-span-2' }}>
             <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
               <VStack space="md" className="p-4">
                 <RadioGroup
@@ -334,7 +338,9 @@ export default function TransactionHistory({ isReport }: { isReport?: boolean })
             </ScrollView>
           </GridItem>
         ) : (
-          <GridItem _extra={{ className: isReport ? 'col-span-1' : 'col-span-2' }}>
+          <GridItem
+            _extra={{ className: isReport || containerWidth > 768 ? 'col-span-1' : 'col-span-2' }}
+          >
             <FlashList
               data={transactions}
               className="flex-1"

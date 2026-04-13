@@ -156,7 +156,7 @@ export default function ReturnTransactionInput() {
 
               return (
                 <Pressable
-                  className="relative px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
+                  className="relative px-4 py-2 rounded-lg border-b border-gray-300 active:bg-gray-100"
                   onPress={() => {
                     setAddProduct(item.product, item.variant?.id);
                     setDeleteItem(null);

@@ -136,7 +136,7 @@ export default function RoleList() {
             keyExtractor={(role) => role.id}
             renderItem={({ item: role }) => (
               <Pressable
-                className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                className={`p-4 rounded-lg border-b border-gray-300 active:bg-gray-100 ${
                   isSelected(role) ? 'bg-gray-100' : ''
                 }`}
                 onPress={() => {
@@ -177,7 +177,7 @@ export default function RoleList() {
             <PermissionGuard permissions="roles:create">
               <Button
                 size="sm"
-                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                className="w-full rounded-lg bg-brand-primary active:bg-brand-primary/90"
                 onPress={handleAdd}
               >
                 <ButtonText className="text-white">TAMBAH ROLE</ButtonText>

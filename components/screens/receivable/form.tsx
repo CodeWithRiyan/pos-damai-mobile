@@ -19,7 +19,6 @@ import {
   VStack,
 } from '@/components/ui';
 import SelectModal from '@/components/ui/select/select-modal';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import {
   useCreateReceivable,
   useReceivableDetail,
@@ -27,6 +26,7 @@ import {
 } from '@/hooks/use-receivable';
 import { useUsers } from '@/hooks/use-user';
 import { useReceivableStore } from '@/stores/receivable';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
@@ -263,7 +263,7 @@ export default function ReceivableForm() {
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
-          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-lg h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
         >

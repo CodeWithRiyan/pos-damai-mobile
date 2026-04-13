@@ -122,7 +122,7 @@ export default function PurchasingList() {
             }
             renderItem={({ item: product }) => (
               <Pressable
-                className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
+                className="px-4 py-2 rounded-lg border-b border-gray-300 active:bg-gray-100"
                 onPress={() => setAddProduct(product)}
               >
                 <HStack className="justify-between items-center">
@@ -168,7 +168,7 @@ export default function PurchasingList() {
             keyExtractor={(item) => item.product.id}
             renderItem={({ item, index }) => (
               <Pressable
-                className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
+                className="px-4 py-2 rounded-lg border-b border-gray-300 active:bg-gray-100"
                 onPress={() => setAddProduct(item.product)}
               >
                 <HStack className="justify-between items-center">

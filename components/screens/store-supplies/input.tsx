@@ -14,15 +14,15 @@ import { Pressable } from '@/components/ui/pressable';
 import { VStack } from '@/components/ui/vstack';
 // import { useBulkDeleteStoreSupplies, StoreSupplies, useStoreSupplies } from "@/hooks/use-purchasing";
 import { SolarIconBold } from '@/components/ui/solar-icon-wrapper';
-import { useProducts } from '@/hooks/use-product';
 import { ProductType } from '@/constants';
+import { useProducts } from '@/hooks/use-product';
 import { useStoreSuppliesStore } from '@/stores/store-supplies';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { FlashList } from '@shopify/flash-list';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
 import { Calendar } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
 import { ScrollView } from 'react-native';
 import StoreSuppliesConfirmForm from './form';
 import PopupAddStoreSupplies from './popup-add';
@@ -90,7 +90,7 @@ export default function StoreSuppliesInput() {
               {products?.map((product, index) => (
                 <Pressable
                   key={index}
-                  className="px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
+                  className="px-4 py-2 rounded-lg border-b border-gray-300 active:bg-gray-100"
                   onPress={() => setAddProduct(product)}
                 >
                   <HStack className="justify-between items-center">
@@ -122,7 +122,7 @@ export default function StoreSuppliesInput() {
             keyExtractor={(item, index) => `${item.product.id}-${item.variant?.id || ''}-${index}`}
             renderItem={({ item, index }) => (
               <Pressable
-                className="relative px-4 py-2 rounded-sm border-b border-gray-300 active:bg-gray-100"
+                className="relative px-4 py-2 rounded-lg border-b border-gray-300 active:bg-gray-100"
                 onPress={() => {
                   setAddProduct(item.product, item.variant?.id);
                   setDeleteItem(null);

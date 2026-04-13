@@ -14,20 +14,20 @@ import SelectModal from '@/components/ui/select/select-modal';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/toast';
 import { VStack } from '@/components/ui/vstack';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
-import { useCustomerStore } from '@/stores/customer';
+import { PriceType } from '@/constants';
 import {
+  CustomerWithStats,
+  refetchCustomerById,
   useCreateCustomer,
   useUpdateCustomer,
-  refetchCustomerById,
-  CustomerWithStats,
 } from '@/hooks/use-customer';
+import { useCustomerStore } from '@/stores/customer';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
 import { ScrollView } from 'react-native';
-import { PriceType } from '@/constants';
 import z from 'zod';
 
 export default function CustomerForm() {
@@ -282,7 +282,7 @@ export default function CustomerForm() {
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
-          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-lg h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
         >

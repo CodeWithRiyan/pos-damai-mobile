@@ -10,13 +10,17 @@ import CashDepositForm from './form-cash-deposit';
 import EndShiftForm from './form-end-shift';
 
 export default function CurrentShift() {
+  const [containerWidth, setContainerWidth] = useState(0);
   const router = useRouter();
   const { data: currentShift } = useCurrentShift();
   const [openEndShift, setOpenEndShift] = useState(false);
   const [openCashDeposit, setOpenCashDeposit] = useState(false);
 
   return (
-    <VStack className="flex-1 bg-white">
+    <VStack
+      className="flex-1 bg-white"
+      onLayout={(event) => setContainerWidth(event.nativeEvent.layout.width)}
+    >
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <VStack space="sm" className="p-4 border-b border-background-300">
           <HStack className="w-full flex-row justify-between">
@@ -83,15 +87,15 @@ export default function CurrentShift() {
       <VStack space="md" className="w-full p-4">
         <HStack space="md">
           <Pressable
-            className="flex-1 rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
+            className="flex-1 rounded-lg h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
             onPress={() => router.push('/(main)/transaction')}
           >
-            <Text size="sm" className="text-typography-0 font-bold">
-              MASUK KE MENU TRANSAKSI
+            <Text size="sm" className="text-typography-0 font-bold text-center">
+              {containerWidth > 760 ? 'MASUK KE MENU TRANSAKSI' : 'TRANSAKSI'}
             </Text>
           </Pressable>
           <Pressable
-            className="flex-1 rounded-sm h-10 flex justify-center items-center bg-primary-100 border border-primary-500"
+            className="flex-1 rounded-lg h-10 flex justify-center items-center bg-primary-100 border border-primary-500"
             onPress={() => setOpenCashDeposit(true)}
           >
             <Text size="sm" className="text-primary-500 font-bold">
@@ -100,7 +104,7 @@ export default function CurrentShift() {
           </Pressable>
         </HStack>
         <Pressable
-          className="w-full rounded-sm h-10 flex justify-center items-center bg-error-100 border border-error-500"
+          className="w-full rounded-lg h-10 flex justify-center items-center bg-error-100 border border-error-500"
           onPress={() => setOpenEndShift(true)}
         >
           <Text size="sm" className="text-error-500 font-bold">

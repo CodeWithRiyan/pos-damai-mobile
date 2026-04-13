@@ -14,17 +14,17 @@ import {
   useToast,
   VStack,
 } from '@/components/ui';
-import { showErrorToast, showSuccessToast } from '@/utils/toast';
-import { useSupplierStore } from '@/stores/supplier';
 import {
   CreateSupplierDTO,
+  refetchSupplierById,
+  Supplier,
   UpdateSupplierDTO,
   useCreateSupplier,
   useSuppliers,
   useUpdateSupplier,
-  refetchSupplierById,
-  Supplier,
 } from '@/hooks/use-supplier';
+import { useSupplierStore } from '@/stores/supplier';
+import { showErrorToast, showSuccessToast } from '@/utils/toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -215,7 +215,7 @@ export default function SupplierForm() {
       </ScrollView>
       <HStack className="w-full p-4 border-t border-slate-200 justify-end gap-4">
         <Pressable
-          className="w-full rounded-sm h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
+          className="w-full rounded-lg h-10 flex justify-center items-center bg-primary-500 border border-primary-500"
           disabled={isLoading}
           onPress={form.handleSubmit(onSubmit)}
         >

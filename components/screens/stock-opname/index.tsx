@@ -57,7 +57,7 @@ export default function StockOpnameList({ isReport }: { isReport?: boolean }) {
               {stockOpname?.map((so) => (
                 <Pressable
                   key={so.id}
-                  className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100${!!cart.find((item) => item.product.id === so.id) ? ' bg-gray-100' : ''}`}
+                  className={`p-4 rounded-lg border-b border-gray-300 active:bg-gray-100${!!cart.find((item) => item.product.id === so.id) ? ' bg-gray-100' : ''}`}
                   onPress={() => {
                     router.push(`/(main)/management/stock-changes/stock-opname/detail/${so.id}`);
                   }}
@@ -110,7 +110,7 @@ export default function StockOpnameList({ isReport }: { isReport?: boolean }) {
             <HStack className="w-full p-4">
               <Button
                 size="sm"
-                className="w-full rounded-sm bg-brand-primary active:bg-brand-primary/90"
+                className="w-full rounded-lg bg-brand-primary active:bg-brand-primary/90"
                 onPress={handleAddStockOpname}
               >
                 <ButtonText className="text-white">TAMBAH STOK OPNAME</ButtonText>

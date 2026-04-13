@@ -7,9 +7,9 @@ import { Pressable } from '@/components/ui/pressable';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
 import { ProductListItem, useProducts } from '@/hooks/use-product';
+import { FlashList } from '@shopify/flash-list';
 import { CheckIcon } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlashList } from '@shopify/flash-list';
 
 export default function SelectingProductList({
   usedFor: _usedFor,
@@ -90,14 +90,19 @@ export default function SelectingProductList({
               const checked = isSelected(product.id);
               return (
                 <Pressable
-                  className={`p-4 rounded-sm border-b border-gray-300 active:bg-gray-100 ${
+                  className={`p-4 rounded-lg border-b border-gray-300 active:bg-gray-100 ${
                     checked ? 'bg-gray-100' : ''
                   }`}
                   onPress={() => handlePress(product)}
                 >
                   <HStack className="justify-between items-center">
                     <HStack space="md" className="items-center">
-                      <Checkbox value={product.id} isChecked={checked} size="md" onChange={() => handlePress(product)}>
+                      <Checkbox
+                        value={product.id}
+                        isChecked={checked}
+                        size="md"
+                        onChange={() => handlePress(product)}
+                      >
                         <CheckboxIndicator>
                           <CheckboxIcon as={CheckIcon} />
                         </CheckboxIndicator>
@@ -131,7 +136,7 @@ export default function SelectingProductList({
           />
           <HStack className="w-full p-4">
             <Pressable
-              className="w-full flex px-4 h-10 items-center justify-center rounded-sm bg-primary-500 active:bg-primary-500/90"
+              className="w-full flex px-4 h-10 items-center justify-center rounded-lg bg-primary-500 active:bg-primary-500/90"
               onPress={() => onSubmit?.(selectedProducts)}
               disabled={isLoading}
             >
